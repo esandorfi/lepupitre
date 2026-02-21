@@ -1,4 +1,5 @@
 mod commands;
+mod core;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -8,6 +9,13 @@ pub fn run() {
             .invoke_handler(tauri::generate_handler![
                 commands::audio::audio_reveal_wav,
                 commands::audio::audio_save_wav,
+                commands::profile::profile_create,
+                commands::profile::profile_list,
+                commands::profile::profile_switch,
+                commands::project::project_create,
+                commands::project::project_get_active,
+                commands::quest::quest_get_daily,
+                commands::quest::quest_submit_text,
                 commands::security::security_prepare_appdata_file,
                 commands::security::security_probe_fs
             ])
@@ -20,7 +28,14 @@ pub fn run() {
         tauri::Builder::default()
             .invoke_handler(tauri::generate_handler![
                 commands::audio::audio_reveal_wav,
-                commands::audio::audio_save_wav
+                commands::audio::audio_save_wav,
+                commands::profile::profile_create,
+                commands::profile::profile_list,
+                commands::profile::profile_switch,
+                commands::project::project_create,
+                commands::project::project_get_active,
+                commands::quest::quest_get_daily,
+                commands::quest::quest_submit_text
             ])
             .run(tauri::generate_context!())
             .expect("error while running tauri application");
