@@ -1,0 +1,19 @@
+{
+  "name": "lepupitre-desktop",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm tauri dev",
+    "build": "pnpm tauri build",
+    "tauri": "tauri",
+    "ui:dev": "pnpm -C ui dev",
+    "ui:build": "pnpm -C ui build",
+    "ui:lint": "pnpm -C ui lint",
+    "ui:typecheck": "pnpm -C ui typecheck",
+    "ui:test": "pnpm -C ui test"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0.0",
+  "rubric_id": "tech_talk_internal.v1",
+  "scale": {
+    "min": 1,
+    "max": 5,
+    "labels": {
+      "1": "Insuffisant",
+      "3": "Solide",
+      "5": "Excellent"
+    }
+  },
+  "items": [
+    { "key": "clarity", "label": "Clart\u00e9 du message" },
+    { "key": "structure", "label": "Structure et progression" },
+    { "key": "pacing", "label": "Rythme" },
+    { "key": "audience_fit", "label": "Adaptation \u00e0 l'audience" },
+    { "key": "examples", "label": "Exemples et preuves" }
+  ],
+  "required_free_text": [
+    { "key": "strengths", "label": "Points forts" },
+    { "key": "improvements", "label": "Am\u00e9liorations prioritaires" }
+  ]
+}

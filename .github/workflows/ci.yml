@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: ["main"]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Linux deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.19.0"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: "10"
+
+      - name: Install JS deps
+        run: pnpm -C desktop install
+
+      - name: UI lint
+        run: pnpm -C desktop ui:lint
+
+      - name: UI typecheck
+        run: pnpm -C desktop ui:typecheck
+
+      - name: UI tests
+        run: pnpm -C desktop ui:test
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Rust fmt
+        run: cargo fmt --all -- --check
+        working-directory: desktop/src-tauri
+
+      - name: Rust clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+        working-directory: desktop/src-tauri
+
+      - name: Rust tests
+        run: cargo test --all
+        working-directory: desktop/src-tauri

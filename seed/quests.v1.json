@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0.0",
+  "quests": [
+    {
+      "code": "A01",
+      "title": "Goal Sentence",
+      "category": "start",
+      "estimated_sec": 180,
+      "prompt": "\u00c0 la fin, ils sauront ___ pour ___.",
+      "output_type": "text",
+      "targets_issues": ["no_start", "unclear_goal"]
+    },
+    {
+      "code": "D01",
+      "title": "Intro 45s",
+      "category": "delivery",
+      "estimated_sec": 180,
+      "prompt": "Enregistre une intro 45s : promesse + plan.",
+      "output_type": "audio",
+      "targets_issues": ["weak_intro", "fillers", "pace"]
+    }
+  ]
+}

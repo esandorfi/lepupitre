@@ -43,3 +43,10 @@ Avant commit, Codex doit tenter:
 - Frontend: lint + typecheck + tests
 
 Si indisponible (repo incomplet), documenter explicitement la limite dans le changelog et le message final.
+
+## 6) MR = stop logique (qualité & revue)
+À chaque MR, Codex doit:
+- marquer un point d’arrêt,
+- relire la logique (risques/edge cases),
+- exécuter les checks qualité disponibles,
+- documenter les résultats avant de poursuivre.
