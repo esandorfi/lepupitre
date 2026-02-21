@@ -47,3 +47,20 @@ pub struct QuestDaily {
     pub why: String,
     pub due_boss_run: bool,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TranscriptSegment {
+    pub t_start_ms: i64,
+    pub t_end_ms: i64,
+    pub text: String,
+    pub confidence: Option<f32>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TranscriptV1 {
+    pub schema_version: String,
+    pub language: String,
+    pub model_id: Option<String>,
+    pub duration_ms: Option<i64>,
+    pub segments: Vec<TranscriptSegment>,
+}

@@ -6,10 +6,33 @@ use std::path::PathBuf;
 
 pub struct ArtifactRecord {
     pub id: String,
-    pub relpath: String,
     pub abspath: PathBuf,
     pub bytes: u64,
     pub sha256: String,
+}
+
+pub struct ArtifactInfo {
+    pub artifact_type: String,
+    pub relpath: String,
+}
+
+pub fn get_artifact(
+    app: &tauri::AppHandle,
+    profile_id: &str,
+    artifact_id: &str,
+) -> Result<ArtifactInfo, String> {
+    let conn = db::open_profile(app, profile_id)?;
+    let row = conn
+        .query_row(
+            "SELECT type, local_relpath FROM artifacts WHERE id = ?1",
+            [artifact_id],
+            |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)),
+        )
+        .map_err(|e| format!("artifact_lookup: {e}"))?;
+    Ok(ArtifactInfo {
+        artifact_type: row.0,
+        relpath: row.1,
+    })
 }
 
 pub fn store_bytes(
@@ -56,7 +79,6 @@ pub fn store_bytes(
 
     Ok(ArtifactRecord {
         id: artifact_id,
-        relpath,
         abspath,
         bytes: byte_len,
         sha256,

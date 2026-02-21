@@ -4,3 +4,4 @@ pub mod project;
 pub mod quest;
 #[cfg(debug_assertions)]
 pub mod security;
+pub mod transcription;

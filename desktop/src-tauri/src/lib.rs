@@ -18,6 +18,8 @@ pub fn run() {
                 commands::project::project_get_active,
                 commands::quest::quest_get_daily,
                 commands::quest::quest_submit_text,
+                commands::transcription::transcribe_audio,
+                commands::transcription::transcript_get,
                 commands::security::security_prepare_appdata_file,
                 commands::security::security_probe_fs
             ])
@@ -39,7 +41,9 @@ pub fn run() {
                 commands::project::project_create,
                 commands::project::project_get_active,
                 commands::quest::quest_get_daily,
-                commands::quest::quest_submit_text
+                commands::quest::quest_submit_text,
+                commands::transcription::transcribe_audio,
+                commands::transcription::transcript_get
             ])
             .run(tauri::generate_context!())
             .expect("error while running tauri application");

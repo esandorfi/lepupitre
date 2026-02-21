@@ -1,8 +1,19 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { useI18n } from "../lib/i18n";
 import { appStore } from "../stores/app";
+import { invokeChecked } from "../composables/useIpc";
+import {
+  AudioSavePayloadSchema,
+  AudioSaveResponseSchema,
+  TranscriptGetPayloadSchema,
+  TranscriptV1,
+  TranscriptV1Schema,
+  TranscribeAudioPayloadSchema,
+  TranscribeResponseSchema,
+} from "../schemas/ipc";
 
 const TARGET_SAMPLE_RATE = 16000;
 type AudioStatusKey =
@@ -17,19 +28,18 @@ const isRecording = ref(false);
 const statusKey = ref<AudioStatusKey>("audio.status_idle");
 const error = ref<string | null>(null);
 const lastSavedPath = ref<string | null>(null);
+const lastArtifactId = ref<string | null>(null);
 const lastDurationSec = ref<number | null>(null);
 const liveDurationSec = ref<number>(0);
 const liveLevel = ref<number>(0);
 const inputSampleRate = ref<number>(TARGET_SAMPLE_RATE);
 const inputChannels = ref<number>(1);
 const isRevealing = ref(false);
-
-type AudioSaveResponse = {
-  path: string;
-  artifactId: string;
-  bytes: number;
-  sha256: string;
-};
+const isTranscribing = ref(false);
+const transcribeProgress = ref<number>(0);
+const transcribeStage = ref<string | null>(null);
+const transcribeJobId = ref<string | null>(null);
+const transcript = ref<TranscriptV1 | null>(null);
 
 let audioContext: AudioContext | null = null;
 let processor: ScriptProcessorNode | null = null;
@@ -37,6 +47,35 @@ let source: MediaStreamAudioSourceNode | null = null;
 let stream: MediaStream | null = null;
 const chunks: Float32Array[] = [];
 let recordedSamples = 0;
+let unlistenProgress: (() => void) | null = null;
+let unlistenCompleted: (() => void) | null = null;
+let unlistenFailed: (() => void) | null = null;
+
+type JobProgressEvent = {
+  jobId: string;
+  stage: string;
+  pct: number;
+  message?: string;
+};
+
+type JobCompletedEvent = {
+  jobId: string;
+  resultId: string;
+};
+
+type JobFailedEvent = {
+  jobId: string;
+  errorCode: string;
+  message: string;
+};
+
+function resetTranscription() {
+  isTranscribing.value = false;
+  transcribeProgress.value = 0;
+  transcribeStage.value = null;
+  transcribeJobId.value = null;
+  transcript.value = null;
+}
 
 
 async function startRecording() {
@@ -46,10 +85,12 @@ async function startRecording() {
     return;
   }
   lastSavedPath.value = null;
+  lastArtifactId.value = null;
   lastDurationSec.value = null;
   liveDurationSec.value = 0;
   liveLevel.value = 0;
   statusKey.value = "audio.status_requesting";
+  resetTranscription();
 
   try {
     stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -102,11 +143,17 @@ async function stopRecording() {
   const base64 = toBase64(wavBytes);
 
   try {
-    const result = await invoke<AudioSaveResponse>("audio_save_wav", {
-      profileId: activeProfileId.value,
-      base64,
-    });
+    const result = await invokeChecked(
+      "audio_save_wav",
+      AudioSavePayloadSchema,
+      AudioSaveResponseSchema,
+      {
+        profileId: activeProfileId.value,
+        base64,
+      }
+    );
     lastSavedPath.value = result.path;
+    lastArtifactId.value = result.artifactId;
     liveLevel.value = 0;
     statusKey.value = "audio.status_idle";
   } catch (err) {
@@ -220,6 +267,85 @@ function formatDuration(seconds: number | null) {
   return `${minutes}:${secs.toString().padStart(2, "0")}`;
 }
 
+async function transcribeRecording() {
+  if (!activeProfileId.value || !lastArtifactId.value) {
+    return;
+  }
+  error.value = null;
+  transcript.value = null;
+  isTranscribing.value = true;
+  transcribeProgress.value = 0;
+  transcribeStage.value = null;
+  try {
+    const response = await invokeChecked(
+      "transcribe_audio",
+      TranscribeAudioPayloadSchema,
+      TranscribeResponseSchema,
+      {
+        profileId: activeProfileId.value,
+        audioArtifactId: lastArtifactId.value,
+      }
+    );
+    transcribeJobId.value = response.jobId ?? transcribeJobId.value;
+    const loaded = await invokeChecked(
+      "transcript_get",
+      TranscriptGetPayloadSchema,
+      TranscriptV1Schema,
+      {
+        profileId: activeProfileId.value,
+        transcriptId: response.transcriptId,
+      }
+    );
+    transcript.value = loaded;
+    transcribeProgress.value = 100;
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : String(err);
+  } finally {
+    isTranscribing.value = false;
+  }
+}
+
+function formatTimestamp(ms: number) {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const minutes = Math.floor(total / 60);
+  const seconds = total % 60;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
+onMounted(async () => {
+  unlistenProgress = await listen<JobProgressEvent>("job_progress", (event) => {
+    if (!isTranscribing.value) {
+      return;
+    }
+    if (transcribeJobId.value && event.payload.jobId !== transcribeJobId.value) {
+      return;
+    }
+    if (!transcribeJobId.value) {
+      transcribeJobId.value = event.payload.jobId;
+    }
+    transcribeProgress.value = event.payload.pct;
+    transcribeStage.value = event.payload.stage;
+  });
+  unlistenCompleted = await listen<JobCompletedEvent>("job_completed", (event) => {
+    if (transcribeJobId.value && event.payload.jobId !== transcribeJobId.value) {
+      return;
+    }
+    transcribeProgress.value = 100;
+  });
+  unlistenFailed = await listen<JobFailedEvent>("job_failed", (event) => {
+    if (transcribeJobId.value && event.payload.jobId !== transcribeJobId.value) {
+      return;
+    }
+    error.value = `${event.payload.errorCode}: ${event.payload.message}`;
+  });
+});
+
+onBeforeUnmount(() => {
+  unlistenProgress?.();
+  unlistenCompleted?.();
+  unlistenFailed?.();
+});
+
 async function revealRecording() {
   if (!lastSavedPath.value) {
     return;
@@ -266,6 +392,14 @@ async function revealRecording() {
         {{ t("audio.stop") }}
       </button>
       <button
+        class="app-button-info cursor-pointer rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
+        type="button"
+        :disabled="!lastArtifactId || isTranscribing"
+        @click="transcribeRecording"
+      >
+        {{ t("audio.transcribe") }}
+      </button>
+      <button
         class="app-button-primary cursor-pointer rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
         type="button"
         :disabled="!lastSavedPath || isRevealing"
@@ -298,6 +432,24 @@ async function revealRecording() {
       >
         {{ lastSavedPath }}
       </span>
+    </div>
+    <div v-if="isTranscribing || transcribeProgress > 0" class="app-muted text-xs">
+      {{ t("audio.transcription") }}:
+      <span class="app-text">{{ transcribeProgress }}%</span>
+      <span v-if="transcribeStage" class="app-subtle">({{ transcribeStage }})</span>
+    </div>
+    <div v-if="transcript" class="app-card rounded-xl border p-3 text-sm">
+      <div class="app-subtle text-xs uppercase tracking-[0.2em]">
+        {{ t("audio.transcript_title") }}
+      </div>
+      <div class="mt-2 space-y-2">
+        <div v-for="(segment, index) in transcript.segments" :key="index">
+          <span class="app-subtle text-xs">
+            {{ formatTimestamp(segment.t_start_ms) }}–{{ formatTimestamp(segment.t_end_ms) }}
+          </span>
+          <div class="app-text">{{ segment.text }}</div>
+        </div>
+      </div>
     </div>
     <div v-if="error" class="app-danger-text text-xs">{{ error }}</div>
   </div>
