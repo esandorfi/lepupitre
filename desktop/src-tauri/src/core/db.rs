@@ -59,13 +59,6 @@ pub fn profile_dir(app: &tauri::AppHandle, profile_id: &str) -> Result<PathBuf, 
 }
 
 fn seed_quests(conn: &mut Connection) -> Result<(), String> {
-    let count: i64 = conn
-        .query_row("SELECT COUNT(*) FROM quests", [], |row| row.get(0))
-        .map_err(|e| format!("count: {e}"))?;
-    if count > 0 {
-        return Ok(());
-    }
-
     let seed: QuestSeedFile =
         serde_json::from_str(QUESTS_SEED).map_err(|e| format!("seed_parse: {e}"))?;
     if seed.schema_version != "1.0.0" {
@@ -74,6 +67,16 @@ fn seed_quests(conn: &mut Connection) -> Result<(), String> {
 
     let tx = conn.transaction().map_err(|e| format!("tx: {e}"))?;
     for quest in seed.quests {
+        let exists: i64 = tx
+            .query_row(
+                "SELECT COUNT(*) FROM quests WHERE code = ?1",
+                [quest.code.as_str()],
+                |row| row.get(0),
+            )
+            .map_err(|e| format!("seed_check: {e}"))?;
+        if exists > 0 {
+            continue;
+        }
         let targets =
             serde_json::to_string(&quest.targets_issues).map_err(|e| format!("targets: {e}"))?;
         tx.execute(

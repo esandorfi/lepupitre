@@ -23,6 +23,10 @@ type AudioStatusKey =
   | "audio.status_encoding";
 
 const { t } = useI18n();
+const emit = defineEmits<{
+  (event: "saved", payload: { artifactId: string; path: string }): void;
+  (event: "transcribed", payload: { transcriptId: string }): void;
+}>();
 const activeProfileId = computed(() => appStore.state.activeProfileId);
 const isRecording = ref(false);
 const statusKey = ref<AudioStatusKey>("audio.status_idle");
@@ -154,6 +158,7 @@ async function stopRecording() {
     );
     lastSavedPath.value = result.path;
     lastArtifactId.value = result.artifactId;
+    emit("saved", { artifactId: result.artifactId, path: result.path });
     liveLevel.value = 0;
     statusKey.value = "audio.status_idle";
   } catch (err) {
@@ -297,6 +302,7 @@ async function transcribeRecording() {
       }
     );
     transcript.value = loaded;
+    emit("transcribed", { transcriptId: response.transcriptId });
     transcribeProgress.value = 100;
   } catch (err) {
     error.value = err instanceof Error ? err.message : String(err);

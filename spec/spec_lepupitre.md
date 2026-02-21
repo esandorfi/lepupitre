@@ -248,6 +248,7 @@ On veut un produit qui aide un **senior** à préparer un **talk interne** (≈ 
 **Quêtes**
 
 * `quest_get_daily(profile_id, project_id) -> QuestDaily`
+* `quest_get_by_code(profile_id, quest_code) -> Quest`
 * `quest_submit_text(profile_id, project_id, quest_code, text) -> AttemptId`
 * `quest_submit_audio(profile_id, project_id, quest_code, artifact_audio_id, transcript_id?) -> AttemptId`
 

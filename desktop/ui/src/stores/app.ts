@@ -13,8 +13,12 @@ import {
   ProjectSummaryNullableSchema,
   QuestDaily,
   QuestDailySchema,
+  QuestSchema,
+  QuestGetByCodePayloadSchema,
   QuestGetDailyPayloadSchema,
+  Quest,
   QuestSubmitTextPayloadSchema,
+  QuestSubmitAudioPayloadSchema,
   AnalyzeAttemptPayloadSchema,
   AnalyzeResponseSchema,
   FeedbackGetPayloadSchema,
@@ -121,8 +125,8 @@ async function loadDailyQuest() {
   state.dailyQuest = quest;
 }
 
-async function submitQuestText(text: string) {
-  if (!state.activeProfileId || !state.activeProject || !state.dailyQuest) {
+async function submitQuestText(questCode: string, text: string) {
+  if (!state.activeProfileId || !state.activeProject) {
     throw new Error("quest_context_missing");
   }
   const attemptId = await invokeChecked(
@@ -132,12 +136,48 @@ async function submitQuestText(text: string) {
     {
       profileId: state.activeProfileId,
       projectId: state.activeProject.id,
-      questCode: state.dailyQuest.quest.code,
+      questCode,
       text,
     }
   );
   state.lastAttemptId = attemptId;
   return attemptId;
+}
+
+async function submitQuestAudio(payload: {
+  questCode: string;
+  audioArtifactId: string;
+  transcriptId?: string | null;
+}) {
+  if (!state.activeProfileId || !state.activeProject) {
+    throw new Error("quest_context_missing");
+  }
+  const attemptId = await invokeChecked(
+    "quest_submit_audio",
+    QuestSubmitAudioPayloadSchema,
+    IdSchema,
+    {
+      profileId: state.activeProfileId,
+      projectId: state.activeProject.id,
+      questCode: payload.questCode,
+      audioArtifactId: payload.audioArtifactId,
+      transcriptId: payload.transcriptId ?? null,
+    }
+  );
+  state.lastAttemptId = attemptId;
+  return attemptId;
+}
+
+async function getQuestByCode(questCode: string): Promise<Quest> {
+  if (!state.activeProfileId) {
+    throw new Error("no_active_profile");
+  }
+  return invokeChecked(
+    "quest_get_by_code",
+    QuestGetByCodePayloadSchema,
+    QuestSchema,
+    { profileId: state.activeProfileId, questCode }
+  );
 }
 
 async function analyzeAttempt(attemptId: string) {
@@ -202,6 +242,8 @@ export const appStore = {
   createProject,
   loadDailyQuest,
   submitQuestText,
+  submitQuestAudio,
+  getQuestByCode,
   analyzeAttempt,
   getFeedback,
 };

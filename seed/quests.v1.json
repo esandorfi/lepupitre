@@ -18,6 +18,15 @@
       "prompt": "Enregistre une intro 45s : promesse + plan.",
       "output_type": "audio",
       "targets_issues": ["weak_intro", "fillers", "pace"]
+    },
+    {
+      "code": "FREE",
+      "title": "Quête libre",
+      "category": "free",
+      "estimated_sec": 180,
+      "prompt": "Capture libre : parle d'un point clé sans contrainte.",
+      "output_type": "audio",
+      "targets_issues": []
     }
   ]
 }

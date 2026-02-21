@@ -20,22 +20,36 @@ pub fn analyze_attempt(
 
     let row = conn
         .query_row(
-            "SELECT qa.output_text, q.estimated_sec
+            "SELECT qa.output_text, qa.transcript_id, q.estimated_sec
              FROM quest_attempts qa
              JOIN quests q ON qa.quest_code = q.code
              WHERE qa.id = ?1",
             [attempt_id.as_str()],
-            |row| Ok((row.get::<_, Option<String>>(0)?, row.get::<_, i64>(1)?)),
+            |row| {
+                Ok((
+                    row.get::<_, Option<String>>(0)?,
+                    row.get::<_, Option<String>>(1)?,
+                    row.get::<_, i64>(2)?,
+                ))
+            },
         )
         .map_err(|e| format!("attempt_lookup: {e}"))?;
 
-    let text = row.0.ok_or_else(|| "attempt_missing_text".to_string())?;
-    let estimated_sec = row.1;
+    let mut source = "text";
+    let text = if let Some(text) = row.0 {
+        text
+    } else if let Some(transcript_id) = row.1 {
+        source = "transcript";
+        load_transcript_text(&app, &profile_id, &transcript_id)?
+    } else {
+        return Err("attempt_missing_text".to_string());
+    };
+    let estimated_sec = row.2;
 
     let feedback = build_feedback(&text, estimated_sec);
     let feedback_json = serde_json::to_vec(&feedback).map_err(|e| format!("feedback_json: {e}"))?;
     let metadata = serde_json::json!({
-        "source": "text",
+        "source": source,
         "attempt_id": attempt_id,
     });
 
@@ -186,6 +200,33 @@ fn build_feedback(text: &str, estimated_sec: i64) -> models::FeedbackV1 {
             density_score,
         },
     }
+}
+
+fn load_transcript_text(
+    app: &tauri::AppHandle,
+    profile_id: &str,
+    transcript_id: &str,
+) -> Result<String, String> {
+    let artifact = artifacts::get_artifact(app, profile_id, transcript_id)?;
+    if artifact.artifact_type != "transcript" {
+        return Err("artifact_not_transcript".to_string());
+    }
+    let profile_dir = db::profile_dir(app, profile_id)?;
+    let transcript_path = profile_dir.join(&artifact.relpath);
+    let bytes = std::fs::read(&transcript_path).map_err(|e| format!("transcript_read: {e}"))?;
+    let transcript: models::TranscriptV1 =
+        serde_json::from_slice(&bytes).map_err(|e| format!("transcript_parse: {e}"))?;
+    let text = transcript
+        .segments
+        .iter()
+        .map(|segment| segment.text.trim())
+        .filter(|segment| !segment.is_empty())
+        .collect::<Vec<&str>>()
+        .join(" ");
+    if text.is_empty() {
+        return Err("transcript_empty".to_string());
+    }
+    Ok(text)
 }
 
 fn tokenize(text: &str) -> Vec<String> {

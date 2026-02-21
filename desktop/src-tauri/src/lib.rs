@@ -19,6 +19,8 @@ pub fn run() {
                 commands::project::project_create,
                 commands::project::project_get_active,
                 commands::quest::quest_get_daily,
+                commands::quest::quest_get_by_code,
+                commands::quest::quest_submit_audio,
                 commands::quest::quest_submit_text,
                 commands::transcription::transcribe_audio,
                 commands::transcription::transcript_get,
@@ -45,6 +47,8 @@ pub fn run() {
                 commands::project::project_create,
                 commands::project::project_get_active,
                 commands::quest::quest_get_daily,
+                commands::quest::quest_get_by_code,
+                commands::quest::quest_submit_audio,
                 commands::quest::quest_submit_text,
                 commands::transcription::transcribe_audio,
                 commands::transcription::transcript_get

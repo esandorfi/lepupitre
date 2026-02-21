@@ -78,11 +78,24 @@ export const ProjectIdPayloadSchema = z.object({
 
 export const QuestGetDailyPayloadSchema = ProjectIdPayloadSchema;
 
+export const QuestGetByCodePayloadSchema = z.object({
+  profileId: IdSchema,
+  questCode: z.string().min(1),
+});
+
 export const QuestSubmitTextPayloadSchema = z.object({
   profileId: IdSchema,
   projectId: IdSchema,
   questCode: z.string().min(1),
   text: z.string().min(1),
+});
+
+export const QuestSubmitAudioPayloadSchema = z.object({
+  profileId: IdSchema,
+  projectId: IdSchema,
+  questCode: z.string().min(1),
+  audioArtifactId: IdSchema,
+  transcriptId: IdSchema.optional().nullable(),
 });
 
 export const AudioSavePayloadSchema = z.object({
@@ -178,6 +191,7 @@ export const FeedbackV1Schema = z.object({
 
 export type ProfileSummary = z.infer<typeof ProfileSummarySchema>;
 export type ProjectSummary = z.infer<typeof ProjectSummarySchema>;
+export type Quest = z.infer<typeof QuestSchema>;
 export type QuestDaily = z.infer<typeof QuestDailySchema>;
 export type TranscriptV1 = z.infer<typeof TranscriptV1Schema>;
 export type FeedbackV1 = z.infer<typeof FeedbackV1Schema>;
