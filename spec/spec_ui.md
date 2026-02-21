@@ -213,6 +213,12 @@ Exemples :
   * titre, “pourquoi”, CTA “Démarrer”
 * Bloc “Projet actif” (titre, stage, durée cible)
 * Indicateur “Boss run dû” (si oui, CTA “Lancer boss run”)
+* Bloc “Prototype audio” (capture rapide) :
+
+  * ancré à la quête du jour si elle existe
+  * redirige vers QuestPage (flow complet)
+  * option “Quête libre” pour capturer sans enjeu
+  * sinon demande de créer un talk avant de capturer
 
 **AC**
 
@@ -255,14 +261,17 @@ Exemples :
 2. Capture :
 
    * **TextCapture** OU **AudioRecorder** selon `quest.outputType`
-3. Processing (transcribe/analyze) avec progress
-4. Redirect vers `/feedback/:feedbackId`
+3. Transcription (optionnelle, audio uniquement)
+4. Analyse **user-initiated** → Redirect vers `/feedback/:feedbackId`
 
 **AC**
 
 * Timer 3:00 visible
 * “Valider” bloque si vide
 * Audio : record/stop + lecture
+* “Demander feedback” déclenche l’analyse (pas automatique)
+* Si audio sans transcript : CTA “Transcrire d’abord”
+* “Skipper la transcription” conserve la tentative sans feedback
 
 ---
 

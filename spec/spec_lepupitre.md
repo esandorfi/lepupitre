@@ -100,6 +100,35 @@ On veut un produit qui aide un **senior** à préparer un **talk interne** (≈ 
 * Sauver tentative + artefacts + timestamps.
 * Générer feedback.
 
+#### 4.1.1 Flux d'une tentative (MVP, user-initiated)
+
+**Pré-requis**
+
+* Un **profil actif** et un **talk actif** sont requis.
+* Si aucun talk n'existe : CTA "Créer mon talk" avant toute capture.
+
+**Home (capture rapide)**
+
+* Le bloc "Prototype audio" est **toujours ancré** à la quête du jour.
+* La capture rapide **redirige vers QuestPage** (flow complet).
+* L'utilisateur peut choisir une **quête libre** (capture sans enjeu) pour enregistrer un audio sans contrainte.
+* Si aucune quête n'est disponible, l'UI propose d'abord la création du talk.
+
+**QuestPage (flow complet)**
+
+1. Pré-brief (objectif + sortie attendue).
+2. Capture texte ou audio.
+3. Si audio : sauvegarde artefact + création d'une tentative audio.
+4. Transcription **optionnelle**, déclenchée par l'utilisateur.
+5. Analyse **user-initiated** -> feedback.
+
+**Règles**
+
+* Le feedback n'est jamais automatique (contrôle utilisateur).
+* Audio -> analyse **requiert** un transcript ; sinon l'UI propose "Transcrire d'abord".
+* L'utilisateur peut **skipper** la transcription et garder une tentative sans feedback.
+* L'analyse utilise soit le texte (quest_submit_text), soit le transcript (quest_submit_audio).
+
 ### 4.2 Analyse & feedback
 
 * Transcrire audio en local.
@@ -211,24 +240,28 @@ On veut un produit qui aide un **senior** à préparer un **talk interne** (≈ 
 * `profile_list() -> ProfileSummary[]`
 * `profile_create(name) -> ProfileId`
 * `profile_switch(profile_id) -> void`
-* `project_create(payload) -> ProjectId`
-* `project_get_active() -> ProjectSummary`
+* `profile_rename(profile_id, name) -> void`
+* `profile_delete(profile_id) -> void`
+* `project_create(profile_id, payload) -> ProjectId`
+* `project_get_active(profile_id) -> ProjectSummary`
 
 **Quêtes**
 
-* `quest_get_daily(project_id) -> QuestDaily`
-* `quest_submit_text(project_id, quest_code, text) -> AttemptId`
+* `quest_get_daily(profile_id, project_id) -> QuestDaily`
+* `quest_submit_text(profile_id, project_id, quest_code, text) -> AttemptId`
+* `quest_submit_audio(profile_id, project_id, quest_code, artifact_audio_id, transcript_id?) -> AttemptId`
 
 **Audio**
 
-* `audio_start_recording(context) -> void`
-* `audio_stop_recording() -> ArtifactId(audio/wav)`
+* `audio_save_wav(profile_id, base64_wav) -> AudioSaveResult{artifact_id, path, bytes, sha256}`
+* `audio_reveal_wav(path) -> void`
 
 **Transcription & analyse**
 
-* `transcribe_audio(artifact_audio_id, options) -> TranscriptId`
-* `analyze_attempt(attempt_id) -> FeedbackId`
-* `feedback_get(feedback_id) -> FeedbackV1`
+* `transcribe_audio(profile_id, artifact_audio_id) -> {transcript_id, job_id}`
+* `transcript_get(profile_id, transcript_id) -> TranscriptV1`
+* `analyze_attempt(profile_id, attempt_id) -> FeedbackId`
+* `feedback_get(profile_id, feedback_id) -> FeedbackV1`
 
 **Boss run**
 
@@ -395,6 +428,7 @@ Sélection :
 ### 13.1 Catalogue
 
 Le catalogue est seedé dans `quests` au premier run depuis un JSON embarqué (build-time) versionné.
+Il inclut une quête **FREE** (capture libre) pour permettre un enregistrement rapide sans enjeu.
 
 ### 13.2 Recommandation rule-based (MVP)
 
@@ -1039,4 +1073,3 @@ Ajouter `CloudStorageProvider` + `SyncEngine`.
 ## M9 — Hardening
 
 * CSP + IPC minimal + limites import + logs.
-
