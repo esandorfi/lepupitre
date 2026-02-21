@@ -1,0 +1,22 @@
+# Changelog commit — unification docs + ADR fermant les zones grises
+
+- Dev: codex
+- Commit SHA: pending_at_creation
+- Résumé:
+  - Unification des documents pour refléter les décisions retenues.
+  - Remplacement du point “décisions non fermées” par un plan actionnable ADR + spikes.
+  - Ajout de deux ADR complètes:
+    - ADR-AUDIO-0001 (WAV 16k mono sans ffmpeg en V1)
+    - ADR-SEC-0002 (capabilities least privilege + CSP)
+- Fichiers modifiés:
+  - README.md
+  - README_TECH.md
+  - docs/SPEC_COHERENCE_REVIEW.md
+  - docs/IMPLEMENTATION_PLAN.md
+  - docs/adr/ADR-AUDIO-0001-normalisation-audio-capture-wav16k.md
+  - docs/adr/ADR-SEC-0002-tauri-capabilities-least-privilege.md
+- Tests/lints exécutés:
+  - git diff --check (OK)
+  - md_sanity_ok (script Python local)
+- Risques/restes à faire:
+  - exécuter les spikes techniques en passe 0 pour valider cross-platform réel.
