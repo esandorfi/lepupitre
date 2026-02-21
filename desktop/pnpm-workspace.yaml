@@ -1,2 +1,5 @@
 packages:
-  - "ui"
+  - ui
+onlyBuiltDependencies:
+  - esbuild
+  - vue-demi
