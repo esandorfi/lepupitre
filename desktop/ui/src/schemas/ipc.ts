@@ -127,7 +127,57 @@ export const TranscriptGetPayloadSchema = z.object({
   transcriptId: IdSchema,
 });
 
+export const AnalyzeAttemptPayloadSchema = z.object({
+  profileId: IdSchema,
+  attemptId: IdSchema,
+});
+
+export const AnalyzeResponseSchema = z.object({
+  feedbackId: IdSchema,
+});
+
+export const FeedbackGetPayloadSchema = z.object({
+  profileId: IdSchema,
+  feedbackId: IdSchema,
+});
+
+export const FeedbackActionSchema = z.object({
+  action_id: z.string().min(1),
+  title: z.string().min(1),
+  why_it_matters: z.string().min(1),
+  how_to_fix: z.string().min(1),
+  target_quest_codes: z.array(z.string().min(1)).min(1).max(3),
+});
+
+export const FeedbackCommentSchema = z.object({
+  t_start_ms: z.number().int().nonnegative(),
+  t_end_ms: z.number().int().nonnegative(),
+  severity: z.enum(["low", "medium", "high"]),
+  label: z.string().min(1),
+  evidence: z.record(z.string(), z.unknown()).optional().nullable(),
+  suggestion: z.string().min(1),
+});
+
+export const FeedbackMetricsSchema = z.object({
+  wpm: z.number().nonnegative(),
+  filler_per_min: z.number().nonnegative(),
+  pause_count: z.number().int().nonnegative(),
+  avg_sentence_words: z.number().nonnegative(),
+  repeat_terms: z.array(z.string().min(1)).max(10),
+  jargon_terms: z.array(z.string().min(1)).optional().nullable(),
+  density_score: z.number().nonnegative().optional().nullable(),
+});
+
+export const FeedbackV1Schema = z.object({
+  schema_version: z.literal("1.0.0"),
+  overall_score: z.number().int().min(0).max(100),
+  top_actions: z.array(FeedbackActionSchema).max(2),
+  comments: z.array(FeedbackCommentSchema).max(7),
+  metrics: FeedbackMetricsSchema,
+});
+
 export type ProfileSummary = z.infer<typeof ProfileSummarySchema>;
 export type ProjectSummary = z.infer<typeof ProjectSummarySchema>;
 export type QuestDaily = z.infer<typeof QuestDailySchema>;
 export type TranscriptV1 = z.infer<typeof TranscriptV1Schema>;
+export type FeedbackV1 = z.infer<typeof FeedbackV1Schema>;

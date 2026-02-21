@@ -64,3 +64,42 @@ pub struct TranscriptV1 {
     pub duration_ms: Option<i64>,
     pub segments: Vec<TranscriptSegment>,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct FeedbackAction {
+    pub action_id: String,
+    pub title: String,
+    pub why_it_matters: String,
+    pub how_to_fix: String,
+    pub target_quest_codes: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct FeedbackComment {
+    pub t_start_ms: i64,
+    pub t_end_ms: i64,
+    pub severity: String,
+    pub label: String,
+    pub evidence: Option<serde_json::Value>,
+    pub suggestion: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct FeedbackMetrics {
+    pub wpm: f64,
+    pub filler_per_min: f64,
+    pub pause_count: i64,
+    pub avg_sentence_words: f64,
+    pub repeat_terms: Vec<String>,
+    pub jargon_terms: Vec<String>,
+    pub density_score: f64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct FeedbackV1 {
+    pub schema_version: String,
+    pub overall_score: i64,
+    pub top_actions: Vec<FeedbackAction>,
+    pub comments: Vec<FeedbackComment>,
+    pub metrics: FeedbackMetrics,
+}

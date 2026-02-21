@@ -40,7 +40,8 @@ async function submit() {
   error.value = null;
   try {
     const attemptId = await appStore.submitQuestText(text.value.trim());
-    await router.push(`/feedback/${attemptId}`);
+    const feedbackId = await appStore.analyzeAttempt(attemptId);
+    await router.push(`/feedback/${feedbackId}`);
   } catch (err) {
     error.value = toError(err);
   } finally {

@@ -15,6 +15,11 @@ import {
   QuestDailySchema,
   QuestGetDailyPayloadSchema,
   QuestSubmitTextPayloadSchema,
+  AnalyzeAttemptPayloadSchema,
+  AnalyzeResponseSchema,
+  FeedbackGetPayloadSchema,
+  FeedbackV1,
+  FeedbackV1Schema,
   VoidResponseSchema,
 } from "../schemas/ipc";
 
@@ -24,6 +29,7 @@ const state = reactive({
   activeProject: null as ProjectSummary | null,
   dailyQuest: null as QuestDaily | null,
   lastAttemptId: null as string | null,
+  lastFeedbackId: null as string | null,
 });
 
 async function loadProfiles() {
@@ -134,6 +140,32 @@ async function submitQuestText(text: string) {
   return attemptId;
 }
 
+async function analyzeAttempt(attemptId: string) {
+  if (!state.activeProfileId) {
+    throw new Error("no_active_profile");
+  }
+  const response = await invokeChecked(
+    "analyze_attempt",
+    AnalyzeAttemptPayloadSchema,
+    AnalyzeResponseSchema,
+    { profileId: state.activeProfileId, attemptId }
+  );
+  state.lastFeedbackId = response.feedbackId;
+  return response.feedbackId;
+}
+
+async function getFeedback(feedbackId: string): Promise<FeedbackV1> {
+  if (!state.activeProfileId) {
+    throw new Error("no_active_profile");
+  }
+  return invokeChecked(
+    "feedback_get",
+    FeedbackGetPayloadSchema,
+    FeedbackV1Schema,
+    { profileId: state.activeProfileId, feedbackId }
+  );
+}
+
 async function bootstrap() {
   await loadProfiles();
   await loadActiveProject();
@@ -170,4 +202,6 @@ export const appStore = {
   createProject,
   loadDailyQuest,
   submitQuestText,
+  analyzeAttempt,
+  getFeedback,
 };
