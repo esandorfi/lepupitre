@@ -14,5 +14,6 @@ declare module 'vue' {
     AudioRecorder: typeof import('./src/components/AudioRecorder.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    SecurityProbe: typeof import('./src/components/SecurityProbe.vue')['default']
   }
 }

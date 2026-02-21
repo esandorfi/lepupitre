@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AudioRecorder from "../components/AudioRecorder.vue";
+import SecurityProbe from "../components/SecurityProbe.vue";
 </script>
 
 <template>
@@ -12,5 +13,6 @@ import AudioRecorder from "../components/AudioRecorder.vue";
     </div>
 
     <AudioRecorder />
+    <SecurityProbe />
   </section>
 </template>
