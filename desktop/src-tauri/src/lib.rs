@@ -3,7 +3,10 @@ mod commands;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![commands::audio::audio_save_wav])
+        .invoke_handler(tauri::generate_handler![
+            commands::audio::audio_open_wav,
+            commands::audio::audio_save_wav
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

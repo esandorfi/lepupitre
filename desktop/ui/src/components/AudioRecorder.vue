@@ -2,38 +2,56 @@
 import { ref } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 
+const TARGET_SAMPLE_RATE = 16000;
+
 const isRecording = ref(false);
 const status = ref("Idle");
 const error = ref<string | null>(null);
 const lastSavedPath = ref<string | null>(null);
+const lastDurationSec = ref<number | null>(null);
+const liveDurationSec = ref<number>(0);
+const liveLevel = ref<number>(0);
+const inputSampleRate = ref<number>(TARGET_SAMPLE_RATE);
+const inputChannels = ref<number>(1);
+const isOpening = ref(false);
 
 let audioContext: AudioContext | null = null;
 let processor: ScriptProcessorNode | null = null;
 let source: MediaStreamAudioSourceNode | null = null;
 let stream: MediaStream | null = null;
 const chunks: Float32Array[] = [];
+let recordedSamples = 0;
 
-const TARGET_SAMPLE_RATE = 16000;
 
 async function startRecording() {
   error.value = null;
   lastSavedPath.value = null;
+  lastDurationSec.value = null;
+  liveDurationSec.value = 0;
+  liveLevel.value = 0;
   status.value = "Requesting microphone";
 
   try {
     stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     audioContext = await createAudioContext();
+    inputSampleRate.value = audioContext.sampleRate;
+    const settings = stream.getAudioTracks()[0]?.getSettings();
+    inputChannels.value = settings?.channelCount ?? 1;
     source = audioContext.createMediaStreamSource(stream);
     processor = audioContext.createScriptProcessor(4096, 1, 1);
     processor.onaudioprocess = (event) => {
       const data = event.inputBuffer.getChannelData(0);
       chunks.push(new Float32Array(data));
+      recordedSamples += data.length;
+      liveDurationSec.value = recordedSamples / inputSampleRate.value;
+      liveLevel.value = calculateRms(data);
     };
 
     source.connect(processor);
     processor.connect(audioContext.destination);
 
     isRecording.value = true;
+    recordedSamples = 0;
     status.value = "Recording";
   } catch (err) {
     error.value = err instanceof Error ? err.message : String(err);
@@ -53,13 +71,14 @@ async function stopRecording() {
   source.disconnect();
   stream.getTracks().forEach((track) => track.stop());
 
-  const inputSampleRate = audioContext.sampleRate;
+  const inputRate = inputSampleRate.value;
   await audioContext.close();
 
   const rawSamples = concatChunks(chunks);
   chunks.length = 0;
 
-  const samples = resample(rawSamples, inputSampleRate, TARGET_SAMPLE_RATE);
+  const samples = resample(rawSamples, inputRate, TARGET_SAMPLE_RATE);
+  lastDurationSec.value = samples.length / TARGET_SAMPLE_RATE;
   const wavBytes = encodeWav(samples, TARGET_SAMPLE_RATE);
   const base64 = toBase64(wavBytes);
 
@@ -67,6 +86,7 @@ async function stopRecording() {
     const path = await invoke<string>("audio_save_wav", { base64 });
     lastSavedPath.value = path;
     status.value = "Saved";
+    liveLevel.value = 0;
   } catch (err) {
     error.value = err instanceof Error ? err.message : String(err);
     status.value = "Idle";
@@ -155,6 +175,43 @@ function toBase64(bytes: Uint8Array) {
   }
   return btoa(binary);
 }
+
+function calculateRms(samples: Float32Array) {
+  let sum = 0;
+  for (let i = 0; i < samples.length; i += 1) {
+    sum += samples[i] * samples[i];
+  }
+  return Math.sqrt(sum / samples.length);
+}
+
+function levelPercent(value: number) {
+  return Math.min(100, Math.round(value * 160));
+}
+
+function formatDuration(seconds: number | null) {
+  if (seconds === null) {
+    return null;
+  }
+  const total = Math.max(0, Math.round(seconds));
+  const minutes = Math.floor(total / 60);
+  const secs = total % 60;
+  return `${minutes}:${secs.toString().padStart(2, "0")}`;
+}
+
+async function openRecording() {
+  if (!lastSavedPath.value) {
+    return;
+  }
+  isOpening.value = true;
+  error.value = null;
+  try {
+    await invoke("audio_open_wav", { path: lastSavedPath.value });
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : String(err);
+  } finally {
+    isOpening.value = false;
+  }
+}
 </script>
 
 <template>
@@ -186,9 +243,33 @@ function toBase64(bytes: Uint8Array) {
       >
         Stop + Save
       </button>
+      <button
+        class="rounded-full bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-white disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+        type="button"
+        :disabled="!lastSavedPath || isOpening"
+        @click="openRecording"
+      >
+        Open file
+      </button>
     </div>
 
     <div class="text-sm text-slate-300">Status: {{ status }}</div>
+    <div class="space-y-1 text-xs text-slate-400">
+      <div>
+        Input: {{ inputSampleRate }} Hz, {{ inputChannels }} ch. Target:
+        {{ TARGET_SAMPLE_RATE }} Hz mono.
+      </div>
+      <div class="h-2 w-full rounded-full bg-slate-800">
+        <div
+          class="h-2 rounded-full bg-emerald-400 transition-all"
+          :style="{ width: `${levelPercent(liveLevel)}%` }"
+        ></div>
+      </div>
+    </div>
+    <div class="text-xs text-slate-400">
+      Duration:
+      {{ formatDuration(isRecording ? liveDurationSec : lastDurationSec) ?? "0:00" }}
+    </div>
     <div v-if="lastSavedPath" class="text-xs text-emerald-300">
       Saved to: {{ lastSavedPath }}
     </div>

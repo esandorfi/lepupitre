@@ -4,9 +4,9 @@
   "version": "0.1.0",
   "identifier": "com.emmanuelsandorfi.lepupitre",
   "build": {
-    "beforeDevCommand": "pnpm -C ../ui dev",
+    "beforeDevCommand": "pnpm -C ui dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "pnpm -C ../ui build",
+    "beforeBuildCommand": "pnpm -C ui build",
     "frontendDist": "../ui/dist"
   },
   "app": {
