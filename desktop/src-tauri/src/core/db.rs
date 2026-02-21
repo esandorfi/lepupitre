@@ -21,6 +21,21 @@ pub fn open_global(app: &tauri::AppHandle) -> Result<Connection, String> {
     Ok(conn)
 }
 
+pub fn ensure_profile_exists(app: &tauri::AppHandle, profile_id: &str) -> Result<(), String> {
+    let conn = open_global(app)?;
+    let count: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM profiles WHERE id = ?1",
+            [profile_id],
+            |row| row.get(0),
+        )
+        .map_err(|e| format!("profile_check: {e}"))?;
+    if count == 0 {
+        return Err("profile_not_found".to_string());
+    }
+    Ok(())
+}
+
 pub fn open_profile(app: &tauri::AppHandle, profile_id: &str) -> Result<Connection, String> {
     let profile_dir = profile_dir(app, profile_id)?;
     std::fs::create_dir_all(&profile_dir).map_err(|e| format!("create_dir: {e}"))?;

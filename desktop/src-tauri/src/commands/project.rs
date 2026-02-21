@@ -7,6 +7,7 @@ pub fn project_create(
     profile_id: String,
     payload: ProjectCreatePayload,
 ) -> Result<String, String> {
+    db::ensure_profile_exists(&app, &profile_id)?;
     let conn = db::open_profile(&app, &profile_id)?;
     let id = ids::new_id("proj");
     let now = time::now_rfc3339();
@@ -35,6 +36,7 @@ pub fn project_get_active(
     app: tauri::AppHandle,
     profile_id: String,
 ) -> Result<Option<ProjectSummary>, String> {
+    db::ensure_profile_exists(&app, &profile_id)?;
     let conn = db::open_profile(&app, &profile_id)?;
 
     let mut stmt = conn

@@ -50,3 +50,8 @@ Si indisponible (repo incomplet), documenter explicitement la limite dans le cha
 - relire la logique (risques/edge cases),
 - exécuter les checks qualité disponibles,
 - documenter les résultats avant de poursuivre.
+
+## 7) Format de réponse (style commit)
+Quand Codex rend un résultat, commencer par une ligne de titre au format
+conventional commit (ex: `feat: ...`, `fix: ...`, `chore: ...`), puis détailler
+les changements.

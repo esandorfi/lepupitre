@@ -7,6 +7,7 @@ pub struct ProfileSummary {
     pub created_at: String,
     pub last_opened_at: Option<String>,
     pub is_active: bool,
+    pub size_bytes: u64,
 }
 
 #[derive(Debug, Deserialize)]

@@ -7,6 +7,7 @@ pub fn quest_get_daily(
     profile_id: String,
     project_id: String,
 ) -> Result<QuestDaily, String> {
+    db::ensure_profile_exists(&app, &profile_id)?;
     let conn = db::open_profile(&app, &profile_id)?;
 
     let mut stmt = conn
@@ -55,6 +56,7 @@ pub fn quest_submit_text(
     quest_code: String,
     text: String,
 ) -> Result<String, String> {
+    db::ensure_profile_exists(&app, &profile_id)?;
     let conn = db::open_profile(&app, &profile_id)?;
     let id = ids::new_id("att");
     let now = time::now_rfc3339();
