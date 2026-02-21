@@ -221,20 +221,20 @@ async function revealRecording() {
 </script>
 
 <template>
-  <div class="space-y-3 rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
+  <div class="app-surface space-y-3 rounded-2xl border p-4">
     <div class="flex items-center justify-between">
       <div>
-        <h2 class="text-lg font-semibold">{{ t("audio.title") }}</h2>
-        <p class="text-sm text-slate-400">{{ t("audio.subtitle") }}</p>
+        <h2 class="text-lg font-bold">{{ t("audio.title") }}</h2>
+        <p class="app-muted text-sm">{{ t("audio.subtitle") }}</p>
       </div>
-      <div class="text-xs uppercase tracking-[0.2em] text-slate-500">
+      <div class="app-subtle text-xs uppercase tracking-[0.2em]">
         {{ t("audio.pass_label") }}
       </div>
     </div>
 
     <div class="flex flex-wrap gap-2">
       <button
-        class="cursor-pointer rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-slate-700"
+        class="app-button-success cursor-pointer rounded-full px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
         type="button"
         :disabled="isRecording"
         @click="startRecording"
@@ -242,7 +242,7 @@ async function revealRecording() {
         {{ t("audio.start") }}
       </button>
       <button
-        class="cursor-pointer rounded-full bg-rose-500 px-4 py-2 text-sm font-semibold text-rose-950 transition hover:bg-rose-400 disabled:cursor-not-allowed disabled:bg-slate-700"
+        class="app-button-danger cursor-pointer rounded-full px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
         type="button"
         :disabled="!isRecording"
         @click="stopRecording"
@@ -250,7 +250,7 @@ async function revealRecording() {
         {{ t("audio.stop") }}
       </button>
       <button
-        class="cursor-pointer rounded-full bg-slate-200 px-3 py-2 text-xs font-semibold text-slate-900 transition hover:bg-white disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+        class="app-button-primary cursor-pointer rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
         type="button"
         :disabled="!lastSavedPath || isRevealing"
         @click="revealRecording"
@@ -259,30 +259,30 @@ async function revealRecording() {
       </button>
     </div>
 
-    <div class="text-sm text-slate-300">
+    <div class="app-text text-sm">
       {{ t("audio.status") }}: {{ t(statusKey) }}
     </div>
-    <div class="space-y-1 text-xs text-slate-400">
-      <div class="h-2 w-full rounded-full bg-slate-800">
+    <div class="app-muted space-y-1 text-xs">
+      <div class="app-meter-bg h-2 w-full rounded-full">
         <div
-          class="h-2 rounded-full bg-emerald-400 transition-all"
+          class="h-2 rounded-full bg-[var(--app-info)] transition-all"
           :style="{ width: `${levelPercent(liveLevel)}%` }"
         ></div>
       </div>
     </div>
-    <div class="text-xs text-slate-400">
+    <div class="app-muted text-xs">
       {{ t("audio.duration") }}:
       {{ formatDuration(isRecording ? liveDurationSec : lastDurationSec) ?? "0:00" }}
     </div>
     <div v-if="lastSavedPath" class="flex flex-wrap items-center gap-2 text-xs">
-      <span class="text-emerald-300">{{ t("audio.saved_to") }}:</span>
+      <span class="app-link">{{ t("audio.saved_to") }}:</span>
       <span
-        class="max-w-[360px] truncate text-emerald-200"
+        class="app-text max-w-[360px] truncate"
         style="direction: rtl; text-align: left;"
       >
         {{ lastSavedPath }}
       </span>
     </div>
-    <div v-if="error" class="text-xs text-rose-300">{{ error }}</div>
+    <div v-if="error" class="app-danger-text text-xs">{{ error }}</div>
   </div>
 </template>

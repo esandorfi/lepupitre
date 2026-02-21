@@ -148,30 +148,27 @@ onMounted(() => {
 
 <template>
   <section class="space-y-6" @click.self="cancelRename">
-    <div class="space-y-2">
-      <h1 class="text-2xl font-semibold">{{ t("profiles.title") }}</h1>
-      <p class="text-sm text-slate-400">{{ t("profiles.subtitle") }}</p>
-    </div>
+    <p class="app-muted text-sm font-semibold">{{ t("profiles.subtitle") }}</p>
 
     <div
       v-if="profiles.length === 0"
-      class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4"
+      class="app-surface rounded-2xl border p-4"
     >
-      <h2 class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">
+      <h2 class="app-subtle text-sm font-semibold uppercase tracking-[0.2em]">
         {{ t("profiles.create_title") }}
       </h2>
       <div class="mt-3 flex flex-wrap gap-3">
         <input
           v-model="name"
           type="text"
-          class="min-w-[240px] flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+          class="app-input min-w-[240px] flex-1 rounded-lg border px-3 py-2 text-sm"
           :placeholder="t('profiles.create_placeholder')"
           @focus="name = ''"
           @keyup.enter="createProfile"
           @keyup.escape="name = ''"
         />
         <button
-          class="cursor-pointer rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-slate-700"
+          class="app-button-primary cursor-pointer rounded-full px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
           type="button"
           :disabled="isSaving"
           @click="createProfile"
@@ -179,12 +176,12 @@ onMounted(() => {
           {{ t("profiles.create_action") }}
         </button>
       </div>
-      <p v-if="error" class="mt-2 text-xs text-rose-300">{{ error }}</p>
+      <p v-if="error" class="app-danger-text mt-2 text-xs">{{ error }}</p>
     </div>
 
     <div v-else class="space-y-6">
-      <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
-        <h2 class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">
+      <div class="app-surface rounded-2xl border p-4">
+        <h2 class="app-subtle text-sm font-semibold uppercase tracking-[0.2em]">
           {{ t("profiles.existing_title") }}
         </h2>
 
@@ -192,10 +189,10 @@ onMounted(() => {
           <div
             v-for="profile in profiles"
             :key="profile.id"
-            class="flex flex-col gap-3 rounded-xl border border-slate-800 bg-slate-950/40 px-3 py-3 md:flex-row md:items-center md:justify-between"
+            class="app-card flex flex-col gap-3 rounded-xl border px-3 py-3 md:flex-row md:items-center md:justify-between"
           >
             <div class="min-w-0 flex-1">
-              <div v-if="editingId !== profile.id" class="text-sm text-slate-100">
+              <div v-if="editingId !== profile.id" class="app-text text-sm">
                 {{ profile.name }}
               </div>
               <div v-else class="flex flex-wrap gap-2">
@@ -203,14 +200,14 @@ onMounted(() => {
                   :ref="setRenameInput(profile.id)"
                   v-model="renameValue"
                   :disabled="isRenaming"
-                  class="flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+                  class="app-input flex-1 rounded-lg border px-3 py-2 text-sm"
                   type="text"
                   @blur="confirmRename(profile.id)"
                   @keyup.enter="confirmRename(profile.id)"
                   @keyup.escape="cancelRename"
                 />
               </div>
-              <div class="text-xs text-slate-500">
+              <div class="app-subtle text-xs">
                 {{ profile.id }} · {{ formatBytes(profile.size_bytes) }}
               </div>
             </div>
@@ -218,18 +215,14 @@ onMounted(() => {
             <div class="flex flex-wrap gap-2">
               <button
                 class="cursor-pointer rounded-full px-3 py-1 text-xs font-semibold"
-                :class="
-                  profile.id === activeProfileId
-                    ? 'bg-emerald-500 text-emerald-950'
-                    : 'bg-slate-800 text-slate-200'
-                "
+                :class="profile.id === activeProfileId ? 'app-pill-active' : 'app-pill'"
                 type="button"
                 @click="switchProfile(profile.id)"
               >
                 {{ profile.id === activeProfileId ? t("profiles.active") : t("profiles.switch") }}
               </button>
               <button
-                class="cursor-pointer rounded-full bg-slate-800/60 p-2 text-xs font-semibold text-slate-200 transition hover:bg-slate-700"
+                class="app-button-secondary cursor-pointer rounded-full p-2 text-xs font-semibold transition"
                 type="button"
                 :disabled="editingId === profile.id || isRenaming"
                 @click="startRename(profile.id, profile.name)"
@@ -248,7 +241,7 @@ onMounted(() => {
                 </svg>
               </button>
               <button
-                class="cursor-pointer rounded-full bg-rose-500/10 p-2 text-xs font-semibold text-rose-200 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:bg-slate-700"
+                class="app-button-danger-soft cursor-pointer rounded-full p-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
                 type="button"
                 :disabled="deletingId === profile.id"
                 @click="requestDelete(profile.id)"
@@ -272,12 +265,12 @@ onMounted(() => {
             </div>
             <div
               v-if="confirmDeleteId === profile.id"
-              class="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-200"
+              class="app-danger-surface rounded-lg border px-3 py-2 text-xs"
             >
               <div>{{ t("profiles.confirm_delete") }}</div>
               <div class="mt-2 flex gap-2">
                 <button
-                  class="cursor-pointer rounded-full bg-rose-500/20 px-3 py-1 text-xs font-semibold text-rose-100 transition hover:bg-rose-500/30"
+                  class="app-button-danger cursor-pointer rounded-full px-3 py-1 text-xs font-semibold transition"
                   type="button"
                   :disabled="deletingId === profile.id"
                   @click="confirmDelete(profile.id, profile.name)"
@@ -285,7 +278,7 @@ onMounted(() => {
                   {{ t("profiles.confirm_delete_action") }}
                 </button>
                 <button
-                  class="cursor-pointer rounded-full bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-200 transition hover:bg-slate-700"
+                  class="app-button-secondary cursor-pointer rounded-full px-3 py-1 text-xs font-semibold transition"
                   type="button"
                   :disabled="deletingId === profile.id"
                   @click="cancelDelete"
@@ -297,25 +290,25 @@ onMounted(() => {
           </div>
         </div>
 
-        <p v-if="error" class="mt-3 text-xs text-rose-300">{{ error }}</p>
+        <p v-if="error" class="app-danger-text mt-3 text-xs">{{ error }}</p>
       </div>
 
-      <div class="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
-        <h2 class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+      <div class="app-card rounded-2xl border p-4">
+        <h2 class="app-subtle text-xs font-semibold uppercase tracking-[0.2em]">
           {{ t("profiles.add_title") }}
         </h2>
         <div class="mt-3 flex flex-wrap gap-3">
           <input
             v-model="name"
             type="text"
-            class="min-w-[240px] flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+            class="app-input min-w-[240px] flex-1 rounded-lg border px-3 py-2 text-sm"
             :placeholder="t('profiles.create_placeholder')"
             @focus="name = ''"
             @keyup.enter="createProfile"
             @keyup.escape="name = ''"
           />
           <button
-            class="cursor-pointer rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-slate-700"
+            class="app-button-primary cursor-pointer rounded-full px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
             type="button"
             :disabled="isSaving"
             @click="createProfile"

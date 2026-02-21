@@ -11,7 +11,10 @@
     "ui:build": "pnpm -C ui build",
     "ui:lint": "pnpm -C ui lint",
     "ui:typecheck": "pnpm -C ui typecheck",
-    "ui:test": "pnpm -C ui test"
+    "ui:test": "pnpm -C ui test",
+    "version:patch": "pnpm version patch --git-tag-version && pnpm -C ui version patch --no-git-tag-version",
+    "version:minor": "pnpm version minor --git-tag-version && pnpm -C ui version minor --no-git-tag-version",
+    "version:major": "pnpm version major --git-tag-version && pnpm -C ui version major --no-git-tag-version"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2"

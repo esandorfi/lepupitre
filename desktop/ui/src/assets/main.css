@@ -1,2 +1,319 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
+
+:root {
+  --app-bg: #ffd7ad;
+  --app-bg-start: #ffbe6f;
+  --app-bg-end: #ffe7c9;
+  --app-toolbar-bg: #ff9a38;
+  --app-toolbar-start: #ff8517;
+  --app-toolbar-end: #ffb867;
+  --app-toolbar-text: #1a1009;
+  --app-toolbar-muted: #1a1009;
+  --app-toolbar-border: #ffa24c;
+  --app-toolbar-button-bg: #fff1e2;
+  --app-toolbar-button-hover: #ffe2c8;
+  --app-surface: #fff0e1;
+  --app-card: #fff8f2;
+  --app-border: #f1b98c;
+  --app-text: #3a2316;
+  --app-muted: #7f4f33;
+  --app-subtle: #956142;
+  --app-accent: #ff8a2a;
+  --app-accent-hover: #ff7a10;
+  --app-accent-contrast: #ffffff;
+  --app-link: #d96518;
+  --app-link-hover: #b64a0d;
+  --app-success: #22c55e;
+  --app-success-hover: #16a34a;
+  --app-success-contrast: #052e16;
+  --app-info: #3b82f6;
+  --app-info-hover: #2563eb;
+  --app-info-contrast: #eff6ff;
+  --app-danger: #ef4444;
+  --app-danger-hover: #dc2626;
+  --app-danger-contrast: #fff7f1;
+  --app-danger-surface: #ffe5e2;
+  --app-danger-text: #b42318;
+  --app-pill: #ffe5cf;
+  --app-pill-text: #1a1009;
+  --app-pill-active: #ffb36a;
+  --app-pill-active-text: #1a1009;
+  --app-input-bg: #ffffff;
+  --app-meter-bg: #ffe0c3;
+  color-scheme: light;
+}
+
+:root[data-theme="orange"] {
+  --app-bg: #ffd7ad;
+  --app-bg-start: #ffbe6f;
+  --app-bg-end: #ffe7c9;
+  --app-toolbar-bg: #ff9a38;
+  --app-toolbar-start: #ff8517;
+  --app-toolbar-end: #ffb867;
+  --app-toolbar-text: #1a1009;
+  --app-toolbar-muted: #1a1009;
+  --app-toolbar-border: #ffa24c;
+  --app-toolbar-button-bg: #fff1e2;
+  --app-toolbar-button-hover: #ffe2c8;
+  --app-surface: #fff0e1;
+  --app-card: #fff8f2;
+  --app-border: #f1b98c;
+  --app-text: #3a2316;
+  --app-muted: #7f4f33;
+  --app-subtle: #956142;
+  --app-accent: #ff8a2a;
+  --app-accent-hover: #ff7a10;
+  --app-accent-contrast: #ffffff;
+  --app-link: #d96518;
+  --app-link-hover: #b64a0d;
+  --app-success: #22c55e;
+  --app-success-hover: #16a34a;
+  --app-success-contrast: #052e16;
+  --app-info: #3b82f6;
+  --app-info-hover: #2563eb;
+  --app-info-contrast: #eff6ff;
+  --app-danger: #ef4444;
+  --app-danger-hover: #dc2626;
+  --app-danger-contrast: #fff7f1;
+  --app-danger-surface: #ffe5e2;
+  --app-danger-text: #b42318;
+  --app-pill: #ffe5cf;
+  --app-pill-text: #1a1009;
+  --app-pill-active: #ffb36a;
+  --app-pill-active-text: #1a1009;
+  --app-input-bg: #ffffff;
+  --app-meter-bg: #ffe0c3;
+  color-scheme: light;
+}
+
+:root[data-theme="terminal"] {
+  --app-bg: #020617;
+  --app-bg-start: #020617;
+  --app-bg-end: #020617;
+  --app-toolbar-bg: #0b1220;
+  --app-toolbar-start: #0b1220;
+  --app-toolbar-end: #0b1220;
+  --app-toolbar-text: #f8fafc;
+  --app-toolbar-muted: #cbd5f5;
+  --app-toolbar-border: #1f2937;
+  --app-toolbar-button-bg: #111827;
+  --app-toolbar-button-hover: #1f2937;
+  --app-surface: #0f172a;
+  --app-card: #111827;
+  --app-border: #1f2937;
+  --app-text: #f8fafc;
+  --app-muted: #94a3b8;
+  --app-subtle: #64748b;
+  --app-accent: #34d399;
+  --app-accent-hover: #22c55e;
+  --app-accent-contrast: #052e16;
+  --app-link: #6ee7b7;
+  --app-link-hover: #a7f3d0;
+  --app-success: #22c55e;
+  --app-success-hover: #16a34a;
+  --app-success-contrast: #052e16;
+  --app-info: #60a5fa;
+  --app-info-hover: #3b82f6;
+  --app-info-contrast: #0b1220;
+  --app-danger: #f87171;
+  --app-danger-hover: #ef4444;
+  --app-danger-contrast: #fff5f5;
+  --app-danger-surface: #3b0f0f;
+  --app-danger-text: #fecaca;
+  --app-pill: #1f2937;
+  --app-pill-text: #e2e8f0;
+  --app-pill-active: #10b981;
+  --app-pill-active-text: #052e16;
+  --app-input-bg: #0b1220;
+  --app-meter-bg: #1f2937;
+  color-scheme: dark;
+}
+
+.app-shell {
+  background-color: var(--app-bg);
+  background-image: linear-gradient(180deg, var(--app-bg-start), var(--app-bg-end));
+  color: var(--app-text);
+}
+
+.app-toolbar {
+  background-color: var(--app-toolbar-bg);
+  background-image: linear-gradient(135deg, var(--app-toolbar-start), var(--app-toolbar-end));
+  border-color: var(--app-toolbar-border);
+  color: var(--app-toolbar-text);
+}
+
+.app-toolbar-muted {
+  color: var(--app-toolbar-muted);
+}
+
+.app-toolbar-link {
+  color: var(--app-toolbar-text);
+  font-weight: 700;
+}
+
+.app-toolbar-link:hover {
+  color: var(--app-toolbar-text);
+}
+
+.app-toolbar-button {
+  border-color: var(--app-toolbar-border);
+  background-color: var(--app-toolbar-button-bg);
+  color: var(--app-toolbar-text);
+  font-weight: 700;
+}
+
+.app-toolbar-button:hover {
+  background-color: var(--app-toolbar-button-hover);
+  color: var(--app-toolbar-text);
+}
+
+.app-surface {
+  background-color: var(--app-surface);
+  border-color: var(--app-border);
+}
+
+.app-card {
+  background-color: var(--app-card);
+  border-color: var(--app-border);
+}
+
+.app-border {
+  border-color: var(--app-border);
+}
+
+.app-text {
+  color: var(--app-text);
+}
+
+.app-muted {
+  color: var(--app-muted);
+}
+
+.app-subtle {
+  color: var(--app-subtle);
+}
+
+.app-link {
+  color: var(--app-link);
+}
+
+.app-link:hover {
+  color: var(--app-link-hover);
+}
+
+.app-input {
+  background-color: var(--app-input-bg);
+  border-color: var(--app-border);
+  color: var(--app-text);
+}
+
+.app-input::placeholder {
+  color: var(--app-subtle);
+}
+
+.app-button-primary {
+  background-color: var(--app-accent);
+  color: var(--app-accent-contrast);
+}
+
+.app-button-primary:hover {
+  background-color: var(--app-accent-hover);
+}
+
+.app-button-secondary {
+  background-color: var(--app-card);
+  border: 1px solid var(--app-border);
+  color: var(--app-text);
+}
+
+.app-button-secondary:hover {
+  background-color: var(--app-surface);
+}
+
+.app-button-danger {
+  background-color: var(--app-danger);
+  color: var(--app-danger-contrast);
+}
+
+.app-button-danger:hover {
+  background-color: var(--app-danger-hover);
+}
+
+.app-button-success {
+  background-color: var(--app-success);
+  color: var(--app-success-contrast);
+}
+
+.app-button-success:hover {
+  background-color: var(--app-success-hover);
+}
+
+.app-button-info {
+  background-color: var(--app-info);
+  color: var(--app-info-contrast);
+}
+
+.app-button-info:hover {
+  background-color: var(--app-info-hover);
+}
+
+.app-button-danger-soft {
+  background-color: var(--app-danger-surface);
+  border: 1px solid var(--app-danger);
+  color: var(--app-danger-text);
+}
+
+.app-button-danger-soft:hover {
+  background-color: var(--app-danger);
+  color: var(--app-danger-contrast);
+}
+
+.app-danger-surface {
+  background-color: var(--app-danger-surface);
+  border-color: var(--app-danger);
+  color: var(--app-danger-text);
+}
+
+.app-danger-text {
+  color: var(--app-danger-text);
+}
+
+.app-pill {
+  background-color: var(--app-pill);
+  color: var(--app-pill-text);
+}
+
+.app-pill-active {
+  background-color: var(--app-info);
+  color: var(--app-info-contrast);
+}
+
+.app-pill-active:hover {
+  background-color: var(--app-info-hover);
+  color: var(--app-info-contrast);
+}
+
+.app-pill-active-neutral {
+  background-color: var(--app-card);
+  border: 1px solid var(--app-border);
+  color: var(--app-text);
+  font-weight: 600;
+}
+
+.app-button-primary:disabled,
+.app-button-secondary:disabled,
+.app-button-danger:disabled,
+.app-button-success:disabled,
+.app-button-info:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.app-meter-bg {
+  background-color: var(--app-meter-bg);
+}
+
+body {
+  background-color: var(--app-bg);
+}

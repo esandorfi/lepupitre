@@ -12,17 +12,14 @@ const attemptId = computed(() => appStore.state.lastAttemptId);
 
 <template>
   <section class="space-y-6">
-    <div class="space-y-2">
-      <h1 class="text-2xl font-semibold">{{ t("feedback.title") }}</h1>
-      <p class="text-sm text-slate-400">{{ t("feedback.subtitle") }}</p>
-    </div>
+    <p class="app-muted text-sm font-semibold">{{ t("feedback.subtitle") }}</p>
 
-    <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 text-sm text-slate-100">
+    <div class="app-surface rounded-2xl border p-4 text-sm">
       <div>{{ t("feedback.feedback_id") }}: {{ feedbackId }}</div>
-      <div v-if="attemptId" class="text-xs text-slate-400">
+      <div v-if="attemptId" class="app-muted text-xs">
         {{ t("feedback.last_attempt") }}: {{ attemptId }}
       </div>
-      <RouterLink class="mt-3 inline-block text-xs text-emerald-300 underline" to="/">
+      <RouterLink class="app-link mt-3 inline-block text-xs underline" to="/">
         {{ t("feedback.back_home") }}
       </RouterLink>
     </div>
