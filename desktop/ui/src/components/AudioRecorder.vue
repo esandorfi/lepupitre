@@ -13,7 +13,7 @@ const liveDurationSec = ref<number>(0);
 const liveLevel = ref<number>(0);
 const inputSampleRate = ref<number>(TARGET_SAMPLE_RATE);
 const inputChannels = ref<number>(1);
-const isOpening = ref(false);
+const isRevealing = ref(false);
 
 let audioContext: AudioContext | null = null;
 let processor: ScriptProcessorNode | null = null;
@@ -66,7 +66,6 @@ async function stopRecording() {
 
   isRecording.value = false;
   status.value = "Encoding";
-
   processor.disconnect();
   source.disconnect();
   stream.getTracks().forEach((track) => track.stop());
@@ -85,8 +84,8 @@ async function stopRecording() {
   try {
     const path = await invoke<string>("audio_save_wav", { base64 });
     lastSavedPath.value = path;
-    status.value = "Saved";
     liveLevel.value = 0;
+    status.value = "Idle";
   } catch (err) {
     error.value = err instanceof Error ? err.message : String(err);
     status.value = "Idle";
@@ -198,18 +197,18 @@ function formatDuration(seconds: number | null) {
   return `${minutes}:${secs.toString().padStart(2, "0")}`;
 }
 
-async function openRecording() {
+async function revealRecording() {
   if (!lastSavedPath.value) {
     return;
   }
-  isOpening.value = true;
+  isRevealing.value = true;
   error.value = null;
   try {
-    await invoke("audio_open_wav", { path: lastSavedPath.value });
+    await invoke("audio_reveal_wav", { path: lastSavedPath.value });
   } catch (err) {
     error.value = err instanceof Error ? err.message : String(err);
   } finally {
-    isOpening.value = false;
+    isRevealing.value = false;
   }
 }
 </script>
@@ -228,7 +227,7 @@ async function openRecording() {
 
     <div class="flex flex-wrap gap-2">
       <button
-        class="rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-slate-700"
+        class="cursor-pointer rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-slate-700"
         type="button"
         :disabled="isRecording"
         @click="startRecording"
@@ -236,7 +235,7 @@ async function openRecording() {
         Start recording
       </button>
       <button
-        class="rounded-full bg-rose-500 px-4 py-2 text-sm font-semibold text-rose-950 transition hover:bg-rose-400 disabled:cursor-not-allowed disabled:bg-slate-700"
+        class="cursor-pointer rounded-full bg-rose-500 px-4 py-2 text-sm font-semibold text-rose-950 transition hover:bg-rose-400 disabled:cursor-not-allowed disabled:bg-slate-700"
         type="button"
         :disabled="!isRecording"
         @click="stopRecording"
@@ -244,21 +243,17 @@ async function openRecording() {
         Stop + Save
       </button>
       <button
-        class="rounded-full bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-white disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+        class="cursor-pointer rounded-full bg-slate-200 px-3 py-2 text-xs font-semibold text-slate-900 transition hover:bg-white disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
         type="button"
-        :disabled="!lastSavedPath || isOpening"
-        @click="openRecording"
+        :disabled="!lastSavedPath || isRevealing"
+        @click="revealRecording"
       >
-        Open file
+        Reveal file
       </button>
     </div>
 
     <div class="text-sm text-slate-300">Status: {{ status }}</div>
     <div class="space-y-1 text-xs text-slate-400">
-      <div>
-        Input: {{ inputSampleRate }} Hz, {{ inputChannels }} ch. Target:
-        {{ TARGET_SAMPLE_RATE }} Hz mono.
-      </div>
       <div class="h-2 w-full rounded-full bg-slate-800">
         <div
           class="h-2 rounded-full bg-emerald-400 transition-all"
@@ -270,8 +265,14 @@ async function openRecording() {
       Duration:
       {{ formatDuration(isRecording ? liveDurationSec : lastDurationSec) ?? "0:00" }}
     </div>
-    <div v-if="lastSavedPath" class="text-xs text-emerald-300">
-      Saved to: {{ lastSavedPath }}
+    <div v-if="lastSavedPath" class="flex flex-wrap items-center gap-2 text-xs">
+      <span class="text-emerald-300">Saved to:</span>
+      <span
+        class="max-w-[360px] truncate text-emerald-200"
+        style="direction: rtl; text-align: left;"
+      >
+        {{ lastSavedPath }}
+      </span>
     </div>
     <div v-if="error" class="text-xs text-rose-300">{{ error }}</div>
   </div>

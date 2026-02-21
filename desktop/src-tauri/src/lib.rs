@@ -4,7 +4,7 @@ mod commands;
 pub fn run() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
-            commands::audio::audio_open_wav,
+            commands::audio::audio_reveal_wav,
             commands::audio::audio_save_wav
         ])
         .run(tauri::generate_context!())

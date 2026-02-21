@@ -1,5 +1,6 @@
 use base64::Engine;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::Manager;
 
@@ -28,7 +29,7 @@ pub fn audio_save_wav(app: tauri::AppHandle, base64: String) -> Result<String, S
 }
 
 #[tauri::command]
-pub fn audio_open_wav(app: tauri::AppHandle, path: String) -> Result<(), String> {
+pub fn audio_reveal_wav(app: tauri::AppHandle, path: String) -> Result<(), String> {
     let app_data_dir = app
         .path()
         .app_data_dir()
@@ -49,6 +50,52 @@ pub fn audio_open_wav(app: tauri::AppHandle, path: String) -> Result<(), String>
         return Err("path_not_allowed".to_string());
     }
 
-    open::that(&requested).map_err(|e| format!("open: {e}"))?;
+    reveal_in_file_manager(&requested)?;
     Ok(())
+}
+
+fn reveal_in_file_manager(path: &Path) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    {
+        let status = Command::new("open")
+            .arg("-R")
+            .arg(path)
+            .status()
+            .map_err(|e| format!("open: {e}"))?;
+        if status.success() {
+            Ok(())
+        } else {
+            Err("open_failed".to_string())
+        }
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        let arg = format!("/select,{}", path.display());
+        let status = Command::new("explorer")
+            .arg(arg)
+            .status()
+            .map_err(|e| format!("explorer: {e}"))?;
+        if status.success() {
+            Ok(())
+        } else {
+            Err("explorer_failed".to_string())
+        }
+    }
+
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    {
+        let parent_dir = path
+            .parent()
+            .ok_or_else(|| "path_missing_parent".to_string())?;
+        let status = Command::new("xdg-open")
+            .arg(parent_dir)
+            .status()
+            .map_err(|e| format!("xdg-open: {e}"))?;
+        if status.success() {
+            Ok(())
+        } else {
+            Err("xdg_open_failed".to_string())
+        }
+    }
 }
