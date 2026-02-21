@@ -57,7 +57,7 @@ function cycleTheme() {
         <RouterLink
           class="app-toolbar-link app-pill rounded-full px-3 py-1 transition"
           exact-active-class="app-pill-active font-semibold"
-          to="/project/new"
+          to="/talks"
         >
           {{ t("nav.talk") }}
         </RouterLink>

@@ -129,6 +129,19 @@ On veut un produit qui aide un **senior** à préparer un **talk interne** (≈ 
 * L'utilisateur peut **skipper** la transcription et garder une tentative sans feedback.
 * L'analyse utilise soit le texte (quest_submit_text), soit le transcript (quest_submit_audio).
 
+#### 4.1.2 Schéma de flux (MVP)
+
+```mermaid
+flowchart LR
+  Profile --> Talk
+  Talk --> Quest
+  Quest --> Attempt
+  Attempt -- audio --> Transcript
+  Attempt -- text --> Feedback
+  Transcript --> Feedback
+  Feedback --> Talk
+```
+
 ### 4.2 Analyse & feedback
 
 * Transcrire audio en local.
@@ -244,6 +257,8 @@ On veut un produit qui aide un **senior** à préparer un **talk interne** (≈ 
 * `profile_delete(profile_id) -> void`
 * `project_create(profile_id, payload) -> ProjectId`
 * `project_get_active(profile_id) -> ProjectSummary`
+* `project_list(profile_id) -> ProjectListItem[]`
+* `project_set_active(profile_id, project_id) -> void`
 
 **Quêtes**
 
@@ -251,6 +266,7 @@ On veut un produit qui aide un **senior** à préparer un **talk interne** (≈ 
 * `quest_get_by_code(profile_id, quest_code) -> Quest`
 * `quest_submit_text(profile_id, project_id, quest_code, text) -> AttemptId`
 * `quest_submit_audio(profile_id, project_id, quest_code, artifact_audio_id, transcript_id?) -> AttemptId`
+* `quest_attempts_list(profile_id, project_id, limit?) -> QuestAttemptSummary[]`
 
 **Audio**
 
@@ -263,6 +279,8 @@ On veut un produit qui aide un **senior** à préparer un **talk interne** (≈ 
 * `transcript_get(profile_id, transcript_id) -> TranscriptV1`
 * `analyze_attempt(profile_id, attempt_id) -> FeedbackId`
 * `feedback_get(profile_id, feedback_id) -> FeedbackV1`
+* `feedback_note_get(profile_id, feedback_id) -> string?`
+* `feedback_note_set(profile_id, feedback_id, note) -> void`
 
 **Boss run**
 

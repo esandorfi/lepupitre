@@ -11,9 +11,45 @@ const feedbackId = computed(() => String(route.params.feedbackId || ""));
 const feedback = ref<FeedbackV1 | null>(null);
 const error = ref<string | null>(null);
 const isLoading = ref(false);
+const note = ref("");
+const lastSavedNote = ref("");
+const noteStatus = ref<"idle" | "saving" | "saved" | "error">("idle");
 
 function toError(err: unknown) {
   return err instanceof Error ? err.message : String(err);
+}
+
+async function loadNote() {
+  if (!feedbackId.value) {
+    return;
+  }
+  try {
+    const existing = await appStore.getFeedbackNote(feedbackId.value);
+    note.value = existing ?? "";
+    lastSavedNote.value = note.value;
+  } catch {
+    noteStatus.value = "error";
+  }
+}
+
+async function saveNote() {
+  if (!feedbackId.value) {
+    return;
+  }
+  if (note.value === lastSavedNote.value) {
+    return;
+  }
+  noteStatus.value = "saving";
+  try {
+    await appStore.setFeedbackNote(feedbackId.value, note.value);
+    lastSavedNote.value = note.value;
+    noteStatus.value = "saved";
+    setTimeout(() => {
+      noteStatus.value = "idle";
+    }, 1200);
+  } catch {
+    noteStatus.value = "error";
+  }
 }
 
 onMounted(async () => {
@@ -25,6 +61,7 @@ onMounted(async () => {
   try {
     await appStore.bootstrap();
     feedback.value = await appStore.getFeedback(feedbackId.value);
+    await loadNote();
   } catch (err) {
     error.value = toError(err);
   } finally {
@@ -106,6 +143,28 @@ onMounted(async () => {
               <div class="app-text font-semibold">{{ comment.label }}</div>
               <div class="app-muted">{{ comment.suggestion }}</div>
             </div>
+          </div>
+        </div>
+
+        <div class="app-card rounded-xl border p-3">
+          <div class="app-subtle text-xs uppercase tracking-[0.2em]">
+            {{ t("feedback.notes_title") }}
+          </div>
+          <textarea
+            v-model="note"
+            rows="4"
+            class="app-input mt-2 w-full rounded-lg border px-3 py-2 text-sm"
+            :placeholder="t('feedback.notes_placeholder')"
+            @blur="saveNote"
+          ></textarea>
+          <div v-if="noteStatus === 'saving'" class="app-muted mt-2 text-xs">
+            {{ t("feedback.notes_saving") }}
+          </div>
+          <div v-else-if="noteStatus === 'saved'" class="app-subtle mt-2 text-xs">
+            {{ t("feedback.notes_saved") }}
+          </div>
+          <div v-else-if="noteStatus === 'error'" class="app-danger-text mt-2 text-xs">
+            {{ t("feedback.notes_error") }}
           </div>
         </div>
       </div>

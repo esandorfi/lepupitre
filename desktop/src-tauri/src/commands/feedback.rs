@@ -1,5 +1,5 @@
 use crate::core::{artifacts, db, ids, models, time};
-use rusqlite::params;
+use rusqlite::{params, OptionalExtension};
 use serde::Serialize;
 use std::collections::{HashMap, HashSet};
 
@@ -114,6 +114,67 @@ pub fn feedback_get(
     let feedback: models::FeedbackV1 =
         serde_json::from_slice(&bytes).map_err(|e| format!("feedback_parse: {e}"))?;
     Ok(feedback)
+}
+
+#[tauri::command]
+pub fn feedback_note_get(
+    app: tauri::AppHandle,
+    profile_id: String,
+    feedback_id: String,
+) -> Result<Option<String>, String> {
+    db::ensure_profile_exists(&app, &profile_id)?;
+    let conn = db::open_profile(&app, &profile_id)?;
+    let note = conn
+        .query_row(
+            "SELECT note_text FROM feedback_notes WHERE feedback_id = ?1",
+            [feedback_id.as_str()],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(|e| format!("note_lookup: {e}"))?;
+    Ok(note)
+}
+
+#[tauri::command]
+pub fn feedback_note_set(
+    app: tauri::AppHandle,
+    profile_id: String,
+    feedback_id: String,
+    note: String,
+) -> Result<(), String> {
+    db::ensure_profile_exists(&app, &profile_id)?;
+    let conn = db::open_profile(&app, &profile_id)?;
+
+    let exists: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM auto_feedback WHERE id = ?1",
+            [feedback_id.as_str()],
+            |row| row.get(0),
+        )
+        .map_err(|e| format!("feedback_check: {e}"))?;
+    if exists == 0 {
+        return Err("feedback_not_found".to_string());
+    }
+
+    let trimmed = note.trim();
+    if trimmed.is_empty() {
+        conn.execute(
+            "DELETE FROM feedback_notes WHERE feedback_id = ?1",
+            [feedback_id.as_str()],
+        )
+        .map_err(|e| format!("note_delete: {e}"))?;
+        return Ok(());
+    }
+
+    let now = time::now_rfc3339();
+    conn.execute(
+        "INSERT INTO feedback_notes (feedback_id, note_text, updated_at)
+         VALUES (?1, ?2, ?3)
+         ON CONFLICT(feedback_id) DO UPDATE SET note_text = excluded.note_text, updated_at = excluded.updated_at",
+        params![feedback_id, trimmed, now],
+    )
+    .map_err(|e| format!("note_upsert: {e}"))?;
+    Ok(())
 }
 
 fn build_feedback(text: &str, estimated_sec: i64) -> models::FeedbackV1 {

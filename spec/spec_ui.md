@@ -53,6 +53,7 @@ desktop/ui/src/
   pages/
     HomePage.vue
     ProfilesPage.vue
+    TalksPage.vue
     ProjectSetupPage.vue
     QuestPage.vue
     FeedbackPage.vue
@@ -103,6 +104,7 @@ desktop/ui/src/
 
 * `/` → **HomePage** (quête du jour + résumé progression)
 * `/profiles` → **ProfilesPage** (liste/crea/switch)
+* `/talks` → **TalksPage** (liste + talk actif)
 * `/project/new` → **ProjectSetupPage**
 * `/quest/:questCode` → **QuestPage** (pré-brief + capture)
 * `/feedback/:feedbackId` → **FeedbackPage**
@@ -242,7 +244,22 @@ Exemples :
 
 ---
 
-## 9.3 ProjectSetupPage
+## 9.3 TalksPage
+
+**But** : lister les talks et définir le talk actif.
+
+* liste talks (dernier modifié en haut)
+* tag "Actif"
+* action "Définir actif"
+* CTA "Créer un talk"
+
+**AC**
+
+* si aucun talk : message + CTA créer
+
+---
+
+## 9.4 ProjectSetupPage
 
 * formulaire : titre, audience, durée, objectif
 * CTA “Créer”
@@ -253,7 +270,7 @@ Exemples :
 
 ---
 
-## 9.4 QuestPage (pré-brief + capture)
+## 9.5 QuestPage (pré-brief + capture)
 
 **États**
 
@@ -275,7 +292,7 @@ Exemples :
 
 ---
 
-## 9.5 FeedbackPage
+## 9.6 FeedbackPage
 
 **But** : corriger sans surcharge.
 
@@ -294,7 +311,7 @@ Exemples :
 
 ---
 
-## 9.6 TalkBuilderPage
+## 9.7 TalkBuilderPage
 
 **But** : plan vivant.
 
@@ -309,7 +326,7 @@ Exemples :
 
 ---
 
-## 9.7 BossRunPage
+## 9.8 BossRunPage
 
 * Enregistrement 6–12 min + timer
 * Processing + rapport (FeedbackPage)
@@ -321,7 +338,7 @@ Exemples :
 
 ---
 
-## 9.8 PacksPage
+## 9.9 PacksPage
 
 * Export pack review (zip)
 * Import review (file picker)
@@ -333,7 +350,7 @@ Exemples :
 
 ---
 
-## 9.9 SettingsPage
+## 9.10 SettingsPage
 
 * Modèle Whisper (sélection + état installé)
 * Stockage local (chemin, taille)

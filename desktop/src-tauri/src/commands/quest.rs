@@ -1,5 +1,6 @@
 use crate::core::{artifacts, db, ids, models::Quest, models::QuestDaily, time};
 use rusqlite::{params, OptionalExtension};
+use serde::Serialize;
 
 #[tauri::command]
 pub fn quest_get_daily(
@@ -31,6 +32,69 @@ pub fn quest_get_by_code(
     let conn = db::open_profile(&app, &profile_id)?;
     let quest = quest_by_code(&conn, &quest_code)?;
     Ok(quest)
+}
+
+#[derive(Debug, Serialize)]
+pub struct QuestAttemptSummary {
+    pub id: String,
+    pub quest_code: String,
+    pub quest_title: String,
+    pub output_type: String,
+    pub created_at: String,
+    pub has_audio: bool,
+    pub has_transcript: bool,
+    pub has_feedback: bool,
+    pub feedback_id: Option<String>,
+}
+
+#[tauri::command]
+pub fn quest_attempts_list(
+    app: tauri::AppHandle,
+    profile_id: String,
+    project_id: String,
+    limit: Option<u32>,
+) -> Result<Vec<QuestAttemptSummary>, String> {
+    db::ensure_profile_exists(&app, &profile_id)?;
+    let conn = db::open_profile(&app, &profile_id)?;
+    let limit = limit.unwrap_or(6).max(1) as i64;
+
+    let mut stmt = conn
+        .prepare(
+            "SELECT qa.id, qa.quest_code, q.title, q.output_type, qa.created_at,
+                    qa.audio_artifact_id, qa.transcript_id, qa.feedback_id
+             FROM quest_attempts qa
+             JOIN quests q ON qa.quest_code = q.code
+             WHERE qa.project_id = ?1
+             ORDER BY qa.created_at DESC
+             LIMIT ?2",
+        )
+        .map_err(|e| format!("prepare: {e}"))?;
+
+    let rows = stmt
+        .query_map(params![project_id, limit], |row| {
+            let audio_id: Option<String> = row.get(5)?;
+            let transcript_id: Option<String> = row.get(6)?;
+            let feedback_id: Option<String> = row.get(7)?;
+            Ok(QuestAttemptSummary {
+                id: row.get(0)?,
+                quest_code: row.get(1)?,
+                quest_title: row.get(2)?,
+                output_type: row.get(3)?,
+                created_at: row.get(4)?,
+                has_audio: audio_id.is_some(),
+                has_transcript: transcript_id.is_some(),
+                has_feedback: feedback_id.is_some(),
+                feedback_id,
+            })
+        })
+        .map_err(|e| format!("query: {e}"))?;
+
+    let mut attempts = Vec::new();
+    for row in rows {
+        attempts.push(row.map_err(|e| format!("row: {e}"))?);
+    }
+
+    Ok(attempts)
 }
 
 #[tauri::command]

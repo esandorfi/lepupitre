@@ -19,6 +19,11 @@ CREATE TABLE IF NOT EXISTS quests (
   targets_issues_json TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS active_state (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  active_project_id TEXT
+);
+
 CREATE TABLE IF NOT EXISTS quest_attempts (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL,
@@ -56,6 +61,12 @@ CREATE TABLE IF NOT EXISTS auto_feedback (
   created_at TEXT NOT NULL,
   feedback_json_artifact_id TEXT NOT NULL,
   overall_score INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS feedback_notes (
+  feedback_id TEXT PRIMARY KEY,
+  note_text TEXT NOT NULL,
+  updated_at TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS peer_reviews (

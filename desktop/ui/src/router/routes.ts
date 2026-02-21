@@ -2,6 +2,7 @@ import type { RouteRecordRaw } from "vue-router";
 
 import HomePage from "../pages/HomePage.vue";
 import ProfilesPage from "../pages/ProfilesPage.vue";
+import TalksPage from "../pages/TalksPage.vue";
 import ProjectSetupPage from "../pages/ProjectSetupPage.vue";
 import QuestPage from "../pages/QuestPage.vue";
 import FeedbackPage from "../pages/FeedbackPage.vue";
@@ -13,6 +14,7 @@ import SettingsPage from "../pages/SettingsPage.vue";
 export const routes: RouteRecordRaw[] = [
   { path: "/", name: "home", component: HomePage },
   { path: "/profiles", name: "profiles", component: ProfilesPage },
+  { path: "/talks", name: "talks", component: TalksPage },
   { path: "/project/new", name: "project-new", component: ProjectSetupPage },
   { path: "/quest/:questCode", name: "quest", component: QuestPage },
   { path: "/feedback/:feedbackId", name: "feedback", component: FeedbackPage },

@@ -9,6 +9,9 @@ import {
   ProfileRenamePayloadSchema,
   ProfileSummary,
   ProjectCreateRequestSchema,
+  ProjectIdPayloadSchema,
+  ProjectListItem,
+  ProjectListResponseSchema,
   ProjectSummary,
   ProjectSummaryNullableSchema,
   QuestDaily,
@@ -19,11 +22,17 @@ import {
   Quest,
   QuestSubmitTextPayloadSchema,
   QuestSubmitAudioPayloadSchema,
+  QuestAttemptsListPayloadSchema,
+  QuestAttemptSummary,
+  QuestAttemptListResponseSchema,
   AnalyzeAttemptPayloadSchema,
   AnalyzeResponseSchema,
   FeedbackGetPayloadSchema,
   FeedbackV1,
   FeedbackV1Schema,
+  FeedbackNoteGetPayloadSchema,
+  FeedbackNoteResponseSchema,
+  FeedbackNoteSetPayloadSchema,
   VoidResponseSchema,
 } from "../schemas/ipc";
 
@@ -31,7 +40,9 @@ const state = reactive({
   profiles: [] as ProfileSummary[],
   activeProfileId: null as string | null,
   activeProject: null as ProjectSummary | null,
+  projects: [] as ProjectListItem[],
   dailyQuest: null as QuestDaily | null,
+  recentAttempts: [] as QuestAttemptSummary[],
   lastAttemptId: null as string | null,
   lastFeedbackId: null as string | null,
 });
@@ -48,6 +59,20 @@ async function loadProfiles() {
   state.activeProfileId = active?.id ?? null;
 }
 
+async function loadProjects() {
+  if (!state.activeProfileId) {
+    state.projects = [];
+    return;
+  }
+  const projects = await invokeChecked(
+    "project_list",
+    ProfileIdPayloadSchema,
+    ProjectListResponseSchema,
+    { profileId: state.activeProfileId }
+  );
+  state.projects = projects;
+}
+
 async function createProfile(name: string) {
   const id = await invokeChecked(
     "profile_create",
@@ -58,6 +83,7 @@ async function createProfile(name: string) {
   await loadProfiles();
   state.activeProfileId = id;
   await loadActiveProject();
+  await loadProjects();
   await loadDailyQuest();
   return id;
 }
@@ -71,6 +97,7 @@ async function switchProfile(profileId: string) {
   );
   await loadProfiles();
   await loadActiveProject();
+  await loadProjects();
   await loadDailyQuest();
 }
 
@@ -104,8 +131,24 @@ async function createProject(payload: {
     { profileId: state.activeProfileId, payload }
   );
   await loadActiveProject();
+  await loadProjects();
   await loadDailyQuest();
   return id;
+}
+
+async function setActiveProject(projectId: string) {
+  if (!state.activeProfileId) {
+    throw new Error("no_active_profile");
+  }
+  await invokeChecked(
+    "project_set_active",
+    ProjectIdPayloadSchema,
+    VoidResponseSchema,
+    { profileId: state.activeProfileId, projectId }
+  );
+  await loadActiveProject();
+  await loadProjects();
+  await loadDailyQuest();
 }
 
 async function loadDailyQuest() {
@@ -123,6 +166,24 @@ async function loadDailyQuest() {
     }
   );
   state.dailyQuest = quest;
+}
+
+async function loadRecentAttempts(limit = 6) {
+  if (!state.activeProfileId || !state.activeProject) {
+    state.recentAttempts = [];
+    return;
+  }
+  const attempts = await invokeChecked(
+    "quest_attempts_list",
+    QuestAttemptsListPayloadSchema,
+    QuestAttemptListResponseSchema,
+    {
+      profileId: state.activeProfileId,
+      projectId: state.activeProject.id,
+      limit,
+    }
+  );
+  state.recentAttempts = attempts;
 }
 
 async function submitQuestText(questCode: string, text: string) {
@@ -206,9 +267,34 @@ async function getFeedback(feedbackId: string): Promise<FeedbackV1> {
   );
 }
 
+async function getFeedbackNote(feedbackId: string): Promise<string | null> {
+  if (!state.activeProfileId) {
+    throw new Error("no_active_profile");
+  }
+  return invokeChecked(
+    "feedback_note_get",
+    FeedbackNoteGetPayloadSchema,
+    FeedbackNoteResponseSchema,
+    { profileId: state.activeProfileId, feedbackId }
+  );
+}
+
+async function setFeedbackNote(feedbackId: string, note: string) {
+  if (!state.activeProfileId) {
+    throw new Error("no_active_profile");
+  }
+  await invokeChecked(
+    "feedback_note_set",
+    FeedbackNoteSetPayloadSchema,
+    VoidResponseSchema,
+    { profileId: state.activeProfileId, feedbackId, note }
+  );
+}
+
 async function bootstrap() {
   await loadProfiles();
   await loadActiveProject();
+  await loadProjects();
   await loadDailyQuest();
 }
 
@@ -216,6 +302,7 @@ export const appStore = {
   state,
   bootstrap,
   loadProfiles,
+  loadProjects,
   createProfile,
   async renameProfile(profileId: string, name: string) {
     await invokeChecked(
@@ -235,15 +322,20 @@ export const appStore = {
     );
     await loadProfiles();
     await loadActiveProject();
+    await loadProjects();
     await loadDailyQuest();
   },
   switchProfile,
   loadActiveProject,
   createProject,
+  setActiveProject,
   loadDailyQuest,
+  loadRecentAttempts,
   submitQuestText,
   submitQuestAudio,
   getQuestByCode,
   analyzeAttempt,
   getFeedback,
+  getFeedbackNote,
+  setFeedbackNote,
 };
