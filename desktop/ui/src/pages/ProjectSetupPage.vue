@@ -55,7 +55,7 @@ onMounted(bootstrap);
 <template>
   <section class="space-y-6">
     <div class="space-y-2">
-      <h1 class="text-2xl font-semibold">Project setup</h1>
+      <h1 class="text-2xl font-semibold">Talk setup</h1>
       <p class="text-sm text-slate-400">Define the talk you want to practice.</p>
     </div>
 
@@ -68,7 +68,7 @@ onMounted(bootstrap);
 
     <div v-else class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
       <div v-if="activeProject" class="mb-4 rounded-xl border border-slate-800 bg-slate-950/40 p-3">
-        <div class="text-xs uppercase tracking-[0.2em] text-slate-500">Active project</div>
+        <div class="text-xs uppercase tracking-[0.2em] text-slate-500">Active talk</div>
         <div class="text-sm text-slate-100">{{ activeProject.title }}</div>
       </div>
 
@@ -77,7 +77,7 @@ onMounted(bootstrap);
           v-model="title"
           class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
           type="text"
-          placeholder="Project title"
+          placeholder="Talk title"
         />
         <input
           v-model="audience"
@@ -107,7 +107,7 @@ onMounted(bootstrap);
           :disabled="isSaving"
           @click="saveProject"
         >
-          Save project
+          Save talk
         </button>
         <RouterLink class="text-xs text-slate-400 underline underline-offset-4" to="/">
           Back to Home

@@ -28,6 +28,17 @@ onMounted(() => {
 
     <div class="grid gap-4 md:grid-cols-2">
       <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
+        <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Talk</div>
+        <div class="mt-2 text-sm text-slate-100">
+          <span v-if="state.activeProject">{{ state.activeProject.title }}</span>
+          <span v-else>No active talk</span>
+        </div>
+        <RouterLink class="mt-3 inline-block text-xs text-emerald-300 underline" to="/project/new">
+          Set up talk
+        </RouterLink>
+      </div>
+
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
         <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Profile</div>
         <div class="mt-2 text-sm text-slate-100">
           <span v-if="state.activeProfileId">
@@ -37,17 +48,6 @@ onMounted(() => {
         </div>
         <RouterLink class="mt-3 inline-block text-xs text-emerald-300 underline" to="/profiles">
           Manage profiles
-        </RouterLink>
-      </div>
-
-      <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
-        <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Project</div>
-        <div class="mt-2 text-sm text-slate-100">
-          <span v-if="state.activeProject">{{ state.activeProject.title }}</span>
-          <span v-else>No active project</span>
-        </div>
-        <RouterLink class="mt-3 inline-block text-xs text-emerald-300 underline" to="/project/new">
-          Set up project
         </RouterLink>
       </div>
     </div>
