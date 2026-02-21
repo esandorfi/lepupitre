@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { useI18n } from "../lib/i18n";
+import { appStore } from "../stores/app";
 
 const TARGET_SAMPLE_RATE = 16000;
 type AudioStatusKey =
@@ -11,6 +12,7 @@ type AudioStatusKey =
   | "audio.status_encoding";
 
 const { t } = useI18n();
+const activeProfileId = computed(() => appStore.state.activeProfileId);
 const isRecording = ref(false);
 const statusKey = ref<AudioStatusKey>("audio.status_idle");
 const error = ref<string | null>(null);
@@ -22,6 +24,13 @@ const inputSampleRate = ref<number>(TARGET_SAMPLE_RATE);
 const inputChannels = ref<number>(1);
 const isRevealing = ref(false);
 
+type AudioSaveResponse = {
+  path: string;
+  artifactId: string;
+  bytes: number;
+  sha256: string;
+};
+
 let audioContext: AudioContext | null = null;
 let processor: ScriptProcessorNode | null = null;
 let source: MediaStreamAudioSourceNode | null = null;
@@ -32,6 +41,10 @@ let recordedSamples = 0;
 
 async function startRecording() {
   error.value = null;
+  if (!activeProfileId.value) {
+    error.value = t("audio.profile_required");
+    return;
+  }
   lastSavedPath.value = null;
   lastDurationSec.value = null;
   liveDurationSec.value = 0;
@@ -89,8 +102,11 @@ async function stopRecording() {
   const base64 = toBase64(wavBytes);
 
   try {
-    const path = await invoke<string>("audio_save_wav", { base64 });
-    lastSavedPath.value = path;
+    const result = await invoke<AudioSaveResponse>("audio_save_wav", {
+      profileId: activeProfileId.value,
+      base64,
+    });
+    lastSavedPath.value = result.path;
     liveLevel.value = 0;
     statusKey.value = "audio.status_idle";
   } catch (err) {
