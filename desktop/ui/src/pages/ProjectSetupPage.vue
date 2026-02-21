@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
+import { useI18n } from "../lib/i18n";
 import { appStore } from "../stores/app";
 
+const { t } = useI18n();
 const title = ref("");
 const audience = ref("");
 const goal = ref("");
@@ -29,7 +31,7 @@ async function bootstrap() {
 
 async function saveProject() {
   if (!title.value.trim()) {
-    error.value = "Title is required";
+    error.value = t("talk.title_required");
     return;
   }
   isSaving.value = true;
@@ -39,7 +41,7 @@ async function saveProject() {
       title: title.value.trim(),
       audience: audience.value.trim() || null,
       goal: goal.value.trim() || null,
-      duration_target_sec: duration.value ? Number(duration.value) : null,
+      duration_target_sec: duration.value ? Number(duration.value) * 60 : null,
     });
     await router.push("/");
   } catch (err) {
@@ -55,20 +57,22 @@ onMounted(bootstrap);
 <template>
   <section class="space-y-6">
     <div class="space-y-2">
-      <h1 class="text-2xl font-semibold">Talk setup</h1>
-      <p class="text-sm text-slate-400">Define the talk you want to practice.</p>
+      <h1 class="text-2xl font-semibold">{{ t("talk.title") }}</h1>
+      <p class="text-sm text-slate-400">{{ t("talk.subtitle") }}</p>
     </div>
 
     <div v-if="!activeProfileId" class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
-      <p class="text-sm text-slate-300">Create a profile first.</p>
+      <p class="text-sm text-slate-300">{{ t("talk.need_profile") }}</p>
       <RouterLink class="text-xs text-emerald-300 underline underline-offset-4" to="/profiles">
-        Go to Profiles
+        {{ t("talk.goto_profiles") }}
       </RouterLink>
     </div>
 
     <div v-else class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
       <div v-if="activeProject" class="mb-4 rounded-xl border border-slate-800 bg-slate-950/40 p-3">
-        <div class="text-xs uppercase tracking-[0.2em] text-slate-500">Active talk</div>
+        <div class="text-xs uppercase tracking-[0.2em] text-slate-500">
+          {{ t("talk.active_title") }}
+        </div>
         <div class="text-sm text-slate-100">{{ activeProject.title }}</div>
       </div>
 
@@ -77,26 +81,26 @@ onMounted(bootstrap);
           v-model="title"
           class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
           type="text"
-          placeholder="Talk title"
+          :placeholder="t('talk.title_placeholder')"
         />
         <input
           v-model="audience"
           class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
           type="text"
-          placeholder="Audience (optional)"
+          :placeholder="t('talk.audience_placeholder')"
         />
         <input
           v-model="goal"
           class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
           type="text"
-          placeholder="Goal (optional)"
+          :placeholder="t('talk.goal_placeholder')"
         />
         <input
           v-model="duration"
           class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
           type="number"
-          min="60"
-          placeholder="Target duration in seconds"
+          min="1"
+          :placeholder="t('talk.duration_placeholder')"
         />
       </div>
 
@@ -107,10 +111,10 @@ onMounted(bootstrap);
           :disabled="isSaving"
           @click="saveProject"
         >
-          Save talk
+          {{ t("talk.save") }}
         </button>
         <RouterLink class="text-xs text-slate-400 underline underline-offset-4" to="/">
-          Back to Home
+          {{ t("talk.back") }}
         </RouterLink>
       </div>
 

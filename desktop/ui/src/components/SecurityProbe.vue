@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { invoke } from "@tauri-apps/api/core";
+import { useI18n } from "../lib/i18n";
 
+const { t } = useI18n();
 const networkStatus = ref("idle");
 const fsStatus = ref("idle");
 const fsDetail = ref<string | null>(null);
@@ -13,6 +15,17 @@ const isWindows = navigator.userAgent.toLowerCase().includes("windows");
 const probePath = isWindows
   ? "C:\\Windows\\System32\\drivers\\etc\\hosts"
   : "/etc/hosts";
+const statusKeyMap: Record<string, string> = {
+  idle: "status.idle",
+  running: "status.running",
+  allowed: "status.allowed",
+  blocked: "status.blocked",
+  error: "status.error",
+};
+
+function statusLabel(value: string) {
+  return t(statusKeyMap[value] ?? value);
+}
 
 async function testNetwork() {
   networkStatus.value = "running";
@@ -62,10 +75,10 @@ async function testFsAllowed() {
     <div class="flex items-center justify-between">
       <div>
         <h3 class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">
-          Security Probe (dev)
+          {{ t("security.title") }}
         </h3>
         <p class="text-xs text-slate-500">
-          Expect both tests to be blocked in production.
+          {{ t("security.subtitle") }}
         </p>
       </div>
     </div>
@@ -77,7 +90,7 @@ async function testFsAllowed() {
         :disabled="networkStatus === 'running'"
         @click="testNetwork"
       >
-        Test network
+        {{ t("security.test_network") }}
       </button>
       <button
         class="cursor-pointer rounded-full bg-slate-200 px-3 py-2 text-xs font-semibold text-slate-900 transition hover:bg-white disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
@@ -85,7 +98,7 @@ async function testFsAllowed() {
         :disabled="fsStatus === 'running'"
         @click="testFs"
       >
-        Test blocked path
+        {{ t("security.test_blocked") }}
       </button>
       <button
         class="cursor-pointer rounded-full bg-slate-200 px-3 py-2 text-xs font-semibold text-slate-900 transition hover:bg-white disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
@@ -93,23 +106,24 @@ async function testFsAllowed() {
         :disabled="fsAllowedStatus === 'running'"
         @click="testFsAllowed"
       >
-        Test appdata path
+        {{ t("security.test_appdata") }}
       </button>
     </div>
 
     <div class="grid gap-2 text-xs text-slate-400">
       <div>
-        Network: <span class="text-slate-200">{{ networkStatus }}</span>
+        {{ t("security.network") }}:
+        <span class="text-slate-200">{{ statusLabel(networkStatus) }}</span>
         <span v-if="networkDetail" class="text-slate-500">({{ networkDetail }})</span>
       </div>
       <div>
-        File system (blocked path):
-        <span class="text-slate-200">{{ fsStatus }}</span>
+        {{ t("security.fs_blocked") }}:
+        <span class="text-slate-200">{{ statusLabel(fsStatus) }}</span>
         <span v-if="fsDetail" class="text-slate-500">({{ fsDetail }})</span>
       </div>
       <div>
-        File system (appdata):
-        <span class="text-slate-200">{{ fsAllowedStatus }}</span>
+        {{ t("security.fs_appdata") }}:
+        <span class="text-slate-200">{{ statusLabel(fsAllowedStatus) }}</span>
         <span v-if="fsAllowedDetail" class="text-slate-500">({{ fsAllowedDetail }})</span>
       </div>
     </div>

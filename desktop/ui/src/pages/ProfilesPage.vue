@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref } from "vue";
 import type { ComponentPublicInstance } from "vue";
+import { useI18n } from "../lib/i18n";
 import { appStore } from "../stores/app";
 
+const { t } = useI18n();
 const name = ref("");
 const error = ref<string | null>(null);
 const isSaving = ref(false);
@@ -44,13 +46,15 @@ function formatBytes(bytes: number) {
 }
 
 async function createProfile() {
-  if (!name.value.trim()) {
+  const trimmed = name.value.trim();
+  if (!trimmed) {
+    error.value = t("profiles.name_required");
     return;
   }
   isSaving.value = true;
   error.value = null;
   try {
-    await appStore.createProfile(name.value.trim());
+    await appStore.createProfile(trimmed);
     name.value = "";
   } catch (err) {
     error.value = toError(err);
@@ -99,7 +103,7 @@ async function confirmRename(profileId: string) {
       profile.id !== profileId && profile.name.toLowerCase() === nextName.toLowerCase()
   );
   if (duplicate) {
-    error.value = "Profile name already exists";
+    error.value = t("profiles.name_exists");
     return;
   }
   isRenaming.value = true;
@@ -145,8 +149,8 @@ onMounted(() => {
 <template>
   <section class="space-y-6" @click.self="cancelRename">
     <div class="space-y-2">
-      <h1 class="text-2xl font-semibold">Profiles</h1>
-      <p class="text-sm text-slate-400">Create a profile to start your local workspace.</p>
+      <h1 class="text-2xl font-semibold">{{ t("profiles.title") }}</h1>
+      <p class="text-sm text-slate-400">{{ t("profiles.subtitle") }}</p>
     </div>
 
     <div
@@ -154,14 +158,14 @@ onMounted(() => {
       class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4"
     >
       <h2 class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">
-        Create profile
+        {{ t("profiles.create_title") }}
       </h2>
       <div class="mt-3 flex flex-wrap gap-3">
         <input
           v-model="name"
           type="text"
           class="min-w-[240px] flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
-          placeholder="Profile name"
+          :placeholder="t('profiles.create_placeholder')"
           @focus="name = ''"
           @keyup.enter="createProfile"
           @keyup.escape="name = ''"
@@ -172,7 +176,7 @@ onMounted(() => {
           :disabled="isSaving"
           @click="createProfile"
         >
-          Create
+          {{ t("profiles.create_action") }}
         </button>
       </div>
       <p v-if="error" class="mt-2 text-xs text-rose-300">{{ error }}</p>
@@ -181,7 +185,7 @@ onMounted(() => {
     <div v-else class="space-y-6">
       <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
         <h2 class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">
-          Existing profiles
+          {{ t("profiles.existing_title") }}
         </h2>
 
         <div class="mt-4 space-y-2">
@@ -222,7 +226,7 @@ onMounted(() => {
                 type="button"
                 @click="switchProfile(profile.id)"
               >
-                {{ profile.id === activeProfileId ? "Active" : "Switch" }}
+                {{ profile.id === activeProfileId ? t("profiles.active") : t("profiles.switch") }}
               </button>
               <button
                 class="cursor-pointer rounded-full bg-slate-800/60 p-2 text-xs font-semibold text-slate-200 transition hover:bg-slate-700"
@@ -270,7 +274,7 @@ onMounted(() => {
               v-if="confirmDeleteId === profile.id"
               class="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-200"
             >
-              <div>Delete this profile and its local data?</div>
+              <div>{{ t("profiles.confirm_delete") }}</div>
               <div class="mt-2 flex gap-2">
                 <button
                   class="cursor-pointer rounded-full bg-rose-500/20 px-3 py-1 text-xs font-semibold text-rose-100 transition hover:bg-rose-500/30"
@@ -278,7 +282,7 @@ onMounted(() => {
                   :disabled="deletingId === profile.id"
                   @click="confirmDelete(profile.id, profile.name)"
                 >
-                  Delete
+                  {{ t("profiles.confirm_delete_action") }}
                 </button>
                 <button
                   class="cursor-pointer rounded-full bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-200 transition hover:bg-slate-700"
@@ -286,7 +290,7 @@ onMounted(() => {
                   :disabled="deletingId === profile.id"
                   @click="cancelDelete"
                 >
-                  Cancel
+                  {{ t("profiles.cancel") }}
                 </button>
               </div>
             </div>
@@ -298,14 +302,14 @@ onMounted(() => {
 
       <div class="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
         <h2 class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-          Add profile
+          {{ t("profiles.add_title") }}
         </h2>
         <div class="mt-3 flex flex-wrap gap-3">
           <input
             v-model="name"
             type="text"
             class="min-w-[240px] flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
-            placeholder="Profile name"
+            :placeholder="t('profiles.create_placeholder')"
             @focus="name = ''"
             @keyup.enter="createProfile"
             @keyup.escape="name = ''"
@@ -316,7 +320,7 @@ onMounted(() => {
             :disabled="isSaving"
             @click="createProfile"
           >
-            Create
+            {{ t("profiles.create_action") }}
           </button>
         </div>
       </div>

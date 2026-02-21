@@ -1,11 +1,18 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { invoke } from "@tauri-apps/api/core";
+import { useI18n } from "../lib/i18n";
 
 const TARGET_SAMPLE_RATE = 16000;
+type AudioStatusKey =
+  | "audio.status_idle"
+  | "audio.status_requesting"
+  | "audio.status_recording"
+  | "audio.status_encoding";
 
+const { t } = useI18n();
 const isRecording = ref(false);
-const status = ref("Idle");
+const statusKey = ref<AudioStatusKey>("audio.status_idle");
 const error = ref<string | null>(null);
 const lastSavedPath = ref<string | null>(null);
 const lastDurationSec = ref<number | null>(null);
@@ -29,7 +36,7 @@ async function startRecording() {
   lastDurationSec.value = null;
   liveDurationSec.value = 0;
   liveLevel.value = 0;
-  status.value = "Requesting microphone";
+  statusKey.value = "audio.status_requesting";
 
   try {
     stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -52,10 +59,10 @@ async function startRecording() {
 
     isRecording.value = true;
     recordedSamples = 0;
-    status.value = "Recording";
+    statusKey.value = "audio.status_recording";
   } catch (err) {
     error.value = err instanceof Error ? err.message : String(err);
-    status.value = "Idle";
+    statusKey.value = "audio.status_idle";
   }
 }
 
@@ -65,7 +72,7 @@ async function stopRecording() {
   }
 
   isRecording.value = false;
-  status.value = "Encoding";
+  statusKey.value = "audio.status_encoding";
   processor.disconnect();
   source.disconnect();
   stream.getTracks().forEach((track) => track.stop());
@@ -85,10 +92,10 @@ async function stopRecording() {
     const path = await invoke<string>("audio_save_wav", { base64 });
     lastSavedPath.value = path;
     liveLevel.value = 0;
-    status.value = "Idle";
+    statusKey.value = "audio.status_idle";
   } catch (err) {
     error.value = err instanceof Error ? err.message : String(err);
-    status.value = "Idle";
+    statusKey.value = "audio.status_idle";
   }
 }
 
@@ -217,11 +224,11 @@ async function revealRecording() {
   <div class="space-y-3 rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
     <div class="flex items-center justify-between">
       <div>
-        <h2 class="text-lg font-semibold">Audio spike</h2>
-        <p class="text-sm text-slate-400">Record a WAV 16kHz mono file locally.</p>
+        <h2 class="text-lg font-semibold">{{ t("audio.title") }}</h2>
+        <p class="text-sm text-slate-400">{{ t("audio.subtitle") }}</p>
       </div>
       <div class="text-xs uppercase tracking-[0.2em] text-slate-500">
-        Pass 0
+        {{ t("audio.pass_label") }}
       </div>
     </div>
 
@@ -232,7 +239,7 @@ async function revealRecording() {
         :disabled="isRecording"
         @click="startRecording"
       >
-        Start recording
+        {{ t("audio.start") }}
       </button>
       <button
         class="cursor-pointer rounded-full bg-rose-500 px-4 py-2 text-sm font-semibold text-rose-950 transition hover:bg-rose-400 disabled:cursor-not-allowed disabled:bg-slate-700"
@@ -240,7 +247,7 @@ async function revealRecording() {
         :disabled="!isRecording"
         @click="stopRecording"
       >
-        Stop + Save
+        {{ t("audio.stop") }}
       </button>
       <button
         class="cursor-pointer rounded-full bg-slate-200 px-3 py-2 text-xs font-semibold text-slate-900 transition hover:bg-white disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
@@ -248,11 +255,13 @@ async function revealRecording() {
         :disabled="!lastSavedPath || isRevealing"
         @click="revealRecording"
       >
-        Reveal file
+        {{ t("audio.reveal") }}
       </button>
     </div>
 
-    <div class="text-sm text-slate-300">Status: {{ status }}</div>
+    <div class="text-sm text-slate-300">
+      {{ t("audio.status") }}: {{ t(statusKey) }}
+    </div>
     <div class="space-y-1 text-xs text-slate-400">
       <div class="h-2 w-full rounded-full bg-slate-800">
         <div
@@ -262,11 +271,11 @@ async function revealRecording() {
       </div>
     </div>
     <div class="text-xs text-slate-400">
-      Duration:
+      {{ t("audio.duration") }}:
       {{ formatDuration(isRecording ? liveDurationSec : lastDurationSec) ?? "0:00" }}
     </div>
     <div v-if="lastSavedPath" class="flex flex-wrap items-center gap-2 text-xs">
-      <span class="text-emerald-300">Saved to:</span>
+      <span class="text-emerald-300">{{ t("audio.saved_to") }}:</span>
       <span
         class="max-w-[360px] truncate text-emerald-200"
         style="direction: rtl; text-align: left;"

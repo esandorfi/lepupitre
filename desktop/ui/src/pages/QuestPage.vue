@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { useI18n } from "../lib/i18n";
 import { appStore } from "../stores/app";
 
+const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 
@@ -27,7 +29,7 @@ async function bootstrap() {
 
 async function submit() {
   if (!text.value.trim()) {
-    error.value = "Response cannot be empty";
+    error.value = t("quest.response_required");
     return;
   }
   isSubmitting.value = true;
@@ -48,8 +50,10 @@ onMounted(bootstrap);
 <template>
   <section class="space-y-6">
     <div class="space-y-2">
-      <h1 class="text-2xl font-semibold">Quest</h1>
-      <p class="text-sm text-slate-400">Code: {{ questCode || "daily" }}</p>
+      <h1 class="text-2xl font-semibold">{{ t("quest.title") }}</h1>
+      <p class="text-sm text-slate-400">
+        {{ t("quest.code") }}: {{ questCode || t("quest.daily") }}
+      </p>
     </div>
 
     <div v-if="dailyQuest" class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
@@ -60,7 +64,7 @@ onMounted(bootstrap);
         v-model="text"
         rows="6"
         class="mt-4 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
-        placeholder="Write your response"
+        :placeholder="t('quest.response_placeholder')"
       ></textarea>
 
       <div class="mt-3 flex items-center gap-3">
@@ -70,10 +74,10 @@ onMounted(bootstrap);
           :disabled="isSubmitting"
           @click="submit"
         >
-          Submit text
+          {{ t("quest.submit") }}
         </button>
         <RouterLink class="text-xs text-slate-400 underline" to="/">
-          Back
+          {{ t("quest.back") }}
         </RouterLink>
       </div>
 
@@ -81,7 +85,7 @@ onMounted(bootstrap);
     </div>
 
     <div v-else class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
-      <p class="text-sm text-slate-400">No quest loaded yet.</p>
+      <p class="text-sm text-slate-400">{{ t("quest.empty") }}</p>
     </div>
   </section>
 </template>
