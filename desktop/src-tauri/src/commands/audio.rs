@@ -10,6 +10,7 @@ use std::time::Duration;
 use tauri::{Emitter, Manager, State};
 
 use crate::core::artifacts;
+use crate::core::asr_live::LiveTranscriptState;
 use crate::core::db;
 use crate::core::dsp;
 use crate::core::models;
@@ -20,6 +21,11 @@ const TARGET_SAMPLE_RATE: u32 = 16000;
 const RING_SECONDS: u32 = 30;
 const START_TIMEOUT_MS: u64 = 3000;
 const STOP_TIMEOUT_MS: u64 = 5000;
+
+const LIVE_WINDOW_MS: i64 = 12_000;
+const LIVE_STEP_MS: u64 = 800;
+const LIVE_COMMIT_DELAY_MS: i64 = 2_800;
+const LIVE_SEGMENT_MS: i64 = 1_200;
 
 const ASR_PARTIAL_EVENT: &str = "asr/partial/v1";
 const ASR_COMMIT_EVENT: &str = "asr/commit/v1";
@@ -412,34 +418,31 @@ fn run_live_asr(
     let mut speech_index: u64 = 1;
     let mut in_speech = false;
     let mut speech_start_ms: i64 = 0;
+    let mut pending_flush = false;
+    let mut transcript_state = LiveTranscriptState::new();
+    let decoder = MockAsrDecoder::new(LIVE_SEGMENT_MS);
+    let window_samples = (TARGET_SAMPLE_RATE as i64 * LIVE_WINDOW_MS / 1000) as usize;
 
     loop {
         if stop_rx.try_recv().is_ok() {
-            if in_speech {
-                if let Ok(guard) = state.lock() {
-                    let now_ms = (guard.total_samples as f64 / TARGET_SAMPLE_RATE as f64 * 1000.0)
-                        .round() as i64;
-                    let segment = models::TranscriptSegment {
-                        t_start_ms: speech_start_ms,
-                        t_end_ms: now_ms,
-                        text: format!("(speech {speech_index})"),
-                        confidence: None,
-                    };
-                    seq += 1;
-                    let _ = app.emit(
-                        ASR_COMMIT_EVENT,
-                        AsrCommitEvent {
-                            schema_version: "1.0.0".to_string(),
-                            segments: vec![segment],
-                            seq,
-                        },
-                    );
-                }
+            if in_speech || pending_flush {
+                let now_ms = current_recording_ms(&state);
+                let window = snapshot_window(&state, window_samples);
+                let window_start_ms =
+                    now_ms - (window.len() as i64 * 1000 / TARGET_SAMPLE_RATE as i64);
+                let segments = decoder.decode(
+                    &window,
+                    window_start_ms,
+                    now_ms,
+                    speech_index,
+                    speech_start_ms,
+                );
+                emit_live_updates(&app, &mut seq, &mut transcript_state, &segments, now_ms);
             }
             break;
         }
 
-        thread::sleep(Duration::from_millis(800));
+        thread::sleep(Duration::from_millis(LIVE_STEP_MS));
 
         let (last_vad, total_samples) = match state.lock() {
             Ok(guard) => (guard.last_vad, guard.total_samples),
@@ -447,41 +450,133 @@ fn run_live_asr(
         };
         let now_ms = (total_samples as f64 / TARGET_SAMPLE_RATE as f64 * 1000.0).round() as i64;
 
-        if last_vad {
-            if !in_speech {
-                in_speech = true;
-                speech_start_ms = now_ms;
-            }
-            seq += 1;
-            let _ = app.emit(
-                ASR_PARTIAL_EVENT,
-                AsrPartialEvent {
-                    schema_version: "1.0.0".to_string(),
-                    text: format!("(speech {speech_index}...)"),
-                    t0_ms: speech_start_ms,
-                    t1_ms: now_ms,
-                    seq,
-                },
-            );
-        } else if in_speech {
+        if last_vad && !in_speech {
+            in_speech = true;
+            speech_start_ms = now_ms;
+        } else if !last_vad && in_speech {
             in_speech = false;
-            let segment = models::TranscriptSegment {
-                t_start_ms: speech_start_ms,
-                t_end_ms: now_ms,
-                text: format!("(speech {speech_index})"),
-                confidence: None,
-            };
-            speech_index += 1;
-            seq += 1;
-            let _ = app.emit(
-                ASR_COMMIT_EVENT,
-                AsrCommitEvent {
-                    schema_version: "1.0.0".to_string(),
-                    segments: vec![segment],
-                    seq,
-                },
-            );
+            pending_flush = true;
         }
+
+        if !in_speech && !pending_flush {
+            continue;
+        }
+
+        let window = snapshot_window(&state, window_samples);
+        let window_start_ms = now_ms - (window.len() as i64 * 1000 / TARGET_SAMPLE_RATE as i64);
+        let segments = decoder.decode(
+            &window,
+            window_start_ms,
+            now_ms,
+            speech_index,
+            speech_start_ms,
+        );
+        let commit_cutoff = if pending_flush {
+            now_ms
+        } else {
+            now_ms - LIVE_COMMIT_DELAY_MS
+        };
+
+        emit_live_updates(
+            &app,
+            &mut seq,
+            &mut transcript_state,
+            &segments,
+            commit_cutoff,
+        );
+
+        if pending_flush {
+            pending_flush = false;
+            speech_index += 1;
+        }
+    }
+}
+
+struct MockAsrDecoder {
+    segment_ms: i64,
+}
+
+impl MockAsrDecoder {
+    fn new(segment_ms: i64) -> Self {
+        Self { segment_ms }
+    }
+
+    fn decode(
+        &self,
+        _window: &[f32],
+        window_start_ms: i64,
+        window_end_ms: i64,
+        speech_index: u64,
+        speech_start_ms: i64,
+    ) -> Vec<models::TranscriptSegment> {
+        let mut segments = Vec::new();
+        let mut cursor = speech_start_ms.max(window_start_ms);
+        if window_end_ms <= cursor {
+            return segments;
+        }
+        let mut segment_index = 1;
+        while cursor < window_end_ms {
+            let end = (cursor + self.segment_ms).min(window_end_ms);
+            segments.push(models::TranscriptSegment {
+                t_start_ms: cursor,
+                t_end_ms: end,
+                text: format!("(speech {speech_index}.{segment_index})"),
+                confidence: None,
+            });
+            segment_index += 1;
+            cursor = end;
+        }
+        segments
+    }
+}
+
+fn current_recording_ms(state: &Arc<Mutex<RecordingState>>) -> i64 {
+    match state.lock() {
+        Ok(guard) => {
+            (guard.total_samples as f64 / TARGET_SAMPLE_RATE as f64 * 1000.0).round() as i64
+        }
+        Err(_) => 0,
+    }
+}
+
+fn snapshot_window(state: &Arc<Mutex<RecordingState>>, window_samples: usize) -> Vec<f32> {
+    match state.lock() {
+        Ok(guard) => guard.ring.snapshot_last(window_samples),
+        Err(_) => Vec::new(),
+    }
+}
+
+fn emit_live_updates(
+    app: &tauri::AppHandle,
+    seq: &mut u64,
+    transcript_state: &mut LiveTranscriptState,
+    segments: &[models::TranscriptSegment],
+    commit_cutoff_ms: i64,
+) {
+    let update = transcript_state.apply_decode(segments, commit_cutoff_ms);
+    if !update.committed.is_empty() {
+        *seq += 1;
+        let _ = app.emit(
+            ASR_COMMIT_EVENT,
+            AsrCommitEvent {
+                schema_version: "1.0.0".to_string(),
+                segments: update.committed,
+                seq: *seq,
+            },
+        );
+    }
+    if let Some(partial) = update.partial {
+        *seq += 1;
+        let _ = app.emit(
+            ASR_PARTIAL_EVENT,
+            AsrPartialEvent {
+                schema_version: "1.0.0".to_string(),
+                text: partial.text,
+                t0_ms: partial.t0_ms,
+                t1_ms: partial.t1_ms,
+                seq: *seq,
+            },
+        );
     }
 }
 

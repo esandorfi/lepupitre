@@ -1,5 +1,6 @@
 pub mod analysis;
 pub mod artifacts;
+pub mod asr_live;
 pub mod asr_models;
 pub mod db;
 pub mod db_helpers;
