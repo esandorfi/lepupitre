@@ -11,6 +11,8 @@ use tauri::{Emitter, Manager, State};
 
 use crate::core::artifacts;
 use crate::core::asr_live::LiveTranscriptState;
+use crate::core::asr_models;
+use crate::core::asr_sidecar;
 use crate::core::db;
 use crate::core::dsp;
 use crate::core::models;
@@ -30,6 +32,10 @@ const LIVE_SEGMENT_MS: i64 = 1_200;
 const ASR_PARTIAL_EVENT: &str = "asr/partial/v1";
 const ASR_COMMIT_EVENT: &str = "asr/commit/v1";
 
+const DEFAULT_MODEL_ID: &str = "tiny";
+const SIDECAR_ENV_PATH: &str = "LEPUPITRE_ASR_SIDECAR";
+const SIDECAR_MODEL_ENV_PATH: &str = "LEPUPITRE_ASR_MODEL_PATH";
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AudioSaveResult {
@@ -37,6 +43,34 @@ pub struct AudioSaveResult {
     pub artifact_id: String,
     pub bytes: u64,
     pub sha256: String,
+}
+
+fn try_spawn_sidecar(app: &tauri::AppHandle) -> Result<asr_sidecar::SidecarDecoder, String> {
+    let sidecar_path = if let Ok(path) = std::env::var(SIDECAR_ENV_PATH) {
+        let path = std::path::PathBuf::from(path);
+        if path.exists() {
+            path
+        } else {
+            return Err("sidecar_missing".to_string());
+        }
+    } else {
+        asr_sidecar::resolve_sidecar_path(app)?
+    };
+
+    let model_path = if let Ok(path) = std::env::var(SIDECAR_MODEL_ENV_PATH) {
+        std::path::PathBuf::from(path)
+    } else {
+        let spec =
+            asr_models::model_spec(DEFAULT_MODEL_ID).ok_or_else(|| "model_unknown".to_string())?;
+        let dir = asr_models::models_dir(app)?;
+        let path = dir.join(spec.filename);
+        if !path.exists() {
+            return Err("model_missing".to_string());
+        }
+        path
+    };
+
+    asr_sidecar::SidecarDecoder::spawn(&sidecar_path, &model_path, "auto")
 }
 
 #[derive(Debug, Serialize)]
@@ -420,7 +454,13 @@ fn run_live_asr(
     let mut speech_start_ms: i64 = 0;
     let mut pending_flush = false;
     let mut transcript_state = LiveTranscriptState::new();
-    let decoder = MockAsrDecoder::new(LIVE_SEGMENT_MS);
+    let mut decoder: Box<dyn LiveDecoder> = match try_spawn_sidecar(&app) {
+        Ok(sidecar) => Box::new(SidecarLiveDecoder::new(sidecar)),
+        Err(err) => {
+            eprintln!("asr sidecar unavailable: {err}");
+            Box::new(MockAsrDecoder::new(LIVE_SEGMENT_MS))
+        }
+    };
     let window_samples = (TARGET_SAMPLE_RATE as i64 * LIVE_WINDOW_MS / 1000) as usize;
 
     loop {
@@ -492,6 +532,56 @@ fn run_live_asr(
     }
 }
 
+trait LiveDecoder {
+    fn decode(
+        &mut self,
+        window: &[f32],
+        window_start_ms: i64,
+        window_end_ms: i64,
+        speech_index: u64,
+        speech_start_ms: i64,
+    ) -> Vec<models::TranscriptSegment>;
+}
+
+struct SidecarLiveDecoder {
+    decoder: asr_sidecar::SidecarDecoder,
+    last_error: Option<String>,
+}
+
+impl SidecarLiveDecoder {
+    fn new(decoder: asr_sidecar::SidecarDecoder) -> Self {
+        Self {
+            decoder,
+            last_error: None,
+        }
+    }
+}
+
+impl LiveDecoder for SidecarLiveDecoder {
+    fn decode(
+        &mut self,
+        window: &[f32],
+        window_start_ms: i64,
+        window_end_ms: i64,
+        _speech_index: u64,
+        _speech_start_ms: i64,
+    ) -> Vec<models::TranscriptSegment> {
+        match self
+            .decoder
+            .decode_window(window, window_start_ms, window_end_ms)
+        {
+            Ok(segments) => segments,
+            Err(err) => {
+                if self.last_error.as_deref() != Some(&err) {
+                    eprintln!("asr sidecar decode error: {err}");
+                    self.last_error = Some(err);
+                }
+                Vec::new()
+            }
+        }
+    }
+}
+
 struct MockAsrDecoder {
     segment_ms: i64,
 }
@@ -500,9 +590,11 @@ impl MockAsrDecoder {
     fn new(segment_ms: i64) -> Self {
         Self { segment_ms }
     }
+}
 
+impl LiveDecoder for MockAsrDecoder {
     fn decode(
-        &self,
+        &mut self,
         _window: &[f32],
         window_start_ms: i64,
         window_end_ms: i64,
