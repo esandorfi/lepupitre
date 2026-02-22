@@ -29,6 +29,11 @@ pub fn run() {
                 commands::quest::quest_report,
                 commands::quest::quest_submit_audio,
                 commands::quest::quest_submit_text,
+                commands::run::run_analyze,
+                commands::run::run_create,
+                commands::run::run_finish,
+                commands::run::run_get_latest,
+                commands::run::run_set_transcript,
                 commands::transcription::transcribe_audio,
                 commands::transcription::transcript_get,
                 commands::security::security_prepare_appdata_file,
@@ -64,6 +69,11 @@ pub fn run() {
                 commands::quest::quest_report,
                 commands::quest::quest_submit_audio,
                 commands::quest::quest_submit_text,
+                commands::run::run_analyze,
+                commands::run::run_create,
+                commands::run::run_finish,
+                commands::run::run_get_latest,
+                commands::run::run_set_transcript,
                 commands::transcription::transcribe_audio,
                 commands::transcription::transcript_get
             ])

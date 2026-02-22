@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS runs (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL,
   created_at TEXT NOT NULL,
-  audio_artifact_id TEXT NOT NULL,
+  audio_artifact_id TEXT,
   transcript_id TEXT,
   feedback_id TEXT
 );

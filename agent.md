@@ -12,6 +12,11 @@
 - No network by default; least-privilege IPC and strict CSP.
 - Migrations and schemas are versioned; secrets never in SQLite.
 - Treat each MR as a stop point: reflect, run quality checks, and review logic before proceeding.
+- Response format: start with a conventional commit title line, then details.
+
+## Tooling & workflow
+- Use `pnpm` for JS tooling and scripts.
+- CI runs on GitHub Actions.
 
 ## Documentation discipline
 - Update docs/ADR/changelog when required by `docs/CODEX_RULES.md`.

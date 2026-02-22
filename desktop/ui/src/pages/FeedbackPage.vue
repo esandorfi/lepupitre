@@ -15,7 +15,11 @@ const isLoading = ref(false);
 const note = ref("");
 const lastSavedNote = ref("");
 const noteStatus = ref<"idle" | "saving" | "saved" | "error">("idle");
+const isRunFeedback = computed(() => context.value?.subject_type === "run");
 const backLink = computed(() => {
+  if (isRunFeedback.value) {
+    return context.value?.run_id ? `/boss-run?runId=${context.value.run_id}` : "/boss-run";
+  }
   if (context.value?.quest_code && context.value?.project_id) {
     return `/quest/${context.value.quest_code}?from=talk&projectId=${context.value.project_id}`;
   }
@@ -24,11 +28,14 @@ const backLink = computed(() => {
   }
   return "/";
 });
-const questDisplayCode = computed(() => {
-  if (!context.value?.quest_code || !context.value?.project_id) {
-    return "";
+const contextLabel = computed(() => {
+  if (isRunFeedback.value) {
+    return t("feedback.run_label");
   }
-  return appStore.formatQuestCode(context.value.project_id, context.value.quest_code);
+  if (context.value?.quest_code && context.value?.project_id) {
+    return appStore.formatQuestCode(context.value.project_id, context.value.quest_code);
+  }
+  return "";
 });
 
 function toError(err: unknown) {
@@ -98,8 +105,8 @@ onMounted(async () => {
       <div class="app-text mt-2 text-2xl font-semibold">
         {{ feedback?.overall_score ?? "--" }}
       </div>
-      <div v-if="context" class="app-muted mt-2 text-xs">
-        {{ t("feedback.quest_code") }}: {{ questDisplayCode }}
+      <div v-if="contextLabel" class="app-muted mt-2 text-xs">
+        {{ t("feedback.context_label") }}: {{ contextLabel }}
       </div>
 
       <div v-if="isLoading" class="app-muted mt-4 text-xs">
@@ -198,12 +205,3 @@ onMounted(async () => {
     </div>
   </section>
 </template>
-const backLink = computed(() => {
-  if (context.value?.quest_code && context.value?.project_id) {
-    return `/quest/${context.value.quest_code}?from=talk&projectId=${context.value.project_id}`;
-  }
-  if (appStore.state.activeProject?.id) {
-    return `/talks/${appStore.state.activeProject.id}`;
-  }
-  return "/";
-});

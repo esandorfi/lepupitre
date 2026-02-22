@@ -42,6 +42,9 @@ const activeTalkId = computed(() => {
   if (route.name === "feedback") {
     return appStore.state.lastFeedbackContext?.project_id ?? "";
   }
+  if (route.name === "boss-run") {
+    return appStore.state.activeProject?.id ?? "";
+  }
   return "";
 });
 const activeTalkTitle = computed(() => {
@@ -62,7 +65,12 @@ const activeTalkNumber = computed(() => {
   return appStore.getTalkNumber(activeTalkId.value);
 });
 const showTalkTab = computed(() => {
-  return route.name === "talk-report" || route.name === "quest" || route.name === "feedback";
+  return (
+    route.name === "talk-report" ||
+    route.name === "quest" ||
+    route.name === "feedback" ||
+    route.name === "boss-run"
+  );
 });
 const talkReportLink = computed(() => {
   const id = activeTalkId.value || appStore.state.activeProject?.id || "";
@@ -118,11 +126,17 @@ const feedbackLabel = computed(() => {
   }
   return t("nav.feedback_active");
 });
+const showBossRunTab = computed(() => route.name === "boss-run");
+const bossRunLabel = computed(() => t("nav.boss_run"));
+const bossRunLink = computed(() => "/boss-run");
 
 const breadcrumbItems = computed(() => {
   const items: { label: string; to?: string }[] = [];
   if (showTalkTab.value) {
     items.push({ label: talkCrumbLabel.value, to: talkReportLink.value });
+  }
+  if (showBossRunTab.value) {
+    items.push({ label: bossRunLabel.value, to: bossRunLink.value });
   }
   if (showQuestTab.value) {
     items.push({ label: questLabel.value, to: questLink.value });

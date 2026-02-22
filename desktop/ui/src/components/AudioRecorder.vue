@@ -22,6 +22,20 @@ type AudioStatusKey =
   | "audio.status_recording"
   | "audio.status_encoding";
 
+const props = withDefaults(
+  defineProps<{
+    titleKey?: string;
+    subtitleKey?: string;
+    passLabelKey?: string;
+    showPassLabel?: boolean;
+  }>(),
+  {
+    titleKey: "audio.title",
+    subtitleKey: "audio.subtitle",
+    passLabelKey: "audio.pass_label",
+    showPassLabel: true,
+  }
+);
 const { t } = useI18n();
 const emit = defineEmits<{
   (event: "saved", payload: { artifactId: string; path: string }): void;
@@ -372,11 +386,11 @@ async function revealRecording() {
   <div class="app-surface space-y-3 rounded-2xl border p-4">
     <div class="flex items-center justify-between">
       <div>
-        <h2 class="text-lg font-bold">{{ t("audio.title") }}</h2>
-        <p class="app-muted text-sm">{{ t("audio.subtitle") }}</p>
+        <h2 class="text-lg font-bold">{{ t(props.titleKey) }}</h2>
+        <p class="app-muted text-sm">{{ t(props.subtitleKey) }}</p>
       </div>
-      <div class="app-subtle text-xs uppercase tracking-[0.2em]">
-        {{ t("audio.pass_label") }}
+      <div v-if="props.showPassLabel" class="app-subtle text-xs uppercase tracking-[0.2em]">
+        {{ t(props.passLabelKey) }}
       </div>
     </div>
 

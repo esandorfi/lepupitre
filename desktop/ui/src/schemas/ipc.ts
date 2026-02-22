@@ -53,6 +53,44 @@ export const ProjectListItemSchema = ProjectSummarySchema.extend({
 
 export const ProjectListResponseSchema = z.array(ProjectListItemSchema);
 
+export const RunCreatePayloadSchema = z.object({
+  profileId: IdSchema,
+  projectId: IdSchema,
+});
+
+export const RunFinishPayloadSchema = z.object({
+  profileId: IdSchema,
+  runId: IdSchema,
+  audioArtifactId: IdSchema,
+});
+
+export const RunSetTranscriptPayloadSchema = z.object({
+  profileId: IdSchema,
+  runId: IdSchema,
+  transcriptId: IdSchema,
+});
+
+export const RunAnalyzePayloadSchema = z.object({
+  profileId: IdSchema,
+  runId: IdSchema,
+});
+
+export const RunLatestPayloadSchema = z.object({
+  profileId: IdSchema,
+  projectId: IdSchema,
+});
+
+export const RunSummarySchema = z.object({
+  id: IdSchema,
+  project_id: IdSchema,
+  created_at: z.string().min(1),
+  audio_artifact_id: IdSchema.optional().nullable(),
+  transcript_id: IdSchema.optional().nullable(),
+  feedback_id: IdSchema.optional().nullable(),
+});
+
+export const RunSummaryNullableSchema = RunSummarySchema.nullable();
+
 export const QuestSchema = z.object({
   code: z.string().min(1),
   title: z.string().min(1),
@@ -206,10 +244,12 @@ export const FeedbackGetPayloadSchema = z.object({
 export const FeedbackContextPayloadSchema = FeedbackGetPayloadSchema;
 
 export const FeedbackContextSchema = z.object({
-  attempt_id: IdSchema,
+  subject_type: z.string().min(1),
+  subject_id: IdSchema,
   project_id: IdSchema,
-  quest_code: z.string().min(1),
-  quest_title: z.string().min(1),
+  quest_code: z.string().min(1).optional().nullable(),
+  quest_title: z.string().min(1).optional().nullable(),
+  run_id: IdSchema.optional().nullable(),
 });
 
 export const FeedbackNoteGetPayloadSchema = FeedbackGetPayloadSchema;
@@ -260,6 +300,7 @@ export const FeedbackV1Schema = z.object({
 export type ProfileSummary = z.infer<typeof ProfileSummarySchema>;
 export type ProjectSummary = z.infer<typeof ProjectSummarySchema>;
 export type ProjectListItem = z.infer<typeof ProjectListItemSchema>;
+export type RunSummary = z.infer<typeof RunSummarySchema>;
 export type Quest = z.infer<typeof QuestSchema>;
 export type QuestDaily = z.infer<typeof QuestDailySchema>;
 export type QuestAttemptSummary = z.infer<typeof QuestAttemptSummarySchema>;

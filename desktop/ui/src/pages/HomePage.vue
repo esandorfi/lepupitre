@@ -99,6 +99,13 @@ watch(
         >
           {{ t("home.talk_action") }}
         </RouterLink>
+        <RouterLink
+          v-if="state.activeProject"
+          class="app-link mt-2 inline-block text-xs underline"
+          to="/boss-run"
+        >
+          {{ t("home.boss_run_action") }}
+        </RouterLink>
         <RouterLink v-else class="app-link mt-3 inline-block text-xs underline" to="/talks">
           {{ t("home.talk_action") }}
         </RouterLink>

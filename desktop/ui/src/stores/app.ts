@@ -14,6 +14,13 @@ import {
   ProjectListResponseSchema,
   ProjectSummary,
   ProjectSummaryNullableSchema,
+  RunAnalyzePayloadSchema,
+  RunCreatePayloadSchema,
+  RunFinishPayloadSchema,
+  RunLatestPayloadSchema,
+  RunSetTranscriptPayloadSchema,
+  RunSummary,
+  RunSummaryNullableSchema,
   QuestDaily,
   QuestDailySchema,
   QuestSchema,
@@ -306,6 +313,64 @@ async function analyzeAttempt(attemptId: string) {
   return response.feedbackId;
 }
 
+async function createRun(projectId: string) {
+  if (!state.activeProfileId) {
+    throw new Error("no_active_profile");
+  }
+  return invokeChecked("run_create", RunCreatePayloadSchema, IdSchema, {
+    profileId: state.activeProfileId,
+    projectId,
+  });
+}
+
+async function finishRun(runId: string, audioArtifactId: string) {
+  if (!state.activeProfileId) {
+    throw new Error("no_active_profile");
+  }
+  await invokeChecked("run_finish", RunFinishPayloadSchema, VoidResponseSchema, {
+    profileId: state.activeProfileId,
+    runId,
+    audioArtifactId,
+  });
+}
+
+async function setRunTranscript(runId: string, transcriptId: string) {
+  if (!state.activeProfileId) {
+    throw new Error("no_active_profile");
+  }
+  await invokeChecked("run_set_transcript", RunSetTranscriptPayloadSchema, VoidResponseSchema, {
+    profileId: state.activeProfileId,
+    runId,
+    transcriptId,
+  });
+}
+
+async function analyzeRun(runId: string) {
+  if (!state.activeProfileId) {
+    throw new Error("no_active_profile");
+  }
+  const response = await invokeChecked(
+    "run_analyze",
+    RunAnalyzePayloadSchema,
+    AnalyzeResponseSchema,
+    { profileId: state.activeProfileId, runId }
+  );
+  state.lastFeedbackId = response.feedbackId;
+  return response.feedbackId;
+}
+
+async function getLatestRun(projectId: string): Promise<RunSummary | null> {
+  if (!state.activeProfileId) {
+    throw new Error("no_active_profile");
+  }
+  return invokeChecked(
+    "run_get_latest",
+    RunLatestPayloadSchema,
+    RunSummaryNullableSchema,
+    { profileId: state.activeProfileId, projectId }
+  );
+}
+
 async function getFeedback(feedbackId: string): Promise<FeedbackV1> {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
@@ -404,6 +469,11 @@ export const appStore = {
   getTalkNumber,
   formatQuestCode,
   analyzeAttempt,
+  createRun,
+  finishRun,
+  setRunTranscript,
+  analyzeRun,
+  getLatestRun,
   getFeedback,
   getFeedbackContext,
   getFeedbackNote,
