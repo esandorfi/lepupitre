@@ -203,6 +203,9 @@ onMounted(loadReport);
             <RouterLink class="app-link underline" to="/boss-run">
               {{ t("talk_report.boss_run") }}
             </RouterLink>
+            <RouterLink class="app-link underline" to="/packs">
+              {{ t("talk_report.packs") }}
+            </RouterLink>
           </div>
         </div>
         <div class="flex items-center gap-2">

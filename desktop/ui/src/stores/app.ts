@@ -21,6 +21,9 @@ import {
   ExportResultSchema,
   OutlineDoc,
   ExportResult,
+  PackExportPayloadSchema,
+  PeerReviewImportPayloadSchema,
+  PeerReviewImportResponseSchema,
   RunAnalyzePayloadSchema,
   RunCreatePayloadSchema,
   RunFinishPayloadSchema,
@@ -433,6 +436,32 @@ async function exportOutline(projectId: string): Promise<ExportResult> {
   });
 }
 
+async function exportPack(runId: string): Promise<ExportResult> {
+  if (!state.activeProfileId) {
+    throw new Error("no_active_profile");
+  }
+  return invokeChecked("pack_export", PackExportPayloadSchema, ExportResultSchema, {
+    profileId: state.activeProfileId,
+    runId,
+  });
+}
+
+async function importPeerReview(path: string) {
+  if (!state.activeProfileId) {
+    throw new Error("no_active_profile");
+  }
+  const response = await invokeChecked(
+    "peer_review_import",
+    PeerReviewImportPayloadSchema,
+    PeerReviewImportResponseSchema,
+    {
+      profileId: state.activeProfileId,
+      path,
+    }
+  );
+  return response.peerReviewId;
+}
+
 async function getFeedback(feedbackId: string): Promise<FeedbackV1> {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
@@ -541,6 +570,8 @@ export const appStore = {
   getOutline,
   saveOutline,
   exportOutline,
+  exportPack,
+  importPeerReview,
   getFeedback,
   getFeedbackContext,
   getFeedbackNote,

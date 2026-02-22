@@ -79,6 +79,20 @@ export const ExportResultSchema = z.object({
   path: z.string().min(1),
 });
 
+export const PackExportPayloadSchema = z.object({
+  profileId: IdSchema,
+  runId: IdSchema,
+});
+
+export const PeerReviewImportPayloadSchema = z.object({
+  profileId: IdSchema,
+  path: z.string().min(1),
+});
+
+export const PeerReviewImportResponseSchema = z.object({
+  peerReviewId: IdSchema,
+});
+
 export const RunCreatePayloadSchema = z.object({
   profileId: IdSchema,
   projectId: IdSchema,

@@ -182,7 +182,7 @@ fn ensure_talk_numbers(conn: &mut Connection) -> Result<(), String> {
 
 pub fn ensure_runs_nullable(conn: &mut Connection) -> Result<(), String> {
     let notnull = db_helpers::column_notnull(conn, "runs", "audio_artifact_id")?;
-    if notnull.unwrap_or(false) == false {
+    if !notnull.unwrap_or(false) {
         return Ok(());
     }
 
