@@ -100,3 +100,6 @@ Shared exit criteria: the “hello quest” app can record a 16k mono WAV into a
 - Then opt-in remote STT.
 - Then opt-in cloud sync.
 Each step must preserve local data compatibility.
+
+## 10) Feature plans
+- Whisper local transcription: `docs/plan/PLAN-WHISPER-LOCAL-TRANSCRIPTION.md`.

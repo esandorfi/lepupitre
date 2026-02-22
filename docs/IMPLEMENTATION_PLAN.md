@@ -94,3 +94,6 @@ Une passe n’est close que si:
 1. lint/test OK,
 2. doc mise à jour,
 3. docs mises à jour si nécessaire.
+
+## Plans associés
+- Whisper local transcription: `docs/plan/PLAN-WHISPER-LOCAL-TRANSCRIPTION.md`.
