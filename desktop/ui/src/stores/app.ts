@@ -17,9 +17,12 @@ import {
   RunAnalyzePayloadSchema,
   RunCreatePayloadSchema,
   RunFinishPayloadSchema,
+  RunGetPayloadSchema,
+  RunListPayloadSchema,
   RunLatestPayloadSchema,
   RunSetTranscriptPayloadSchema,
   RunSummary,
+  RunSummaryListSchema,
   RunSummaryNullableSchema,
   QuestDaily,
   QuestDailySchema,
@@ -371,6 +374,27 @@ async function getLatestRun(projectId: string): Promise<RunSummary | null> {
   );
 }
 
+async function getRun(runId: string): Promise<RunSummary | null> {
+  if (!state.activeProfileId) {
+    throw new Error("no_active_profile");
+  }
+  return invokeChecked("run_get", RunGetPayloadSchema, RunSummaryNullableSchema, {
+    profileId: state.activeProfileId,
+    runId,
+  });
+}
+
+async function getRuns(projectId: string, limit = 12): Promise<RunSummary[]> {
+  if (!state.activeProfileId) {
+    throw new Error("no_active_profile");
+  }
+  return invokeChecked("run_list", RunListPayloadSchema, RunSummaryListSchema, {
+    profileId: state.activeProfileId,
+    projectId,
+    limit,
+  });
+}
+
 async function getFeedback(feedbackId: string): Promise<FeedbackV1> {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
@@ -474,6 +498,8 @@ export const appStore = {
   setRunTranscript,
   analyzeRun,
   getLatestRun,
+  getRun,
+  getRuns,
   getFeedback,
   getFeedbackContext,
   getFeedbackNote,

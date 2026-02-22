@@ -123,6 +123,78 @@ pub fn run_get_latest(
 }
 
 #[tauri::command]
+pub fn run_get(
+    app: tauri::AppHandle,
+    profile_id: String,
+    run_id: String,
+) -> Result<Option<RunSummary>, String> {
+    db::ensure_profile_exists(&app, &profile_id)?;
+    let conn = db::open_profile(&app, &profile_id)?;
+
+    let run = conn
+        .query_row(
+            "SELECT id, project_id, created_at, audio_artifact_id, transcript_id, feedback_id
+             FROM runs
+             WHERE id = ?1",
+            params![run_id],
+            |row| {
+                Ok(RunSummary {
+                    id: row.get(0)?,
+                    project_id: row.get(1)?,
+                    created_at: row.get(2)?,
+                    audio_artifact_id: row.get(3)?,
+                    transcript_id: row.get(4)?,
+                    feedback_id: row.get(5)?,
+                })
+            },
+        )
+        .optional()
+        .map_err(|e| format!("run_lookup: {e}"))?;
+
+    Ok(run)
+}
+
+#[tauri::command]
+pub fn run_list(
+    app: tauri::AppHandle,
+    profile_id: String,
+    project_id: String,
+    limit: Option<u32>,
+) -> Result<Vec<RunSummary>, String> {
+    db::ensure_profile_exists(&app, &profile_id)?;
+    let conn = db::open_profile(&app, &profile_id)?;
+    let limit = limit.unwrap_or(12).max(1) as i64;
+
+    let mut stmt = conn
+        .prepare(
+            "SELECT id, project_id, created_at, audio_artifact_id, transcript_id, feedback_id
+             FROM runs
+             WHERE project_id = ?1
+             ORDER BY created_at DESC
+             LIMIT ?2",
+        )
+        .map_err(|e| format!("run_list_prepare: {e}"))?;
+    let rows = stmt
+        .query_map(params![project_id, limit], |row| {
+            Ok(RunSummary {
+                id: row.get(0)?,
+                project_id: row.get(1)?,
+                created_at: row.get(2)?,
+                audio_artifact_id: row.get(3)?,
+                transcript_id: row.get(4)?,
+                feedback_id: row.get(5)?,
+            })
+        })
+        .map_err(|e| format!("run_list_query: {e}"))?;
+
+    let mut runs = Vec::new();
+    for row in rows {
+        runs.push(row.map_err(|e| format!("run_list_row: {e}"))?);
+    }
+    Ok(runs)
+}
+
+#[tauri::command]
 pub fn run_analyze(
     app: tauri::AppHandle,
     profile_id: String,

@@ -13,7 +13,7 @@ const error = ref<string | null>(null);
 const isLoading = ref(false);
 const report = ref<QuestReportItem[]>([]);
 const attempts = ref<QuestAttemptSummary[]>([]);
-const latestRun = ref<RunSummary | null>(null);
+const runs = ref<RunSummary[]>([]);
 const isActivating = ref(false);
 
 const project = computed(() =>
@@ -99,13 +99,13 @@ const timeline = computed(() => {
     });
   }
 
-  if (latestRun.value) {
+  for (const run of runs.value) {
     items.push({
-      id: latestRun.value.id,
+      id: run.id,
       label: t("talk_report.timeline_boss_run"),
-      date: latestRun.value.created_at,
-      status: runStatus(latestRun.value),
-      to: `/boss-run?runId=${latestRun.value.id}`,
+      date: run.created_at,
+      status: runStatus(run),
+      to: `/boss-run?runId=${run.id}`,
     });
   }
 
@@ -149,7 +149,7 @@ async function loadReport() {
     }
     report.value = await appStore.getQuestReport(projectId.value);
     attempts.value = await appStore.getQuestAttempts(projectId.value, 12);
-    latestRun.value = await appStore.getLatestRun(projectId.value);
+    runs.value = await appStore.getRuns(projectId.value, 12);
   } catch (err) {
     error.value = toError(err);
   } finally {

@@ -75,9 +75,20 @@ export const RunAnalyzePayloadSchema = z.object({
   runId: IdSchema,
 });
 
+export const RunGetPayloadSchema = z.object({
+  profileId: IdSchema,
+  runId: IdSchema,
+});
+
 export const RunLatestPayloadSchema = z.object({
   profileId: IdSchema,
   projectId: IdSchema,
+});
+
+export const RunListPayloadSchema = z.object({
+  profileId: IdSchema,
+  projectId: IdSchema,
+  limit: z.number().int().positive().optional(),
 });
 
 export const RunSummarySchema = z.object({
@@ -90,6 +101,7 @@ export const RunSummarySchema = z.object({
 });
 
 export const RunSummaryNullableSchema = RunSummarySchema.nullable();
+export const RunSummaryListSchema = z.array(RunSummarySchema);
 
 export const QuestSchema = z.object({
   code: z.string().min(1),

@@ -15,6 +15,7 @@ const isLoading = ref(false);
 const isSaving = ref(false);
 const isAnalyzing = ref(false);
 const run = ref<RunSummary | null>(null);
+const requestedRunId = computed(() => String(route.query.runId || ""));
 
 const activeProfileId = computed(() => appStore.state.activeProfileId);
 const activeProject = computed(() => appStore.state.activeProject);
@@ -66,7 +67,14 @@ async function loadLatest() {
   isLoading.value = true;
   error.value = null;
   try {
-    run.value = await appStore.getLatestRun(activeProject.value.id);
+    if (requestedRunId.value) {
+      run.value = await appStore.getRun(requestedRunId.value);
+      if (!run.value) {
+        run.value = await appStore.getLatestRun(activeProject.value.id);
+      }
+    } else {
+      run.value = await appStore.getLatestRun(activeProject.value.id);
+    }
   } catch (err) {
     error.value = toError(err);
   } finally {
@@ -136,7 +144,7 @@ watch(
 );
 
 watch(
-  () => route.query.runId,
+  () => requestedRunId.value,
   () => {
     loadLatest();
   }
