@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+echo "lepupitre-asr placeholder: replace with real whisper.cpp sidecar" 1>&2
+exit 1

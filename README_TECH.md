@@ -108,3 +108,19 @@ Each step must preserve local data compatibility.
 
 ## 10) Feature plans
 - Whisper local transcription: `docs/plan/PLAN-WHISPER-LOCAL-TRANSCRIPTION.md`.
+
+
+## ASR sidecar (whisper.cpp)
+
+The app uses a bundled whisper.cpp sidecar binary for live transcription. By default it is resolved from the app resources; in dev you can override the path with environment variables.
+
+### Dev overrides
+
+- `LEPUPITRE_ASR_SIDECAR=/absolute/path/to/lepupitre-asr`
+- `LEPUPITRE_ASR_MODEL_PATH=/absolute/path/to/ggml-*.bin`
+
+### Packaging
+
+Place the built sidecar binary in `desktop/src-tauri/sidecar/` before running `pnpm -C desktop tauri build`. Tauri will bundle the `sidecar/lepupitre-asr` resource.
+
+Note: placeholder sidecar files are checked in to keep builds green. Replace them with real binaries before release.
