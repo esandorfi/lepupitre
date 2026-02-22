@@ -7,11 +7,12 @@ use std::process::Command;
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
 use std::time::Duration;
-use tauri::{Manager, State};
+use tauri::{Emitter, Manager, State};
 
 use crate::core::artifacts;
 use crate::core::db;
 use crate::core::dsp;
+use crate::core::models;
 use crate::core::recording::{LinearResampler, RingBuffer, WavWriter};
 use crate::core::vad::{VadConfig, VadState};
 
@@ -69,6 +70,24 @@ struct RecordingState {
     scratch: Vec<f32>,
 }
 
+#[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+struct AsrPartialEvent {
+    pub schema_version: String,
+    pub text: String,
+    pub t0_ms: i64,
+    pub t1_ms: i64,
+    pub seq: u64,
+}
+
+#[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+struct AsrCommitEvent {
+    pub schema_version: String,
+    pub segments: Vec<models::TranscriptSegment>,
+    pub seq: u64,
+}
+
 struct RecordingStartInfo {
     input_sample_rate: u32,
     input_channels: u16,
@@ -90,6 +109,12 @@ struct RecordingController {
     draft: artifacts::ArtifactDraft,
     state: Arc<Mutex<RecordingState>>,
     command_tx: mpsc::Sender<RecordingCommand>,
+    thread: thread::JoinHandle<()>,
+    live: LiveAsrHandle,
+}
+
+struct LiveAsrHandle {
+    stop_tx: mpsc::Sender<()>,
     thread: thread::JoinHandle<()>,
 }
 
@@ -152,6 +177,13 @@ pub fn recording_start(
 
     let recording_id = crate::core::ids::new_id("rec");
 
+    let (live_tx, live_rx) = mpsc::channel::<()>();
+    let live_state = state.clone();
+    let live_app = app.clone();
+    let live_thread = thread::spawn(move || {
+        run_live_asr(live_app, live_state, live_rx);
+    });
+
     *guard = Some(RecordingController {
         recording_id: recording_id.clone(),
         profile_id: profile_id.clone(),
@@ -159,6 +191,10 @@ pub fn recording_start(
         state,
         command_tx: cmd_tx,
         thread,
+        live: LiveAsrHandle {
+            stop_tx: live_tx,
+            thread: live_thread,
+        },
     });
 
     Ok(RecordingStartResult {
@@ -228,6 +264,8 @@ pub fn recording_stop(
         .recv_timeout(Duration::from_millis(STOP_TIMEOUT_MS))
         .map_err(|_| "recording_stop_timeout".to_string())??;
 
+    let _ = session.live.stop_tx.send(());
+    let _ = session.live.thread.join();
     let _ = session.thread.join();
 
     let metadata = serde_json::json!({
@@ -357,6 +395,88 @@ fn run_recording_thread(
     }
 
     Ok(())
+}
+
+fn run_live_asr(
+    app: tauri::AppHandle,
+    state: Arc<Mutex<RecordingState>>,
+    stop_rx: mpsc::Receiver<()>,
+) {
+    let mut seq: u64 = 0;
+    let mut speech_index: u64 = 1;
+    let mut in_speech = false;
+    let mut speech_start_ms: i64 = 0;
+
+    loop {
+        if stop_rx.try_recv().is_ok() {
+            if in_speech {
+                if let Ok(guard) = state.lock() {
+                    let now_ms = (guard.total_samples as f64 / TARGET_SAMPLE_RATE as f64 * 1000.0)
+                        .round() as i64;
+                    let segment = models::TranscriptSegment {
+                        t_start_ms: speech_start_ms,
+                        t_end_ms: now_ms,
+                        text: format!("(speech {speech_index})"),
+                        confidence: None,
+                    };
+                    seq += 1;
+                    let _ = app.emit(
+                        "asr.commit.v1",
+                        AsrCommitEvent {
+                            schema_version: "1.0.0".to_string(),
+                            segments: vec![segment],
+                            seq,
+                        },
+                    );
+                }
+            }
+            break;
+        }
+
+        thread::sleep(Duration::from_millis(800));
+
+        let (last_vad, total_samples) = match state.lock() {
+            Ok(guard) => (guard.last_vad, guard.total_samples),
+            Err(_) => continue,
+        };
+        let now_ms = (total_samples as f64 / TARGET_SAMPLE_RATE as f64 * 1000.0).round() as i64;
+
+        if last_vad {
+            if !in_speech {
+                in_speech = true;
+                speech_start_ms = now_ms;
+            }
+            seq += 1;
+            let _ = app.emit(
+                "asr.partial.v1",
+                AsrPartialEvent {
+                    schema_version: "1.0.0".to_string(),
+                    text: format!("(speech {speech_index}...)"),
+                    t0_ms: speech_start_ms,
+                    t1_ms: now_ms,
+                    seq,
+                },
+            );
+        } else if in_speech {
+            in_speech = false;
+            let segment = models::TranscriptSegment {
+                t_start_ms: speech_start_ms,
+                t_end_ms: now_ms,
+                text: format!("(speech {speech_index})"),
+                confidence: None,
+            };
+            speech_index += 1;
+            seq += 1;
+            let _ = app.emit(
+                "asr.commit.v1",
+                AsrCommitEvent {
+                    schema_version: "1.0.0".to_string(),
+                    segments: vec![segment],
+                    seq,
+                },
+            );
+        }
+    }
 }
 
 fn handle_input<T>(state: &Arc<Mutex<RecordingState>>, data: &[T], channels: u16)

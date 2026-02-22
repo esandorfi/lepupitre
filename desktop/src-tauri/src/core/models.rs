@@ -61,7 +61,7 @@ pub struct QuestDaily {
     pub due_boss_run: bool,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct TranscriptSegment {
     pub t_start_ms: i64,
     pub t_end_ms: i64,

@@ -6,6 +6,8 @@ import { useI18n } from "../lib/i18n";
 import { appStore } from "../stores/app";
 import { invokeChecked } from "../composables/useIpc";
 import {
+  AsrCommitEventSchema,
+  AsrPartialEventSchema,
   RecordingStartPayloadSchema,
   RecordingStartResponseSchema,
   RecordingStatusPayloadSchema,
@@ -13,6 +15,7 @@ import {
   RecordingStopPayloadSchema,
   RecordingStopResponseSchema,
   TranscriptGetPayloadSchema,
+  TranscriptSegment,
   TranscriptV1,
   TranscriptV1Schema,
   TranscribeAudioPayloadSchema,
@@ -60,11 +63,16 @@ const transcribeStage = ref<string | null>(null);
 const transcribeJobId = ref<string | null>(null);
 const transcript = ref<TranscriptV1 | null>(null);
 const recordingId = ref<string | null>(null);
+const liveSegments = ref<TranscriptSegment[]>([]);
+const livePartial = ref<string | null>(null);
+const livePartialWindow = ref<{ t0_ms: number; t1_ms: number } | null>(null);
 
 let statusTimer: number | null = null;
 let unlistenProgress: (() => void) | null = null;
 let unlistenCompleted: (() => void) | null = null;
 let unlistenFailed: (() => void) | null = null;
+let unlistenAsrPartial: (() => void) | null = null;
+let unlistenAsrCommit: (() => void) | null = null;
 
 type JobProgressEvent = {
   jobId: string;
@@ -90,6 +98,12 @@ function resetTranscription() {
   transcribeStage.value = null;
   transcribeJobId.value = null;
   transcript.value = null;
+}
+
+function resetLiveTranscript() {
+  liveSegments.value = [];
+  livePartial.value = null;
+  livePartialWindow.value = null;
 }
 
 function clearStatusTimer() {
@@ -130,6 +144,7 @@ async function startRecording() {
   liveLevel.value = 0;
   statusKey.value = "audio.status_requesting";
   resetTranscription();
+  resetLiveTranscript();
 
   try {
     const result = await invokeChecked(
@@ -228,7 +243,10 @@ function formatDuration(value: number | null) {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
-function formatTimestamp(ms: number) {
+function formatTimestamp(ms: number | null | undefined) {
+  if (ms === null || ms === undefined) {
+    return "0:00";
+  }
   const totalSeconds = Math.floor(ms / 1000);
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
@@ -264,6 +282,28 @@ onMounted(async () => {
     }
     error.value = event.payload.message;
   });
+
+  unlistenAsrPartial = await listen("asr.partial.v1", (event) => {
+    if (!isRecording.value) {
+      return;
+    }
+    const parsed = AsrPartialEventSchema.safeParse(event.payload);
+    if (!parsed.success) {
+      return;
+    }
+    livePartial.value = parsed.data.text;
+    livePartialWindow.value = { t0_ms: parsed.data.t0_ms, t1_ms: parsed.data.t1_ms };
+  });
+
+  unlistenAsrCommit = await listen("asr.commit.v1", (event) => {
+    const parsed = AsrCommitEventSchema.safeParse(event.payload);
+    if (!parsed.success) {
+      return;
+    }
+    liveSegments.value = [...liveSegments.value, ...parsed.data.segments];
+    livePartial.value = null;
+    livePartialWindow.value = null;
+  });
 });
 
 onBeforeUnmount(() => {
@@ -271,6 +311,8 @@ onBeforeUnmount(() => {
   unlistenProgress?.();
   unlistenCompleted?.();
   unlistenFailed?.();
+  unlistenAsrPartial?.();
+  unlistenAsrCommit?.();
 });
 
 async function revealRecording() {
@@ -366,7 +408,27 @@ async function revealRecording() {
       <span class="app-text">{{ transcribeProgress }}%</span>
       <span v-if="transcribeStage" class="app-subtle">({{ transcribeStage }})</span>
     </div>
-    <div v-if="transcript" class="app-card rounded-xl border p-3 text-sm">
+        <div v-if="liveSegments.length > 0 || livePartial" class="app-card rounded-xl border p-3 text-sm">
+      <div class="app-subtle text-xs uppercase tracking-[0.2em]">
+        {{ t("audio.live_transcript") }}
+      </div>
+      <div class="mt-2 space-y-2">
+        <div v-for="(segment, index) in liveSegments" :key="`live-${index}`">
+          <span class="app-subtle text-xs">
+            {{ formatTimestamp(segment.t_start_ms) }}–{{ formatTimestamp(segment.t_end_ms) }}
+          </span>
+          <div class="app-text">{{ segment.text }}</div>
+        </div>
+        <div v-if="livePartial" class="app-muted text-xs">
+          <span class="app-subtle">
+            {{ formatTimestamp(livePartialWindow?.t0_ms) }}–{{ formatTimestamp(livePartialWindow?.t1_ms) }}
+          </span>
+          <div class="app-text">{{ livePartial }}</div>
+        </div>
+      </div>
+    </div>
+
+<div v-if="transcript" class="app-card rounded-xl border p-3 text-sm">
       <div class="app-subtle text-xs uppercase tracking-[0.2em]">
         {{ t("audio.transcript_title") }}
       </div>

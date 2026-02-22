@@ -490,6 +490,7 @@ export type Quest = z.infer<typeof QuestSchema>;
 export type QuestDaily = z.infer<typeof QuestDailySchema>;
 export type QuestAttemptSummary = z.infer<typeof QuestAttemptSummarySchema>;
 export type QuestReportItem = z.infer<typeof QuestReportItemSchema>;
+export type TranscriptSegment = z.infer<typeof TranscriptSegmentSchema>;
 export type TranscriptV1 = z.infer<typeof TranscriptV1Schema>;
 export type FeedbackV1 = z.infer<typeof FeedbackV1Schema>;
 export type FeedbackContext = z.infer<typeof FeedbackContextSchema>;
