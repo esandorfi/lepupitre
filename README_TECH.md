@@ -121,6 +121,17 @@ The app uses a bundled whisper.cpp sidecar binary for live transcription. By def
 
 ### Packaging
 
+### Build the stub sidecar
+
+To build the stub sidecar that implements the JSON protocol (no real ASR yet), run:
+
+```
+./scripts/build-asr-sidecar.sh
+```
+
+This copies the binary into `desktop/src-tauri/sidecar/` for packaging.
+
+
 Place the built sidecar binary in `desktop/src-tauri/sidecar/` before running `pnpm -C desktop tauri build`. Tauri will bundle the `sidecar/lepupitre-asr` resource.
 
 Note: placeholder sidecar files are checked in to keep builds green. Replace them with real binaries before release.
