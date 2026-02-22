@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.1.2 - 2026-02-22
+Summary: 1 chores.
+Comparing from v0.1.1 to HEAD.
+
+### Chores
+- chore: distribution settings
+
 ## v0.1.1 - 2026-02-22
 Summary: 17 features, 2 fixes, 1 chores, 14 other.
 Initial release notes.
