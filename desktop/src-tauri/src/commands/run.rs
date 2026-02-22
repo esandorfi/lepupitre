@@ -1,5 +1,5 @@
 use crate::core::{analysis, artifacts, db, ids, time, transcript};
-use rusqlite::{params, OptionalExtension};
+use rusqlite::{params, ErrorCode, OptionalExtension};
 use serde::Serialize;
 
 #[derive(Debug, Serialize)]
@@ -25,17 +25,28 @@ pub fn run_create(
     project_id: String,
 ) -> Result<String, String> {
     db::ensure_profile_exists(&app, &profile_id)?;
-    let conn = db::open_profile(&app, &profile_id)?;
+    let mut conn = db::open_profile(&app, &profile_id)?;
     ensure_project_exists(&conn, &project_id)?;
 
     let id = ids::new_id("run");
     let now = time::now_rfc3339();
 
-    conn.execute(
+    let insert = conn.execute(
         "INSERT INTO runs (id, project_id, created_at) VALUES (?1, ?2, ?3)",
         params![id, project_id, now],
-    )
-    .map_err(|e| format!("run_insert: {e}"))?;
+    );
+    if let Err(err) = insert {
+        if is_audio_notnull_error(&err) {
+            db::ensure_runs_nullable(&mut conn)?;
+            conn.execute(
+                "INSERT INTO runs (id, project_id, created_at) VALUES (?1, ?2, ?3)",
+                params![id, project_id, now],
+            )
+            .map_err(|e| format!("run_insert: {e}"))?;
+        } else {
+            return Err(format!("run_insert: {err}"));
+        }
+    }
 
     Ok(id)
 }
@@ -306,4 +317,16 @@ fn ensure_transcript_artifact(
         return Err("artifact_not_transcript".to_string());
     }
     Ok(())
+}
+
+fn is_audio_notnull_error(err: &rusqlite::Error) -> bool {
+    match err {
+        rusqlite::Error::SqliteFailure(e, msg) => {
+            matches!(e.code, ErrorCode::ConstraintViolation)
+                && msg.as_deref()
+                    .unwrap_or_default()
+                    .contains("runs.audio_artifact_id")
+        }
+        _ => false,
+    }
 }
