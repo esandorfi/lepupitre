@@ -352,6 +352,7 @@ export const RecordingStopResponseSchema = AudioSaveResponseSchema.extend({
 export const TranscribeAudioPayloadSchema = z.object({
   profileId: IdSchema,
   audioArtifactId: IdSchema,
+  asrSettings: AsrSettingsSchema.optional(),
 });
 
 export const TranscribeResponseSchema = z.object({

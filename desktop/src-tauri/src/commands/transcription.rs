@@ -1,8 +1,9 @@
-use crate::core::{artifacts, asr_models, db, ids, models, transcript};
+use crate::core::{artifacts, asr_models, asr_sidecar, db, ids, models, transcript};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::fs::File;
 use std::io::{Read, Write};
+use std::path::PathBuf;
 use std::time::{Duration, Instant};
 use tauri::Emitter;
 
@@ -13,11 +14,58 @@ const EVENT_ASR_FINAL_PROGRESS: &str = "asr/final_progress/v1";
 const EVENT_ASR_FINAL_RESULT: &str = "asr/final_result/v1";
 const EVENT_MODEL_DOWNLOAD_PROGRESS: &str = "asr/model_download_progress/v1";
 
+const DEFAULT_MODEL_ID: &str = "tiny";
+const SIDECAR_ENV_PATH: &str = "LEPUPITRE_ASR_SIDECAR";
+const SIDECAR_MODEL_ENV_PATH: &str = "LEPUPITRE_ASR_MODEL_PATH";
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TranscribeResponse {
     pub transcript_id: String,
     pub job_id: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TranscribeAudioPayload {
+    profile_id: String,
+    audio_artifact_id: String,
+    asr_settings: Option<AsrSettingsPayload>,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AsrSettingsPayload {
+    model: Option<String>,
+    mode: Option<String>,
+    language: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+struct AsrRuntimeSettings {
+    model_id: String,
+    language: String,
+}
+
+fn normalize_asr_settings(payload: Option<AsrSettingsPayload>) -> AsrRuntimeSettings {
+    let mut model_id = DEFAULT_MODEL_ID.to_string();
+    let mut language = "auto".to_string();
+
+    if let Some(payload) = payload {
+        let _ = payload.mode.as_deref();
+        if let Some(model) = payload.model.as_deref() {
+            if model == "tiny" || model == "base" {
+                model_id = model.to_string();
+            }
+        }
+        if let Some(language_value) = payload.language.as_deref() {
+            if language_value == "auto" || language_value == "en" || language_value == "fr" {
+                language = language_value.to_string();
+            }
+        }
+    }
+
+    AsrRuntimeSettings { model_id, language }
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -81,10 +129,12 @@ pub enum TranscriptExportFormat {
 #[tauri::command]
 pub fn transcribe_audio(
     app: tauri::AppHandle,
-    profile_id: String,
-    audio_artifact_id: String,
+    payload: TranscribeAudioPayload,
 ) -> Result<TranscribeResponse, String> {
+    let profile_id = payload.profile_id;
+    let audio_artifact_id = payload.audio_artifact_id;
     db::ensure_profile_exists(&app, &profile_id)?;
+    let asr_settings = normalize_asr_settings(payload.asr_settings);
     let artifact = artifacts::get_artifact(&app, &profile_id, &audio_artifact_id)?;
     if artifact.artifact_type != "audio" {
         return Err("artifact_not_audio".to_string());
@@ -106,11 +156,18 @@ pub fn transcribe_audio(
             Some("analyze_audio".to_string()),
         )?;
 
-        let duration_ms = wav_duration_ms(&audio_bytes);
-        let total_ms = duration_ms.unwrap_or(0);
+        let (samples, duration_ms) = decode_wav_mono_16k(&audio_bytes)?;
+        let total_ms = duration_ms;
         emit_final_progress(&app, 0, total_ms)?;
 
-        let transcript = build_stub_transcript(duration_ms);
+        let segments = decode_with_sidecar(&app, &asr_settings, &samples, total_ms)?;
+        let transcript = models::TranscriptV1 {
+            schema_version: "1.0.0".to_string(),
+            language: asr_settings.language.clone(),
+            model_id: Some(asr_settings.model_id.clone()),
+            duration_ms: Some(duration_ms),
+            segments,
+        };
 
         emit_progress(
             &app,
@@ -124,7 +181,7 @@ pub fn transcribe_audio(
             serde_json::to_vec(&transcript).map_err(|e| format!("transcript_json: {e}"))?;
         let metadata = serde_json::json!({
             "source_audio_artifact_id": audio_artifact_id,
-            "provider": "mock",
+            "provider": "sidecar",
             "job_id": job_id,
         });
         let record = artifacts::store_bytes(
@@ -485,36 +542,72 @@ fn to_hex(bytes: &[u8]) -> String {
     out
 }
 
-fn wav_duration_ms(bytes: &[u8]) -> Option<i64> {
-    if bytes.len() < 44 {
-        return None;
-    }
-    let channels = u16::from_le_bytes([bytes[22], bytes[23]]) as u32;
-    let sample_rate = u32::from_le_bytes([bytes[24], bytes[25], bytes[26], bytes[27]]);
-    let bits_per_sample = u16::from_le_bytes([bytes[34], bytes[35]]) as u32;
-    let data_size = u32::from_le_bytes([bytes[40], bytes[41], bytes[42], bytes[43]]);
-    if channels == 0 || sample_rate == 0 || bits_per_sample == 0 {
-        return None;
-    }
-    let bytes_per_sample = bits_per_sample / 8;
-    if bytes_per_sample == 0 {
-        return None;
-    }
-    let sample_count = data_size / bytes_per_sample / channels;
-    Some(((sample_count as f64 / sample_rate as f64) * 1000.0) as i64)
+fn decode_with_sidecar(
+    app: &tauri::AppHandle,
+    settings: &AsrRuntimeSettings,
+    samples: &[f32],
+    duration_ms: i64,
+) -> Result<Vec<models::TranscriptSegment>, String> {
+    let sidecar_path = if let Ok(path) = std::env::var(SIDECAR_ENV_PATH) {
+        let path = PathBuf::from(path);
+        if path.exists() {
+            path
+        } else {
+            return Err("sidecar_missing".to_string());
+        }
+    } else {
+        asr_sidecar::resolve_sidecar_path(app)?
+    };
+
+    let model_path = if let Ok(path) = std::env::var(SIDECAR_MODEL_ENV_PATH) {
+        PathBuf::from(path)
+    } else {
+        let spec = asr_models::model_spec(&settings.model_id)
+            .ok_or_else(|| "model_unknown".to_string())?;
+        let dir = asr_models::models_dir(app)?;
+        let path = dir.join(spec.filename);
+        if !path.exists() {
+            return Err("model_missing".to_string());
+        }
+        path
+    };
+
+    let mut decoder =
+        asr_sidecar::SidecarDecoder::spawn(&sidecar_path, &model_path, &settings.language)?;
+    decoder.decode_window(samples, 0, duration_ms)
 }
 
-fn build_stub_transcript(duration_ms: Option<i64>) -> models::TranscriptV1 {
-    models::TranscriptV1 {
-        schema_version: "1.0.0".to_string(),
-        language: "fr".to_string(),
-        model_id: Some("mock".to_string()),
-        duration_ms,
-        segments: vec![models::TranscriptSegment {
-            t_start_ms: 0,
-            t_end_ms: duration_ms.unwrap_or(1000).max(1000),
-            text: "Transcription en cours — remplacement par whisper.cpp requis.".to_string(),
-            confidence: None,
-        }],
+fn decode_wav_mono_16k(bytes: &[u8]) -> Result<(Vec<f32>, i64), String> {
+    if bytes.len() < 44 {
+        return Err("wav_header".to_string());
     }
+    if &bytes[0..4] != b"RIFF" || &bytes[8..12] != b"WAVE" || &bytes[12..16] != b"fmt " {
+        return Err("wav_header".to_string());
+    }
+    let audio_format = u16::from_le_bytes([bytes[20], bytes[21]]);
+    let channels = u16::from_le_bytes([bytes[22], bytes[23]]);
+    let sample_rate = u32::from_le_bytes([bytes[24], bytes[25], bytes[26], bytes[27]]);
+    let bits_per_sample = u16::from_le_bytes([bytes[34], bytes[35]]);
+    if audio_format != 1 || channels != 1 || bits_per_sample != 16 {
+        return Err("wav_format".to_string());
+    }
+    if sample_rate != 16_000 {
+        return Err("wav_sample_rate".to_string());
+    }
+    if &bytes[36..40] != b"data" {
+        return Err("wav_data".to_string());
+    }
+    let data_size = u32::from_le_bytes([bytes[40], bytes[41], bytes[42], bytes[43]]) as usize;
+    let data_start = 44;
+    let data_end = data_start + data_size;
+    if bytes.len() < data_end {
+        return Err("wav_data".to_string());
+    }
+    let mut samples = Vec::with_capacity(data_size / 2);
+    for chunk in bytes[data_start..data_end].chunks_exact(2) {
+        let sample = i16::from_le_bytes([chunk[0], chunk[1]]);
+        samples.push(sample as f32 / 32768.0);
+    }
+    let duration_ms = ((samples.len() as f64 / sample_rate as f64) * 1000.0).round() as i64;
+    Ok((samples, duration_ms))
 }

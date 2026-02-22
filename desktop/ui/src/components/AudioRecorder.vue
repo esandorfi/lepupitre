@@ -249,6 +249,7 @@ async function transcribeRecording() {
       {
         profileId: activeProfileId.value,
         audioArtifactId: lastArtifactId.value,
+        asrSettings: transcriptionSettings.value,
       }
     );
     transcribeJobId.value = response.jobId ?? transcribeJobId.value;
