@@ -3,17 +3,33 @@ import { computed, onMounted, ref } from "vue";
 import { useRoute, RouterLink } from "vue-router";
 import { useI18n } from "../lib/i18n";
 import { appStore } from "../stores/app";
-import type { FeedbackV1 } from "../schemas/ipc";
+import type { FeedbackContext, FeedbackV1 } from "../schemas/ipc";
 
 const { t } = useI18n();
 const route = useRoute();
 const feedbackId = computed(() => String(route.params.feedbackId || ""));
 const feedback = ref<FeedbackV1 | null>(null);
+const context = ref<FeedbackContext | null>(null);
 const error = ref<string | null>(null);
 const isLoading = ref(false);
 const note = ref("");
 const lastSavedNote = ref("");
 const noteStatus = ref<"idle" | "saving" | "saved" | "error">("idle");
+const backLink = computed(() => {
+  if (context.value?.quest_code && context.value?.project_id) {
+    return `/quest/${context.value.quest_code}?from=talk&projectId=${context.value.project_id}`;
+  }
+  if (appStore.state.activeProject?.id) {
+    return `/talks/${appStore.state.activeProject.id}`;
+  }
+  return "/";
+});
+const questDisplayCode = computed(() => {
+  if (!context.value?.quest_code || !context.value?.project_id) {
+    return "";
+  }
+  return appStore.formatQuestCode(context.value.project_id, context.value.quest_code);
+});
 
 function toError(err: unknown) {
   return err instanceof Error ? err.message : String(err);
@@ -61,6 +77,7 @@ onMounted(async () => {
   try {
     await appStore.bootstrap();
     feedback.value = await appStore.getFeedback(feedbackId.value);
+    context.value = await appStore.getFeedbackContext(feedbackId.value);
     await loadNote();
   } catch (err) {
     error.value = toError(err);
@@ -80,6 +97,9 @@ onMounted(async () => {
       </div>
       <div class="app-text mt-2 text-2xl font-semibold">
         {{ feedback?.overall_score ?? "--" }}
+      </div>
+      <div v-if="context" class="app-muted mt-2 text-xs">
+        {{ t("feedback.quest_code") }}: {{ questDisplayCode }}
       </div>
 
       <div v-if="isLoading" class="app-muted mt-4 text-xs">
@@ -172,9 +192,18 @@ onMounted(async () => {
         {{ t("feedback.empty") }}
       </div>
 
-      <RouterLink class="app-link mt-4 inline-block text-xs underline" to="/">
-        {{ t("feedback.back_home") }}
+      <RouterLink class="app-link mt-4 inline-block text-xs underline" :to="backLink">
+        {{ t("feedback.back_parent") }}
       </RouterLink>
     </div>
   </section>
 </template>
+const backLink = computed(() => {
+  if (context.value?.quest_code && context.value?.project_id) {
+    return `/quest/${context.value.quest_code}?from=talk&projectId=${context.value.project_id}`;
+  }
+  if (appStore.state.activeProject?.id) {
+    return `/talks/${appStore.state.activeProject.id}`;
+  }
+  return "/";
+});

@@ -39,6 +39,7 @@ export const ProjectSummarySchema = z.object({
   audience: OptionalString,
   goal: OptionalString,
   duration_target_sec: z.number().int().positive().nullable().optional(),
+  talk_number: z.number().int().positive().nullable().optional(),
   stage: z.string().min(1),
   created_at: z.string().min(1),
   updated_at: z.string().min(1),
@@ -124,6 +125,28 @@ export const QuestAttemptSummarySchema = z.object({
 
 export const QuestAttemptListResponseSchema = z.array(QuestAttemptSummarySchema);
 
+export const QuestReportPayloadSchema = z.object({
+  profileId: IdSchema,
+  projectId: IdSchema,
+});
+
+export const QuestReportItemSchema = z.object({
+  quest_code: z.string().min(1),
+  quest_title: z.string().min(1),
+  quest_prompt: z.string().min(1),
+  output_type: z.string().min(1),
+  category: z.string().min(1),
+  estimated_sec: z.number().int().positive(),
+  attempt_id: IdSchema.optional().nullable(),
+  attempt_created_at: z.string().min(1).optional().nullable(),
+  has_audio: z.boolean(),
+  has_transcript: z.boolean(),
+  has_feedback: z.boolean(),
+  feedback_id: IdSchema.optional().nullable(),
+});
+
+export const QuestReportResponseSchema = z.array(QuestReportItemSchema);
+
 export const AudioSavePayloadSchema = z.object({
   profileId: IdSchema,
   base64: z.string().min(1),
@@ -180,6 +203,15 @@ export const FeedbackGetPayloadSchema = z.object({
   feedbackId: IdSchema,
 });
 
+export const FeedbackContextPayloadSchema = FeedbackGetPayloadSchema;
+
+export const FeedbackContextSchema = z.object({
+  attempt_id: IdSchema,
+  project_id: IdSchema,
+  quest_code: z.string().min(1),
+  quest_title: z.string().min(1),
+});
+
 export const FeedbackNoteGetPayloadSchema = FeedbackGetPayloadSchema;
 
 export const FeedbackNoteSetPayloadSchema = z.object({
@@ -231,5 +263,7 @@ export type ProjectListItem = z.infer<typeof ProjectListItemSchema>;
 export type Quest = z.infer<typeof QuestSchema>;
 export type QuestDaily = z.infer<typeof QuestDailySchema>;
 export type QuestAttemptSummary = z.infer<typeof QuestAttemptSummarySchema>;
+export type QuestReportItem = z.infer<typeof QuestReportItemSchema>;
 export type TranscriptV1 = z.infer<typeof TranscriptV1Schema>;
 export type FeedbackV1 = z.infer<typeof FeedbackV1Schema>;
+export type FeedbackContext = z.infer<typeof FeedbackContextSchema>;

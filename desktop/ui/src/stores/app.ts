@@ -25,11 +25,17 @@ import {
   QuestAttemptsListPayloadSchema,
   QuestAttemptSummary,
   QuestAttemptListResponseSchema,
+  QuestReportPayloadSchema,
+  QuestReportResponseSchema,
+  QuestReportItem,
   AnalyzeAttemptPayloadSchema,
   AnalyzeResponseSchema,
   FeedbackGetPayloadSchema,
   FeedbackV1,
   FeedbackV1Schema,
+  FeedbackContextPayloadSchema,
+  FeedbackContextSchema,
+  FeedbackContext,
   FeedbackNoteGetPayloadSchema,
   FeedbackNoteResponseSchema,
   FeedbackNoteSetPayloadSchema,
@@ -45,6 +51,7 @@ const state = reactive({
   recentAttempts: [] as QuestAttemptSummary[],
   lastAttemptId: null as string | null,
   lastFeedbackId: null as string | null,
+  lastFeedbackContext: null as FeedbackContext | null,
 });
 
 async function loadProfiles() {
@@ -173,17 +180,61 @@ async function loadRecentAttempts(limit = 6) {
     state.recentAttempts = [];
     return;
   }
-  const attempts = await invokeChecked(
+  const attempts = await getQuestAttempts(state.activeProject.id, limit);
+  state.recentAttempts = attempts;
+}
+
+async function getQuestAttempts(projectId: string, limit = 10) {
+  if (!state.activeProfileId) {
+    throw new Error("no_active_profile");
+  }
+  return invokeChecked(
     "quest_attempts_list",
     QuestAttemptsListPayloadSchema,
     QuestAttemptListResponseSchema,
     {
       profileId: state.activeProfileId,
-      projectId: state.activeProject.id,
+      projectId,
       limit,
     }
   );
-  state.recentAttempts = attempts;
+}
+
+async function getQuestReport(projectId: string): Promise<QuestReportItem[]> {
+  if (!state.activeProfileId) {
+    throw new Error("no_active_profile");
+  }
+  return invokeChecked(
+    "quest_report",
+    QuestReportPayloadSchema,
+    QuestReportResponseSchema,
+    { profileId: state.activeProfileId, projectId }
+  );
+}
+
+function getTalkNumber(projectId: string): number | null {
+  if (!projectId) {
+    return null;
+  }
+  const project = state.projects.find((item) => item.id === projectId);
+  if (project?.talk_number) {
+    return project.talk_number;
+  }
+  if (state.activeProject?.id === projectId) {
+    return state.activeProject.talk_number ?? null;
+  }
+  return null;
+}
+
+function formatQuestCode(projectId: string, questCode: string): string {
+  if (!questCode) {
+    return "";
+  }
+  const number = getTalkNumber(projectId);
+  if (!number) {
+    return questCode;
+  }
+  return `T${number}-${questCode}`;
 }
 
 async function submitQuestText(questCode: string, text: string) {
@@ -267,6 +318,20 @@ async function getFeedback(feedbackId: string): Promise<FeedbackV1> {
   );
 }
 
+async function getFeedbackContext(feedbackId: string): Promise<FeedbackContext> {
+  if (!state.activeProfileId) {
+    throw new Error("no_active_profile");
+  }
+  const context = await invokeChecked(
+    "feedback_context_get",
+    FeedbackContextPayloadSchema,
+    FeedbackContextSchema,
+    { profileId: state.activeProfileId, feedbackId }
+  );
+  state.lastFeedbackContext = context;
+  return context;
+}
+
 async function getFeedbackNote(feedbackId: string): Promise<string | null> {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
@@ -331,11 +396,16 @@ export const appStore = {
   setActiveProject,
   loadDailyQuest,
   loadRecentAttempts,
+  getQuestAttempts,
   submitQuestText,
   submitQuestAudio,
   getQuestByCode,
+  getQuestReport,
+  getTalkNumber,
+  formatQuestCode,
   analyzeAttempt,
   getFeedback,
+  getFeedbackContext,
   getFeedbackNote,
   setFeedbackNote,
 };

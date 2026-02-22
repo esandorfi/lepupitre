@@ -11,6 +11,24 @@ const route = useRoute();
 const router = useRouter();
 
 const questCode = computed(() => String(route.params.questCode || ""));
+const backLink = computed(() => {
+  if (route.query.projectId) {
+    return `/talks/${route.query.projectId}`;
+  }
+  if (appStore.state.activeProject?.id) {
+    return `/talks/${appStore.state.activeProject.id}`;
+  }
+  return "/";
+});
+const displayQuestCode = computed(() => {
+  const code = questCode.value;
+  if (!code) {
+    return t("quest.daily");
+  }
+  const projectId =
+    String(route.query.projectId || "") || appStore.state.activeProject?.id || "";
+  return appStore.formatQuestCode(projectId, code);
+});
 const text = ref("");
 const error = ref<string | null>(null);
 const isSubmitting = ref(false);
@@ -155,7 +173,7 @@ watch(questCode, loadQuest);
 <template>
   <section class="space-y-6">
     <p class="app-muted text-sm font-semibold">
-      {{ t("quest.code") }}: {{ questCode || t("quest.daily") }}
+      {{ t("quest.code") }}: {{ displayQuestCode }}
     </p>
 
     <div v-if="isLoading" class="app-surface rounded-2xl border p-4">
@@ -187,7 +205,7 @@ watch(questCode, loadQuest);
           >
             {{ t("quest.skip_transcription") }}
           </button>
-          <RouterLink class="app-muted text-xs underline" to="/">
+          <RouterLink class="app-muted text-xs underline" :to="backLink">
             {{ t("quest.back") }}
           </RouterLink>
         </div>
@@ -214,7 +232,7 @@ watch(questCode, loadQuest);
           >
             {{ t("quest.submit") }}
           </button>
-          <RouterLink class="app-muted text-xs underline" to="/">
+          <RouterLink class="app-muted text-xs underline" :to="backLink">
             {{ t("quest.back") }}
           </RouterLink>
         </div>

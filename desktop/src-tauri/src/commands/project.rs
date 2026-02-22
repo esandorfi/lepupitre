@@ -9,6 +9,7 @@ pub struct ProjectListItem {
     pub audience: Option<String>,
     pub goal: Option<String>,
     pub duration_target_sec: Option<i64>,
+    pub talk_number: Option<i64>,
     pub stage: String,
     pub created_at: String,
     pub updated_at: String,
@@ -25,16 +26,18 @@ pub fn project_create(
     let conn = db::open_profile(&app, &profile_id)?;
     let id = ids::new_id("proj");
     let now = time::now_rfc3339();
+    let talk_number = next_talk_number(&conn)?;
 
     conn.execute(
-        "INSERT INTO talk_projects (id, title, audience, goal, duration_target_sec, stage, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+        "INSERT INTO talk_projects (id, title, audience, goal, duration_target_sec, talk_number, stage, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
         params![
             id,
             payload.title,
             payload.audience,
             payload.goal,
             payload.duration_target_sec,
+            talk_number,
             "draft",
             now,
             now
@@ -80,7 +83,7 @@ pub fn project_list(
 
     let mut stmt = conn
         .prepare(
-            "SELECT id, title, audience, goal, duration_target_sec, stage, created_at, updated_at
+            "SELECT id, title, audience, goal, duration_target_sec, talk_number, stage, created_at, updated_at
              FROM talk_projects
              ORDER BY updated_at DESC",
         )
@@ -94,9 +97,10 @@ pub fn project_list(
                 audience: row.get(2)?,
                 goal: row.get(3)?,
                 duration_target_sec: row.get(4)?,
-                stage: row.get(5)?,
-                created_at: row.get(6)?,
-                updated_at: row.get(7)?,
+                talk_number: row.get(5)?,
+                stage: row.get(6)?,
+                created_at: row.get(7)?,
+                updated_at: row.get(8)?,
                 is_active: false,
             })
         })
@@ -144,7 +148,7 @@ fn fetch_project_by_id(
 ) -> Result<Option<ProjectSummary>, String> {
     let mut stmt = conn
         .prepare(
-            "SELECT id, title, audience, goal, duration_target_sec, stage, created_at, updated_at
+            "SELECT id, title, audience, goal, duration_target_sec, talk_number, stage, created_at, updated_at
              FROM talk_projects
              WHERE id = ?1",
         )
@@ -158,9 +162,10 @@ fn fetch_project_by_id(
                 audience: row.get(2)?,
                 goal: row.get(3)?,
                 duration_target_sec: row.get(4)?,
-                stage: row.get(5)?,
-                created_at: row.get(6)?,
-                updated_at: row.get(7)?,
+                talk_number: row.get(5)?,
+                stage: row.get(6)?,
+                created_at: row.get(7)?,
+                updated_at: row.get(8)?,
             })
         })
         .optional()
@@ -172,7 +177,7 @@ fn fetch_project_by_id(
 fn fetch_latest_project(conn: &rusqlite::Connection) -> Result<Option<ProjectSummary>, String> {
     let mut stmt = conn
         .prepare(
-            "SELECT id, title, audience, goal, duration_target_sec, stage, created_at, updated_at
+            "SELECT id, title, audience, goal, duration_target_sec, talk_number, stage, created_at, updated_at
              FROM talk_projects
              ORDER BY updated_at DESC
              LIMIT 1",
@@ -187,9 +192,10 @@ fn fetch_latest_project(conn: &rusqlite::Connection) -> Result<Option<ProjectSum
             audience: row.get(2).map_err(|e| format!("audience: {e}"))?,
             goal: row.get(3).map_err(|e| format!("goal: {e}"))?,
             duration_target_sec: row.get(4).map_err(|e| format!("duration: {e}"))?,
-            stage: row.get(5).map_err(|e| format!("stage: {e}"))?,
-            created_at: row.get(6).map_err(|e| format!("created_at: {e}"))?,
-            updated_at: row.get(7).map_err(|e| format!("updated_at: {e}"))?,
+            talk_number: row.get(5).map_err(|e| format!("talk_number: {e}"))?,
+            stage: row.get(6).map_err(|e| format!("stage: {e}"))?,
+            created_at: row.get(7).map_err(|e| format!("created_at: {e}"))?,
+            updated_at: row.get(8).map_err(|e| format!("updated_at: {e}"))?,
         };
         return Ok(Some(summary));
     }
@@ -216,4 +222,15 @@ fn set_active_project_id(conn: &rusqlite::Connection, project_id: &str) -> Resul
     )
     .map_err(|e| format!("active_set: {e}"))?;
     Ok(())
+}
+
+fn next_talk_number(conn: &rusqlite::Connection) -> Result<i64, String> {
+    let max_value: i64 = conn
+        .query_row(
+            "SELECT COALESCE(MAX(talk_number), 0) FROM talk_projects",
+            [],
+            |row| row.get(0),
+        )
+        .map_err(|e| format!("talk_number_max: {e}"))?;
+    Ok(max_value + 1)
 }

@@ -46,6 +46,7 @@ pub fn open_profile(app: &tauri::AppHandle, profile_id: &str) -> Result<Connecti
         .map_err(|e| format!("migrate: {e}"))?;
 
     seed_quests(&mut conn)?;
+    ensure_talk_numbers(&mut conn)?;
 
     Ok(conn)
 }
@@ -95,5 +96,54 @@ fn seed_quests(conn: &mut Connection) -> Result<(), String> {
         .map_err(|e| format!("insert_quest: {e}"))?;
     }
     tx.commit().map_err(|e| format!("commit: {e}"))?;
+    Ok(())
+}
+
+fn ensure_talk_numbers(conn: &mut Connection) -> Result<(), String> {
+    let has_column: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM pragma_table_info('talk_projects') WHERE name = 'talk_number'",
+            [],
+            |row| row.get(0),
+        )
+        .map_err(|e| format!("talk_number_check: {e}"))?;
+    if has_column == 0 {
+        conn.execute(
+            "ALTER TABLE talk_projects ADD COLUMN talk_number INTEGER",
+            [],
+        )
+        .map_err(|e| format!("talk_number_add: {e}"))?;
+    }
+
+    let max_existing: i64 = conn
+        .query_row(
+            "SELECT COALESCE(MAX(talk_number), 0) FROM talk_projects WHERE talk_number > 0",
+            [],
+            |row| row.get(0),
+        )
+        .map_err(|e| format!("talk_number_max: {e}"))?;
+
+    let mut next_number = max_existing + 1;
+    let mut stmt = conn
+        .prepare(
+            "SELECT id FROM talk_projects
+             WHERE talk_number IS NULL OR talk_number <= 0
+             ORDER BY created_at ASC",
+        )
+        .map_err(|e| format!("talk_number_prepare: {e}"))?;
+    let rows = stmt
+        .query_map([], |row| row.get::<_, String>(0))
+        .map_err(|e| format!("talk_number_query: {e}"))?;
+
+    for row in rows {
+        let id = row.map_err(|e| format!("talk_number_row: {e}"))?;
+        conn.execute(
+            "UPDATE talk_projects SET talk_number = ?1 WHERE id = ?2",
+            params![next_number, id],
+        )
+        .map_err(|e| format!("talk_number_update: {e}"))?;
+        next_number += 1;
+    }
+
     Ok(())
 }

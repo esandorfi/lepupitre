@@ -6,6 +6,7 @@ import TalksPage from "../pages/TalksPage.vue";
 import ProjectSetupPage from "../pages/ProjectSetupPage.vue";
 import QuestPage from "../pages/QuestPage.vue";
 import FeedbackPage from "../pages/FeedbackPage.vue";
+import TalkReportPage from "../pages/TalkReportPage.vue";
 import TalkBuilderPage from "../pages/TalkBuilderPage.vue";
 import BossRunPage from "../pages/BossRunPage.vue";
 import PacksPage from "../pages/PacksPage.vue";
@@ -15,6 +16,7 @@ export const routes: RouteRecordRaw[] = [
   { path: "/", name: "home", component: HomePage },
   { path: "/profiles", name: "profiles", component: ProfilesPage },
   { path: "/talks", name: "talks", component: TalksPage },
+  { path: "/talks/:projectId", name: "talk-report", component: TalkReportPage },
   { path: "/project/new", name: "project-new", component: ProjectSetupPage },
   { path: "/quest/:questCode", name: "quest", component: QuestPage },
   { path: "/feedback/:feedbackId", name: "feedback", component: FeedbackPage },

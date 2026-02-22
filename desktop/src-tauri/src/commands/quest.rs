@@ -97,6 +97,82 @@ pub fn quest_attempts_list(
     Ok(attempts)
 }
 
+#[derive(Debug, Serialize)]
+pub struct QuestReportItem {
+    pub quest_code: String,
+    pub quest_title: String,
+    pub quest_prompt: String,
+    pub output_type: String,
+    pub category: String,
+    pub estimated_sec: i64,
+    pub attempt_id: Option<String>,
+    pub attempt_created_at: Option<String>,
+    pub has_audio: bool,
+    pub has_transcript: bool,
+    pub has_feedback: bool,
+    pub feedback_id: Option<String>,
+}
+
+#[tauri::command]
+pub fn quest_report(
+    app: tauri::AppHandle,
+    profile_id: String,
+    project_id: String,
+) -> Result<Vec<QuestReportItem>, String> {
+    db::ensure_profile_exists(&app, &profile_id)?;
+    let conn = db::open_profile(&app, &profile_id)?;
+
+    let mut stmt = conn
+        .prepare(
+            "SELECT q.code, q.title, q.prompt, q.output_type, q.category, q.estimated_sec,
+                    qa.id, qa.created_at, qa.audio_artifact_id, qa.transcript_id, qa.feedback_id
+             FROM quests q
+             LEFT JOIN (
+                SELECT qa1.*
+                FROM quest_attempts qa1
+                JOIN (
+                  SELECT quest_code, MAX(created_at) AS max_created
+                  FROM quest_attempts
+                  WHERE project_id = ?1
+                  GROUP BY quest_code
+                ) latest
+                ON qa1.quest_code = latest.quest_code AND qa1.created_at = latest.max_created
+                WHERE qa1.project_id = ?1
+             ) qa ON qa.quest_code = q.code
+             ORDER BY q.code ASC",
+        )
+        .map_err(|e| format!("prepare: {e}"))?;
+
+    let rows = stmt
+        .query_map(params![project_id], |row| {
+            let audio_id: Option<String> = row.get(8)?;
+            let transcript_id: Option<String> = row.get(9)?;
+            let feedback_id: Option<String> = row.get(10)?;
+            Ok(QuestReportItem {
+                quest_code: row.get(0)?,
+                quest_title: row.get(1)?,
+                quest_prompt: row.get(2)?,
+                output_type: row.get(3)?,
+                category: row.get(4)?,
+                estimated_sec: row.get(5)?,
+                attempt_id: row.get(6)?,
+                attempt_created_at: row.get(7)?,
+                has_audio: audio_id.is_some(),
+                has_transcript: transcript_id.is_some(),
+                has_feedback: feedback_id.is_some(),
+                feedback_id,
+            })
+        })
+        .map_err(|e| format!("query: {e}"))?;
+
+    let mut report = Vec::new();
+    for row in rows {
+        report.push(row.map_err(|e| format!("row: {e}"))?);
+    }
+
+    Ok(report)
+}
+
 #[tauri::command]
 pub fn quest_submit_text(
     app: tauri::AppHandle,

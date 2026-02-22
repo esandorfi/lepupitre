@@ -105,6 +105,7 @@ desktop/ui/src/
 * `/` → **HomePage** (quête du jour + résumé progression)
 * `/profiles` → **ProfilesPage** (liste/crea/switch)
 * `/talks` → **TalksPage** (liste + talk actif)
+* `/talks/:projectId` → **TalkReportPage** (rapport du talk)
 * `/project/new` → **ProjectSetupPage**
 * `/quest/:questCode` → **QuestPage** (pré-brief + capture)
 * `/feedback/:feedbackId` → **FeedbackPage**
@@ -259,7 +260,21 @@ Exemples :
 
 ---
 
-## 9.4 ProjectSetupPage
+## 9.4 TalkReportPage
+
+**But** : rapport complet d'un talk.
+
+* résumé (totaux, feedbacks, dernière activité)
+* bibliothèque des quêtes (statut + CTA)
+* tentatives récentes
+
+**AC**
+
+* visible même si le talk n'est pas actif
+
+---
+
+## 9.5 ProjectSetupPage
 
 * formulaire : titre, audience, durée, objectif
 * CTA “Créer”
@@ -270,7 +285,7 @@ Exemples :
 
 ---
 
-## 9.5 QuestPage (pré-brief + capture)
+## 9.6 QuestPage (pré-brief + capture)
 
 **États**
 
@@ -292,7 +307,7 @@ Exemples :
 
 ---
 
-## 9.6 FeedbackPage
+## 9.7 FeedbackPage
 
 **But** : corriger sans surcharge.
 
@@ -311,7 +326,7 @@ Exemples :
 
 ---
 
-## 9.7 TalkBuilderPage
+## 9.8 TalkBuilderPage
 
 **But** : plan vivant.
 
@@ -326,7 +341,7 @@ Exemples :
 
 ---
 
-## 9.8 BossRunPage
+## 9.9 BossRunPage
 
 * Enregistrement 6–12 min + timer
 * Processing + rapport (FeedbackPage)
@@ -338,7 +353,7 @@ Exemples :
 
 ---
 
-## 9.9 PacksPage
+## 9.10 PacksPage
 
 * Export pack review (zip)
 * Import review (file picker)
@@ -350,7 +365,7 @@ Exemples :
 
 ---
 
-## 9.10 SettingsPage
+## 9.11 SettingsPage
 
 * Modèle Whisper (sélection + état installé)
 * Stockage local (chemin, taille)

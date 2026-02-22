@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS talk_projects (
   audience TEXT,
   goal TEXT,
   duration_target_sec INTEGER,
+  talk_number INTEGER,
   stage TEXT NOT NULL,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL

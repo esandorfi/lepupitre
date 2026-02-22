@@ -38,6 +38,11 @@ function attemptStatus(attempt: QuestAttemptSummary) {
   return t("quest.status_submitted");
 }
 
+function questCodeLabel(code: string) {
+  const projectId = state.value.activeProject?.id ?? "";
+  return appStore.formatQuestCode(projectId, code);
+}
+
 onMounted(async () => {
   await appStore.bootstrap();
   await appStore.loadRecentAttempts();
@@ -87,7 +92,14 @@ watch(
           <span v-if="state.activeProject">{{ state.activeProject.title }}</span>
           <span v-else>{{ t("home.talk_empty") }}</span>
         </div>
-        <RouterLink class="app-link mt-3 inline-block text-xs underline" to="/talks">
+        <RouterLink
+          v-if="state.activeProject"
+          class="app-link mt-3 inline-block text-xs underline"
+          :to="`/talks/${state.activeProject.id}`"
+        >
+          {{ t("home.talk_action") }}
+        </RouterLink>
+        <RouterLink v-else class="app-link mt-3 inline-block text-xs underline" to="/talks">
           {{ t("home.talk_action") }}
         </RouterLink>
       </div>
@@ -131,7 +143,8 @@ watch(
             <div>
               <div class="app-text text-sm">{{ attempt.quest_title }}</div>
               <div class="app-muted text-[11px]">
-                {{ formatDate(attempt.created_at) }} · {{ attemptStatus(attempt) }}
+                {{ formatDate(attempt.created_at) }} · {{ attemptStatus(attempt) }} ·
+                {{ questCodeLabel(attempt.quest_code) }}
               </div>
             </div>
             <div class="flex items-center gap-2">

@@ -9,6 +9,14 @@ pub struct AnalyzeResponse {
     pub feedback_id: String,
 }
 
+#[derive(Debug, Serialize)]
+pub struct FeedbackContext {
+    pub attempt_id: String,
+    pub project_id: String,
+    pub quest_code: String,
+    pub quest_title: String,
+}
+
 #[tauri::command]
 pub fn analyze_attempt(
     app: tauri::AppHandle,
@@ -114,6 +122,46 @@ pub fn feedback_get(
     let feedback: models::FeedbackV1 =
         serde_json::from_slice(&bytes).map_err(|e| format!("feedback_parse: {e}"))?;
     Ok(feedback)
+}
+
+#[tauri::command]
+pub fn feedback_context_get(
+    app: tauri::AppHandle,
+    profile_id: String,
+    feedback_id: String,
+) -> Result<FeedbackContext, String> {
+    db::ensure_profile_exists(&app, &profile_id)?;
+    let conn = db::open_profile(&app, &profile_id)?;
+
+    let (subject_type, subject_id): (String, String) = conn
+        .query_row(
+            "SELECT subject_type, subject_id FROM auto_feedback WHERE id = ?1",
+            [feedback_id.as_str()],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
+        .map_err(|e| format!("feedback_lookup: {e}"))?;
+
+    if subject_type != "quest_attempt" {
+        return Err("feedback_subject_not_supported".to_string());
+    }
+
+    let (attempt_id, project_id, quest_code, quest_title): (String, String, String, String) = conn
+        .query_row(
+            "SELECT qa.id, qa.project_id, qa.quest_code, q.title
+             FROM quest_attempts qa
+             JOIN quests q ON qa.quest_code = q.code
+             WHERE qa.id = ?1",
+            [subject_id.as_str()],
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+        )
+        .map_err(|e| format!("attempt_lookup: {e}"))?;
+
+    Ok(FeedbackContext {
+        attempt_id,
+        project_id,
+        quest_code,
+        quest_title,
+    })
 }
 
 #[tauri::command]

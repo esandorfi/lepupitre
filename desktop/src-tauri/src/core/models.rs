@@ -25,6 +25,7 @@ pub struct ProjectSummary {
     pub audience: Option<String>,
     pub goal: Option<String>,
     pub duration_target_sec: Option<i64>,
+    pub talk_number: Option<i64>,
     pub stage: String,
     pub created_at: String,
     pub updated_at: String,
