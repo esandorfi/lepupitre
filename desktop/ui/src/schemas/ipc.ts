@@ -84,6 +84,32 @@ export const PackExportPayloadSchema = z.object({
   runId: IdSchema,
 });
 
+export const PackInspectPayloadSchema = z.object({
+  profileId: IdSchema,
+  path: z.string().min(1),
+});
+
+export const PackFileSummarySchema = z.object({
+  role: z.string().min(1),
+  bytes: z.number(),
+  mime: z.string().min(1),
+});
+
+export const PackInspectResponseSchema = z.object({
+  fileName: z.string().min(1),
+  fileBytes: z.number(),
+  schemaVersion: z.string().min(1),
+  packId: IdSchema,
+  createdAt: z.string().min(1),
+  appVersion: z.string().min(1),
+  profileId: IdSchema.nullable(),
+  projectId: IdSchema,
+  runId: IdSchema,
+  durationMs: z.number(),
+  reviewerTag: z.string().min(1).nullable(),
+  files: z.array(PackFileSummarySchema),
+});
+
 export const PeerReviewImportPayloadSchema = z.object({
   profileId: IdSchema,
   path: z.string().min(1),
@@ -91,6 +117,8 @@ export const PeerReviewImportPayloadSchema = z.object({
 
 export const PeerReviewImportResponseSchema = z.object({
   peerReviewId: IdSchema,
+  projectId: IdSchema,
+  runId: IdSchema,
 });
 
 export const RunCreatePayloadSchema = z.object({
@@ -354,6 +382,7 @@ export type ProjectSummary = z.infer<typeof ProjectSummarySchema>;
 export type ProjectListItem = z.infer<typeof ProjectListItemSchema>;
 export type OutlineDoc = z.infer<typeof OutlineDocSchema>;
 export type ExportResult = z.infer<typeof ExportResultSchema>;
+export type PackInspectResponse = z.infer<typeof PackInspectResponseSchema>;
 export type RunSummary = z.infer<typeof RunSummarySchema>;
 export type Quest = z.infer<typeof QuestSchema>;
 export type QuestDaily = z.infer<typeof QuestDailySchema>;

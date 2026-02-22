@@ -158,62 +158,72 @@ function cycleTheme() {
 
 <template>
   <div class="app-shell min-h-screen">
-    <header class="app-toolbar border-b px-6 py-4">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <div class="app-toolbar-muted text-xs font-bold uppercase tracking-[0.3em]">
-            Le Pupitre
+    <header class="app-toolbar border-b">
+      <div class="app-container px-6 py-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="app-toolbar-muted text-xs font-bold uppercase tracking-[0.3em]">
+              Le Pupitre
+            </div>
+            <div class="app-toolbar-muted text-[10px] font-semibold">v{{ appVersion }}</div>
           </div>
-          <div class="app-toolbar-muted text-[10px] font-semibold">v{{ appVersion }}</div>
+          <div class="flex items-center gap-2">
+            <RouterLink
+              class="app-toolbar-button cursor-pointer rounded-full border px-3 py-1 text-xs transition"
+              to="/profiles"
+            >
+              {{ t("nav.profiles") }}
+            </RouterLink>
+            <RouterLink
+              class="app-toolbar-button cursor-pointer rounded-full border px-3 py-1 text-xs transition"
+              to="/packs"
+            >
+              {{ t("nav.import") }}
+            </RouterLink>
+            <button
+              class="app-toolbar-button cursor-pointer rounded-full border px-3 py-1 text-xs transition"
+              type="button"
+              @click="cycleTheme"
+            >
+              {{ t("theme.label") }}: {{ themeLabel }}
+            </button>
+            <button
+              class="app-toolbar-button cursor-pointer rounded-full border px-3 py-1 text-xs transition"
+              type="button"
+              @click="toggleLocale"
+            >
+              {{ locale.toUpperCase() }}
+            </button>
+          </div>
         </div>
-        <div class="flex items-center gap-2">
+        <nav class="app-nav-text mt-3 flex flex-wrap items-center gap-3">
           <RouterLink
-            class="app-toolbar-button cursor-pointer rounded-full border px-3 py-1 text-xs transition"
-            to="/profiles"
+            class="app-toolbar-link app-pill rounded-full px-3 py-1 transition"
+            exact-active-class="app-pill-active font-semibold"
+            to="/"
           >
-            {{ t("nav.profiles") }}
+            {{ t("nav.home") }}
           </RouterLink>
-          <button
-            class="app-toolbar-button cursor-pointer rounded-full border px-3 py-1 text-xs transition"
-            type="button"
-            @click="cycleTheme"
+          <RouterLink
+            class="app-toolbar-link app-pill rounded-full px-3 py-1 transition"
+            exact-active-class="app-pill-active font-semibold"
+            to="/talks"
           >
-            {{ t("theme.label") }}: {{ themeLabel }}
-          </button>
-          <button
-            class="app-toolbar-button cursor-pointer rounded-full border px-3 py-1 text-xs transition"
-            type="button"
-            @click="toggleLocale"
-          >
-            {{ locale.toUpperCase() }}
-          </button>
-        </div>
+            {{ talkLabel }}
+          </RouterLink>
+          <UBreadcrumb
+            v-if="breadcrumbItems.length > 0"
+            class="app-breadcrumb app-nav-text"
+            separator-icon="i-lucide-arrow-right"
+            :items="breadcrumbItems"
+          />
+        </nav>
       </div>
-      <nav class="app-nav-text mt-3 flex flex-wrap items-center gap-3">
-        <RouterLink
-          class="app-toolbar-link app-pill rounded-full px-3 py-1 transition"
-          exact-active-class="app-pill-active font-semibold"
-          to="/"
-        >
-          {{ t("nav.home") }}
-        </RouterLink>
-        <RouterLink
-          class="app-toolbar-link app-pill rounded-full px-3 py-1 transition"
-          exact-active-class="app-pill-active font-semibold"
-          to="/talks"
-        >
-          {{ talkLabel }}
-        </RouterLink>
-        <UBreadcrumb
-          v-if="breadcrumbItems.length > 0"
-          class="app-breadcrumb app-nav-text"
-          separator-icon="i-lucide-arrow-right"
-          :items="breadcrumbItems"
-        />
-      </nav>
     </header>
     <main class="px-6 py-6">
-      <slot />
+      <div class="app-container">
+        <slot />
+      </div>
     </main>
   </div>
 </template>

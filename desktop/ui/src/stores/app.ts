@@ -22,6 +22,8 @@ import {
   OutlineDoc,
   ExportResult,
   PackExportPayloadSchema,
+  PackInspectPayloadSchema,
+  PackInspectResponseSchema,
   PeerReviewImportPayloadSchema,
   PeerReviewImportResponseSchema,
   RunAnalyzePayloadSchema,
@@ -446,6 +448,16 @@ async function exportPack(runId: string): Promise<ExportResult> {
   });
 }
 
+async function inspectPack(path: string) {
+  if (!state.activeProfileId) {
+    throw new Error("no_active_profile");
+  }
+  return invokeChecked("pack_inspect", PackInspectPayloadSchema, PackInspectResponseSchema, {
+    profileId: state.activeProfileId,
+    path,
+  });
+}
+
 async function importPeerReview(path: string) {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
@@ -459,7 +471,7 @@ async function importPeerReview(path: string) {
       path,
     }
   );
-  return response.peerReviewId;
+  return response;
 }
 
 async function getFeedback(feedbackId: string): Promise<FeedbackV1> {
@@ -571,6 +583,7 @@ export const appStore = {
   saveOutline,
   exportOutline,
   exportPack,
+  inspectPack,
   importPeerReview,
   getFeedback,
   getFeedbackContext,

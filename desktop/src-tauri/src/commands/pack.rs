@@ -1,10 +1,11 @@
 use crate::core::{artifacts, db, ids, models, time, transcript};
 use rusqlite::{params, OptionalExtension};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
+use std::collections::HashMap;
 use zip::write::FileOptions;
 use zip::{CompressionMethod, ZipArchive, ZipWriter};
 
@@ -18,7 +19,7 @@ struct ArtifactRow {
     bytes: u64,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 struct PackManifestV1 {
     schema_version: String,
     pack_id: String,
@@ -30,13 +31,13 @@ struct PackManifestV1 {
     files: Vec<PackFileEntry>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 struct PackRun {
     run_id: String,
     duration_ms: i64,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 struct PackFileEntry {
     path: String,
     role: String,
@@ -214,6 +215,115 @@ pub fn pack_export(
 #[serde(rename_all = "camelCase")]
 pub struct PeerReviewImportResponse {
     pub peer_review_id: String,
+    pub project_id: String,
+    pub run_id: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PackFileSummary {
+    pub role: String,
+    pub bytes: u64,
+    pub mime: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PackInspectResponse {
+    pub file_name: String,
+    pub file_bytes: u64,
+    pub schema_version: String,
+    pub pack_id: String,
+    pub created_at: String,
+    pub app_version: String,
+    pub profile_id: Option<String>,
+    pub project_id: String,
+    pub run_id: String,
+    pub duration_ms: i64,
+    pub reviewer_tag: Option<String>,
+    pub files: Vec<PackFileSummary>,
+}
+
+#[tauri::command]
+pub fn pack_inspect(
+    app: tauri::AppHandle,
+    profile_id: String,
+    path: String,
+) -> Result<PackInspectResponse, String> {
+    db::ensure_profile_exists(&app, &profile_id)?;
+
+    let archive_path = PathBuf::from(path);
+    let file_name = archive_path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("pack.zip")
+        .to_string();
+    let file_bytes = std::fs::metadata(&archive_path)
+        .map_err(|e| format!("pack_stat: {e}"))?
+        .len();
+
+    let archive_file = File::open(&archive_path).map_err(|e| format!("pack_open: {e}"))?;
+    let mut archive = ZipArchive::new(archive_file).map_err(|e| format!("pack_zip: {e}"))?;
+
+    validate_zip_entries(&mut archive)?;
+
+    let manifest_bytes = read_zip_file(&mut archive, "manifest.json")?;
+    let manifest: PackManifestV1 =
+        serde_json::from_slice(&manifest_bytes).map_err(|e| format!("manifest_parse: {e}"))?;
+    if manifest.schema_version != "1.0.0" {
+        return Err("manifest_schema_mismatch".to_string());
+    }
+
+    let files_by_role = files_by_role(&manifest.files);
+    let _audio_entry = files_by_role
+        .get("audio")
+        .ok_or_else(|| "manifest_missing_audio".to_string())?;
+    let _transcript_entry = files_by_role
+        .get("transcript")
+        .ok_or_else(|| "manifest_missing_transcript".to_string())?;
+    let _outline_entry = files_by_role
+        .get("outline")
+        .ok_or_else(|| "manifest_missing_outline".to_string())?;
+    let _rubric_entry = files_by_role
+        .get("rubric")
+        .ok_or_else(|| "manifest_missing_rubric".to_string())?;
+    let review_entry = files_by_role
+        .get("review_template")
+        .ok_or_else(|| "manifest_missing_review".to_string())?;
+
+    let review_bytes = read_zip_file(&mut archive, &review_entry.path)?;
+    let review_json: serde_json::Value =
+        serde_json::from_slice(&review_bytes).map_err(|e| format!("review_parse: {e}"))?;
+    let reviewer_tag = review_json
+        .get("reviewer_tag")
+        .and_then(|value| value.as_str())
+        .map(|value| value.to_string())
+        .filter(|value| !value.trim().is_empty());
+
+    let files = manifest
+        .files
+        .iter()
+        .map(|entry| PackFileSummary {
+            role: entry.role.clone(),
+            bytes: entry.bytes,
+            mime: entry.mime.clone(),
+        })
+        .collect();
+
+    Ok(PackInspectResponse {
+        file_name,
+        file_bytes,
+        schema_version: manifest.schema_version,
+        pack_id: manifest.pack_id,
+        created_at: manifest.created_at,
+        app_version: manifest.app_version,
+        profile_id: manifest.profile_id,
+        project_id: manifest.project_id,
+        run_id: manifest.run.run_id,
+        duration_ms: manifest.run.duration_ms,
+        reviewer_tag,
+        files,
+    })
 }
 
 #[tauri::command]
@@ -232,22 +342,40 @@ pub fn peer_review_import(
     validate_zip_entries(&mut archive)?;
 
     let manifest_bytes = read_zip_file(&mut archive, "manifest.json")?;
-    let manifest: serde_json::Value =
+    let manifest: PackManifestV1 =
         serde_json::from_slice(&manifest_bytes).map_err(|e| format!("manifest_parse: {e}"))?;
-    let schema_version = manifest
-        .get("schema_version")
-        .and_then(|value| value.as_str())
-        .unwrap_or("");
-    if schema_version != "1.0.0" {
+    if manifest.schema_version != "1.0.0" {
         return Err("manifest_schema_mismatch".to_string());
     }
-    let run_id = manifest
-        .get("run")
-        .and_then(|run| run.get("run_id"))
-        .and_then(|value| value.as_str())
-        .ok_or_else(|| "manifest_missing_run".to_string())?;
 
-    let review_bytes = read_zip_file(&mut archive, "review/review_template.json")?;
+    let files_by_role = files_by_role(&manifest.files);
+    let audio_entry = files_by_role
+        .get("audio")
+        .ok_or_else(|| "manifest_missing_audio".to_string())?;
+    let transcript_entry = files_by_role
+        .get("transcript")
+        .ok_or_else(|| "manifest_missing_transcript".to_string())?;
+    let outline_entry = files_by_role
+        .get("outline")
+        .ok_or_else(|| "manifest_missing_outline".to_string())?;
+    let rubric_entry = files_by_role
+        .get("rubric")
+        .ok_or_else(|| "manifest_missing_rubric".to_string())?;
+    let review_entry = files_by_role
+        .get("review_template")
+        .ok_or_else(|| "manifest_missing_review".to_string())?;
+
+    let audio_bytes = read_zip_file(&mut archive, &audio_entry.path)?;
+    ensure_sha_match(&audio_entry.sha256, &audio_bytes)?;
+    let transcript_bytes = read_zip_file(&mut archive, &transcript_entry.path)?;
+    ensure_sha_match(&transcript_entry.sha256, &transcript_bytes)?;
+    let outline_bytes = read_zip_file(&mut archive, &outline_entry.path)?;
+    ensure_sha_match(&outline_entry.sha256, &outline_bytes)?;
+    let rubric_bytes = read_zip_file(&mut archive, &rubric_entry.path)?;
+    ensure_sha_match(&rubric_entry.sha256, &rubric_bytes)?;
+    let review_bytes = read_zip_file(&mut archive, &review_entry.path)?;
+    ensure_sha_match(&review_entry.sha256, &review_bytes)?;
+
     let review_json: serde_json::Value =
         serde_json::from_slice(&review_bytes).map_err(|e| format!("review_parse: {e}"))?;
     let reviewer_tag = review_json
@@ -255,9 +383,105 @@ pub fn peer_review_import(
         .and_then(|value| value.as_str())
         .map(|value| value.to_string());
 
+    let project_id = ids::new_id("proj");
+    let talk_number = next_talk_number(&conn)?;
+    let now = time::now_rfc3339();
+    let talk_title = format!("Peer review: {}", manifest.pack_id);
+    conn.execute(
+        "INSERT INTO talk_projects (id, title, audience, goal, duration_target_sec, talk_number, stage, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+        params![
+            project_id,
+            talk_title,
+            Option::<String>::None,
+            Option::<String>::None,
+            Option::<i64>::None,
+            talk_number,
+            "peer_review",
+            now,
+            now
+        ],
+    )
+    .map_err(|e| format!("project_insert: {e}"))?;
+
+    let outline_text = String::from_utf8(outline_bytes.clone())
+        .map_err(|_| "outline_invalid_utf8".to_string())?;
+    conn.execute(
+        "INSERT INTO talk_outlines (project_id, outline_md, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4)",
+        params![project_id, outline_text, now, now],
+    )
+    .map_err(|e| format!("outline_insert: {e}"))?;
+
+    let audio_record = artifacts::store_bytes(
+        &app,
+        &profile_id,
+        "audio",
+        "wav",
+        &audio_bytes,
+        &serde_json::json!({
+            "source": "peer_review_import",
+            "pack_id": manifest.pack_id,
+            "role": "audio",
+        }),
+    )?;
+    let transcript_record = artifacts::store_bytes(
+        &app,
+        &profile_id,
+        "transcript",
+        "json",
+        &transcript_bytes,
+        &serde_json::json!({
+            "source": "peer_review_import",
+            "pack_id": manifest.pack_id,
+            "role": "transcript",
+        }),
+    )?;
+    let _outline_record = artifacts::store_bytes(
+        &app,
+        &profile_id,
+        "outline",
+        "md",
+        &outline_bytes,
+        &serde_json::json!({
+            "source": "peer_review_import",
+            "pack_id": manifest.pack_id,
+            "role": "outline",
+        }),
+    )?;
+    let _rubric_record = artifacts::store_bytes(
+        &app,
+        &profile_id,
+        "rubric",
+        "json",
+        &rubric_bytes,
+        &serde_json::json!({
+            "source": "peer_review_import",
+            "pack_id": manifest.pack_id,
+            "role": "rubric",
+        }),
+    )?;
+
+    let run_id = ids::new_id("run");
+    conn.execute(
+        "INSERT INTO runs (id, project_id, created_at, audio_artifact_id, transcript_id)
+         VALUES (?1, ?2, ?3, ?4, ?5)",
+        params![
+            run_id,
+            project_id,
+            manifest.created_at,
+            audio_record.id,
+            transcript_record.id
+        ],
+    )
+    .map_err(|e| format!("run_insert: {e}"))?;
+
     let metadata = serde_json::json!({
         "source": "peer_review_import",
-        "run_id": run_id,
+        "pack_id": manifest.pack_id,
+        "pack_run_id": manifest.run.run_id,
+        "import_run_id": run_id,
+        "project_id": project_id,
     });
     let record = artifacts::store_bytes(
         &app,
@@ -269,7 +493,6 @@ pub fn peer_review_import(
     )?;
 
     let review_id = ids::new_id("peer");
-    let now = time::now_rfc3339();
     conn.execute(
         "INSERT INTO peer_reviews (id, run_id, created_at, reviewer_tag, review_json_artifact_id)
          VALUES (?1, ?2, ?3, ?4, ?5)",
@@ -279,6 +502,8 @@ pub fn peer_review_import(
 
     Ok(PeerReviewImportResponse {
         peer_review_id: review_id,
+        project_id,
+        run_id,
     })
 }
 
@@ -488,4 +713,32 @@ fn read_zip_file(archive: &mut ZipArchive<File>, name: &str) -> Result<Vec<u8>, 
     file.read_to_end(&mut bytes)
         .map_err(|e| format!("pack_read: {e}"))?;
     Ok(bytes)
+}
+
+fn files_by_role(files: &[PackFileEntry]) -> HashMap<String, PackFileEntry> {
+    let mut map = HashMap::new();
+    for entry in files {
+        if !map.contains_key(&entry.role) {
+            map.insert(entry.role.clone(), entry.clone());
+        }
+    }
+    map
+}
+
+fn ensure_sha_match(expected: &str, bytes: &[u8]) -> Result<(), String> {
+    if sha256_hex(bytes) != expected {
+        return Err("pack_sha_mismatch".to_string());
+    }
+    Ok(())
+}
+
+fn next_talk_number(conn: &rusqlite::Connection) -> Result<i64, String> {
+    let max_value: i64 = conn
+        .query_row(
+            "SELECT COALESCE(MAX(talk_number), 0) FROM talk_projects",
+            [],
+            |row| row.get(0),
+        )
+        .map_err(|e| format!("talk_number_max: {e}"))?;
+    Ok(max_value + 1)
 }

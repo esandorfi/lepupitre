@@ -6,6 +6,7 @@ pub fn run() {
     #[cfg(debug_assertions)]
     {
         tauri::Builder::default()
+            .plugin(tauri_plugin_dialog::init())
             .invoke_handler(tauri::generate_handler![
                 commands::audio::audio_reveal_wav,
                 commands::audio::audio_save_wav,
@@ -17,6 +18,7 @@ pub fn run() {
                 commands::outline::export_outline,
                 commands::outline::outline_get,
                 commands::outline::outline_set,
+                commands::pack::pack_inspect,
                 commands::pack::pack_export,
                 commands::pack::peer_review_import,
                 commands::profile::profile_create,
@@ -53,6 +55,7 @@ pub fn run() {
     #[cfg(not(debug_assertions))]
     {
         tauri::Builder::default()
+            .plugin(tauri_plugin_dialog::init())
             .invoke_handler(tauri::generate_handler![
                 commands::audio::audio_reveal_wav,
                 commands::audio::audio_save_wav,
@@ -64,6 +67,7 @@ pub fn run() {
                 commands::outline::export_outline,
                 commands::outline::outline_get,
                 commands::outline::outline_set,
+                commands::pack::pack_inspect,
                 commands::pack::pack_export,
                 commands::pack::peer_review_import,
                 commands::profile::profile_create,
