@@ -8,6 +8,7 @@ pub fn run() {
         tauri::Builder::default()
             .manage(commands::audio::RecordingManager::default())
             .plugin(tauri_plugin_dialog::init())
+            .plugin(tauri_plugin_shell::init())
             .invoke_handler(tauri::generate_handler![
                 commands::audio::audio_reveal_wav,
                 commands::audio::audio_save_wav,
@@ -52,6 +53,12 @@ pub fn run() {
                 commands::transcription::transcribe_audio,
                 commands::transcription::transcript_get,
                 commands::transcription::transcript_export,
+                commands::transcription::asr_models_list,
+                commands::transcription::asr_model_download,
+                commands::transcription::asr_model_remove,
+                commands::transcription::asr_models_list,
+                commands::transcription::asr_model_download,
+                commands::transcription::asr_model_remove,
                 commands::security::security_prepare_appdata_file,
                 commands::security::security_probe_fs
             ])
@@ -64,6 +71,7 @@ pub fn run() {
         tauri::Builder::default()
             .manage(commands::audio::RecordingManager::default())
             .plugin(tauri_plugin_dialog::init())
+            .plugin(tauri_plugin_shell::init())
             .invoke_handler(tauri::generate_handler![
                 commands::audio::audio_reveal_wav,
                 commands::audio::audio_save_wav,
@@ -107,7 +115,9 @@ pub fn run() {
                 commands::run::run_set_transcript,
                 commands::transcription::transcribe_audio,
                 commands::transcription::transcript_get,
-                commands::transcription::transcript_export
+                commands::transcription::transcript_export,
+                commands::transcription::asr_models_list,
+                commands::transcription::asr_model_download
             ])
             .run(tauri::generate_context!())
             .expect("error while running tauri application");

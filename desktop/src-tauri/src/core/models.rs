@@ -44,6 +44,29 @@ pub struct ExportResult {
 }
 
 #[derive(Debug, Serialize)]
+pub struct AsrModelStatus {
+    pub id: String,
+    pub label: String,
+    pub bundled: bool,
+    pub installed: bool,
+    pub expected_bytes: u64,
+    pub expected_sha256: String,
+    pub source_url: String,
+    pub path: Option<String>,
+    pub size_bytes: Option<u64>,
+    pub checksum_ok: Option<bool>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AsrModelDownloadResult {
+    pub model_id: String,
+    pub path: String,
+    pub bytes: u64,
+    pub sha256: String,
+}
+
+#[derive(Debug, Serialize)]
 pub struct Quest {
     pub code: String,
     pub title: String,

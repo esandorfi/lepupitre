@@ -1,5 +1,9 @@
-use crate::core::{artifacts, db, ids, models, transcript};
+use crate::core::{artifacts, asr_models, db, ids, models, transcript};
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
+use std::fs::File;
+use std::io::{Read, Write};
+use std::time::{Duration, Instant};
 use tauri::Emitter;
 
 const EVENT_JOB_PROGRESS: &str = "job:progress";
@@ -7,6 +11,7 @@ const EVENT_JOB_COMPLETED: &str = "job:completed";
 const EVENT_JOB_FAILED: &str = "job:failed";
 const EVENT_ASR_FINAL_PROGRESS: &str = "asr/final_progress/v1";
 const EVENT_ASR_FINAL_RESULT: &str = "asr/final_result/v1";
+const EVENT_MODEL_DOWNLOAD_PROGRESS: &str = "asr/model_download_progress/v1";
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -53,6 +58,15 @@ struct AsrFinalResultEvent {
     pub schema_version: String,
     pub text: String,
     pub segments: Vec<models::TranscriptSegment>,
+}
+
+#[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+struct AsrModelDownloadProgressEvent {
+    pub schema_version: String,
+    pub model_id: String,
+    pub downloaded_bytes: u64,
+    pub total_bytes: u64,
 }
 
 #[derive(Debug, Deserialize)]
@@ -164,6 +178,146 @@ pub fn transcript_get(
 ) -> Result<models::TranscriptV1, String> {
     db::ensure_profile_exists(&app, &profile_id)?;
     transcript::load_transcript(&app, &profile_id, &transcript_id)
+}
+
+#[tauri::command]
+pub fn asr_models_list(app: tauri::AppHandle) -> Result<Vec<models::AsrModelStatus>, String> {
+    asr_models::list_models(&app)
+}
+
+#[tauri::command]
+pub fn asr_model_remove(app: tauri::AppHandle, model_id: String) -> Result<(), String> {
+    let spec = asr_models::model_spec(&model_id).ok_or_else(|| "model_unknown".to_string())?;
+    let dir = asr_models::models_dir(&app)?;
+    let final_path = dir.join(spec.filename);
+    let tmp_path = dir.join(format!("{}.download", spec.filename));
+
+    if final_path.exists() {
+        std::fs::remove_file(&final_path).map_err(|e| format!("model_remove: {e}"))?;
+    }
+    if tmp_path.exists() {
+        let _ = std::fs::remove_file(&tmp_path);
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn asr_model_download(
+    app: tauri::AppHandle,
+    model_id: String,
+) -> Result<models::AsrModelDownloadResult, String> {
+    let app_handle = app.clone();
+    let model_id_clone = model_id.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        download_model_blocking(&app_handle, &model_id_clone)
+    })
+    .await
+    .map_err(|e| format!("download_join: {e}"))?
+}
+
+fn download_model_blocking(
+    app: &tauri::AppHandle,
+    model_id: &str,
+) -> Result<models::AsrModelDownloadResult, String> {
+    let spec = asr_models::model_spec(model_id).ok_or_else(|| "model_unknown".to_string())?;
+    let dir = asr_models::models_dir(app)?;
+    let final_path = dir.join(spec.filename);
+
+    if final_path.exists() {
+        let models = asr_models::list_models(app)?;
+        if let Some(model) = models
+            .iter()
+            .find(|model| model.id == model_id && model.installed)
+        {
+            let bytes = model.size_bytes.unwrap_or(model.expected_bytes);
+            return Ok(models::AsrModelDownloadResult {
+                model_id: model_id.to_string(),
+                path: model
+                    .path
+                    .clone()
+                    .unwrap_or_else(|| final_path.to_string_lossy().to_string()),
+                bytes,
+                sha256: model.expected_sha256.clone(),
+            });
+        }
+    }
+
+    crate::commands::assert_valid_event_name(EVENT_MODEL_DOWNLOAD_PROGRESS);
+
+    let tmp_path = dir.join(format!("{}.download", spec.filename));
+    let result = (|| -> Result<models::AsrModelDownloadResult, String> {
+        let client = reqwest::blocking::Client::builder()
+            .timeout(Duration::from_secs(60 * 30))
+            .user_agent("LePupitre")
+            .build()
+            .map_err(|e| format!("download_client: {e}"))?;
+        let mut response = client
+            .get(spec.url)
+            .send()
+            .map_err(|e| format!("download_request: {e}"))?;
+        if !response.status().is_success() {
+            return Err(format!("download_status: {}", response.status()));
+        }
+
+        let total_bytes = response.content_length().unwrap_or(spec.size_bytes);
+        emit_model_download_progress(app, model_id, 0, total_bytes)?;
+
+        let mut file = File::create(&tmp_path).map_err(|e| format!("download_create: {e}"))?;
+        let mut hasher = Sha256::new();
+        let mut buffer = [0u8; 16 * 1024];
+        let mut downloaded = 0u64;
+        let mut last_emit_bytes = 0u64;
+        let mut last_emit_at = Instant::now();
+
+        loop {
+            let read = response
+                .read(&mut buffer)
+                .map_err(|e| format!("download_read: {e}"))?;
+            if read == 0 {
+                break;
+            }
+            file.write_all(&buffer[..read])
+                .map_err(|e| format!("download_write: {e}"))?;
+            hasher.update(&buffer[..read]);
+            downloaded += read as u64;
+
+            if downloaded.saturating_sub(last_emit_bytes) >= 1_048_576
+                || last_emit_at.elapsed() >= Duration::from_millis(250)
+            {
+                emit_model_download_progress(app, model_id, downloaded, total_bytes)?;
+                last_emit_bytes = downloaded;
+                last_emit_at = Instant::now();
+            }
+        }
+
+        file.flush().map_err(|e| format!("download_flush: {e}"))?;
+
+        if spec.size_bytes > 0 && downloaded != spec.size_bytes {
+            return Err("download_size_mismatch".to_string());
+        }
+
+        let sha256 = to_hex(&hasher.finalize());
+        if sha256 != spec.sha256 {
+            return Err("download_checksum_mismatch".to_string());
+        }
+
+        std::fs::rename(&tmp_path, &final_path).map_err(|e| format!("download_finalize: {e}"))?;
+        emit_model_download_progress(app, model_id, downloaded, total_bytes)?;
+
+        Ok(models::AsrModelDownloadResult {
+            model_id: model_id.to_string(),
+            path: final_path.to_string_lossy().to_string(),
+            bytes: downloaded,
+            sha256,
+        })
+    })();
+
+    if result.is_err() {
+        let _ = std::fs::remove_file(&tmp_path);
+    }
+
+    result
 }
 
 #[tauri::command]
@@ -288,6 +442,34 @@ fn emit_final_result(
     )
     .map_err(|e| format!("emit_final_result: {e}"))?;
     Ok(())
+}
+
+fn emit_model_download_progress(
+    app: &tauri::AppHandle,
+    model_id: &str,
+    downloaded_bytes: u64,
+    total_bytes: u64,
+) -> Result<(), String> {
+    crate::commands::assert_valid_event_name(EVENT_MODEL_DOWNLOAD_PROGRESS);
+    app.emit(
+        EVENT_MODEL_DOWNLOAD_PROGRESS,
+        AsrModelDownloadProgressEvent {
+            schema_version: "1.0.0".to_string(),
+            model_id: model_id.to_string(),
+            downloaded_bytes,
+            total_bytes,
+        },
+    )
+    .map_err(|e| format!("emit_model_download: {e}"))?;
+    Ok(())
+}
+
+fn to_hex(bytes: &[u8]) -> String {
+    let mut out = String::with_capacity(bytes.len() * 2);
+    for byte in bytes {
+        out.push_str(&format!("{:02x}", byte));
+    }
+    out
 }
 
 fn wav_duration_ms(bytes: &[u8]) -> Option<i64> {

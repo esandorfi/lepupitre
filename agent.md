@@ -9,6 +9,7 @@
 - Ship vertical slices: each pass must run end-to-end (UI + backend).
 - Keep changes minimal and reversible; avoid speculative abstractions.
 - Prefer explicit, typed contracts and runtime validation at IPC boundaries.
+- IPC payloads must be schema-aligned end-to-end (Rust serde casing ↔ Zod schemas ↔ UI usage). If a field name changes, update all three and add a quick validation check.
 - No network by default; least-privilege IPC and strict CSP.
 - Migrations and schemas are versioned; secrets never in SQLite.
 - Treat each MR as a stop point: reflect, run quality checks, and review logic before proceeding.

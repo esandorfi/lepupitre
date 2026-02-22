@@ -20,10 +20,12 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
+tauri-plugin-shell = "2"
 base64 = "0.22.1"
 chrono = { version = "0.4.38", default-features = false, features = ["clock"] }
 cpal = "0.15.3"
 rusqlite = { version = "0.31.0", features = ["bundled"] }
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "rustls-tls", "http2", "gzip"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10.8"

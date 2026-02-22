@@ -19,7 +19,7 @@
 - **Model storage**: `AppDataDir/LePupitre/models/whisper`
   - macOS: `~/Library/Application Support/LePupitre/models/whisper`
   - Windows: `%APPDATA%\LePupitre\models\whisper`
-- **Events**: versioned payloads (e.g., `asr.partial.v1`).
+- **Events**: versioned payloads (e.g., `asr/partial/v1`).
 
 ## MR plan (incremental)
 
@@ -33,7 +33,7 @@
 - ADR: sidecar + model management + event versioning.
 - IPC contracts for:
   - `recording.start`, `recording.stop`
-  - `asr.partial.v1`, `asr.commit.v1`, `asr.final_progress.v1`, `asr.final_result.v1`
+  - `asr/partial/v1`, `asr/commit/v1`, `asr/final_progress/v1`, `asr/final_result/v1`
 - Settings schema:
   - `model`: tiny | base
   - `mode`: live+final | final-only | auto
@@ -92,7 +92,7 @@
 - Export formats.
 
 **Deliverables**
-- `asr.final_progress.v1`, `asr.final_result.v1`
+- `asr/final_progress/v1`, `asr/final_result/v1`
 - Export txt/json/srt/vtt.
 
 **Quality gate**

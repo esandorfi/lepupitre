@@ -368,27 +368,27 @@ export const TranscriptV1Schema = z.object({
 });
 
 export const AsrPartialEventSchema = z.object({
-  schema_version: z.literal("1.0.0"),
+  schemaVersion: z.literal("1.0.0"),
   text: z.string(),
-  t0_ms: z.number().int().nonnegative(),
-  t1_ms: z.number().int().nonnegative(),
+  t0Ms: z.number().int().nonnegative(),
+  t1Ms: z.number().int().nonnegative(),
   seq: z.number().int().nonnegative(),
 });
 
 export const AsrCommitEventSchema = z.object({
-  schema_version: z.literal("1.0.0"),
+  schemaVersion: z.literal("1.0.0"),
   segments: z.array(TranscriptSegmentSchema).min(1),
   seq: z.number().int().nonnegative(),
 });
 
 export const AsrFinalProgressEventSchema = z.object({
-  schema_version: z.literal("1.0.0"),
-  processed_ms: z.number().int().nonnegative(),
-  total_ms: z.number().int().nonnegative(),
+  schemaVersion: z.literal("1.0.0"),
+  processedMs: z.number().int().nonnegative(),
+  totalMs: z.number().int().nonnegative(),
 });
 
 export const AsrFinalResultEventSchema = z.object({
-  schema_version: z.literal("1.0.0"),
+  schemaVersion: z.literal("1.0.0"),
   text: z.string().min(1),
   segments: z.array(TranscriptSegmentSchema).min(1),
 });
@@ -404,6 +404,43 @@ export const TranscriptExportPayloadSchema = z.object({
   profileId: IdSchema,
   transcriptId: IdSchema,
   format: TranscriptExportFormatSchema,
+});
+
+export const AsrModelStatusSchema = z.object({
+  id: z.string().min(1),
+  label: z.string().min(1),
+  bundled: z.boolean(),
+  installed: z.boolean(),
+  expected_bytes: z.number().nonnegative(),
+  expected_sha256: z.string().min(1),
+  source_url: z.string().min(1),
+  path: z.string().min(1).optional().nullable(),
+  size_bytes: z.number().nonnegative().optional().nullable(),
+  checksum_ok: z.boolean().optional().nullable(),
+});
+
+export const AsrModelsListSchema = z.array(AsrModelStatusSchema);
+
+export const AsrModelDownloadPayloadSchema = z.object({
+  modelId: z.string().min(1),
+});
+
+export const AsrModelRemovePayloadSchema = z.object({
+  modelId: z.string().min(1),
+});
+
+export const AsrModelDownloadResultSchema = z.object({
+  modelId: z.string().min(1),
+  path: z.string().min(1),
+  bytes: z.number().nonnegative(),
+  sha256: z.string().min(1),
+});
+
+export const AsrModelDownloadProgressEventSchema = z.object({
+  schemaVersion: z.literal("1.0.0"),
+  modelId: z.string().min(1),
+  downloadedBytes: z.number().nonnegative(),
+  totalBytes: z.number().nonnegative(),
 });
 
 export const AnalyzeAttemptPayloadSchema = z.object({
@@ -501,5 +538,8 @@ export type QuestReportItem = z.infer<typeof QuestReportItemSchema>;
 export type TranscriptSegment = z.infer<typeof TranscriptSegmentSchema>;
 export type TranscriptV1 = z.infer<typeof TranscriptV1Schema>;
 export type TranscriptExportFormat = z.infer<typeof TranscriptExportFormatSchema>;
+export type AsrModelStatus = z.infer<typeof AsrModelStatusSchema>;
+export type AsrModelDownloadResult = z.infer<typeof AsrModelDownloadResultSchema>;
+export type AsrModelDownloadProgressEvent = z.infer<typeof AsrModelDownloadProgressEventSchema>;
 export type FeedbackV1 = z.infer<typeof FeedbackV1Schema>;
 export type FeedbackContext = z.infer<typeof FeedbackContextSchema>;

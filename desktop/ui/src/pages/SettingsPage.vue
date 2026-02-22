@@ -1,25 +1,57 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { listen } from "@tauri-apps/api/event";
+import { open } from "@tauri-apps/plugin-shell";
 import { useI18n } from "../lib/i18n";
 import { useTranscriptionSettings } from "../lib/transcriptionSettings";
+import { invokeChecked } from "../composables/useIpc";
+import {
+  AsrModelDownloadPayloadSchema,
+  AsrModelDownloadProgressEventSchema,
+  AsrModelDownloadResultSchema,
+  AsrModelRemovePayloadSchema,
+  AsrModelStatus,
+  AsrModelsListSchema,
+  EmptyPayloadSchema,
+  VoidResponseSchema,
+} from "../schemas/ipc";
 
 const { t } = useI18n();
 const { settings, updateSettings } = useTranscriptionSettings();
 
-const modelOptions = computed(() => [
-  {
-    id: "tiny",
-    label: t("settings.transcription.model_tiny"),
-    status: t("settings.transcription.model_bundled"),
-    installed: true,
-  },
-  {
-    id: "base",
-    label: t("settings.transcription.model_base"),
-    status: t("settings.transcription.model_download"),
-    installed: false,
-  },
-]);
+const models = ref<AsrModelStatus[]>([]);
+const isLoadingModels = ref(false);
+const downloadingModelId = ref<string | null>(null);
+const downloadError = ref<string | null>(null);
+const downloadProgress = ref<Record<string, { downloadedBytes: number; totalBytes: number }>>({});
+
+let unlistenDownloadProgress: (() => void) | null = null;
+
+const modelOptions = computed(() =>
+  models.value.map((model) => {
+    const label =
+      model.id === "tiny"
+        ? t("settings.transcription.model_tiny")
+        : t("settings.transcription.model_base");
+    let statusKey = "settings.transcription.model_status_missing";
+    if (model.installed) {
+      statusKey = "settings.transcription.model_status_ready";
+    } else if (model.checksum_ok === false) {
+      statusKey = "settings.transcription.model_status_invalid";
+    } else if (model.bundled) {
+      statusKey = "settings.transcription.model_status_missing_bundled";
+    }
+    return {
+      id: model.id,
+      label,
+      installed: model.installed,
+      expectedBytes: model.expected_bytes,
+      checksum: model.expected_sha256,
+      sourceUrl: model.source_url,
+      status: t(statusKey),
+    };
+  })
+);
 
 const modeOptions = computed(() => [
   { value: "auto", label: t("settings.transcription.mode_auto") },
@@ -56,6 +88,129 @@ const selectedLanguage = computed({
   set: (value: string) => {
     updateSettings({ language: value as "auto" | "en" | "fr" });
   },
+});
+
+function formatBytes(value?: number | null) {
+  if (!value || value <= 0) {
+    return "0 B";
+  }
+  const units = ["B", "KB", "MB", "GB"];
+  let size = value;
+  let unitIndex = 0;
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex += 1;
+  }
+  return `${size.toFixed(size >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+}
+
+function shortHash(value: string) {
+  return value.slice(0, 8);
+}
+
+async function openSourceUrl(url: string) {
+  try {
+    await open(url);
+  } catch (err) {
+    downloadError.value = err instanceof Error ? err.message : String(err);
+  }
+}
+
+function progressPercent(modelId: string) {
+  const progress = downloadProgress.value[modelId];
+  if (!progress || progress.totalBytes <= 0) {
+    return 0;
+  }
+  return Math.min(100, Math.round((progress.downloadedBytes / progress.totalBytes) * 100));
+}
+
+function progressLabel(modelId: string) {
+  const progress = downloadProgress.value[modelId];
+  if (!progress) {
+    return "";
+  }
+  if (progress.totalBytes > 0) {
+    return `${formatBytes(progress.downloadedBytes)} / ${formatBytes(progress.totalBytes)}`;
+  }
+  return formatBytes(progress.downloadedBytes);
+}
+
+async function refreshModels() {
+  isLoadingModels.value = true;
+  downloadError.value = null;
+  try {
+    models.value = await invokeChecked("asr_models_list", EmptyPayloadSchema, AsrModelsListSchema, {});
+  } catch (err) {
+    downloadError.value = err instanceof Error ? err.message : String(err);
+  } finally {
+    isLoadingModels.value = false;
+  }
+}
+
+async function removeModel(modelId: string) {
+  const confirmed = window.confirm(t("settings.transcription.model_remove_confirm"));
+  if (!confirmed) {
+    return;
+  }
+  downloadError.value = null;
+  try {
+    await invokeChecked(
+      "asr_model_remove",
+      AsrModelRemovePayloadSchema,
+      VoidResponseSchema,
+      { modelId }
+    );
+    await refreshModels();
+  } catch (err) {
+    downloadError.value = err instanceof Error ? err.message : String(err);
+  }
+}
+
+async function downloadModel(modelId: string) {
+  if (downloadingModelId.value) {
+    return;
+  }
+  downloadingModelId.value = modelId;
+  downloadError.value = null;
+  downloadProgress.value = { ...downloadProgress.value, [modelId]: { downloadedBytes: 0, totalBytes: 0 } };
+
+  try {
+    await invokeChecked(
+      "asr_model_download",
+      AsrModelDownloadPayloadSchema,
+      AsrModelDownloadResultSchema,
+      { modelId }
+    );
+    await refreshModels();
+  } catch (err) {
+    downloadError.value = err instanceof Error ? err.message : String(err);
+  } finally {
+    downloadingModelId.value = null;
+    const next = { ...downloadProgress.value };
+    delete next[modelId];
+    downloadProgress.value = next;
+  }
+}
+
+onMounted(async () => {
+  await refreshModels();
+  unlistenDownloadProgress = await listen("asr/model_download_progress/v1", (event) => {
+    const parsed = AsrModelDownloadProgressEventSchema.safeParse(event.payload);
+    if (!parsed.success) {
+      return;
+    }
+    downloadProgress.value = {
+      ...downloadProgress.value,
+      [parsed.data.modelId]: {
+        downloadedBytes: parsed.data.downloadedBytes,
+        totalBytes: parsed.data.totalBytes,
+      },
+    };
+  });
+});
+
+onBeforeUnmount(() => {
+  unlistenDownloadProgress?.();
 });
 </script>
 
@@ -125,17 +280,80 @@ const selectedLanguage = computed({
         </div>
       </div>
 
-      <div class="mt-4 flex flex-wrap items-center gap-3">
-        <button
-          class="app-button-secondary cursor-not-allowed rounded-full px-3 py-2 text-xs font-semibold opacity-60"
-          type="button"
-          disabled
-        >
-          {{ t("settings.transcription.download_base") }}
-        </button>
-        <span class="app-muted text-xs">
-          {{ t("settings.transcription.download_note") }}
-        </span>
+      <div class="mt-4 space-y-2">
+        <div v-if="isLoadingModels" class="app-muted text-xs">
+          {{ t("settings.transcription.model_loading") }}
+        </div>
+        <div v-else class="space-y-2">
+          <div
+            v-for="model in modelOptions"
+            :key="model.id"
+            class="app-surface rounded-xl border px-3 py-3"
+          >
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div class="space-y-1">
+                <div class="app-nav-text text-sm font-semibold">{{ model.label }}</div>
+                <div class="app-muted text-xs">{{ model.status }}</div>
+                <div class="app-muted text-xs">
+                  {{ t("settings.transcription.model_size") }}: {{ formatBytes(model.expectedBytes) }}
+                </div>
+                <div class="app-muted text-xs">
+                  {{ t("settings.transcription.model_hash") }}: {{ shortHash(model.checksum) }}
+                </div>
+              </div>
+              <div class="flex flex-col items-end gap-2">
+                <div class="app-muted text-xs">
+                  {{ t("settings.transcription.model_source") }}:
+                  <button
+                    class="app-link max-w-[320px] truncate text-left"
+                    type="button"
+                    @click="openSourceUrl(model.sourceUrl)"
+                  >
+                    {{ model.sourceUrl }}
+                  </button>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <span v-if="downloadingModelId === model.id" class="app-muted text-xs">
+                    {{ t("settings.transcription.model_downloading") }}
+                  </span>
+                  <button
+                    v-else-if="!model.installed"
+                    class="app-button-secondary cursor-pointer rounded-full px-3 py-2 text-xs font-semibold transition"
+                    type="button"
+                    @click="downloadModel(model.id)"
+                  >
+                    {{ t("settings.transcription.download_action") }}
+                  </button>
+                  <button
+                    v-else
+                    class="app-button-secondary cursor-pointer rounded-full px-3 py-2 text-xs font-semibold transition"
+                    type="button"
+                    @click="removeModel(model.id)"
+                  >
+                    {{ t("settings.transcription.model_remove") }}
+                  </button>
+                  <span v-if="model.installed" class="app-muted text-xs">
+                    {{ t("settings.transcription.model_installed") }}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div v-if="downloadingModelId === model.id && downloadProgress[model.id]" class="mt-2 flex items-center gap-2 text-xs">
+              <div class="app-meter-bg h-2 w-32 rounded-full">
+                <div
+                  class="h-2 rounded-full bg-[var(--app-info)]"
+                  :style="{ width: `${progressPercent(model.id)}%` }"
+                ></div>
+              </div>
+              <span class="app-muted">{{ progressLabel(model.id) }}</span>
+              <span class="app-text">{{ progressPercent(model.id) }}%</span>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="downloadError" class="app-danger-text text-xs">
+          {{ downloadError }}
+        </div>
       </div>
     </div>
   </section>

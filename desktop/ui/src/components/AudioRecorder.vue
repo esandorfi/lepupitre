@@ -73,7 +73,7 @@ const isExporting = ref(false);
 const recordingId = ref<string | null>(null);
 const liveSegments = ref<TranscriptSegment[]>([]);
 const livePartial = ref<string | null>(null);
-const livePartialWindow = ref<{ t0_ms: number; t1_ms: number } | null>(null);
+const livePartialWindow = ref<{ t0Ms: number; t1Ms: number } | null>(null);
 
 let statusTimer: number | null = null;
 let unlistenProgress: (() => void) | null = null;
@@ -357,7 +357,7 @@ onMounted(async () => {
       return;
     }
     livePartial.value = parsed.data.text;
-    livePartialWindow.value = { t0_ms: parsed.data.t0_ms, t1_ms: parsed.data.t1_ms };
+    livePartialWindow.value = { t0Ms: parsed.data.t0Ms, t1Ms: parsed.data.t1Ms };
   });
 
   unlistenAsrCommit = await listen("asr/commit/v1", (event) => {
@@ -378,11 +378,11 @@ onMounted(async () => {
     if (!isTranscribing.value && !transcribeJobId.value) {
       return;
     }
-    const total = parsed.data.total_ms;
+    const total = parsed.data.totalMs;
     if (total <= 0) {
       return;
     }
-    const pct = Math.min(100, Math.round((parsed.data.processed_ms / total) * 100));
+    const pct = Math.min(100, Math.round((parsed.data.processedMs / total) * 100));
     transcribeProgress.value = pct;
     transcribeStageKey.value = "audio.stage_final";
   });
@@ -525,7 +525,7 @@ async function revealRecording() {
         </div>
         <div v-if="livePartial" class="app-muted text-xs">
           <span class="app-subtle">
-            {{ formatTimestamp(livePartialWindow?.t0_ms) }}–{{ formatTimestamp(livePartialWindow?.t1_ms) }}
+            {{ formatTimestamp(livePartialWindow?.t0Ms) }}–{{ formatTimestamp(livePartialWindow?.t1Ms) }}
           </span>
           <div class="app-text">{{ livePartial }}</div>
         </div>
