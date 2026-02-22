@@ -56,7 +56,7 @@ Shared exit criteria: the “hello quest” app can record a 16k mono WAV into a
 - Local build: `pnpm -C desktop build` (macOS => `.dmg`, Windows => `.msi/.exe`).
 - Changelog: `pnpm -C desktop changelog` (or `node scripts/changelog.mjs <version>`).
 - If the latest Git tag is missing in `CHANGELOG.md`, backfill it first: `pnpm -C desktop changelog -- <tag-version>`.
-- CI release: `.github/workflows/release.yml` (macOS/Windows matrix).
+- CI release: `.github/workflows/release-packaging.yml` (macOS/Windows matrix).
 - Versioning: `pnpm -C desktop release:patch|minor|major` updates `package.json`, `tauri.conf.json`, `Cargo.toml`, `Cargo.lock`, and creates a `vX.Y.Z` tag.
 - Tag flow (CLI, precise):
   1. Automated bump + commit + push (recommended):

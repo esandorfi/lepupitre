@@ -37,4 +37,4 @@ Adopt **Option A**:
 
 ## Divergence (ADR vs codebase)
 - Status: Aligned.
-- References: `.github/workflows/release.yml`, `scripts/release.mjs`, `desktop/package.json`.
+- References: `.github/workflows/release-packaging.yml`, `scripts/release.mjs`, `desktop/package.json`.
