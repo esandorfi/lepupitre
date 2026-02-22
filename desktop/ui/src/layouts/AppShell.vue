@@ -62,9 +62,6 @@ const activeTalkNumber = computed(() => {
   return appStore.getTalkNumber(activeTalkId.value);
 });
 const showTalkTab = computed(() => {
-  if (!activeTalkTitle.value) {
-    return false;
-  }
   return route.name === "talk-report" || route.name === "quest" || route.name === "feedback";
 });
 const talkReportLink = computed(() => {
@@ -74,6 +71,23 @@ const talkReportLink = computed(() => {
   }
   return "/talks";
 });
+const questLink = computed(() => {
+  const code = activeQuestCode.value;
+  if (!code) {
+    return "/";
+  }
+  const projectId = activeTalkId.value || appStore.state.activeProject?.id || "";
+  if (projectId) {
+    return `/quest/${code}?from=talk&projectId=${projectId}`;
+  }
+  return `/quest/${code}`;
+});
+const feedbackLink = computed(() => {
+  if (!activeFeedbackId.value) {
+    return "/";
+  }
+  return `/feedback/${activeFeedbackId.value}`;
+});
 
 function truncateLabel(value: string, max = 18) {
   if (value.length <= max) {
@@ -81,6 +95,15 @@ function truncateLabel(value: string, max = 18) {
   }
   return `${value.slice(0, Math.max(0, max - 3))}...`;
 }
+
+const talkCrumbLabel = computed(() => {
+  if (activeTalkTitle.value) {
+    return `${activeTalkNumber.value ? `T${activeTalkNumber.value} ` : ""}${truncateLabel(
+      activeTalkTitle.value
+    )}`;
+  }
+  return t("nav.talk");
+});
 
 const questLabel = computed(() => {
   if (activeQuestCode.value) {
@@ -94,6 +117,20 @@ const feedbackLabel = computed(() => {
     return truncateLabel(activeFeedbackId.value, 10);
   }
   return t("nav.feedback_active");
+});
+
+const breadcrumbItems = computed(() => {
+  const items: { label: string; to?: string }[] = [];
+  if (showTalkTab.value) {
+    items.push({ label: talkCrumbLabel.value, to: talkReportLink.value });
+  }
+  if (showQuestTab.value) {
+    items.push({ label: questLabel.value, to: questLink.value });
+  }
+  if (showFeedbackTab.value) {
+    items.push({ label: feedbackLabel.value, to: feedbackLink.value });
+  }
+  return items;
 });
 
 function toggleLocale() {
@@ -138,7 +175,7 @@ function cycleTheme() {
           </button>
         </div>
       </div>
-      <nav class="mt-3 flex flex-wrap gap-3 text-xs">
+      <nav class="app-nav-text mt-3 flex flex-wrap items-center gap-3">
         <RouterLink
           class="app-toolbar-link app-pill rounded-full px-3 py-1 transition"
           exact-active-class="app-pill-active font-semibold"
@@ -153,34 +190,12 @@ function cycleTheme() {
         >
           {{ talkLabel }}
         </RouterLink>
-        <RouterLink
-          v-if="showTalkTab"
-          class="app-toolbar-link app-pill app-pill-active rounded-full px-3 py-1 font-semibold transition"
-          :to="talkReportLink"
-          :title="activeTalkTitle || undefined"
-        >
-          {{
-            activeTalkTitle
-              ? `${activeTalkNumber ? `T${activeTalkNumber} ` : ""}${truncateLabel(activeTalkTitle)}`
-              : ""
-          }}
-        </RouterLink>
-        <RouterLink
-          v-if="showQuestTab"
-          class="app-toolbar-link app-pill rounded-full px-3 py-1 transition"
-          exact-active-class="app-pill-active font-semibold"
-          :to="`/quest/${activeQuestCode}`"
-        >
-          {{ questLabel }}
-        </RouterLink>
-        <RouterLink
-          v-if="showFeedbackTab"
-          class="app-toolbar-link app-pill rounded-full px-3 py-1 transition"
-          exact-active-class="app-pill-active font-semibold"
-          :to="`/feedback/${activeFeedbackId}`"
-        >
-          {{ feedbackLabel }}
-        </RouterLink>
+        <UBreadcrumb
+          v-if="breadcrumbItems.length > 0"
+          class="app-breadcrumb app-nav-text"
+          separator-icon="i-lucide-arrow-right"
+          :items="breadcrumbItems"
+        />
       </nav>
     </header>
     <main class="px-6 py-6">

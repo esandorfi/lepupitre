@@ -15,5 +15,6 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SecurityProbe: typeof import('./src/components/SecurityProbe.vue')['default']
+    UBreadcrumb: typeof import('./../node_modules/.pnpm/@nuxt+ui@4.4.0_@tiptap+extensions@3.20.0_@tiptap+core@3.20.0_@tiptap+pm@3.20.0__@tiptap_de8bba3212ab9ac0762d9b96edb9e4e2/node_modules/@nuxt/ui/dist/runtime/components/Breadcrumb.vue')['default']
   }
 }

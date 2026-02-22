@@ -39,6 +39,10 @@
   --app-pill-text: #1a1009;
   --app-pill-active: #ffb36a;
   --app-pill-active-text: #1a1009;
+  --app-breadcrumb-sep: #ffd0a3;
+  --app-text-xs: 0.75rem;
+  --app-text-sm: 0.875rem;
+  --app-text-base: 1rem;
   --app-input-bg: #ffffff;
   --app-meter-bg: #ffe0c3;
   color-scheme: light;
@@ -82,6 +86,10 @@
   --app-pill-text: #1a1009;
   --app-pill-active: #ffb36a;
   --app-pill-active-text: #1a1009;
+  --app-breadcrumb-sep: #ffd0a3;
+  --app-text-xs: 0.75rem;
+  --app-text-sm: 0.875rem;
+  --app-text-base: 1rem;
   --app-input-bg: #ffffff;
   --app-meter-bg: #ffe0c3;
   color-scheme: light;
@@ -125,6 +133,10 @@
   --app-pill-text: #e2e8f0;
   --app-pill-active: #10b981;
   --app-pill-active-text: #052e16;
+  --app-breadcrumb-sep: #334155;
+  --app-text-xs: 0.75rem;
+  --app-text-sm: 0.875rem;
+  --app-text-base: 1rem;
   --app-input-bg: #0b1220;
   --app-meter-bg: #1f2937;
   color-scheme: dark;
@@ -166,6 +178,12 @@
 .app-toolbar-button:hover {
   background-color: var(--app-toolbar-button-hover);
   color: var(--app-toolbar-text);
+}
+
+.app-nav-text {
+  font-size: var(--app-text-xs);
+  font-weight: 700;
+  line-height: 1rem;
 }
 
 .app-surface {
@@ -291,6 +309,45 @@
 
 .app-pill-active:hover {
   background-color: var(--app-info-hover);
+  color: var(--app-info-contrast);
+}
+
+.app-breadcrumb {
+  color: var(--app-subtle);
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+}
+
+.app-breadcrumb a {
+  color: var(--app-text);
+}
+
+.app-breadcrumb * {
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+}
+
+.app-breadcrumb a:hover {
+  color: var(--app-link-hover);
+}
+
+.app-breadcrumb svg {
+  color: var(--app-breadcrumb-sep);
+}
+
+.app-breadcrumb [aria-current="page"],
+.app-breadcrumb a[aria-current="page"] {
+  background-color: var(--app-info);
+  color: var(--app-info-contrast);
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.app-breadcrumb [aria-current="page"] a {
   color: var(--app-info-contrast);
 }
 
