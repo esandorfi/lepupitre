@@ -339,6 +339,32 @@ export const TranscriptV1Schema = z.object({
   segments: z.array(TranscriptSegmentSchema).min(1),
 });
 
+export const AsrPartialEventSchema = z.object({
+  schema_version: z.literal("1.0.0"),
+  text: z.string(),
+  t0_ms: z.number().int().nonnegative(),
+  t1_ms: z.number().int().nonnegative(),
+  seq: z.number().int().nonnegative(),
+});
+
+export const AsrCommitEventSchema = z.object({
+  schema_version: z.literal("1.0.0"),
+  segments: z.array(TranscriptSegmentSchema).min(1),
+  seq: z.number().int().nonnegative(),
+});
+
+export const AsrFinalProgressEventSchema = z.object({
+  schema_version: z.literal("1.0.0"),
+  processed_ms: z.number().int().nonnegative(),
+  total_ms: z.number().int().nonnegative(),
+});
+
+export const AsrFinalResultEventSchema = z.object({
+  schema_version: z.literal("1.0.0"),
+  text: z.string().min(1),
+  segments: z.array(TranscriptSegmentSchema).min(1),
+});
+
 export const TranscriptGetPayloadSchema = z.object({
   profileId: IdSchema,
   transcriptId: IdSchema,
@@ -413,6 +439,11 @@ export const FeedbackV1Schema = z.object({
   comments: z.array(FeedbackCommentSchema).max(7),
   metrics: FeedbackMetricsSchema,
 });
+
+export type AsrPartialEvent = z.infer<typeof AsrPartialEventSchema>;
+export type AsrCommitEvent = z.infer<typeof AsrCommitEventSchema>;
+export type AsrFinalProgressEvent = z.infer<typeof AsrFinalProgressEventSchema>;
+export type AsrFinalResultEvent = z.infer<typeof AsrFinalResultEventSchema>;
 
 export type ProfileSummary = z.infer<typeof ProfileSummarySchema>;
 export type ProjectSummary = z.infer<typeof ProjectSummarySchema>;

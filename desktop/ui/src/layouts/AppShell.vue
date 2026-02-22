@@ -207,6 +207,12 @@ function cycleTheme() {
             >
               {{ t("nav.import") }}
             </RouterLink>
+            <RouterLink
+              class="app-toolbar-button cursor-pointer rounded-full border px-3 py-1 text-xs transition"
+              to="/settings"
+            >
+              {{ t("nav.settings") }}
+            </RouterLink>
             <button
               class="app-toolbar-button cursor-pointer rounded-full border px-3 py-1 text-xs transition"
               type="button"
