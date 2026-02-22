@@ -16,6 +16,9 @@
   - Base: Live + Final by default.
   - Tiny: Auto benchmark -> Live + Final if fast enough; else Final only.
 - **Model UI**: Settings only (no recorder dropdown).
+- **Model storage**: `AppDataDir/LePupitre/models/whisper`
+  - macOS: `~/Library/Application Support/LePupitre/models/whisper`
+  - Windows: `%APPDATA%\LePupitre\models\whisper`
 - **Events**: versioned payloads (e.g., `asr.partial.v1`).
 
 ## MR plan (incremental)
@@ -125,7 +128,6 @@
 
 ## Open questions (to resolve in MR1)
 - Which tiny/base GGUF variants to ship.
-- Where to store downloaded models (appdata path).
 - How to detect GPU backend availability for sidecar selection.
 
 ## Risks

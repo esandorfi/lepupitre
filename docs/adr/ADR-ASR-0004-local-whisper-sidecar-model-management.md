@@ -18,6 +18,9 @@ We also need a model lifecycle that starts lightweight (tiny) and allows upgrade
    - Bundle **tiny** model for first-run.
    - Offer **base** as a user-initiated download (opt-in network).
    - Store models in app data with checksums and version metadata.
+   - Storage path: `AppDataDir/LePupitre/models/whisper`
+     - macOS: `~/Library/Application Support/LePupitre/models/whisper`
+     - Windows: `%APPDATA%\LePupitre\models\whisper`
 
 3) **Mode policy**:
    - **Base** defaults to Live + Final.
