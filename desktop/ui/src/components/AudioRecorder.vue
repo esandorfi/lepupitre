@@ -7,13 +7,18 @@ import { appStore } from "../stores/app";
 import { invokeChecked } from "../composables/useIpc";
 import {
   AsrCommitEventSchema,
+  AsrFinalProgressEventSchema,
+  AsrFinalResultEventSchema,
   AsrPartialEventSchema,
+  ExportResultSchema,
   RecordingStartPayloadSchema,
   RecordingStartResponseSchema,
   RecordingStatusPayloadSchema,
   RecordingStatusResponseSchema,
   RecordingStopPayloadSchema,
   RecordingStopResponseSchema,
+  TranscriptExportFormat,
+  TranscriptExportPayloadSchema,
   TranscriptGetPayloadSchema,
   TranscriptSegment,
   TranscriptV1,
@@ -59,9 +64,12 @@ const liveLevel = ref<number>(0);
 const isRevealing = ref(false);
 const isTranscribing = ref(false);
 const transcribeProgress = ref<number>(0);
-const transcribeStage = ref<string | null>(null);
+const transcribeStageKey = ref<string | null>(null);
 const transcribeJobId = ref<string | null>(null);
 const transcript = ref<TranscriptV1 | null>(null);
+const lastTranscriptId = ref<string | null>(null);
+const exportPath = ref<string | null>(null);
+const isExporting = ref(false);
 const recordingId = ref<string | null>(null);
 const liveSegments = ref<TranscriptSegment[]>([]);
 const livePartial = ref<string | null>(null);
@@ -73,6 +81,8 @@ let unlistenCompleted: (() => void) | null = null;
 let unlistenFailed: (() => void) | null = null;
 let unlistenAsrPartial: (() => void) | null = null;
 let unlistenAsrCommit: (() => void) | null = null;
+let unlistenAsrFinalProgress: (() => void) | null = null;
+let unlistenAsrFinalResult: (() => void) | null = null;
 
 type JobProgressEvent = {
   jobId: string;
@@ -92,12 +102,38 @@ type JobFailedEvent = {
   message: string;
 };
 
+function mapStageToKey(stage: string | null, message?: string | null) {
+  if (message) {
+    switch (message) {
+      case "queued":
+        return "audio.stage_queued";
+      case "analyze_audio":
+        return "audio.stage_analyze";
+      case "serialize":
+        return "audio.stage_serialize";
+      case "done":
+        return "audio.stage_done";
+      default:
+        break;
+    }
+  }
+  if (!stage) {
+    return null;
+  }
+  if (stage === "transcribe") {
+    return "audio.stage_transcribe";
+  }
+  return "audio.stage_processing";
+}
+
 function resetTranscription() {
   isTranscribing.value = false;
   transcribeProgress.value = 0;
-  transcribeStage.value = null;
+  transcribeStageKey.value = null;
   transcribeJobId.value = null;
   transcript.value = null;
+  lastTranscriptId.value = null;
+  exportPath.value = null;
 }
 
 function resetLiveTranscript() {
@@ -201,7 +237,7 @@ async function transcribeRecording() {
   isTranscribing.value = true;
   transcript.value = null;
   transcribeProgress.value = 0;
-  transcribeStage.value = null;
+  transcribeStageKey.value = null;
 
   try {
     const response = await invokeChecked(
@@ -214,6 +250,8 @@ async function transcribeRecording() {
       }
     );
     transcribeJobId.value = response.jobId ?? transcribeJobId.value;
+    lastTranscriptId.value = response.transcriptId;
+    exportPath.value = null;
     const loaded = await invokeChecked(
       "transcript_get",
       TranscriptGetPayloadSchema,
@@ -226,12 +264,39 @@ async function transcribeRecording() {
     transcript.value = loaded;
     emit("transcribed", { transcriptId: response.transcriptId });
     transcribeProgress.value = 100;
+    transcribeStageKey.value = "audio.stage_done";
   } catch (err) {
     error.value = err instanceof Error ? err.message : String(err);
   } finally {
     isTranscribing.value = false;
   }
 }
+
+async function exportTranscript(format: TranscriptExportFormat) {
+  if (!activeProfileId.value || !lastTranscriptId.value) {
+    return;
+  }
+  isExporting.value = true;
+  error.value = null;
+  try {
+    const result = await invokeChecked(
+      "transcript_export",
+      TranscriptExportPayloadSchema,
+      ExportResultSchema,
+      {
+        profileId: activeProfileId.value,
+        transcriptId: lastTranscriptId.value,
+        format,
+      }
+    );
+    exportPath.value = result.path;
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : String(err);
+  } finally {
+    isExporting.value = false;
+  }
+}
+
 
 function formatDuration(value: number | null) {
   if (value === null || Number.isNaN(value)) {
@@ -266,7 +331,7 @@ onMounted(async () => {
       transcribeJobId.value = event.payload.jobId;
     }
     transcribeProgress.value = event.payload.pct;
-    transcribeStage.value = event.payload.stage;
+    transcribeStageKey.value = mapStageToKey(event.payload.stage, event.payload.message);
   });
 
   unlistenCompleted = await listen<JobCompletedEvent>("job:completed", (event) => {
@@ -283,7 +348,7 @@ onMounted(async () => {
     error.value = event.payload.message;
   });
 
-  unlistenAsrPartial = await listen("asr.partial.v1", (event) => {
+  unlistenAsrPartial = await listen("asr/partial/v1", (event) => {
     if (!isRecording.value) {
       return;
     }
@@ -295,7 +360,7 @@ onMounted(async () => {
     livePartialWindow.value = { t0_ms: parsed.data.t0_ms, t1_ms: parsed.data.t1_ms };
   });
 
-  unlistenAsrCommit = await listen("asr.commit.v1", (event) => {
+  unlistenAsrCommit = await listen("asr/commit/v1", (event) => {
     const parsed = AsrCommitEventSchema.safeParse(event.payload);
     if (!parsed.success) {
       return;
@@ -303,6 +368,43 @@ onMounted(async () => {
     liveSegments.value = [...liveSegments.value, ...parsed.data.segments];
     livePartial.value = null;
     livePartialWindow.value = null;
+  });
+
+  unlistenAsrFinalProgress = await listen("asr/final_progress/v1", (event) => {
+    const parsed = AsrFinalProgressEventSchema.safeParse(event.payload);
+    if (!parsed.success) {
+      return;
+    }
+    if (!isTranscribing.value && !transcribeJobId.value) {
+      return;
+    }
+    const total = parsed.data.total_ms;
+    if (total <= 0) {
+      return;
+    }
+    const pct = Math.min(100, Math.round((parsed.data.processed_ms / total) * 100));
+    transcribeProgress.value = pct;
+    transcribeStageKey.value = "audio.stage_final";
+  });
+
+  unlistenAsrFinalResult = await listen("asr/final_result/v1", (event) => {
+    const parsed = AsrFinalResultEventSchema.safeParse(event.payload);
+    if (!parsed.success) {
+      return;
+    }
+    transcribeProgress.value = 100;
+    transcribeStageKey.value = "audio.stage_final";
+    liveSegments.value = [];
+    livePartial.value = null;
+    livePartialWindow.value = null;
+    const current = transcript.value;
+    transcript.value = {
+      schema_version: "1.0.0",
+      language: current?.language ?? "und",
+      model_id: current?.model_id ?? null,
+      duration_ms: current?.duration_ms ?? null,
+      segments: parsed.data.segments,
+    };
   });
 });
 
@@ -313,6 +415,8 @@ onBeforeUnmount(() => {
   unlistenFailed?.();
   unlistenAsrPartial?.();
   unlistenAsrCommit?.();
+  unlistenAsrFinalProgress?.();
+  unlistenAsrFinalResult?.();
 });
 
 async function revealRecording() {
@@ -406,9 +510,9 @@ async function revealRecording() {
     <div v-if="isTranscribing || transcribeProgress > 0" class="app-muted text-xs">
       {{ t("audio.transcription") }}:
       <span class="app-text">{{ transcribeProgress }}%</span>
-      <span v-if="transcribeStage" class="app-subtle">({{ transcribeStage }})</span>
+      <span v-if="transcribeStageKey" class="app-subtle">({{ t(transcribeStageKey) }})</span>
     </div>
-        <div v-if="liveSegments.length > 0 || livePartial" class="app-card rounded-xl border p-3 text-sm">
+    <div v-if="liveSegments.length > 0 || livePartial" class="app-card rounded-xl border p-3 text-sm">
       <div class="app-subtle text-xs uppercase tracking-[0.2em]">
         {{ t("audio.live_transcript") }}
       </div>
@@ -428,7 +532,7 @@ async function revealRecording() {
       </div>
     </div>
 
-<div v-if="transcript" class="app-card rounded-xl border p-3 text-sm">
+    <div v-if="transcript" class="app-card rounded-xl border p-3 text-sm">
       <div class="app-subtle text-xs uppercase tracking-[0.2em]">
         {{ t("audio.transcript_title") }}
       </div>
@@ -440,6 +544,46 @@ async function revealRecording() {
           <div class="app-text">{{ segment.text }}</div>
         </div>
       </div>
+    </div>
+    <div v-if="lastTranscriptId" class="flex flex-wrap gap-2">
+      <button
+        class="app-button-info cursor-pointer rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
+        type="button"
+        :disabled="isExporting"
+        @click="exportTranscript('txt')"
+      >
+        {{ t("audio.export_txt") }}
+      </button>
+      <button
+        class="app-button-info cursor-pointer rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
+        type="button"
+        :disabled="isExporting"
+        @click="exportTranscript('json')"
+      >
+        {{ t("audio.export_json") }}
+      </button>
+      <button
+        class="app-button-info cursor-pointer rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
+        type="button"
+        :disabled="isExporting"
+        @click="exportTranscript('srt')"
+      >
+        {{ t("audio.export_srt") }}
+      </button>
+      <button
+        class="app-button-info cursor-pointer rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
+        type="button"
+        :disabled="isExporting"
+        @click="exportTranscript('vtt')"
+      >
+        {{ t("audio.export_vtt") }}
+      </button>
+    </div>
+    <div v-if="exportPath" class="flex flex-wrap items-center gap-2 text-xs">
+      <span class="app-link">{{ t("audio.exported_to") }}:</span>
+      <span class="app-text max-w-[360px] truncate" style="direction: rtl; text-align: left;">
+        {{ exportPath }}
+      </span>
     </div>
     <div v-if="error" class="app-danger-text text-xs">{{ error }}</div>
   </div>

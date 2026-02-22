@@ -398,6 +398,14 @@ export const TranscriptGetPayloadSchema = z.object({
   transcriptId: IdSchema,
 });
 
+export const TranscriptExportFormatSchema = z.enum(["txt", "json", "srt", "vtt"]);
+
+export const TranscriptExportPayloadSchema = z.object({
+  profileId: IdSchema,
+  transcriptId: IdSchema,
+  format: TranscriptExportFormatSchema,
+});
+
 export const AnalyzeAttemptPayloadSchema = z.object({
   profileId: IdSchema,
   attemptId: IdSchema,
@@ -492,5 +500,6 @@ export type QuestAttemptSummary = z.infer<typeof QuestAttemptSummarySchema>;
 export type QuestReportItem = z.infer<typeof QuestReportItemSchema>;
 export type TranscriptSegment = z.infer<typeof TranscriptSegmentSchema>;
 export type TranscriptV1 = z.infer<typeof TranscriptV1Schema>;
+export type TranscriptExportFormat = z.infer<typeof TranscriptExportFormatSchema>;
 export type FeedbackV1 = z.infer<typeof FeedbackV1Schema>;
 export type FeedbackContext = z.infer<typeof FeedbackContextSchema>;

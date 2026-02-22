@@ -23,6 +23,7 @@ pub struct VadState {
     silence_ms: u32,
 }
 
+#[allow(dead_code)]
 pub struct VadDecision {
     pub in_speech: bool,
     pub speech_started: bool,

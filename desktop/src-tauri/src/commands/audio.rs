@@ -21,6 +21,9 @@ const RING_SECONDS: u32 = 30;
 const START_TIMEOUT_MS: u64 = 3000;
 const STOP_TIMEOUT_MS: u64 = 5000;
 
+const ASR_PARTIAL_EVENT: &str = "asr/partial/v1";
+const ASR_COMMIT_EVENT: &str = "asr/commit/v1";
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AudioSaveResult {
@@ -402,6 +405,9 @@ fn run_live_asr(
     state: Arc<Mutex<RecordingState>>,
     stop_rx: mpsc::Receiver<()>,
 ) {
+    crate::commands::assert_valid_event_name(ASR_PARTIAL_EVENT);
+    crate::commands::assert_valid_event_name(ASR_COMMIT_EVENT);
+
     let mut seq: u64 = 0;
     let mut speech_index: u64 = 1;
     let mut in_speech = false;
@@ -421,7 +427,7 @@ fn run_live_asr(
                     };
                     seq += 1;
                     let _ = app.emit(
-                        "asr.commit.v1",
+                        ASR_COMMIT_EVENT,
                         AsrCommitEvent {
                             schema_version: "1.0.0".to_string(),
                             segments: vec![segment],
@@ -448,7 +454,7 @@ fn run_live_asr(
             }
             seq += 1;
             let _ = app.emit(
-                "asr.partial.v1",
+                ASR_PARTIAL_EVENT,
                 AsrPartialEvent {
                     schema_version: "1.0.0".to_string(),
                     text: format!("(speech {speech_index}...)"),
@@ -468,7 +474,7 @@ fn run_live_asr(
             speech_index += 1;
             seq += 1;
             let _ = app.emit(
-                "asr.commit.v1",
+                ASR_COMMIT_EVENT,
                 AsrCommitEvent {
                     schema_version: "1.0.0".to_string(),
                     segments: vec![segment],

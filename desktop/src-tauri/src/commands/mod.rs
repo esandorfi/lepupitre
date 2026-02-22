@@ -10,3 +10,12 @@ pub mod run;
 #[cfg(debug_assertions)]
 pub mod security;
 pub mod transcription;
+
+fn is_valid_event_name(name: &str) -> bool {
+    name.chars()
+        .all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '-' | '/' | ':' | '_'))
+}
+
+pub fn assert_valid_event_name(name: &str) {
+    assert!(is_valid_event_name(name), "invalid_event_name: {name}");
+}

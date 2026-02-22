@@ -1,6 +1,12 @@
-use crate::core::{artifacts, db, ids, models};
-use serde::Serialize;
+use crate::core::{artifacts, db, ids, models, transcript};
+use serde::{Deserialize, Serialize};
 use tauri::Emitter;
+
+const EVENT_JOB_PROGRESS: &str = "job:progress";
+const EVENT_JOB_COMPLETED: &str = "job:completed";
+const EVENT_JOB_FAILED: &str = "job:failed";
+const EVENT_ASR_FINAL_PROGRESS: &str = "asr/final_progress/v1";
+const EVENT_ASR_FINAL_RESULT: &str = "asr/final_result/v1";
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -33,6 +39,31 @@ struct JobFailedEvent {
     pub message: String,
 }
 
+#[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+struct AsrFinalProgressEvent {
+    pub schema_version: String,
+    pub processed_ms: i64,
+    pub total_ms: i64,
+}
+
+#[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+struct AsrFinalResultEvent {
+    pub schema_version: String,
+    pub text: String,
+    pub segments: Vec<models::TranscriptSegment>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum TranscriptExportFormat {
+    Txt,
+    Json,
+    Srt,
+    Vtt,
+}
+
 #[tauri::command]
 pub fn transcribe_audio(
     app: tauri::AppHandle,
@@ -62,6 +93,9 @@ pub fn transcribe_audio(
         )?;
 
         let duration_ms = wav_duration_ms(&audio_bytes);
+        let total_ms = duration_ms.unwrap_or(0);
+        emit_final_progress(&app, 0, total_ms)?;
+
         let transcript = build_stub_transcript(duration_ms);
 
         emit_progress(
@@ -88,6 +122,23 @@ pub fn transcribe_audio(
             &metadata,
         )?;
 
+        emit_final_progress(&app, total_ms, total_ms)?;
+        let text = transcript::transcript_text(&transcript).unwrap_or_else(|_| {
+            transcript
+                .segments
+                .iter()
+                .map(|segment| segment.text.trim())
+                .filter(|segment| !segment.is_empty())
+                .collect::<Vec<&str>>()
+                .join(" ")
+        });
+        let final_text = if text.is_empty() {
+            "Transcription terminée.".to_string()
+        } else {
+            text
+        };
+        emit_final_result(&app, final_text, transcript.segments.clone())?;
+
         emit_progress(&app, &job_id, "transcribe", 100, Some("done".to_string()))?;
         emit_completed(&app, &job_id, &record.id)?;
 
@@ -112,16 +163,41 @@ pub fn transcript_get(
     transcript_id: String,
 ) -> Result<models::TranscriptV1, String> {
     db::ensure_profile_exists(&app, &profile_id)?;
-    let artifact = artifacts::get_artifact(&app, &profile_id, &transcript_id)?;
-    if artifact.artifact_type != "transcript" {
-        return Err("artifact_not_transcript".to_string());
-    }
+    transcript::load_transcript(&app, &profile_id, &transcript_id)
+}
+
+#[tauri::command]
+pub fn transcript_export(
+    app: tauri::AppHandle,
+    profile_id: String,
+    transcript_id: String,
+    format: TranscriptExportFormat,
+) -> Result<models::ExportResult, String> {
+    db::ensure_profile_exists(&app, &profile_id)?;
+    let transcript = transcript::load_transcript(&app, &profile_id, &transcript_id)?;
+
+    let (ext, contents) = match format {
+        TranscriptExportFormat::Txt => ("txt", transcript::transcript_text(&transcript)?),
+        TranscriptExportFormat::Json => (
+            "json",
+            serde_json::to_string_pretty(&transcript)
+                .map_err(|e| format!("transcript_json: {e}"))?,
+        ),
+        TranscriptExportFormat::Srt => ("srt", transcript::transcript_to_srt(&transcript)?),
+        TranscriptExportFormat::Vtt => ("vtt", transcript::transcript_to_vtt(&transcript)?),
+    };
+
     let profile_dir = db::profile_dir(&app, &profile_id)?;
-    let transcript_path = profile_dir.join(&artifact.relpath);
-    let bytes = std::fs::read(&transcript_path).map_err(|e| format!("transcript_read: {e}"))?;
-    let transcript: models::TranscriptV1 =
-        serde_json::from_slice(&bytes).map_err(|e| format!("transcript_parse: {e}"))?;
-    Ok(transcript)
+    let export_dir = profile_dir.join("exports").join("transcript");
+    std::fs::create_dir_all(&export_dir).map_err(|e| format!("export_dir: {e}"))?;
+
+    let filename = format!("{transcript_id}.{ext}");
+    let export_path = export_dir.join(filename);
+    std::fs::write(&export_path, contents).map_err(|e| format!("export_write: {e}"))?;
+
+    Ok(models::ExportResult {
+        path: export_path.to_string_lossy().to_string(),
+    })
 }
 
 fn emit_progress(
@@ -131,8 +207,9 @@ fn emit_progress(
     pct: u8,
     message: Option<String>,
 ) -> Result<(), String> {
+    crate::commands::assert_valid_event_name(EVENT_JOB_PROGRESS);
     app.emit(
-        "job_progress",
+        EVENT_JOB_PROGRESS,
         JobProgressEvent {
             job_id: job_id.to_string(),
             stage: stage.to_string(),
@@ -145,8 +222,9 @@ fn emit_progress(
 }
 
 fn emit_completed(app: &tauri::AppHandle, job_id: &str, result_id: &str) -> Result<(), String> {
+    crate::commands::assert_valid_event_name(EVENT_JOB_COMPLETED);
     app.emit(
-        "job_completed",
+        EVENT_JOB_COMPLETED,
         JobCompletedEvent {
             job_id: job_id.to_string(),
             result_id: result_id.to_string(),
@@ -163,8 +241,9 @@ fn emit_failed(
     error_code: &str,
     message: &str,
 ) -> Result<(), String> {
+    crate::commands::assert_valid_event_name(EVENT_JOB_FAILED);
     app.emit(
-        "job_failed",
+        EVENT_JOB_FAILED,
         JobFailedEvent {
             job_id: job_id.to_string(),
             error_code: error_code.to_string(),
@@ -172,6 +251,42 @@ fn emit_failed(
         },
     )
     .map_err(|e| format!("emit_failed: {e}"))?;
+    Ok(())
+}
+
+fn emit_final_progress(
+    app: &tauri::AppHandle,
+    processed_ms: i64,
+    total_ms: i64,
+) -> Result<(), String> {
+    crate::commands::assert_valid_event_name(EVENT_ASR_FINAL_PROGRESS);
+    app.emit(
+        EVENT_ASR_FINAL_PROGRESS,
+        AsrFinalProgressEvent {
+            schema_version: "1.0.0".to_string(),
+            processed_ms,
+            total_ms,
+        },
+    )
+    .map_err(|e| format!("emit_final_progress: {e}"))?;
+    Ok(())
+}
+
+fn emit_final_result(
+    app: &tauri::AppHandle,
+    text: String,
+    segments: Vec<models::TranscriptSegment>,
+) -> Result<(), String> {
+    crate::commands::assert_valid_event_name(EVENT_ASR_FINAL_RESULT);
+    app.emit(
+        EVENT_ASR_FINAL_RESULT,
+        AsrFinalResultEvent {
+            schema_version: "1.0.0".to_string(),
+            text,
+            segments,
+        },
+    )
+    .map_err(|e| format!("emit_final_result: {e}"))?;
     Ok(())
 }
 

@@ -1,5 +1,5 @@
 mod commands;
-mod core;
+pub mod core;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -51,6 +51,7 @@ pub fn run() {
                 commands::run::run_set_transcript,
                 commands::transcription::transcribe_audio,
                 commands::transcription::transcript_get,
+                commands::transcription::transcript_export,
                 commands::security::security_prepare_appdata_file,
                 commands::security::security_probe_fs
             ])
@@ -105,7 +106,8 @@ pub fn run() {
                 commands::run::run_list,
                 commands::run::run_set_transcript,
                 commands::transcription::transcribe_audio,
-                commands::transcription::transcript_get
+                commands::transcription::transcript_get,
+                commands::transcription::transcript_export
             ])
             .run(tauri::generate_context!())
             .expect("error while running tauri application");

@@ -29,6 +29,7 @@ impl RingBuffer {
         }
     }
 
+    #[allow(dead_code)]
     pub fn snapshot(&self) -> Vec<f32> {
         if !self.filled {
             return self.data[..self.write_pos].to_vec();
@@ -80,8 +81,13 @@ impl LinearResampler {
 
         let drop = self.pos.floor() as usize;
         if drop > 0 {
-            self.buffer.drain(0..drop);
-            self.pos -= drop as f32;
+            if drop >= self.buffer.len() {
+                self.buffer.clear();
+                self.pos = 0.0;
+            } else {
+                self.buffer.drain(0..drop);
+                self.pos -= drop as f32;
+            }
         }
 
         output
@@ -202,5 +208,26 @@ mod tests {
         assert_eq!(output.len(), 2);
         assert!((output[0] - 0.0).abs() < 1e-6);
         assert!((output[1] - 2.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn resampler_handles_large_ratio() {
+        let mut resampler = LinearResampler::new(48_000, 16_000);
+        let input = vec![0.1f32; 512];
+        let output = resampler.process(&input);
+        assert!(!output.is_empty());
+    }
+
+    #[test]
+    fn resampler_survives_varied_rates_and_chunks() {
+        let rates = [8_000, 12_000, 16_000, 22_050, 44_100, 48_000];
+        for input_rate in rates {
+            let mut resampler = LinearResampler::new(input_rate, 16_000);
+            for len in 0..128 {
+                let input = vec![0.01f32; len];
+                let output = resampler.process(&input);
+                assert!(output.iter().all(|sample| sample.is_finite()));
+            }
+        }
     }
 }
