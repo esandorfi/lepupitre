@@ -314,8 +314,15 @@ export const AudioSaveResponseSchema = z.object({
   sha256: z.string().min(1),
 });
 
+export const AsrSettingsSchema = z.object({
+  model: z.enum(["tiny", "base"]).optional(),
+  mode: z.enum(["auto", "live+final", "final-only"]).optional(),
+  language: z.enum(["auto", "en", "fr"]).optional(),
+});
+
 export const RecordingStartPayloadSchema = z.object({
   profileId: IdSchema,
+  asrSettings: AsrSettingsSchema.optional(),
 });
 
 export const RecordingStartResponseSchema = z.object({

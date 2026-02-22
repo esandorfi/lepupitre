@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useI18n } from "../lib/i18n";
+import { useTranscriptionSettings } from "../lib/transcriptionSettings";
 import { appStore } from "../stores/app";
 import { invokeChecked } from "../composables/useIpc";
 import {
@@ -48,6 +49,7 @@ const props = withDefaults(
   }
 );
 const { t } = useI18n();
+const { settings: transcriptionSettings } = useTranscriptionSettings();
 const emit = defineEmits<{
   (event: "saved", payload: { artifactId: string; path: string }): void;
   (event: "transcribed", payload: { transcriptId: string }): void;
@@ -187,7 +189,7 @@ async function startRecording() {
       "recording_start",
       RecordingStartPayloadSchema,
       RecordingStartResponseSchema,
-      { profileId: activeProfileId.value }
+      { profileId: activeProfileId.value, asrSettings: transcriptionSettings.value }
     );
     recordingId.value = result.recordingId;
     isRecording.value = true;
