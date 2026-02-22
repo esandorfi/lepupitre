@@ -314,6 +314,34 @@ export const AudioSaveResponseSchema = z.object({
   sha256: z.string().min(1),
 });
 
+export const RecordingStartPayloadSchema = z.object({
+  profileId: IdSchema,
+});
+
+export const RecordingStartResponseSchema = z.object({
+  recordingId: IdSchema,
+  inputSampleRate: z.number().int().positive(),
+  inputChannels: z.number().int().positive(),
+});
+
+export const RecordingStatusPayloadSchema = z.object({
+  recordingId: IdSchema,
+});
+
+export const RecordingStatusResponseSchema = z.object({
+  durationMs: z.number().int().nonnegative(),
+  level: z.number().min(0).max(1),
+});
+
+export const RecordingStopPayloadSchema = z.object({
+  profileId: IdSchema,
+  recordingId: IdSchema,
+});
+
+export const RecordingStopResponseSchema = AudioSaveResponseSchema.extend({
+  durationMs: z.number().int().nonnegative(),
+});
+
 export const TranscribeAudioPayloadSchema = z.object({
   profileId: IdSchema,
   audioArtifactId: IdSchema,
@@ -444,6 +472,10 @@ export type AsrPartialEvent = z.infer<typeof AsrPartialEventSchema>;
 export type AsrCommitEvent = z.infer<typeof AsrCommitEventSchema>;
 export type AsrFinalProgressEvent = z.infer<typeof AsrFinalProgressEventSchema>;
 export type AsrFinalResultEvent = z.infer<typeof AsrFinalResultEventSchema>;
+
+export type RecordingStartResponse = z.infer<typeof RecordingStartResponseSchema>;
+export type RecordingStatusResponse = z.infer<typeof RecordingStatusResponseSchema>;
+export type RecordingStopResponse = z.infer<typeof RecordingStopResponseSchema>;
 
 export type ProfileSummary = z.infer<typeof ProfileSummarySchema>;
 export type ProjectSummary = z.infer<typeof ProjectSummarySchema>;

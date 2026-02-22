@@ -4,6 +4,7 @@ pub mod db;
 pub mod db_helpers;
 pub mod ids;
 pub mod models;
+pub mod recording;
 pub mod seed;
 pub mod time;
 pub mod transcript;

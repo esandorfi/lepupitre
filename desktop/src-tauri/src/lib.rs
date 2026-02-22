@@ -6,10 +6,14 @@ pub fn run() {
     #[cfg(debug_assertions)]
     {
         tauri::Builder::default()
+            .manage(commands::audio::RecordingManager::default())
             .plugin(tauri_plugin_dialog::init())
             .invoke_handler(tauri::generate_handler![
                 commands::audio::audio_reveal_wav,
                 commands::audio::audio_save_wav,
+                commands::audio::recording_start,
+                commands::audio::recording_status,
+                commands::audio::recording_stop,
                 commands::feedback::analyze_attempt,
                 commands::feedback::feedback_context_get,
                 commands::feedback::feedback_get,
@@ -57,10 +61,14 @@ pub fn run() {
     #[cfg(not(debug_assertions))]
     {
         tauri::Builder::default()
+            .manage(commands::audio::RecordingManager::default())
             .plugin(tauri_plugin_dialog::init())
             .invoke_handler(tauri::generate_handler![
                 commands::audio::audio_reveal_wav,
                 commands::audio::audio_save_wav,
+                commands::audio::recording_start,
+                commands::audio::recording_status,
+                commands::audio::recording_stop,
                 commands::feedback::analyze_attempt,
                 commands::feedback::feedback_context_get,
                 commands::feedback::feedback_get,

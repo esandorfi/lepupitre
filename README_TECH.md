@@ -49,6 +49,11 @@ Shared exit criteria: the “hello quest” app can record a 16k mono WAV into a
 - types: `pnpm -C desktop ui:typecheck`
 - tests: `pnpm -C desktop ui:test`
 
+## 6.1 Local dev quickstart
+- Install deps: `pnpm -C desktop install`
+- Run desktop app (Tauri): `pnpm -C desktop dev`
+- Run UI only (browser): `pnpm -C desktop ui:dev`
+
 ## Minimal E2E
 - Profile creation -> project creation -> text quest submission -> feedback displayed.
 
