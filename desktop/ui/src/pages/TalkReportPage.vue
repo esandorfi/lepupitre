@@ -197,6 +197,9 @@ onMounted(loadReport);
             <RouterLink class="app-link underline" to="/talks">
               {{ t("talk_report.back") }}
             </RouterLink>
+            <RouterLink class="app-link underline" :to="`/builder?projectId=${projectId}`">
+              {{ t("talk_report.builder") }}
+            </RouterLink>
             <RouterLink class="app-link underline" to="/boss-run">
               {{ t("talk_report.boss_run") }}
             </RouterLink>

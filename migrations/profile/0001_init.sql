@@ -10,6 +10,13 @@ CREATE TABLE IF NOT EXISTS talk_projects (
   updated_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS talk_outlines (
+  project_id TEXT PRIMARY KEY,
+  outline_md TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS quests (
   code TEXT PRIMARY KEY,
   title TEXT NOT NULL,

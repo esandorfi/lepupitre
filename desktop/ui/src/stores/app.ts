@@ -14,6 +14,13 @@ import {
   ProjectListResponseSchema,
   ProjectSummary,
   ProjectSummaryNullableSchema,
+  OutlineGetPayloadSchema,
+  OutlineSetPayloadSchema,
+  OutlineDocSchema,
+  ExportOutlinePayloadSchema,
+  ExportResultSchema,
+  OutlineDoc,
+  ExportResult,
   RunAnalyzePayloadSchema,
   RunCreatePayloadSchema,
   RunFinishPayloadSchema,
@@ -395,6 +402,37 @@ async function getRuns(projectId: string, limit = 12): Promise<RunSummary[]> {
   });
 }
 
+async function getOutline(projectId: string): Promise<OutlineDoc> {
+  if (!state.activeProfileId) {
+    throw new Error("no_active_profile");
+  }
+  return invokeChecked("outline_get", OutlineGetPayloadSchema, OutlineDocSchema, {
+    profileId: state.activeProfileId,
+    projectId,
+  });
+}
+
+async function saveOutline(projectId: string, markdown: string) {
+  if (!state.activeProfileId) {
+    throw new Error("no_active_profile");
+  }
+  await invokeChecked("outline_set", OutlineSetPayloadSchema, VoidResponseSchema, {
+    profileId: state.activeProfileId,
+    projectId,
+    markdown,
+  });
+}
+
+async function exportOutline(projectId: string): Promise<ExportResult> {
+  if (!state.activeProfileId) {
+    throw new Error("no_active_profile");
+  }
+  return invokeChecked("export_outline", ExportOutlinePayloadSchema, ExportResultSchema, {
+    profileId: state.activeProfileId,
+    projectId,
+  });
+}
+
 async function getFeedback(feedbackId: string): Promise<FeedbackV1> {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
@@ -500,6 +538,9 @@ export const appStore = {
   getLatestRun,
   getRun,
   getRuns,
+  getOutline,
+  saveOutline,
+  exportOutline,
   getFeedback,
   getFeedbackContext,
   getFeedbackNote,

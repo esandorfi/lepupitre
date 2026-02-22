@@ -32,6 +32,18 @@ pub struct ProjectSummary {
 }
 
 #[derive(Debug, Serialize)]
+pub struct OutlineDoc {
+    pub project_id: String,
+    pub markdown: String,
+    pub updated_at: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ExportResult {
+    pub path: String,
+}
+
+#[derive(Debug, Serialize)]
 pub struct Quest {
     pub code: String,
     pub title: String,

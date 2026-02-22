@@ -32,7 +32,9 @@ pub fn open_global(app: &tauri::AppHandle) -> Result<Connection, String> {
 
     if !db_exists || !GLOBAL_MIGRATED.load(Ordering::Acquire) {
         let lock = GLOBAL_MIGRATION_LOCK.get_or_init(|| Mutex::new(()));
-        let _guard = lock.lock().map_err(|_| "global_migration_lock".to_string())?;
+        let _guard = lock
+            .lock()
+            .map_err(|_| "global_migration_lock".to_string())?;
         if !db_exists || !GLOBAL_MIGRATED.load(Ordering::Acquire) {
             conn.execute_batch(GLOBAL_MIGRATION)
                 .map_err(|e| format!("migrate: {e}"))?;
@@ -76,11 +78,13 @@ pub fn open_profile(app: &tauri::AppHandle, profile_id: &str) -> Result<Connecti
             .map_err(|e| format!("migrate: {e}"))?;
 
         seed_quests(&mut conn)?;
-        ensure_talk_numbers(&mut conn)?;
-        ensure_runs_nullable(&mut conn)?;
 
         state_guard.insert(profile_id.to_string());
     }
+
+    ensure_outline_table(&mut conn)?;
+    ensure_talk_numbers(&mut conn)?;
+    ensure_runs_nullable(&mut conn)?;
 
     Ok(conn)
 }
@@ -221,6 +225,20 @@ pub fn ensure_runs_nullable(conn: &mut Connection) -> Result<(), String> {
     Ok(())
 }
 
+fn ensure_outline_table(conn: &mut Connection) -> Result<(), String> {
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS talk_outlines (
+           project_id TEXT PRIMARY KEY,
+           outline_md TEXT NOT NULL,
+           created_at TEXT NOT NULL,
+           updated_at TEXT NOT NULL
+         )",
+        [],
+    )
+    .map_err(|e| format!("outline_table: {e}"))?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -242,12 +260,8 @@ mod tests {
         .expect("create");
 
         ensure_runs_nullable(&mut conn).expect("ensure");
-        let notnull = crate::core::db_helpers::column_notnull(
-            &conn,
-            "runs",
-            "audio_artifact_id",
-        )
-        .expect("pragma");
+        let notnull = crate::core::db_helpers::column_notnull(&conn, "runs", "audio_artifact_id")
+            .expect("pragma");
         assert_eq!(notnull, Some(false));
     }
 

@@ -323,7 +323,8 @@ fn is_audio_notnull_error(err: &rusqlite::Error) -> bool {
     match err {
         rusqlite::Error::SqliteFailure(e, msg) => {
             matches!(e.code, ErrorCode::ConstraintViolation)
-                && msg.as_deref()
+                && msg
+                    .as_deref()
                     .unwrap_or_default()
                     .contains("runs.audio_artifact_id")
         }

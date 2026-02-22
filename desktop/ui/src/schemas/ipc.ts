@@ -53,6 +53,32 @@ export const ProjectListItemSchema = ProjectSummarySchema.extend({
 
 export const ProjectListResponseSchema = z.array(ProjectListItemSchema);
 
+export const OutlineGetPayloadSchema = z.object({
+  profileId: IdSchema,
+  projectId: IdSchema,
+});
+
+export const OutlineSetPayloadSchema = z.object({
+  profileId: IdSchema,
+  projectId: IdSchema,
+  markdown: z.string(),
+});
+
+export const OutlineDocSchema = z.object({
+  project_id: IdSchema,
+  markdown: z.string(),
+  updated_at: z.string().min(1).optional().nullable(),
+});
+
+export const ExportOutlinePayloadSchema = z.object({
+  profileId: IdSchema,
+  projectId: IdSchema,
+});
+
+export const ExportResultSchema = z.object({
+  path: z.string().min(1),
+});
+
 export const RunCreatePayloadSchema = z.object({
   profileId: IdSchema,
   projectId: IdSchema,
@@ -312,6 +338,8 @@ export const FeedbackV1Schema = z.object({
 export type ProfileSummary = z.infer<typeof ProfileSummarySchema>;
 export type ProjectSummary = z.infer<typeof ProjectSummarySchema>;
 export type ProjectListItem = z.infer<typeof ProjectListItemSchema>;
+export type OutlineDoc = z.infer<typeof OutlineDocSchema>;
+export type ExportResult = z.infer<typeof ExportResultSchema>;
 export type RunSummary = z.infer<typeof RunSummarySchema>;
 export type Quest = z.infer<typeof QuestSchema>;
 export type QuestDaily = z.infer<typeof QuestDailySchema>;

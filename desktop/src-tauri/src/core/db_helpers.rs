@@ -15,14 +15,9 @@ pub fn table_info(conn: &Connection, table: &str) -> Result<Vec<TableColumn>, St
         .query([])
         .map_err(|e| format!("table_info_query: {e}"))?;
     let mut columns = Vec::new();
-    while let Some(row) = rows
-        .next()
-        .map_err(|e| format!("table_info_row: {e}"))?
-    {
+    while let Some(row) = rows.next().map_err(|e| format!("table_info_row: {e}"))? {
         let name: String = row.get(1).map_err(|e| format!("table_info_name: {e}"))?;
-        let notnull: i64 = row
-            .get(3)
-            .map_err(|e| format!("table_info_notnull: {e}"))?;
+        let notnull: i64 = row.get(3).map_err(|e| format!("table_info_notnull: {e}"))?;
         columns.push(TableColumn {
             name,
             notnull: notnull != 0,
