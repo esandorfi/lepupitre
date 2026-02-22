@@ -1,7 +1,7 @@
 {
   "name": "lepupitre-desktop",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "scripts": {
     "dev": "pnpm tauri dev",
@@ -12,9 +12,13 @@
     "ui:lint": "pnpm -C ui lint",
     "ui:typecheck": "pnpm -C ui typecheck",
     "ui:test": "pnpm -C ui test",
-    "version:patch": "pnpm version patch --git-tag-version && pnpm -C ui version patch --no-git-tag-version",
-    "version:minor": "pnpm version minor --git-tag-version && pnpm -C ui version minor --no-git-tag-version",
-    "version:major": "pnpm version major --git-tag-version && pnpm -C ui version major --no-git-tag-version"
+    "changelog": "node ../scripts/changelog.mjs",
+    "release:patch": "node ../scripts/release.mjs patch",
+    "release:minor": "node ../scripts/release.mjs minor",
+    "release:major": "node ../scripts/release.mjs major",
+    "version:patch": "node ../scripts/release.mjs patch",
+    "version:minor": "node ../scripts/release.mjs minor",
+    "version:major": "node ../scripts/release.mjs major"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2"

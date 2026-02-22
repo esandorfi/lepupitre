@@ -2,10 +2,10 @@ use crate::core::{artifacts, db, ids, models, time, transcript};
 use rusqlite::{params, OptionalExtension};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
-use std::collections::HashMap;
 use zip::write::FileOptions;
 use zip::{CompressionMethod, ZipArchive, ZipWriter};
 
@@ -414,8 +414,8 @@ pub fn peer_review_import(
     )
     .map_err(|e| format!("project_insert: {e}"))?;
 
-    let outline_text = String::from_utf8(outline_bytes.clone())
-        .map_err(|_| "outline_invalid_utf8".to_string())?;
+    let outline_text =
+        String::from_utf8(outline_bytes.clone()).map_err(|_| "outline_invalid_utf8".to_string())?;
     conn.execute(
         "INSERT INTO talk_outlines (project_id, outline_md, created_at, updated_at)
          VALUES (?1, ?2, ?3, ?4)",

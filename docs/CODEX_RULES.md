@@ -1,57 +1,52 @@
-# Règles Codex (documentation, ADR, changelog, qualité)
+# Codex Rules (docs, ADR, changelog, quality)
 
-## 1) Mise à jour README à la demande
-Quand demandé explicitement, Codex doit:
-1. Mettre à jour `README.md` (vue humaine/onboarding),
-2. Mettre à jour `README_TECH.md` (architecture/tech),
-3. Ajouter un résumé des changements en changelog.
+## 1) README updates on request
+When explicitly asked, Codex must:
+1. Update `README.md` (human/onboarding),
+2. Update `README_TECH.md` (architecture/tech),
+3. Write README/README_TECH and ADRs in English.
 
-## 2) Génération ADR à la demande
-Quand demandé, Codex doit générer une ADR dans `docs/adr/` au format:
-- `ADR-XXXX-titre-kebab.md`
+## 2) ADR creation on request
+When requested, create an ADR in `docs/adr/` with:
+- Filename: `ADR-XXXX-title-kebab.md`
 
-Contenu minimal:
-- Contexte
-- Décision
+Minimal content:
+- Context
+- Decision
 - Alternatives
-- Conséquences
-- Statut (Proposed/Accepted/Superseded)
-- Références de code/doc
+- Consequences
+- Status (Proposed/Accepted/Superseded)
+- Code/doc references
 
-## 3) Vérification divergence ADR vs codebase
-Pour chaque ADR demandée, Codex doit inclure une section **"Divergence"**:
-- `Conforme` si implémentation alignée.
-- `Partiellement conforme` si écart partiel.
-- `Divergent` si la base de code contredit la décision.
-Dans les deux derniers cas, lister un plan de remédiation.
+## 3) ADR vs codebase divergence
+Each ADR must include a **"Divergence"** section:
+- `Aligned` if implementation matches.
+- `Partially aligned` if there is drift.
+- `Divergent` if the code contradicts the decision.
+For the last two, list a remediation plan.
 
-## 4) Changelog après chaque commit (multi-dev)
-Après chaque commit, créer un fichier dédié dans `docs/changelog/` (ne pas réécrire un seul fichier global), format:
-- `YYYYMMDD-HHMMSS_<dev>_<shortsha>.md`
-
-Contenu:
-- Auteur/dev
-- Commit SHA
-- Résumé
-- Fichiers modifiés
-- Tests/lints exécutés
-- Risques/restes à faire
-
-## 5) Exécution systématique tests et lints
-Avant commit, Codex doit tenter:
+## 4) Tests and lint are mandatory
+Before commit, attempt:
 - Backend: fmt + clippy + tests
 - Frontend: lint + typecheck + tests
 
-Si indisponible (repo incomplet), documenter explicitement la limite dans le changelog et le message final.
+If unavailable (incomplete repo), document the limitation in the changelog and final response.
 
-## 6) MR = stop logique (qualité & revue)
-À chaque MR, Codex doit:
-- marquer un point d’arrêt,
-- relire la logique (risques/edge cases),
-- exécuter les checks qualité disponibles,
-- documenter les résultats avant de poursuivre.
+## 5) Changelog generation (release gate)
+For any version bump or release:
+- Update `CHANGELOG.md` in English.
+- Generate a brief entry from Git history since the last logged version (or last tag).
+- If the current tag/version is missing from the changelog, add it before release.
+- Use `pnpm -C desktop changelog` (or `node scripts/changelog.mjs <version>`).
+- The generator groups by conventional commit type; keep commit subjects consistent.
 
-## 7) Format de réponse (style commit)
-Quand Codex rend un résultat, commencer par une ligne de titre au format
-conventional commit (ex: `feat: ...`, `fix: ...`, `chore: ...`), puis détailler
-les changements.
+## 6) MR = logical stop (quality & review)
+At each MR, Codex must:
+- pause and reflect,
+- review logic (risks/edge cases),
+- run available quality checks,
+- document results before proceeding.
+
+## 7) Response format (commit style)
+When delivering results, start with a conventional commit title line
+(e.g. `feat: ...`, `fix: ...`, `chore: ...`), then detail the changes.

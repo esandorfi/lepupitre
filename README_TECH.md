@@ -1,65 +1,94 @@
-# README_TECH — Architecture et règles d’implémentation
+# README_TECH — Architecture and implementation rules
 
-## 1) Cible architecture
+## 1) Target architecture
 - **Desktop**: Tauri v2
 - **Core**: Rust
 - **UI**: Vue 3 + Vite + TypeScript + Vue Router + Nuxt UI + Tailwind
-- **Stockage**: SQLite (global + par profil) + filesystem artefacts
-- **STT**: whisper.cpp local via adapter
+- **Storage**: SQLite (global + per profile) + filesystem artifacts
+- **STT**: local whisper.cpp adapter
 
-## 2) Décisions de cohérence retenues
-1. **UI standardisée Vue** (la variante React du starterkit est rejetée pour cohérence avec la spec UI).
-2. **Docs source**: `spec/` reste la source RFC; `README*` + `docs/` portent l’opérationnel.
-3. **Architecture hexagonale** maintenue: domain/application/ports/adapters.
-4. **No network by default** dès le MVP.
-5. **Décisions non fermées transformées en ADR obligatoires**: ADR-AUDIO-0001 et ADR-SEC-0002 avec spikes et critères de sortie.
+## 2) Coherence decisions
+1. **UI standardized on Vue** (React starterkit variant rejected for spec coherence).
+2. **Docs source**: `spec/` remains the RFC source; `README*` + `docs/` carry operational guidance.
+3. **Hexagonal architecture** preserved: domain/application/ports/adapters.
+4. **No network by default** from the MVP.
+5. **Open decisions moved into mandatory ADRs**: ADR-AUDIO-0001 and ADR-SEC-0002 with spikes and exit criteria.
 
-
-## 2.1 ADR obligatoires avant implémentation
+## 2.1 Mandatory ADRs before implementation
 - `docs/adr/ADR-AUDIO-0001-normalisation-audio-capture-wav16k.md`
 - `docs/adr/ADR-SEC-0002-tauri-capabilities-least-privilege.md`
 
-Critère de sortie commun: app “hello quest” capable d’enregistrer un WAV 16k mono dans appdata, sans accès UI hors sandbox.
+Shared exit criteria: the “hello quest” app can record a 16k mono WAV into appdata, with no UI access outside the sandbox.
 
-## 3) Modules backend (proposition exécutable)
-- `commands/`: surface IPC Tauri minimale.
-- `core/domain`: entités, invariants, IDs.
-- `core/application/usecases`: orchestration métier.
+## 3) Backend modules (executable proposal)
+- `commands/`: minimal Tauri IPC surface.
+- `core/domain`: entities, invariants, IDs.
+- `core/application/usecases`: business orchestration.
 - `core/ports`: interfaces (`TranscriptionProvider`, `ArtifactStore`, etc.).
 - `core/adapters`: sqlite/fs/whisper/zip/secrets/jobs.
 
-## 4) Contrats et versioning
-- Schémas JSON versionnés (`schemas/*.v1.json`).
-- Migrations SQL versionnées (`migrations/*`).
-- Tous les changements de contrat => ADR + entrée changelog.
+## 4) Contracts and versioning
+- Versioned JSON schemas (`schemas/*.v1.json`).
+- Versioned SQL migrations (`migrations/*`).
+- Any contract change => ADR + changelog entry.
 
-## 5) Sécurité (baseline)
-- Aucun accès FS générique depuis UI.
-- IPC “task-oriented” uniquement.
-- Validation imports zip anti traversal + limites taille.
-- Secrets via keyring/stronghold, jamais en clair dans SQLite.
+## 5) Security baseline
+- No generic FS access from UI.
+- Task-oriented IPC only.
+- ZIP import validation (path traversal + size limits).
+- Secrets via keyring/stronghold, never stored in SQLite.
 
-## 6) Tests et lint (gates obligatoires)
+## 6) Tests and lint (mandatory gates)
 ## Backend
 - format: `cargo fmt --all -- --check`
 - lint: `cargo clippy --all-targets --all-features -- -D warnings`
 - tests: `cargo test --all`
 
 ## Frontend
-- lint: `pnpm lint`
-- types: `pnpm typecheck`
-- tests: `pnpm test`
+- lint: `pnpm -C desktop ui:lint`
+- types: `pnpm -C desktop ui:typecheck`
+- tests: `pnpm -C desktop ui:test`
 
-## E2E minimal
-- test parcours: création profil -> création projet -> soumission quête texte -> feedback affiché.
+## Minimal E2E
+- Profile creation -> project creation -> text quest submission -> feedback displayed.
 
-## 7) Observabilité locale
-- logs structurés JSON en dev.
-- IDs corrélés par `job_id` pour transcription/analyse.
-- erreurs UI normalisées (`IPC_INVALID_*`, `IPC_COMMAND_FAILED`, etc.).
+## 7) Release & packaging
+- Local build: `pnpm -C desktop build` (macOS => `.dmg`, Windows => `.msi/.exe`).
+- Changelog: `pnpm -C desktop changelog` (or `node scripts/changelog.mjs <version>`).
+- If the latest Git tag is missing in `CHANGELOG.md`, backfill it first: `pnpm -C desktop changelog -- <tag-version>`.
+- CI release: `.github/workflows/release.yml` (macOS/Windows matrix).
+- Versioning: `pnpm -C desktop release:patch|minor|major` updates `package.json`, `tauri.conf.json`, `Cargo.toml`, `Cargo.lock`, and creates a `vX.Y.Z` tag.
+- Tag flow: commit the version bump, then push the tag (`git push origin vX.Y.Z`) to trigger packaging.
+  - The DMG name follows `productName` (set to `LePupitre` in `tauri.conf.json`).
+  - The workflow attaches built installers to the tag release as draft assets.
+- CI secrets (optional):
+  - `HOMEBREW_TAP_TOKEN` for pushing cask updates.
+  - `WINGETCREATE_TOKEN` for submitting winget updates.
+### Token setup (GitHub)
+- `HOMEBREW_TAP_TOKEN`:
+  - Fine-grained PAT with access to `esandorfi/homebrew-lepupitre`.
+  - Permissions: Contents (read/write).
+- `WINGETCREATE_TOKEN`:
+  - PAT with access to your fork of `microsoft/winget-pkgs`.
+  - Permissions: Contents (read/write) + Pull requests (read/write).
+  - Ensure the fork exists at `esandorfi/winget-pkgs`.
+### Optional distribution (Homebrew + winget)
+- Homebrew (macOS):
+  - Tap repo: `esandorfi/homebrew-lepupitre`.
+  - Cask: `Casks/lepupitre.rb` pointing to the GitHub release `.dmg`, with `version` and `sha256`.
+  - CI can update the cask automatically when a tag release is published.
+- winget (Windows):
+  - Package ID: `esandorfi.LePupitre`.
+  - Use `wingetcreate update` to submit a PR to `microsoft/winget-pkgs` with the new `.msi/.exe` URL and SHA256.
+  - CI automation uses a GitHub token; otherwise keep it manual.
 
-## 8) Plan de montée en puissance
-- MVP offline stable.
-- then remote STT opt-in.
-- then sync cloud opt-in.
-Chaque étape doit préserver la compatibilité des données locales.
+## 8) Local observability
+- Structured JSON logs in dev.
+- Correlate IDs via `job_id` for transcription/analysis.
+- Normalized UI errors (`IPC_INVALID_*`, `IPC_COMMAND_FAILED`, etc.).
+
+## 9) Scale-up plan
+- Stable offline MVP.
+- Then opt-in remote STT.
+- Then opt-in cloud sync.
+Each step must preserve local data compatibility.

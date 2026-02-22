@@ -93,4 +93,4 @@ Avoir une application fonctionnelle après chaque passe, avec valeur visible.
 Une passe n’est close que si:
 1. lint/test OK,
 2. doc mise à jour,
-3. changelog de commit écrit.
+3. docs mises à jour si nécessaire.

@@ -1,0 +1,167 @@
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+env:
+  HOMEBREW_TAP: esandorfi/homebrew-lepupitre
+  HOMEBREW_CASK: lepupitre
+  WINGET_ID: esandorfi.LePupitre
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-13, macos-latest, windows-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.19.0"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: "10"
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install JS deps
+        run: pnpm -C desktop install
+
+      - name: Build artifacts (manual run)
+        if: github.event_name == 'workflow_dispatch'
+        run: pnpm -C desktop build
+
+      - name: Upload artifacts (manual run)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: lepupitre-${{ matrix.os }}
+          path: |
+            desktop/src-tauri/target/release/bundle/**
+
+      - name: Build and attach to GitHub release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: desktop
+          releaseName: "LePupitre ${{ github.ref_name }}"
+          tagName: ${{ github.ref_name }}
+          releaseDraft: true
+          prerelease: false
+
+  update-homebrew:
+    if: startsWith(github.ref, 'refs/tags/') && secrets.HOMEBREW_TAP_TOKEN != ''
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Install tools
+        run: sudo apt-get update && sudo apt-get install -y jq
+      - name: Update Homebrew cask
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          API_URL="https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/${GITHUB_REF_NAME}"
+          RELEASE=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" "${API_URL}")
+          ARM_URL=$(echo "${RELEASE}" | jq -r '.assets[] | select(.name | test("aarch64|arm64")) | .browser_download_url' | head -n 1)
+          INTEL_URL=$(echo "${RELEASE}" | jq -r '.assets[] | select(.name | test("x64|x86_64")) | .browser_download_url' | head -n 1)
+          if [ -z "${ARM_URL}" ] && [ -z "${INTEL_URL}" ]; then
+            echo "No DMG assets found."
+            exit 1
+          fi
+          mkdir -p /tmp/lepupitre
+          if [ -n "${ARM_URL}" ]; then
+            curl -L -o /tmp/lepupitre/arm.dmg "${ARM_URL}"
+            ARM_SHA=$(shasum -a 256 /tmp/lepupitre/arm.dmg | awk '{print $1}')
+            ARM_NAME=$(basename "${ARM_URL}")
+          fi
+          if [ -n "${INTEL_URL}" ]; then
+            curl -L -o /tmp/lepupitre/intel.dmg "${INTEL_URL}"
+            INTEL_SHA=$(shasum -a 256 /tmp/lepupitre/intel.dmg | awk '{print $1}')
+            INTEL_NAME=$(basename "${INTEL_URL}")
+          fi
+          git clone "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/${HOMEBREW_TAP}.git" homebrew-tap
+          mkdir -p "homebrew-tap/Casks"
+          if [ -n "${ARM_URL}" ] && [ -n "${INTEL_URL}" ]; then
+            cat > "homebrew-tap/Casks/${HOMEBREW_CASK}.rb" <<EOF
+cask "${HOMEBREW_CASK}" do
+  version "${VERSION}"
+  sha256 arm: "${ARM_SHA}", intel: "${INTEL_SHA}"
+
+  url "https://github.com/${GITHUB_REPOSITORY}/releases/download/v#{version}/#{arch}",
+      arch: { arm: "${ARM_NAME}", intel: "${INTEL_NAME}" }
+
+  name "LePupitre"
+  desc "Local-first talk coach"
+  homepage "https://github.com/${GITHUB_REPOSITORY}"
+
+  app "LePupitre.app"
+end
+EOF
+          else
+            URL="${ARM_URL:-${INTEL_URL}}"
+            SHA="${ARM_SHA:-${INTEL_SHA}}"
+            NAME=$(basename "${URL}")
+            cat > "homebrew-tap/Casks/${HOMEBREW_CASK}.rb" <<EOF
+cask "${HOMEBREW_CASK}" do
+  version "${VERSION}"
+  sha256 "${SHA}"
+
+  url "https://github.com/${GITHUB_REPOSITORY}/releases/download/v#{version}/${NAME}"
+
+  name "LePupitre"
+  desc "Local-first talk coach"
+  homepage "https://github.com/${GITHUB_REPOSITORY}"
+
+  app "LePupitre.app"
+end
+EOF
+          fi
+          cd homebrew-tap
+          git add "Casks/${HOMEBREW_CASK}.rb"
+          git commit -m "Update ${HOMEBREW_CASK} to ${VERSION}"
+          git push
+
+  update-winget:
+    if: startsWith(github.ref, 'refs/tags/') && secrets.WINGETCREATE_TOKEN != ''
+    runs-on: windows-latest
+    needs: build
+    steps:
+      - name: Update winget package
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WINGETCREATE_TOKEN: ${{ secrets.WINGETCREATE_TOKEN }}
+        shell: pwsh
+        run: |
+          $version = $env:GITHUB_REF_NAME -replace '^v',''
+          $apiUrl = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/releases/tags/$env:GITHUB_REF_NAME"
+          $release = Invoke-RestMethod -Headers @{ Authorization = "token $env:GITHUB_TOKEN" } -Uri $apiUrl
+          $asset = $release.assets | Where-Object { $_.name -like "*.msi" } | Select-Object -First 1
+          if (-not $asset) {
+            $asset = $release.assets | Where-Object { $_.name -like "*.exe" } | Select-Object -First 1
+          }
+          if (-not $asset) {
+            throw "No installer asset found."
+          }
+          $url = $asset.browser_download_url
+          $installerPath = Join-Path $env:RUNNER_TEMP $asset.name
+          Invoke-WebRequest -Uri $url -OutFile $installerPath
+          $sha = (Get-FileHash -Algorithm SHA256 $installerPath).Hash.ToLower()
+          winget install --id Microsoft.WingetCreate -e --accept-package-agreements --accept-source-agreements
+          wingetcreate update $env:WINGET_ID --version $version --urls $url --sha256 $sha --submit --token $env:WINGETCREATE_TOKEN

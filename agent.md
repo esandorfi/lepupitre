@@ -19,6 +19,9 @@
 - CI runs on GitHub Actions.
 
 ## Documentation discipline
-- Update docs/ADR/changelog when required by `docs/CODEX_RULES.md`.
+- Update docs/ADR when required by `docs/CODEX_RULES.md`.
+- Write README/README_TECH and ADRs in English.
+- Maintain `CHANGELOG.md` in English for every version bump/release.
+- Use `pnpm -C desktop changelog` to generate a brief entry from Git history when releasing.
 - Record unresolved decisions and mismatches; challenge assumptions early.
 - If tests/lints cannot run, state why and what is missing.
