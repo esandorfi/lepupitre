@@ -11,9 +11,13 @@ const args = process.argv.slice(2);
 const bump = args[0];
 const noTag = args.includes("--no-tag");
 const noChangelog = args.includes("--no-changelog");
+const doCommit = args.includes("--commit");
+const doPush = args.includes("--push");
 
 if (!bump) {
-  console.error("Usage: node scripts/release.mjs <patch|minor|major|x.y.z> [--no-tag] [--no-changelog]");
+  console.error(
+    "Usage: node scripts/release.mjs <patch|minor|major|x.y.z> [--no-tag] [--no-changelog] [--commit] [--push]"
+  );
   process.exit(1);
 }
 
@@ -81,6 +85,10 @@ function updateTauriConfig(filePath, nextVersion) {
   fs.writeFileSync(filePath, `${JSON.stringify(data, null, 2)}\n`, "utf8");
 }
 
+function git(command) {
+  return execSync(command, { encoding: "utf8" }).trim();
+}
+
 const desktopPackagePath = path.join(repoDir, "desktop", "package.json");
 const uiPackagePath = path.join(repoDir, "desktop", "ui", "package.json");
 const tauriConfigPath = path.join(repoDir, "desktop", "src-tauri", "tauri.conf.json");
@@ -109,6 +117,24 @@ if (!noChangelog) {
 
 if (!noTag) {
   execSync(`git tag v${nextVersion}`, { stdio: "inherit" });
+}
+
+if (doCommit) {
+  execSync("git add -A", { stdio: "inherit" });
+  const status = git("git status --porcelain");
+  if (status) {
+    execSync(`git commit -m "chore(release): v${nextVersion}"`, { stdio: "inherit" });
+  } else {
+    console.log("No changes to commit.");
+  }
+}
+
+if (doPush) {
+  const branch = git("git rev-parse --abbrev-ref HEAD");
+  execSync(`git push origin ${branch}`, { stdio: "inherit" });
+  if (!noTag) {
+    execSync(`git push origin v${nextVersion}`, { stdio: "inherit" });
+  }
 }
 
 console.log(`Version bumped to ${nextVersion}`);

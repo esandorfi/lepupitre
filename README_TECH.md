@@ -58,7 +58,15 @@ Shared exit criteria: the “hello quest” app can record a 16k mono WAV into a
 - If the latest Git tag is missing in `CHANGELOG.md`, backfill it first: `pnpm -C desktop changelog -- <tag-version>`.
 - CI release: `.github/workflows/release.yml` (macOS/Windows matrix).
 - Versioning: `pnpm -C desktop release:patch|minor|major` updates `package.json`, `tauri.conf.json`, `Cargo.toml`, `Cargo.lock`, and creates a `vX.Y.Z` tag.
-- Tag flow: commit the version bump, then push the tag (`git push origin vX.Y.Z`) to trigger packaging.
+- Tag flow (CLI, precise):
+  1. Automated bump + commit + push (recommended):
+     - `pnpm -C desktop release:patch:push` (or `release:minor:push`, `release:major:push`)
+     - This creates the tag and pushes both commit + tag to GitHub.
+  2. Manual alternative:
+     - `pnpm -C desktop release:patch`
+     - `git add -A && git commit -m "chore(release): vX.Y.Z"`
+     - `git push origin <branch> && git push origin vX.Y.Z`
+     - To push all local tags: `git push origin --tags`
   - The DMG name follows `productName` (set to `LePupitre` in `tauri.conf.json`).
   - The workflow attaches built installers to the tag release as draft assets.
 - CI secrets (optional):

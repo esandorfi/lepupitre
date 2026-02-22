@@ -100,38 +100,38 @@ jobs:
           mkdir -p "homebrew-tap/Casks"
           if [ -n "${ARM_URL}" ] && [ -n "${INTEL_URL}" ]; then
             cat > "homebrew-tap/Casks/${HOMEBREW_CASK}.rb" <<EOF
-cask "${HOMEBREW_CASK}" do
-  version "${VERSION}"
-  sha256 arm: "${ARM_SHA}", intel: "${INTEL_SHA}"
+          cask "${HOMEBREW_CASK}" do
+            version "${VERSION}"
+            sha256 arm: "${ARM_SHA}", intel: "${INTEL_SHA}"
 
-  url "https://github.com/${GITHUB_REPOSITORY}/releases/download/v#{version}/#{arch}",
-      arch: { arm: "${ARM_NAME}", intel: "${INTEL_NAME}" }
+            url "https://github.com/${GITHUB_REPOSITORY}/releases/download/v#{version}/#{arch}",
+                arch: { arm: "${ARM_NAME}", intel: "${INTEL_NAME}" }
 
-  name "LePupitre"
-  desc "Local-first talk coach"
-  homepage "https://github.com/${GITHUB_REPOSITORY}"
+            name "LePupitre"
+            desc "Local-first talk coach"
+            homepage "https://github.com/${GITHUB_REPOSITORY}"
 
-  app "LePupitre.app"
-end
-EOF
+            app "LePupitre.app"
+          end
+          EOF
           else
             URL="${ARM_URL:-${INTEL_URL}}"
             SHA="${ARM_SHA:-${INTEL_SHA}}"
             NAME=$(basename "${URL}")
             cat > "homebrew-tap/Casks/${HOMEBREW_CASK}.rb" <<EOF
-cask "${HOMEBREW_CASK}" do
-  version "${VERSION}"
-  sha256 "${SHA}"
+          cask "${HOMEBREW_CASK}" do
+            version "${VERSION}"
+            sha256 "${SHA}"
 
-  url "https://github.com/${GITHUB_REPOSITORY}/releases/download/v#{version}/${NAME}"
+            url "https://github.com/${GITHUB_REPOSITORY}/releases/download/v#{version}/${NAME}"
 
-  name "LePupitre"
-  desc "Local-first talk coach"
-  homepage "https://github.com/${GITHUB_REPOSITORY}"
+            name "LePupitre"
+            desc "Local-first talk coach"
+            homepage "https://github.com/${GITHUB_REPOSITORY}"
 
-  app "LePupitre.app"
-end
-EOF
+            app "LePupitre.app"
+          end
+          EOF
           fi
           cd homebrew-tap
           git add "Casks/${HOMEBREW_CASK}.rb"

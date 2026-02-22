@@ -16,6 +16,9 @@
     "release:patch": "node ../scripts/release.mjs patch",
     "release:minor": "node ../scripts/release.mjs minor",
     "release:major": "node ../scripts/release.mjs major",
+    "release:patch:push": "node ../scripts/release.mjs patch --commit --push",
+    "release:minor:push": "node ../scripts/release.mjs minor --commit --push",
+    "release:major:push": "node ../scripts/release.mjs major --commit --push",
     "version:patch": "node ../scripts/release.mjs patch",
     "version:minor": "node ../scripts/release.mjs minor",
     "version:major": "node ../scripts/release.mjs major"
