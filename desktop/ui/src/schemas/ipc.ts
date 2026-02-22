@@ -429,6 +429,12 @@ export const AsrModelRemovePayloadSchema = z.object({
   modelId: z.string().min(1),
 });
 
+export const AsrModelVerifyPayloadSchema = z.object({
+  modelId: z.string().min(1),
+});
+
+export const AsrModelVerifyResultSchema = AsrModelStatusSchema;
+
 export const AsrModelDownloadResultSchema = z.object({
   modelId: z.string().min(1),
   path: z.string().min(1),

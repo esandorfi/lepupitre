@@ -25,14 +25,17 @@ Each ADR must include a **"Divergence"** section:
 - `Divergent` if the code contradicts the decision.
 For the last two, list a remediation plan.
 
-## 4) Tests and lint are mandatory
+## 4) IPC schema alignment
+IPC payloads must be schema-aligned end-to-end (Rust serde casing ↔ Zod schemas ↔ UI usage). If a field name changes, update all three and add a quick validation check.
+
+## 5) Tests and lint are mandatory
 Before commit, attempt:
 - Backend: fmt + clippy + tests
 - Frontend: lint + typecheck + tests
 
 If unavailable (incomplete repo), document the limitation in the changelog and final response.
 
-## 5) Changelog generation (release gate)
+## 6) Changelog generation (release gate)
 For any version bump or release:
 - Update `CHANGELOG.md` in English.
 - Generate a brief entry from Git history since the last logged version (or last tag).
@@ -40,13 +43,13 @@ For any version bump or release:
 - Use `pnpm -C desktop changelog` (or `node scripts/changelog.mjs <version>`).
 - The generator groups by conventional commit type; keep commit subjects consistent.
 
-## 6) MR = logical stop (quality & review)
+## 7) MR = logical stop (quality & review)
 At each MR, Codex must:
 - pause and reflect,
 - review logic (risks/edge cases),
 - run available quality checks,
 - document results before proceeding.
 
-## 7) Response format (commit style)
+## 8) Response format (commit style)
 When delivering results, start with a conventional commit title line
 (e.g. `feat: ...`, `fix: ...`, `chore: ...`), then detail the changes.

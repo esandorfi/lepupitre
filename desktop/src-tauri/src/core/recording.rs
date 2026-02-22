@@ -63,7 +63,14 @@ impl LinearResampler {
 
     pub fn process(&mut self, input: &[f32]) -> Vec<f32> {
         if self.input_rate == self.target_rate {
+            self.buffer.clear();
+            self.pos = 0.0;
             return input.to_vec();
+        }
+
+        if !self.pos.is_finite() {
+            self.buffer.clear();
+            self.pos = 0.0;
         }
 
         self.buffer.extend_from_slice(input);
@@ -73,6 +80,9 @@ impl LinearResampler {
         while self.pos + 1.0 < len {
             let left = self.pos.floor() as usize;
             let right = left + 1;
+            if right >= self.buffer.len() {
+                break;
+            }
             let weight = self.pos - left as f32;
             let sample = self.buffer[left] * (1.0 - weight) + self.buffer[right] * weight;
             output.push(sample);
@@ -81,7 +91,8 @@ impl LinearResampler {
 
         let drop = self.pos.floor() as usize;
         if drop > 0 {
-            if drop >= self.buffer.len() {
+            let drop = drop.min(self.buffer.len());
+            if drop == self.buffer.len() {
                 self.buffer.clear();
                 self.pos = 0.0;
             } else {

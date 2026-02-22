@@ -1,4 +1,5 @@
 use crate::core::models;
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::fs::File;
 use std::io::Read;
@@ -13,6 +14,12 @@ pub struct AsrModelSpec {
     pub sha256: &'static str,
     pub size_bytes: u64,
     pub bundled: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct AsrModelManifest {
+    sha256: String,
+    size_bytes: u64,
 }
 
 const MODEL_SPECS: [AsrModelSpec; 2] = [
@@ -61,19 +68,36 @@ pub fn list_models(app: &tauri::AppHandle) -> Result<Vec<models::AsrModelStatus>
     for spec in &MODEL_SPECS {
         let path = dir.join(spec.filename);
         if path.exists() {
-            let (sha256, size_bytes) = sha256_file(&path)?;
-            let checksum_ok = sha256 == spec.sha256;
+            let size_bytes = std::fs::metadata(&path).map(|meta| meta.len()).ok();
+            let manifest = read_manifest(&manifest_path(&dir, spec.filename));
+            let mut installed = false;
+            let mut checksum_ok = None;
+
+            if let Some(actual_size) = size_bytes {
+                if actual_size != spec.size_bytes {
+                    checksum_ok = Some(false);
+                } else if let Some(manifest) = manifest {
+                    let ok = manifest.sha256 == spec.sha256 && manifest.size_bytes == actual_size;
+                    checksum_ok = Some(ok);
+                    installed = ok;
+                } else {
+                    installed = true;
+                }
+            } else {
+                checksum_ok = Some(false);
+            }
+
             out.push(models::AsrModelStatus {
                 id: spec.id.to_string(),
                 label: spec.label.to_string(),
                 bundled: spec.bundled,
-                installed: checksum_ok,
+                installed,
                 expected_bytes: spec.size_bytes,
                 expected_sha256: spec.sha256.to_string(),
                 source_url: spec.url.to_string(),
                 path: Some(path.to_string_lossy().to_string()),
-                size_bytes: Some(size_bytes),
-                checksum_ok: Some(checksum_ok),
+                size_bytes,
+                checksum_ok,
             });
         } else {
             out.push(models::AsrModelStatus {
@@ -92,6 +116,65 @@ pub fn list_models(app: &tauri::AppHandle) -> Result<Vec<models::AsrModelStatus>
     }
 
     Ok(out)
+}
+
+pub fn verify_model(
+    app: &tauri::AppHandle,
+    model_id: &str,
+) -> Result<models::AsrModelStatus, String> {
+    let spec = model_spec(model_id).ok_or_else(|| "model_unknown".to_string())?;
+    let dir = models_dir(app)?;
+    let path = dir.join(spec.filename);
+
+    if !path.exists() {
+        return Err("model_missing".to_string());
+    }
+
+    let (sha256, size_bytes) = sha256_file(&path)?;
+    store_manifest(&dir, spec.filename, &sha256, size_bytes)?;
+
+    let checksum_ok = sha256 == spec.sha256 && size_bytes == spec.size_bytes;
+
+    Ok(models::AsrModelStatus {
+        id: spec.id.to_string(),
+        label: spec.label.to_string(),
+        bundled: spec.bundled,
+        installed: checksum_ok,
+        expected_bytes: spec.size_bytes,
+        expected_sha256: spec.sha256.to_string(),
+        source_url: spec.url.to_string(),
+        path: Some(path.to_string_lossy().to_string()),
+        size_bytes: Some(size_bytes),
+        checksum_ok: Some(checksum_ok),
+    })
+}
+
+pub fn store_manifest(
+    dir: &PathBuf,
+    filename: &str,
+    sha256: &str,
+    size_bytes: u64,
+) -> Result<(), String> {
+    let manifest = AsrModelManifest {
+        sha256: sha256.to_string(),
+        size_bytes,
+    };
+    write_manifest(&manifest_path(dir, filename), &manifest)
+}
+
+fn manifest_path(dir: &PathBuf, filename: &str) -> PathBuf {
+    dir.join(format!("{filename}.manifest.json"))
+}
+
+fn read_manifest(path: &PathBuf) -> Option<AsrModelManifest> {
+    let data = std::fs::read_to_string(path).ok()?;
+    serde_json::from_str(&data).ok()
+}
+
+fn write_manifest(path: &PathBuf, manifest: &AsrModelManifest) -> Result<(), String> {
+    let payload = serde_json::to_string(manifest).map_err(|e| format!("manifest_json: {e}"))?;
+    std::fs::write(path, payload).map_err(|e| format!("manifest_write: {e}"))?;
+    Ok(())
 }
 
 fn sha256_file(path: &PathBuf) -> Result<(String, u64), String> {
@@ -120,4 +203,22 @@ fn to_hex(bytes: &[u8]) -> String {
         out.push_str(&format!("{:02x}", byte));
     }
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn model_specs_are_consistent() {
+        let specs = model_specs();
+        let mut ids = std::collections::HashSet::new();
+        for spec in specs {
+            assert!(ids.insert(spec.id), "duplicate model id: {}", spec.id);
+            assert!(spec.filename.ends_with(".bin"));
+            assert!(spec.url.starts_with("https://"));
+            assert!(spec.size_bytes > 0);
+            assert_eq!(spec.sha256.len(), 64);
+        }
+    }
 }

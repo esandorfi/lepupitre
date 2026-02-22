@@ -11,6 +11,8 @@ import {
   AsrModelDownloadResultSchema,
   AsrModelRemovePayloadSchema,
   AsrModelStatus,
+  AsrModelVerifyPayloadSchema,
+  AsrModelVerifyResultSchema,
   AsrModelsListSchema,
   EmptyPayloadSchema,
   VoidResponseSchema,
@@ -22,6 +24,7 @@ const { settings, updateSettings } = useTranscriptionSettings();
 const models = ref<AsrModelStatus[]>([]);
 const isLoadingModels = ref(false);
 const downloadingModelId = ref<string | null>(null);
+const verifyingModelId = ref<string | null>(null);
 const downloadError = ref<string | null>(null);
 const downloadProgress = ref<Record<string, { downloadedBytes: number; totalBytes: number }>>({});
 
@@ -34,10 +37,12 @@ const modelOptions = computed(() =>
         ? t("settings.transcription.model_tiny")
         : t("settings.transcription.model_base");
     let statusKey = "settings.transcription.model_status_missing";
-    if (model.installed) {
-      statusKey = "settings.transcription.model_status_ready";
-    } else if (model.checksum_ok === false) {
+    if (model.checksum_ok === false) {
       statusKey = "settings.transcription.model_status_invalid";
+    } else if (model.installed && model.checksum_ok == null) {
+      statusKey = "settings.transcription.model_status_unverified";
+    } else if (model.installed) {
+      statusKey = "settings.transcription.model_status_ready";
     } else if (model.bundled) {
       statusKey = "settings.transcription.model_status_missing_bundled";
     }
@@ -48,6 +53,7 @@ const modelOptions = computed(() =>
       expectedBytes: model.expected_bytes,
       checksum: model.expected_sha256,
       sourceUrl: model.source_url,
+      checksumOk: model.checksum_ok,
       status: t(statusKey),
     };
   })
@@ -166,8 +172,29 @@ async function removeModel(modelId: string) {
   }
 }
 
+async function verifyModel(modelId: string) {
+  if (downloadingModelId.value || verifyingModelId.value) {
+    return;
+  }
+  verifyingModelId.value = modelId;
+  downloadError.value = null;
+  try {
+    await invokeChecked(
+      "asr_model_verify",
+      AsrModelVerifyPayloadSchema,
+      AsrModelVerifyResultSchema,
+      { modelId }
+    );
+    await refreshModels();
+  } catch (err) {
+    downloadError.value = err instanceof Error ? err.message : String(err);
+  } finally {
+    verifyingModelId.value = null;
+  }
+}
+
 async function downloadModel(modelId: string) {
-  if (downloadingModelId.value) {
+  if (downloadingModelId.value || verifyingModelId.value) {
     return;
   }
   downloadingModelId.value = modelId;
@@ -316,6 +343,9 @@ onBeforeUnmount(() => {
                   <span v-if="downloadingModelId === model.id" class="app-muted text-xs">
                     {{ t("settings.transcription.model_downloading") }}
                   </span>
+                  <span v-else-if="verifyingModelId === model.id" class="app-muted text-xs">
+                    {{ t("settings.transcription.model_verifying") }}
+                  </span>
                   <button
                     v-else-if="!model.installed"
                     class="app-button-secondary cursor-pointer rounded-full px-3 py-2 text-xs font-semibold transition"
@@ -324,14 +354,23 @@ onBeforeUnmount(() => {
                   >
                     {{ t("settings.transcription.download_action") }}
                   </button>
-                  <button
-                    v-else
-                    class="app-button-secondary cursor-pointer rounded-full px-3 py-2 text-xs font-semibold transition"
-                    type="button"
-                    @click="removeModel(model.id)"
-                  >
-                    {{ t("settings.transcription.model_remove") }}
-                  </button>
+                  <template v-else>
+                    <button
+                      v-if="model.checksumOk == null"
+                      class="app-button-secondary cursor-pointer rounded-full px-3 py-2 text-xs font-semibold transition"
+                      type="button"
+                      @click="verifyModel(model.id)"
+                    >
+                      {{ t("settings.transcription.model_verify") }}
+                    </button>
+                    <button
+                      class="app-button-secondary cursor-pointer rounded-full px-3 py-2 text-xs font-semibold transition"
+                      type="button"
+                      @click="removeModel(model.id)"
+                    >
+                      {{ t("settings.transcription.model_remove") }}
+                    </button>
+                  </template>
                   <span v-if="model.installed" class="app-muted text-xs">
                     {{ t("settings.transcription.model_installed") }}
                   </span>

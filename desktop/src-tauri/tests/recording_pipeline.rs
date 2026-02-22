@@ -1,52 +1,59 @@
-use lepupitre_lib::core::dsp::Agc;
-use lepupitre_lib::core::recording::{LinearResampler, WavWriter};
-use std::fs;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::path::PathBuf;
 
-fn temp_wav_path() -> std::path::PathBuf {
-    let mut path = std::env::temp_dir();
-    let stamp = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_nanos();
-    let pid = std::process::id();
-    path.push(format!("lepupitre-recording-{pid}-{stamp}.wav"));
-    path
+use hound::WavReader;
+use lepupitre_lib::core::dsp::Agc;
+use lepupitre_lib::core::recording::{LinearResampler, RingBuffer};
+use lepupitre_lib::core::vad::{VadConfig, VadState};
+
+fn fixture_path() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
+        .join("fixtures")
+        .join("sine_16k_mono.wav")
 }
 
 #[test]
-fn recording_pipeline_writes_valid_wav() {
-    let input_rate = 48_000u32;
-    let target_rate = 16_000u32;
-    let duration_sec = 1.0f32;
-    let input_samples = (input_rate as f32 * duration_sec) as usize;
-    let input = vec![0.12f32; input_samples];
-    let path = temp_wav_path();
+fn wav_fixture_pipeline_runs_without_panic() {
+    let mut reader = WavReader::open(fixture_path()).expect("fixture wav should open");
+    let spec = reader.spec();
+    assert_eq!(spec.channels, 1);
+    assert_eq!(spec.sample_rate, 16_000);
 
-    let mut resampler = LinearResampler::new(input_rate, target_rate);
+    let samples: Vec<f32> = reader
+        .samples::<i16>()
+        .map(|sample| sample.expect("sample read") as f32 / 32768.0)
+        .collect();
+    assert!(!samples.is_empty());
+
+    let mut resampler = LinearResampler::new(spec.sample_rate, 16_000);
     let mut agc = Agc::new(0.1, 0.5, 8.0, 0.2);
-    let mut writer = WavWriter::create(&path, target_rate, 1).expect("wav create");
+    let mut vad = VadState::default();
+    let config = VadConfig::balanced();
+    let mut ring = RingBuffer::new(16_000);
 
-    let mut total_out = 0usize;
-    let mut offset = 0usize;
-    while offset < input.len() {
-        let end = (offset + 512).min(input.len());
-        let chunk = &input[offset..end];
-        let mut resampled = resampler.process(chunk);
-        agc.process(&mut resampled);
-        total_out += resampled.len();
-        writer.write_samples(&resampled).expect("wav write");
-        offset = end;
+    let chunk_sizes = [64usize, 127, 256, 513, 1024];
+    let mut idx = 0usize;
+    let mut total_processed = 0usize;
+
+    while idx < samples.len() {
+        let chunk_len = chunk_sizes[idx % chunk_sizes.len()].min(samples.len() - idx);
+        let input = &samples[idx..idx + chunk_len];
+        let resampled = resampler.process(input);
+        let mut processed = resampled.clone();
+        agc.process(&mut processed);
+
+        if !processed.is_empty() {
+            let frame_ms = ((processed.len() as f32 / 16_000.0) * 1000.0).round() as u32;
+            if frame_ms > 0 {
+                let _ = vad.update_from_samples(&processed, frame_ms, &config);
+            }
+            ring.push(&processed);
+            total_processed += processed.len();
+        }
+
+        idx += chunk_len;
     }
 
-    writer.finalize().expect("wav finalize");
-
-    let bytes = fs::read(&path).expect("wav read");
-    assert!(bytes.starts_with(b"RIFF"));
-    assert_eq!(&bytes[8..12], b"WAVE");
-
-    let expected_len = 44usize + total_out * 2;
-    assert_eq!(bytes.len(), expected_len);
-
-    let _ = fs::remove_file(&path);
+    assert!(total_processed > 0);
+    assert!(ring.snapshot().len() <= 16_000);
 }

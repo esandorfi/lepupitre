@@ -191,6 +191,7 @@ pub fn asr_model_remove(app: tauri::AppHandle, model_id: String) -> Result<(), S
     let dir = asr_models::models_dir(&app)?;
     let final_path = dir.join(spec.filename);
     let tmp_path = dir.join(format!("{}.download", spec.filename));
+    let manifest_path = dir.join(format!("{}.manifest.json", spec.filename));
 
     if final_path.exists() {
         std::fs::remove_file(&final_path).map_err(|e| format!("model_remove: {e}"))?;
@@ -198,8 +199,19 @@ pub fn asr_model_remove(app: tauri::AppHandle, model_id: String) -> Result<(), S
     if tmp_path.exists() {
         let _ = std::fs::remove_file(&tmp_path);
     }
+    if manifest_path.exists() {
+        let _ = std::fs::remove_file(&manifest_path);
+    }
 
     Ok(())
+}
+
+#[tauri::command]
+pub fn asr_model_verify(
+    app: tauri::AppHandle,
+    model_id: String,
+) -> Result<models::AsrModelStatus, String> {
+    asr_models::verify_model(&app, &model_id)
 }
 
 #[tauri::command]
@@ -303,6 +315,7 @@ fn download_model_blocking(
         }
 
         std::fs::rename(&tmp_path, &final_path).map_err(|e| format!("download_finalize: {e}"))?;
+        asr_models::store_manifest(&dir, spec.filename, &sha256, downloaded)?;
         emit_model_download_progress(app, model_id, downloaded, total_bytes)?;
 
         Ok(models::AsrModelDownloadResult {
