@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from "vue";
 import { useRoute, RouterLink } from "vue-router";
 import { useI18n } from "../lib/i18n";
 import { appStore } from "../stores/app";
-import type { QuestAttemptSummary, QuestReportItem } from "../schemas/ipc";
+import type { QuestAttemptSummary, QuestReportItem, RunSummary } from "../schemas/ipc";
 
 const { t } = useI18n();
 const route = useRoute();
@@ -13,6 +13,7 @@ const error = ref<string | null>(null);
 const isLoading = ref(false);
 const report = ref<QuestReportItem[]>([]);
 const attempts = ref<QuestAttemptSummary[]>([]);
+const latestRun = ref<RunSummary | null>(null);
 const isActivating = ref(false);
 
 const project = computed(() =>
@@ -49,6 +50,19 @@ function attemptStatus(item: { has_feedback: boolean; has_transcript: boolean; h
   return t("quest.status_not_started");
 }
 
+function runStatus(run: RunSummary) {
+  if (run.feedback_id) {
+    return t("talk_report.timeline_feedback");
+  }
+  if (run.transcript_id) {
+    return t("talk_report.timeline_transcribed");
+  }
+  if (run.audio_artifact_id) {
+    return t("talk_report.timeline_recorded");
+  }
+  return t("talk_report.timeline_started");
+}
+
 function outputLabel(outputType: string) {
   const type = outputType.toLowerCase();
   if (type === "audio") {
@@ -63,6 +77,49 @@ function outputLabel(outputType: string) {
 function questCodeLabel(code: string) {
   return appStore.formatQuestCode(projectId.value, code);
 }
+
+const timeline = computed(() => {
+  const items: {
+    id: string;
+    label: string;
+    date: string;
+    status: string;
+    to?: string;
+    meta?: string;
+  }[] = [];
+
+  for (const attempt of attempts.value) {
+    items.push({
+      id: attempt.id,
+      label: attempt.quest_title,
+      date: attempt.created_at,
+      status: attemptStatus(attempt),
+      to: `/quest/${attempt.quest_code}?from=talk&projectId=${projectId.value}`,
+      meta: questCodeLabel(attempt.quest_code),
+    });
+  }
+
+  if (latestRun.value) {
+    items.push({
+      id: latestRun.value.id,
+      label: t("talk_report.timeline_boss_run"),
+      date: latestRun.value.created_at,
+      status: runStatus(latestRun.value),
+      to: `/boss-run?runId=${latestRun.value.id}`,
+    });
+  }
+
+  items.sort((a, b) => {
+    const aTime = new Date(a.date).getTime();
+    const bTime = new Date(b.date).getTime();
+    if (Number.isNaN(aTime) || Number.isNaN(bTime)) {
+      return 0;
+    }
+    return bTime - aTime;
+  });
+
+  return items;
+});
 
 const summary = computed(() => {
   const total = report.value.length;
@@ -92,6 +149,7 @@ async function loadReport() {
     }
     report.value = await appStore.getQuestReport(projectId.value);
     attempts.value = await appStore.getQuestAttempts(projectId.value, 12);
+    latestRun.value = await appStore.getLatestRun(projectId.value);
   } catch (err) {
     error.value = toError(err);
   } finally {
@@ -135,9 +193,14 @@ onMounted(loadReport);
             {{ t("talk_report.minutes") }}
           </div>
           <div class="app-muted mt-1 text-xs">{{ t("talk_report.subtitle") }}</div>
-          <RouterLink class="app-link mt-2 inline-block text-xs underline" to="/talks">
-            {{ t("talk_report.back") }}
-          </RouterLink>
+          <div class="mt-2 flex flex-wrap items-center gap-3 text-xs">
+            <RouterLink class="app-link underline" to="/talks">
+              {{ t("talk_report.back") }}
+            </RouterLink>
+            <RouterLink class="app-link underline" to="/boss-run">
+              {{ t("talk_report.boss_run") }}
+            </RouterLink>
+          </div>
         </div>
         <div class="flex items-center gap-2">
           <span
@@ -245,36 +308,27 @@ onMounted(loadReport);
 
     <div class="app-surface rounded-2xl border p-4">
       <div class="app-subtle text-xs uppercase tracking-[0.2em]">
-        {{ t("talk_report.recent_attempts") }}
+        {{ t("talk_report.timeline") }}
       </div>
-      <div v-if="attempts.length === 0" class="app-muted mt-3 text-sm">
-        {{ t("talk_report.no_attempts") }}
+      <div v-if="timeline.length === 0" class="app-muted mt-3 text-sm">
+        {{ t("talk_report.timeline_empty") }}
       </div>
       <div v-else class="mt-3 space-y-2 text-xs">
         <div
-          v-for="attempt in attempts"
-          :key="attempt.id"
+          v-for="item in timeline"
+          :key="item.id"
           class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--app-border)] px-3 py-2"
         >
           <div>
-            <div class="app-text text-sm">{{ attempt.quest_title }}</div>
+            <div class="app-text text-sm">{{ item.label }}</div>
             <div class="app-muted text-[11px]">
-              {{ formatDate(attempt.created_at) }} · {{ attemptStatus(attempt) }}
+              {{ formatDate(item.date) }} · {{ item.status }}
+              <span v-if="item.meta">· {{ item.meta }}</span>
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <RouterLink
-              class="app-link text-xs underline"
-              :to="`/quest/${attempt.quest_code}?from=talk&projectId=${projectId}`"
-            >
-              {{ t("talk_report.replay") }}
-            </RouterLink>
-            <RouterLink
-              v-if="attempt.feedback_id"
-              class="app-link text-xs underline"
-              :to="`/feedback/${attempt.feedback_id}`"
-            >
-              {{ t("talk_report.view_feedback") }}
+            <RouterLink v-if="item.to" class="app-link text-xs underline" :to="item.to">
+              {{ t("talk_report.view_item") }}
             </RouterLink>
           </div>
         </div>

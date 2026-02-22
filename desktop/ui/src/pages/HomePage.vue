@@ -92,20 +92,17 @@ watch(
           <span v-if="state.activeProject">{{ state.activeProject.title }}</span>
           <span v-else>{{ t("home.talk_empty") }}</span>
         </div>
-        <RouterLink
-          v-if="state.activeProject"
-          class="app-link mt-3 inline-block text-xs underline"
-          :to="`/talks/${state.activeProject.id}`"
-        >
-          {{ t("home.talk_action") }}
-        </RouterLink>
-        <RouterLink
-          v-if="state.activeProject"
-          class="app-link mt-2 inline-block text-xs underline"
-          to="/boss-run"
-        >
-          {{ t("home.boss_run_action") }}
-        </RouterLink>
+        <div v-if="state.activeProject" class="mt-3 space-y-2">
+          <RouterLink
+            class="app-link block text-xs underline"
+            :to="`/talks/${state.activeProject.id}`"
+          >
+            {{ t("home.talk_action") }}
+          </RouterLink>
+          <RouterLink class="app-link block text-xs underline" to="/boss-run">
+            {{ t("home.boss_run_action") }}
+          </RouterLink>
+        </div>
         <RouterLink v-else class="app-link mt-3 inline-block text-xs underline" to="/talks">
           {{ t("home.talk_action") }}
         </RouterLink>
