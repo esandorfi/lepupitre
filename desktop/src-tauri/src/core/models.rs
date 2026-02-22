@@ -116,3 +116,14 @@ pub struct FeedbackV1 {
     pub comments: Vec<FeedbackComment>,
     pub metrics: FeedbackMetrics,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PeerReviewV1 {
+    pub schema_version: String,
+    pub rubric_id: String,
+    #[serde(default)]
+    pub reviewer_tag: Option<String>,
+    pub scores: serde_json::Map<String, serde_json::Value>,
+    pub free_text: serde_json::Map<String, serde_json::Value>,
+    pub timestamps: Vec<serde_json::Value>,
+}

@@ -274,7 +274,7 @@ pub fn pack_inspect(
         return Err("manifest_schema_mismatch".to_string());
     }
 
-    let files_by_role = files_by_role(&manifest.files);
+    let files_by_role = files_by_role(&manifest.files)?;
     let _audio_entry = files_by_role
         .get("audio")
         .ok_or_else(|| "manifest_missing_audio".to_string())?;
@@ -291,7 +291,11 @@ pub fn pack_inspect(
         .get("review_template")
         .ok_or_else(|| "manifest_missing_review".to_string())?;
 
-    let review_bytes = read_zip_file(&mut archive, &review_entry.path)?;
+    let audio_bytes = read_zip_entry_checked(&mut archive, _audio_entry, true, true)?;
+    let transcript_bytes = read_zip_entry_checked(&mut archive, _transcript_entry, true, true)?;
+    let outline_bytes = read_zip_entry_checked(&mut archive, _outline_entry, true, true)?;
+    let rubric_bytes = read_zip_entry_checked(&mut archive, _rubric_entry, true, true)?;
+    let review_bytes = read_zip_entry_checked(&mut archive, review_entry, false, false)?;
     let review_json: serde_json::Value =
         serde_json::from_slice(&review_bytes).map_err(|e| format!("review_parse: {e}"))?;
     let reviewer_tag = review_json
@@ -300,12 +304,22 @@ pub fn pack_inspect(
         .map(|value| value.to_string())
         .filter(|value| !value.trim().is_empty());
 
+    let mut actual_sizes = HashMap::new();
+    actual_sizes.insert("audio".to_string(), audio_bytes.len() as u64);
+    actual_sizes.insert("transcript".to_string(), transcript_bytes.len() as u64);
+    actual_sizes.insert("outline".to_string(), outline_bytes.len() as u64);
+    actual_sizes.insert("rubric".to_string(), rubric_bytes.len() as u64);
+    actual_sizes.insert("review_template".to_string(), review_bytes.len() as u64);
+
     let files = manifest
         .files
         .iter()
         .map(|entry| PackFileSummary {
             role: entry.role.clone(),
-            bytes: entry.bytes,
+            bytes: actual_sizes
+                .get(&entry.role)
+                .copied()
+                .unwrap_or(entry.bytes),
             mime: entry.mime.clone(),
         })
         .collect();
@@ -348,7 +362,7 @@ pub fn peer_review_import(
         return Err("manifest_schema_mismatch".to_string());
     }
 
-    let files_by_role = files_by_role(&manifest.files);
+    let files_by_role = files_by_role(&manifest.files)?;
     let audio_entry = files_by_role
         .get("audio")
         .ok_or_else(|| "manifest_missing_audio".to_string())?;
@@ -365,23 +379,19 @@ pub fn peer_review_import(
         .get("review_template")
         .ok_or_else(|| "manifest_missing_review".to_string())?;
 
-    let audio_bytes = read_zip_file(&mut archive, &audio_entry.path)?;
-    ensure_sha_match(&audio_entry.sha256, &audio_bytes)?;
-    let transcript_bytes = read_zip_file(&mut archive, &transcript_entry.path)?;
-    ensure_sha_match(&transcript_entry.sha256, &transcript_bytes)?;
-    let outline_bytes = read_zip_file(&mut archive, &outline_entry.path)?;
-    ensure_sha_match(&outline_entry.sha256, &outline_bytes)?;
-    let rubric_bytes = read_zip_file(&mut archive, &rubric_entry.path)?;
-    ensure_sha_match(&rubric_entry.sha256, &rubric_bytes)?;
-    let review_bytes = read_zip_file(&mut archive, &review_entry.path)?;
-    ensure_sha_match(&review_entry.sha256, &review_bytes)?;
+    let audio_bytes = read_zip_entry_checked(&mut archive, audio_entry, true, true)?;
+    let transcript_bytes = read_zip_entry_checked(&mut archive, transcript_entry, true, true)?;
+    let outline_bytes = read_zip_entry_checked(&mut archive, outline_entry, true, true)?;
+    let rubric_bytes = read_zip_entry_checked(&mut archive, rubric_entry, true, true)?;
+    let review_bytes = read_zip_entry_checked(&mut archive, review_entry, false, false)?;
 
     let review_json: serde_json::Value =
         serde_json::from_slice(&review_bytes).map_err(|e| format!("review_parse: {e}"))?;
     let reviewer_tag = review_json
         .get("reviewer_tag")
         .and_then(|value| value.as_str())
-        .map(|value| value.to_string());
+        .map(|value| value.to_string())
+        .filter(|value| !value.trim().is_empty());
 
     let project_id = ids::new_id("proj");
     let talk_number = next_talk_number(&conn)?;
@@ -602,8 +612,9 @@ fn build_review_template(rubric_bytes: &[u8]) -> Result<Vec<u8>, String> {
 }
 
 fn build_viewer_html(title: &str) -> String {
+    let escaped = escape_html(title);
     format!(
-        "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\" />\n<title>{title}</title>\n</head>\n<body>\n<h1>{title}</h1>\n<p>Open audio.wav and transcript.json from the pack.</p>\n</body>\n</html>\n"
+        "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\" />\n<title>{escaped}</title>\n</head>\n<body>\n<h1>{escaped}</h1>\n<p>Open audio.wav and transcript.json from the pack.</p>\n</body>\n</html>\n"
     )
 }
 
@@ -715,14 +726,15 @@ fn read_zip_file(archive: &mut ZipArchive<File>, name: &str) -> Result<Vec<u8>, 
     Ok(bytes)
 }
 
-fn files_by_role(files: &[PackFileEntry]) -> HashMap<String, PackFileEntry> {
+fn files_by_role(files: &[PackFileEntry]) -> Result<HashMap<String, PackFileEntry>, String> {
     let mut map = HashMap::new();
     for entry in files {
-        if !map.contains_key(&entry.role) {
-            map.insert(entry.role.clone(), entry.clone());
+        if map.contains_key(&entry.role) {
+            return Err("manifest_duplicate_role".to_string());
         }
+        map.insert(entry.role.clone(), entry.clone());
     }
-    map
+    Ok(map)
 }
 
 fn ensure_sha_match(expected: &str, bytes: &[u8]) -> Result<(), String> {
@@ -730,6 +742,37 @@ fn ensure_sha_match(expected: &str, bytes: &[u8]) -> Result<(), String> {
         return Err("pack_sha_mismatch".to_string());
     }
     Ok(())
+}
+
+fn read_zip_entry_checked(
+    archive: &mut ZipArchive<File>,
+    entry: &PackFileEntry,
+    validate_sha: bool,
+    validate_size: bool,
+) -> Result<Vec<u8>, String> {
+    let bytes = read_zip_file(archive, &entry.path)?;
+    if validate_size && bytes.len() as u64 != entry.bytes {
+        return Err("pack_size_mismatch".to_string());
+    }
+    if validate_sha {
+        ensure_sha_match(&entry.sha256, &bytes)?;
+    }
+    Ok(bytes)
+}
+
+fn escape_html(input: &str) -> String {
+    let mut out = String::with_capacity(input.len());
+    for ch in input.chars() {
+        match ch {
+            '&' => out.push_str("&amp;"),
+            '<' => out.push_str("&lt;"),
+            '>' => out.push_str("&gt;"),
+            '"' => out.push_str("&quot;"),
+            '\'' => out.push_str("&#39;"),
+            _ => out.push(ch),
+        }
+    }
+    out
 }
 
 fn next_talk_number(conn: &rusqlite::Connection) -> Result<i64, String> {

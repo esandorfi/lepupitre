@@ -30,6 +30,13 @@ const activeFeedbackId = computed(() => {
   return "";
 });
 const showFeedbackTab = computed(() => activeFeedbackId.value.length > 0);
+const activePeerReviewId = computed(() => {
+  if (route.name === "peer-review") {
+    return String(route.params.peerReviewId || "");
+  }
+  return "";
+});
+const showPeerReviewTab = computed(() => activePeerReviewId.value.length > 0);
 const activeTalkId = computed(() => {
   const paramId = String(route.params.projectId || "");
   if (paramId) {
@@ -69,7 +76,8 @@ const showTalkTab = computed(() => {
     route.name === "talk-report" ||
     route.name === "quest" ||
     route.name === "feedback" ||
-    route.name === "boss-run"
+    route.name === "boss-run" ||
+    route.name === "peer-review"
   );
 });
 const talkReportLink = computed(() => {
@@ -95,6 +103,16 @@ const feedbackLink = computed(() => {
     return "/";
   }
   return `/feedback/${activeFeedbackId.value}`;
+});
+const peerReviewLink = computed(() => {
+  if (!activePeerReviewId.value) {
+    return "/";
+  }
+  const projectId = String(route.query.projectId || "");
+  if (projectId) {
+    return `/peer-review/${activePeerReviewId.value}?projectId=${projectId}`;
+  }
+  return `/peer-review/${activePeerReviewId.value}`;
 });
 
 function truncateLabel(value: string, max = 18) {
@@ -126,6 +144,12 @@ const feedbackLabel = computed(() => {
   }
   return t("nav.feedback_active");
 });
+const peerReviewLabel = computed(() => {
+  if (activePeerReviewId.value) {
+    return truncateLabel(activePeerReviewId.value, 10);
+  }
+  return t("nav.peer_review_active");
+});
 const showBossRunTab = computed(() => route.name === "boss-run");
 const bossRunLabel = computed(() => t("nav.boss_run"));
 const bossRunLink = computed(() => "/boss-run");
@@ -143,6 +167,9 @@ const breadcrumbItems = computed(() => {
   }
   if (showFeedbackTab.value) {
     items.push({ label: feedbackLabel.value, to: feedbackLink.value });
+  }
+  if (showPeerReviewTab.value) {
+    items.push({ label: peerReviewLabel.value, to: peerReviewLink.value });
   }
   return items;
 });

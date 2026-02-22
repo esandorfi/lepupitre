@@ -121,6 +121,43 @@ export const PeerReviewImportResponseSchema = z.object({
   runId: IdSchema,
 });
 
+export const PeerReviewListPayloadSchema = z.object({
+  profileId: IdSchema,
+  projectId: IdSchema,
+  limit: z.number().int().positive().optional(),
+});
+
+export const PeerReviewSummarySchema = z.object({
+  id: IdSchema,
+  run_id: IdSchema,
+  project_id: IdSchema,
+  created_at: z.string().min(1),
+  reviewer_tag: z.string().min(1).optional().nullable(),
+});
+
+export const PeerReviewV1Schema = z.object({
+  schema_version: z.string().min(1),
+  rubric_id: z.string().min(1),
+  reviewer_tag: z.string().min(1).optional().nullable(),
+  scores: z.record(z.string(), z.unknown()),
+  free_text: z.record(z.string(), z.unknown()),
+  timestamps: z.array(z.unknown()),
+});
+
+export const PeerReviewDetailSchema = z.object({
+  id: IdSchema,
+  run_id: IdSchema,
+  project_id: IdSchema,
+  created_at: z.string().min(1),
+  reviewer_tag: z.string().min(1).optional().nullable(),
+  review: PeerReviewV1Schema,
+});
+
+export const PeerReviewGetPayloadSchema = z.object({
+  profileId: IdSchema,
+  peerReviewId: IdSchema,
+});
+
 export const RunCreatePayloadSchema = z.object({
   profileId: IdSchema,
   projectId: IdSchema,
@@ -383,6 +420,8 @@ export type ProjectListItem = z.infer<typeof ProjectListItemSchema>;
 export type OutlineDoc = z.infer<typeof OutlineDocSchema>;
 export type ExportResult = z.infer<typeof ExportResultSchema>;
 export type PackInspectResponse = z.infer<typeof PackInspectResponseSchema>;
+export type PeerReviewSummary = z.infer<typeof PeerReviewSummarySchema>;
+export type PeerReviewDetail = z.infer<typeof PeerReviewDetailSchema>;
 export type RunSummary = z.infer<typeof RunSummarySchema>;
 export type Quest = z.infer<typeof QuestSchema>;
 export type QuestDaily = z.infer<typeof QuestDailySchema>;

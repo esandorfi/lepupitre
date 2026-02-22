@@ -4,7 +4,12 @@ import { useRoute, RouterLink } from "vue-router";
 import { invoke } from "@tauri-apps/api/core";
 import { useI18n } from "../lib/i18n";
 import { appStore } from "../stores/app";
-import type { QuestAttemptSummary, QuestReportItem, RunSummary } from "../schemas/ipc";
+import type {
+  PeerReviewSummary,
+  QuestAttemptSummary,
+  QuestReportItem,
+  RunSummary,
+} from "../schemas/ipc";
 
 const { t } = useI18n();
 const route = useRoute();
@@ -15,6 +20,7 @@ const isLoading = ref(false);
 const report = ref<QuestReportItem[]>([]);
 const attempts = ref<QuestAttemptSummary[]>([]);
 const runs = ref<RunSummary[]>([]);
+const peerReviews = ref<PeerReviewSummary[]>([]);
 const isActivating = ref(false);
 const exportPath = ref<string | null>(null);
 const exportingRunId = ref<string | null>(null);
@@ -143,6 +149,17 @@ const timeline = computed(() => {
     });
   }
 
+  for (const review of peerReviews.value) {
+    items.push({
+      id: review.id,
+      label: t("talk_report.timeline_peer_review"),
+      date: review.created_at,
+      status: t("talk_report.timeline_peer_review_status"),
+      to: `/peer-review/${review.id}?projectId=${projectId.value}`,
+      meta: review.reviewer_tag ?? undefined,
+    });
+  }
+
   items.sort((a, b) => {
     const aTime = new Date(a.date).getTime();
     const bTime = new Date(b.date).getTime();
@@ -184,6 +201,7 @@ async function loadReport() {
     report.value = await appStore.getQuestReport(projectId.value);
     attempts.value = await appStore.getQuestAttempts(projectId.value, 12);
     runs.value = await appStore.getRuns(projectId.value, 12);
+    peerReviews.value = await appStore.getPeerReviews(projectId.value, 12);
   } catch (err) {
     error.value = toError(err);
   } finally {

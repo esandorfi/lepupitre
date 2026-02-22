@@ -24,6 +24,12 @@ import {
   PackExportPayloadSchema,
   PackInspectPayloadSchema,
   PackInspectResponseSchema,
+  PeerReviewListPayloadSchema,
+  PeerReviewSummary,
+  PeerReviewSummarySchema,
+  PeerReviewDetail,
+  PeerReviewDetailSchema,
+  PeerReviewGetPayloadSchema,
   PeerReviewImportPayloadSchema,
   PeerReviewImportResponseSchema,
   RunAnalyzePayloadSchema,
@@ -474,6 +480,33 @@ async function importPeerReview(path: string) {
   return response;
 }
 
+async function getPeerReviews(
+  projectId: string,
+  limit = 12
+): Promise<PeerReviewSummary[]> {
+  if (!state.activeProfileId) {
+    throw new Error("no_active_profile");
+  }
+  return invokeChecked(
+    "peer_review_list",
+    PeerReviewListPayloadSchema,
+    PeerReviewSummarySchema.array(),
+    { profileId: state.activeProfileId, projectId, limit }
+  );
+}
+
+async function getPeerReview(peerReviewId: string): Promise<PeerReviewDetail> {
+  if (!state.activeProfileId) {
+    throw new Error("no_active_profile");
+  }
+  return invokeChecked(
+    "peer_review_get",
+    PeerReviewGetPayloadSchema,
+    PeerReviewDetailSchema,
+    { profileId: state.activeProfileId, peerReviewId }
+  );
+}
+
 async function getFeedback(feedbackId: string): Promise<FeedbackV1> {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
@@ -585,6 +618,8 @@ export const appStore = {
   exportPack,
   inspectPack,
   importPeerReview,
+  getPeerReviews,
+  getPeerReview,
   getFeedback,
   getFeedbackContext,
   getFeedbackNote,
