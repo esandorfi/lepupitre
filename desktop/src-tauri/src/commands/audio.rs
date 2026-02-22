@@ -11,7 +11,9 @@ use tauri::{Manager, State};
 
 use crate::core::artifacts;
 use crate::core::db;
+use crate::core::dsp;
 use crate::core::recording::{LinearResampler, RingBuffer, WavWriter};
+use crate::core::vad::{VadConfig, VadState};
 
 const TARGET_SAMPLE_RATE: u32 = 16000;
 const RING_SECONDS: u32 = 30;
@@ -56,6 +58,10 @@ struct RecordingState {
     writer: Option<WavWriter>,
     resampler: LinearResampler,
     ring: RingBuffer,
+    agc: dsp::Agc,
+    vad: VadState,
+    vad_config: VadConfig,
+    last_vad: bool,
     total_samples: u64,
     last_level: f32,
     last_error: Option<String>,
@@ -122,6 +128,10 @@ pub fn recording_start(
         writer: None,
         resampler: LinearResampler::new(TARGET_SAMPLE_RATE, TARGET_SAMPLE_RATE),
         ring: RingBuffer::new((TARGET_SAMPLE_RATE * RING_SECONDS) as usize),
+        agc: dsp::Agc::new(0.1, 0.5, 8.0, 0.2),
+        vad: VadState::default(),
+        vad_config: VadConfig::balanced(),
+        last_vad: false,
         total_samples: 0,
         last_level: 0.0,
         last_error: None,
@@ -378,7 +388,7 @@ where
         }
     }
 
-    guard.last_level = rms(&scratch);
+    guard.last_level = dsp::rms(&scratch);
 
     let resampled = guard.resampler.process(&scratch);
     guard.scratch = scratch;
@@ -387,7 +397,21 @@ where
     }
 
     guard.total_samples += resampled.len() as u64;
-    guard.ring.push(&resampled);
+
+    let mut processed = resampled.clone();
+    guard.agc.process(&mut processed);
+
+    let frame_ms = ((processed.len() as f32 / TARGET_SAMPLE_RATE as f32) * 1000.0).round() as u32;
+    if frame_ms > 0 {
+        let config = VadConfig {
+            speech_start_ms: guard.vad_config.speech_start_ms,
+            speech_end_ms: guard.vad_config.speech_end_ms,
+            energy_threshold: guard.vad_config.energy_threshold,
+        };
+        let decision = guard.vad.update_from_samples(&processed, frame_ms, &config);
+        guard.last_vad = decision.in_speech;
+    }
+    guard.ring.push(&processed);
 
     if let Some(writer) = guard.writer.as_mut() {
         if let Err(err) = writer.write_samples(&resampled) {
@@ -395,17 +419,6 @@ where
             guard.is_stopping = true;
         }
     }
-}
-
-fn rms(samples: &[f32]) -> f32 {
-    if samples.is_empty() {
-        return 0.0;
-    }
-    let mut sum = 0.0;
-    for sample in samples {
-        sum += sample * sample;
-    }
-    (sum / samples.len() as f32).sqrt().min(1.0)
 }
 
 #[tauri::command]
