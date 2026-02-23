@@ -56,12 +56,28 @@ jobs:
         shell: bash
         run: ./scripts/build-asr-sidecar.sh
 
+      - name: Cache whisper tiny model (macOS)
+        if: matrix.os == 'macos-latest'
+        uses: actions/cache@v4
+        with:
+          path: /tmp/ggml-tiny.bin
+          key: whisper-tiny-${{ runner.os }}-be07e048
+
+      - name: Cache whisper tiny model (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/ggml-tiny.bin
+          key: whisper-tiny-${{ runner.os }}-be07e048
+
       - name: ASR smoke test (macOS)
         if: matrix.os == 'macos-latest'
         shell: bash
         run: |
           set -euo pipefail
-          curl -L -o /tmp/ggml-tiny.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin
+          if [ ! -f /tmp/ggml-tiny.bin ]; then
+            curl -L -o /tmp/ggml-tiny.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin
+          fi
           echo "be07e048e1e599ad46341c8d2a135645097a538221678b7acdd1b1919c6e1b21  /tmp/ggml-tiny.bin" | shasum -a 256 -c -
           chmod +x desktop/src-tauri/sidecar/lepupitre-asr
           LEPUPITRE_ASR_SMOKE=1 \
@@ -74,7 +90,9 @@ jobs:
         shell: pwsh
         run: |
           $modelPath = Join-Path $env:RUNNER_TEMP "ggml-tiny.bin"
-          Invoke-WebRequest -Uri "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin" -OutFile $modelPath
+          if (-not (Test-Path $modelPath)) {
+            Invoke-WebRequest -Uri "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin" -OutFile $modelPath
+          }
           $expected = "be07e048e1e599ad46341c8d2a135645097a538221678b7acdd1b1919c6e1b21"
           $actual = (Get-FileHash -Algorithm SHA256 $modelPath).Hash.ToLower()
           if ($actual -ne $expected) { throw "Model checksum mismatch: $actual" }
