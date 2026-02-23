@@ -1,5 +1,31 @@
 # Changelog
 
+## v0.2.2 - 2026-02-23
+Summary: 1 features, 1 chores.
+Comparing from v0.2.1 to HEAD.
+
+### Features
+- feat: ui system design for appbar
+
+### Chores
+- chore: ci
+
+## v0.2.1 - 2026-02-23
+Summary: 1 features, 1 fixes, 4 chores.
+Comparing from v0.2.0 to HEAD.
+
+### Features
+- feat: ui system design for appbar
+
+### Fixes
+- fix: misc
+
+### Chores
+- chore: ci
+- chore(release): bump version to 0.2.1
+- chore: ci
+- chore(release): v0.2.0
+
 ## v0.2.0 - 2026-02-23
 Summary: 19 features, 5 fixes, 2 docs, 5 chores, 1 perf, 1 tests, 7 ci, 1 other.
 Comparing from v0.1.2 to HEAD.
