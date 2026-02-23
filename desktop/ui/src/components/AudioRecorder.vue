@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { open } from "@tauri-apps/plugin-shell";
 import { RouterLink } from "vue-router";
 import { useI18n } from "../lib/i18n";
 import { useTranscriptionSettings } from "../lib/transcriptionSettings";
@@ -300,6 +301,17 @@ function formatTranscribeError(err: unknown) {
     return { message: t("audio.error_asr_timeout"), code: "asr_timeout" };
   }
   return { message: raw, code: null };
+}
+
+async function openExportPath() {
+  if (!exportPath.value) {
+    return;
+  }
+  try {
+    await open(exportPath.value);
+  } catch (err) {
+    setError(err instanceof Error ? err.message : String(err));
+  }
 }
 
 async function exportTranscript(format: TranscriptExportFormat) {
@@ -610,6 +622,13 @@ async function revealRecording() {
       </button>
     </div>
     <div v-if="exportPath" class="flex flex-wrap items-center gap-2 text-xs">
+      <button
+        class="app-link cursor-pointer text-xs underline"
+        type="button"
+        @click="openExportPath"
+      >
+        {{ t("audio.open_export") }}
+      </button>
       <span class="app-link">{{ t("audio.exported_to") }}:</span>
       <span class="app-text max-w-[360px] truncate" style="direction: rtl; text-align: left;">
         {{ exportPath }}

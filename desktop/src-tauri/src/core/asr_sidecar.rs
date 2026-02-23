@@ -38,8 +38,21 @@ pub fn resolve_sidecar_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
         if exe_path.exists() {
             return Ok(exe_path);
         }
+
+        // Dev fallback: target/debug -> target -> src-tauri/sidecar
+        if let Some(dev_root) = dir.parent().and_then(|parent| parent.parent()) {
+            let dev_path = dev_root.join("sidecar").join(sidecar_basename());
+            if dev_path.exists() {
+                return Ok(dev_path);
+            }
+        }
     }
 
+    if cfg!(debug_assertions) {
+        eprintln!(
+            "asr sidecar missing (dev): set LEPUPITRE_ASR_SIDECAR or run ./scripts/build-asr-sidecar.sh --copy"
+        );
+    }
     Err("sidecar_missing".to_string())
 }
 

@@ -54,7 +54,7 @@ jobs:
 
       - name: Build ASR sidecar
         shell: bash
-        run: ./scripts/build-asr-sidecar.sh
+        run: ./scripts/build-asr-sidecar.sh --copy
 
       - name: Cache whisper tiny model (macOS)
         if: matrix.os == 'macos-latest'

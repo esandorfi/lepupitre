@@ -26,4 +26,4 @@ This repository includes placeholder files for `lepupitre-asr` and `lepupitre-as
 
 ## Rust sidecar
 
-The Rust sidecar lives in `desktop/asr-sidecar` and embeds whisper.cpp via `whisper-rs` (requires `cmake`). Build it with `./scripts/build-asr-sidecar.sh` and replace the placeholders in this folder before release.
+The Rust sidecar lives in `desktop/asr-sidecar` and embeds whisper.cpp via `whisper-rs` (requires `cmake`). Build it with `./scripts/build-asr-sidecar.sh` (use `--copy` to bundle into this folder before release).

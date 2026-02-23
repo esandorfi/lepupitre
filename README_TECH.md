@@ -115,7 +115,7 @@ Each step must preserve local data compatibility.
 ## ASR sidecar (whisper.cpp)
 
 ## ASR troubleshooting
-- `sidecar_missing`: the bundled sidecar is missing; rebuild the app or ensure `desktop/src-tauri/sidecar/lepupitre-asr` exists.
+- `sidecar_missing`: the bundled sidecar is missing; rebuild the app or ensure `desktop/src-tauri/sidecar/lepupitre-asr` exists (use `./scripts/build-asr-sidecar.sh --copy`).
 - `model_missing`: the selected model is not installed; download it in Settings or set `LEPUPITRE_ASR_MODEL_PATH` in dev.
 - `sidecar_init_timeout` / `sidecar_decode_timeout`: the sidecar is slow or unresponsive; try a smaller model or shorter audio.
 
@@ -135,6 +135,12 @@ The Rust sidecar embeds whisper.cpp via `whisper-rs` (requires `cmake` and a C++
 
 ```
 ./scripts/build-asr-sidecar.sh
+```
+
+For release packaging, copy the binary into `desktop/src-tauri/sidecar/` with:
+
+```
+./scripts/build-asr-sidecar.sh --copy
 ```
 
 This copies the binary into `desktop/src-tauri/sidecar/` for packaging.
