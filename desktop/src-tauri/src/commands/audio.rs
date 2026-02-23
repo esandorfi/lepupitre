@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use tauri::{Emitter, Manager, State};
 
 use crate::core::artifacts;
@@ -30,6 +30,7 @@ const LIVE_COMMIT_DELAY_MS: i64 = 2_800;
 const LIVE_SEGMENT_MS: i64 = 1_200;
 const AUTO_BENCH_WINDOW_MS: i64 = 2_000;
 const AUTO_BENCH_MAX_RATIO: f64 = 1.2;
+const SIDECAR_DECODE_BACKOFF_MS: u64 = 3000;
 
 const ASR_PARTIAL_EVENT: &str = "asr/partial/v1";
 const ASR_COMMIT_EVENT: &str = "asr/commit/v1";
@@ -645,6 +646,7 @@ trait LiveDecoder {
 struct SidecarLiveDecoder {
     decoder: asr_sidecar::SidecarDecoder,
     last_error: Option<String>,
+    cooldown_until: Option<Instant>,
 }
 
 impl SidecarLiveDecoder {
@@ -652,6 +654,7 @@ impl SidecarLiveDecoder {
         Self {
             decoder,
             last_error: None,
+            cooldown_until: None,
         }
     }
 }
@@ -665,16 +668,26 @@ impl LiveDecoder for SidecarLiveDecoder {
         _speech_index: u64,
         _speech_start_ms: i64,
     ) -> Vec<models::TranscriptSegment> {
+        if let Some(deadline) = self.cooldown_until {
+            if Instant::now() < deadline {
+                return Vec::new();
+            }
+        }
+
         match self
             .decoder
             .decode_window(window, window_start_ms, window_end_ms, asr_sidecar::DecodeMode::Live)
         {
-            Ok(segments) => segments,
+            Ok(segments) => {
+                self.cooldown_until = None;
+                segments
+            }
             Err(err) => {
                 if self.last_error.as_deref() != Some(&err) {
                     eprintln!("asr sidecar decode error: {err}");
                     self.last_error = Some(err);
                 }
+                self.cooldown_until = Some(Instant::now() + Duration::from_millis(SIDECAR_DECODE_BACKOFF_MS));
                 Vec::new()
             }
         }
