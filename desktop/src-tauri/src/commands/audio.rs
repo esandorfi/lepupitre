@@ -31,6 +31,8 @@ const LIVE_SEGMENT_MS: i64 = 1_200;
 const AUTO_BENCH_WINDOW_MS: i64 = 2_000;
 const AUTO_BENCH_MAX_RATIO: f64 = 1.2;
 const SIDECAR_DECODE_BACKOFF_MS: u64 = 3000;
+const ASR_SLOW_DECODE_RATIO: f64 = 1.5;
+const ASR_SLOW_LOG_COOLDOWN_MS: u64 = 5000;
 
 const ASR_PARTIAL_EVENT: &str = "asr/partial/v1";
 const ASR_COMMIT_EVENT: &str = "asr/commit/v1";
@@ -647,6 +649,7 @@ struct SidecarLiveDecoder {
     decoder: asr_sidecar::SidecarDecoder,
     last_error: Option<String>,
     cooldown_until: Option<Instant>,
+    last_slow_log: Option<Instant>,
 }
 
 impl SidecarLiveDecoder {
@@ -655,6 +658,7 @@ impl SidecarLiveDecoder {
             decoder,
             last_error: None,
             cooldown_until: None,
+            last_slow_log: None,
         }
     }
 }
@@ -674,12 +678,33 @@ impl LiveDecoder for SidecarLiveDecoder {
             }
         }
 
+        let decode_start = Instant::now();
         match self
             .decoder
             .decode_window(window, window_start_ms, window_end_ms, asr_sidecar::DecodeMode::Live)
         {
             Ok(segments) => {
                 self.cooldown_until = None;
+                let window_ms = (window_end_ms - window_start_ms).max(0) as f64;
+                if window_ms > 0.0 {
+                    let elapsed_ms = decode_start.elapsed().as_millis() as f64;
+                    let ratio = elapsed_ms / window_ms;
+                    if ratio > ASR_SLOW_DECODE_RATIO {
+                        let should_log = self
+                            .last_slow_log
+                            .map(|last| last.elapsed().as_millis() as u64 >= ASR_SLOW_LOG_COOLDOWN_MS)
+                            .unwrap_or(true);
+                        if should_log {
+                            eprintln!(
+                                "asr live decode slow: {:.2}x ({}ms for {}ms window)",
+                                ratio,
+                                elapsed_ms.round() as i64,
+                                window_ms.round() as i64
+                            );
+                            self.last_slow_log = Some(Instant::now());
+                        }
+                    }
+                }
                 segments
             }
             Err(err) => {

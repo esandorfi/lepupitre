@@ -17,6 +17,7 @@ const EVENT_MODEL_DOWNLOAD_PROGRESS: &str = "asr/model_download_progress/v1";
 const DEFAULT_MODEL_ID: &str = "tiny";
 const SIDECAR_ENV_PATH: &str = "LEPUPITRE_ASR_SIDECAR";
 const SIDECAR_MODEL_ENV_PATH: &str = "LEPUPITRE_ASR_MODEL_PATH";
+const FINAL_SLOW_DECODE_RATIO: f64 = 1.5;
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -587,6 +588,8 @@ fn decode_with_sidecar(
         }
         let end_idx = end_idx.min(samples.len());
         let chunk = &samples[start_idx..end_idx];
+        let chunk_ms = (end_ms - cursor_ms).max(0) as f64;
+        let decode_start = Instant::now();
         let mut chunk_segments = decoder.decode_window_with_progress(
             chunk,
             cursor_ms,
@@ -601,6 +604,18 @@ fn decode_with_sidecar(
                 let _ = emit_final_progress(app, absolute_ms, total_ms);
             },
         )?;
+        if chunk_ms > 0.0 {
+            let elapsed_ms = decode_start.elapsed().as_millis() as f64;
+            let ratio = elapsed_ms / chunk_ms;
+            if ratio > FINAL_SLOW_DECODE_RATIO {
+                eprintln!(
+                    "asr final decode slow: {:.2}x ({}ms for {}ms window)",
+                    ratio,
+                    elapsed_ms.round() as i64,
+                    chunk_ms.round() as i64
+                );
+            }
+        }
         segments.append(&mut chunk_segments);
         emit_final_progress(app, end_ms, total_ms)?;
         cursor_ms = end_ms;
