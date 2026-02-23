@@ -1,5 +1,66 @@
 # Changelog
 
+## v0.2.0 - 2026-02-23
+Summary: 19 features, 5 fixes, 2 docs, 5 chores, 1 perf, 1 tests, 7 ci, 1 other.
+Comparing from v0.1.2 to HEAD.
+
+### Features
+- feat(settings): add ASR sidecar readiness badge
+- feat(settings): add spoken‑punctuation toggle for final transcripts
+- feat(ui): add Settings link for missing ASR model
+- feat(ui): surface ASR errors with friendly messages
+- feat(asr): cap final transcript segment volume
+- feat(asr): add decode performance warnings
+- feat(asr): add live decode backoff on sidecar errors
+- feat(asr): harden live transcript segment handling
+- feat(asr): consume sidecar progress during final decode
+- feat(asr): add tiny auto-benchmark to gate live mode
+- feat(transcription): align final chunk window to 12s
+- feat(transcription): chunk final decode + emit progress
+- feat(transcription): run final pass via sidecar with settings
+- feat(asr): pass model/mode/language settings into live sidecar init
+- feat(asr): add stub sidecar binary + build script
+- feat(asr): resolve bundled sidecar path automatically
+- feat(asr): scaffold live streaming loop + stabilization
+- feat(asr): add live transcript events and VAD/AGC wiring (MR4)
+- feat(asr): add MR1 contracts, settings UI skeleton, and ADR
+
+### Fixes
+- fix(transcription): accept transcribe_audio args without payload wrapper
+- fix(ui): make download progress update + hide action buttons while downloading
+- fix(events): enforce tauri-safe ASR names with runtime guard
+- fix(vad): VAD end‑silence test needed 700ms of silence (14×50ms frames).
+- fix(recording): make cpal capture Send‑safe and get tests green
+
+### Docs
+- docs(asr): update ADR + plan status
+- docs: lock model storage path in ADR + plan
+
+### Chores
+- chore(docs): document local sidecar dev flow and revert binary
+- chore(asr): add dev-only sidecar missing warning
+- chore(ci): build ASR sidecar in release packaging
+- chore(asr): silence progress warning
+- chore(asr): bundle sidecar placeholders + doc it
+
+### Tests
+- test(transcription): add WAV decode coverage
+
+### CI
+- ci(release): cache tiny model for ASR smoke tests
+- ci(release): verify model checksum in ASR smoke tests
+- ci(release): run ASR smoke tests on macOS + Windows
+- ci: release
+- ci: update
+- ci: update release packaging
+- ci: update release
+
+### Perf
+- perf(settings): cache model checksums + add verify action
+
+### Other
+- Bump to 0.1.2
+
 ## v0.1.2 - 2026-02-22
 Summary: 1 chores.
 Comparing from v0.1.1 to HEAD.
