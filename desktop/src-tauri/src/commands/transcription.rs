@@ -18,6 +18,8 @@ const DEFAULT_MODEL_ID: &str = "tiny";
 const SIDECAR_ENV_PATH: &str = "LEPUPITRE_ASR_SIDECAR";
 const SIDECAR_MODEL_ENV_PATH: &str = "LEPUPITRE_ASR_MODEL_PATH";
 const FINAL_SLOW_DECODE_RATIO: f64 = 1.5;
+const MAX_FINAL_SEGMENTS_PER_CHUNK: usize = 200;
+const MAX_FINAL_SEGMENTS_TOTAL: usize = 10_000;
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -604,6 +606,14 @@ fn decode_with_sidecar(
                 let _ = emit_final_progress(app, absolute_ms, total_ms);
             },
         )?;
+        if chunk_segments.len() > MAX_FINAL_SEGMENTS_PER_CHUNK {
+            eprintln!(
+                "asr final decode truncated: {} segments in chunk (limit {})",
+                chunk_segments.len(),
+                MAX_FINAL_SEGMENTS_PER_CHUNK
+            );
+            chunk_segments.truncate(MAX_FINAL_SEGMENTS_PER_CHUNK);
+        }
         if chunk_ms > 0.0 {
             let elapsed_ms = decode_start.elapsed().as_millis() as f64;
             let ratio = elapsed_ms / chunk_ms;
@@ -617,6 +627,15 @@ fn decode_with_sidecar(
             }
         }
         segments.append(&mut chunk_segments);
+        if segments.len() > MAX_FINAL_SEGMENTS_TOTAL {
+            eprintln!(
+                "asr final decode capped: {} segments total (limit {})",
+                segments.len(),
+                MAX_FINAL_SEGMENTS_TOTAL
+            );
+            segments.truncate(MAX_FINAL_SEGMENTS_TOTAL);
+            break;
+        }
         emit_final_progress(app, end_ms, total_ms)?;
         cursor_ms = end_ms;
     }
