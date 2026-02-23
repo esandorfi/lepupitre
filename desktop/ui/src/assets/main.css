@@ -45,6 +45,21 @@
   --app-text-base: 1rem;
   --app-input-bg: #ffffff;
   --app-meter-bg: #ffe0c3;
+  --color-bg: var(--app-bg);
+  --color-surface: var(--app-surface);
+  --color-surface-elevated: var(--app-card);
+  --color-text: var(--app-text);
+  --color-text-muted: var(--app-muted);
+  --color-border: var(--app-border);
+  --color-accent: var(--app-accent);
+  --color-accent-soft: var(--app-pill);
+  --color-on-accent: var(--app-accent-contrast);
+  --color-danger: var(--app-danger);
+  --color-danger-soft: var(--app-danger-surface);
+  --color-on-danger: var(--app-danger-contrast);
+  --color-focus: #2563eb;
+  --shadow-sm: 0 8px 24px rgb(15 23 42 / 0.08);
+  --shadow-md: 0 16px 42px rgb(15 23 42 / 0.16);
   color-scheme: light;
 }
 
@@ -139,6 +154,9 @@
   --app-text-base: 1rem;
   --app-input-bg: #0b1220;
   --app-meter-bg: #1f2937;
+  --color-focus: #60a5fa;
+  --shadow-sm: 0 10px 26px rgb(2 6 23 / 0.38);
+  --shadow-md: 0 18px 48px rgb(2 6 23 / 0.55);
   color-scheme: dark;
 }
 
@@ -193,13 +211,13 @@
 }
 
 .app-surface {
-  background-color: var(--app-surface);
-  border-color: var(--app-border);
+  background-color: var(--color-surface);
+  border-color: var(--color-border);
 }
 
 .app-card {
-  background-color: var(--app-card);
-  border-color: var(--app-border);
+  background-color: var(--color-surface-elevated);
+  border-color: var(--color-border);
 }
 
 .app-border {
@@ -207,11 +225,11 @@
 }
 
 .app-text {
-  color: var(--app-text);
+  color: var(--color-text);
 }
 
 .app-muted {
-  color: var(--app-muted);
+  color: var(--color-text-muted);
 }
 
 .app-subtle {
@@ -243,8 +261,8 @@
 
 .app-input {
   background-color: var(--app-input-bg);
-  border-color: var(--app-border);
-  color: var(--app-text);
+  border-color: var(--color-border);
+  color: var(--color-text);
 }
 
 .app-input::placeholder {
@@ -252,8 +270,8 @@
 }
 
 .app-button-primary {
-  background-color: var(--app-accent);
-  color: var(--app-accent-contrast);
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
 }
 
 .app-button-primary:hover {
@@ -261,9 +279,9 @@
 }
 
 .app-button-secondary {
-  background-color: var(--app-card);
-  border: 1px solid var(--app-border);
-  color: var(--app-text);
+  background-color: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
 }
 
 .app-button-secondary:hover {
@@ -271,8 +289,8 @@
 }
 
 .app-button-danger {
-  background-color: var(--app-danger);
-  color: var(--app-danger-contrast);
+  background-color: var(--color-danger);
+  color: var(--color-on-danger);
 }
 
 .app-button-danger:hover {
@@ -298,8 +316,8 @@
 }
 
 .app-button-danger-soft {
-  background-color: var(--app-danger-surface);
-  border: 1px solid var(--app-danger);
+  background-color: var(--color-danger-soft);
+  border: 1px solid var(--color-danger);
   color: var(--app-danger-text);
 }
 
@@ -394,4 +412,153 @@
 
 body {
   background-color: var(--app-bg);
+}
+
+.app-focus-ring:focus-visible,
+.app-input:focus-visible,
+.app-button-primary:focus-visible,
+.app-button-secondary:focus-visible,
+.app-button-danger:focus-visible,
+.app-button-success:focus-visible,
+.app-button-info:focus-visible,
+.app-button-danger-soft:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.app-top-tab {
+  color: var(--app-toolbar-text);
+  background-color: transparent;
+  border: 1px solid transparent;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.app-top-tab:hover {
+  background-color: color-mix(in srgb, var(--app-toolbar-button-bg) 84%, transparent);
+}
+
+.app-top-tab-active {
+  background-color: var(--app-toolbar-button-bg);
+  border-color: var(--app-toolbar-border);
+  color: var(--app-toolbar-text);
+  box-shadow: inset 0 -2px 0 0 var(--color-accent);
+}
+
+.app-menu-panel {
+  background-color: var(--color-surface-elevated);
+  border-color: var(--color-border);
+  color: var(--color-text);
+  box-shadow: var(--shadow-md);
+}
+
+.app-menu-item {
+  background-color: transparent;
+  color: var(--color-text);
+}
+
+.app-menu-item:hover {
+  background-color: color-mix(in srgb, var(--color-accent-soft) 65%, transparent);
+}
+
+.app-divider {
+  border-top: 1px solid var(--color-border);
+}
+
+.app-avatar {
+  background-color: var(--color-accent-soft);
+  color: var(--color-accent);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 20%, var(--color-border));
+}
+
+.app-switcher-row {
+  background-color: transparent;
+  color: var(--color-text);
+}
+
+.app-switcher-row:hover {
+  background-color: color-mix(in srgb, var(--color-accent-soft) 65%, transparent);
+}
+
+.app-switcher-row:disabled {
+  cursor: default;
+}
+
+.app-badge-accent {
+  background-color: var(--color-accent-soft);
+  color: var(--color-accent);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 18%, var(--color-border));
+}
+
+.app-icon-button {
+  color: inherit;
+}
+
+.app-dialog-overlay {
+  background-color: rgb(15 23 42 / 0.45);
+}
+
+.app-dialog {
+  background-color: var(--color-surface-elevated);
+  border-color: var(--color-border);
+  color: var(--color-text);
+  box-shadow: var(--shadow-md);
+}
+
+.app-markdown h1,
+.app-markdown h2,
+.app-markdown h3,
+.app-markdown h4,
+.app-markdown h5,
+.app-markdown h6 {
+  color: var(--color-text);
+  font-weight: 700;
+  line-height: 1.25;
+  margin-top: 0.9rem;
+  margin-bottom: 0.45rem;
+}
+
+.app-markdown h1 {
+  font-size: 1.125rem;
+}
+
+.app-markdown h2 {
+  font-size: 1rem;
+}
+
+.app-markdown h3 {
+  font-size: 0.9375rem;
+}
+
+.app-markdown p {
+  margin: 0.5rem 0;
+  color: var(--color-text);
+}
+
+.app-markdown ul,
+.app-markdown ol {
+  margin: 0.5rem 0;
+  padding-left: 1.25rem;
+}
+
+.app-markdown li {
+  margin: 0.2rem 0;
+}
+
+.app-markdown a {
+  color: var(--app-link);
+  text-decoration: underline;
+}
+
+.app-markdown a:hover {
+  color: var(--app-link-hover);
+}
+
+.app-markdown code {
+  background-color: color-mix(in srgb, var(--color-accent-soft) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+  border-radius: 0.375rem;
+  color: var(--color-text);
+  font-size: 0.85em;
+  padding: 0.08rem 0.3rem;
 }

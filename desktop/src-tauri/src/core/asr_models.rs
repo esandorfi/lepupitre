@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::fs::File;
 use std::io::Read;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tauri::Manager;
 
 pub struct AsrModelSpec {
@@ -150,7 +150,7 @@ pub fn verify_model(
 }
 
 pub fn store_manifest(
-    dir: &PathBuf,
+    dir: &Path,
     filename: &str,
     sha256: &str,
     size_bytes: u64,
@@ -162,22 +162,22 @@ pub fn store_manifest(
     write_manifest(&manifest_path(dir, filename), &manifest)
 }
 
-fn manifest_path(dir: &PathBuf, filename: &str) -> PathBuf {
+fn manifest_path(dir: &Path, filename: &str) -> PathBuf {
     dir.join(format!("{filename}.manifest.json"))
 }
 
-fn read_manifest(path: &PathBuf) -> Option<AsrModelManifest> {
+fn read_manifest(path: &Path) -> Option<AsrModelManifest> {
     let data = std::fs::read_to_string(path).ok()?;
     serde_json::from_str(&data).ok()
 }
 
-fn write_manifest(path: &PathBuf, manifest: &AsrModelManifest) -> Result<(), String> {
+fn write_manifest(path: &Path, manifest: &AsrModelManifest) -> Result<(), String> {
     let payload = serde_json::to_string(manifest).map_err(|e| format!("manifest_json: {e}"))?;
     std::fs::write(path, payload).map_err(|e| format!("manifest_write: {e}"))?;
     Ok(())
 }
 
-fn sha256_file(path: &PathBuf) -> Result<(String, u64), String> {
+fn sha256_file(path: &Path) -> Result<(String, u64), String> {
     let mut file = File::open(path).map_err(|e| format!("model_open: {e}"))?;
     let mut hasher = Sha256::new();
     let mut buffer = [0u8; 8192];

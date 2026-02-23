@@ -99,11 +99,7 @@ fn apply_spoken_punctuation_to_text(text: &str, rules: &[SpokenRule]) -> String 
         if let Some(rule) = matched {
             match rule.mode {
                 PunctInsert::Attach => {
-                    if out.is_empty() {
-                        out.push_str(rule.replacement);
-                    } else {
-                        out.push_str(rule.replacement);
-                    }
+                    out.push_str(rule.replacement);
                 }
                 PunctInsert::Separate => {
                     append_token(&mut out, rule.replacement);

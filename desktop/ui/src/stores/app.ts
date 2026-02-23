@@ -73,6 +73,8 @@ import {
 const state = reactive({
   profiles: [] as ProfileSummary[],
   activeProfileId: null as string | null,
+  hasBootstrapped: false,
+  isBootstrapping: false,
   activeProject: null as ProjectSummary | null,
   projects: [] as ProjectListItem[],
   dailyQuest: null as QuestDaily | null,
@@ -81,6 +83,8 @@ const state = reactive({
   lastFeedbackId: null as string | null,
   lastFeedbackContext: null as FeedbackContext | null,
 });
+
+let bootstrapPromise: Promise<void> | null = null;
 
 async function loadProfiles() {
   const profiles = await invokeChecked(
@@ -558,15 +562,35 @@ async function setFeedbackNote(feedbackId: string, note: string) {
 }
 
 async function bootstrap() {
-  await loadProfiles();
-  await loadActiveProject();
-  await loadProjects();
-  await loadDailyQuest();
+  if (state.hasBootstrapped) {
+    return;
+  }
+  if (bootstrapPromise) {
+    return bootstrapPromise;
+  }
+  state.isBootstrapping = true;
+  bootstrapPromise = (async () => {
+    await loadProfiles();
+    await loadActiveProject();
+    await loadProjects();
+    await loadDailyQuest();
+    state.hasBootstrapped = true;
+  })()
+    .finally(() => {
+      state.isBootstrapping = false;
+      bootstrapPromise = null;
+    });
+  return bootstrapPromise;
+}
+
+async function ensureBootstrapped() {
+  return bootstrap();
 }
 
 export const appStore = {
   state,
   bootstrap,
+  ensureBootstrapped,
   loadProfiles,
   loadProjects,
   createProfile,

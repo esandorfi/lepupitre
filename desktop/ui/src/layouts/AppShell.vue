@@ -1,17 +1,14 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
+import AppHeaderMenu from "../components/AppHeaderMenu.vue";
+import WorkspaceSwitcher from "../components/WorkspaceSwitcher.vue";
 import { useI18n } from "../lib/i18n";
-import { useTheme } from "../lib/theme";
 import { appStore } from "../stores/app";
-import packageJson from "../../package.json";
 
-const { locale, setLocale, t } = useI18n();
-const { theme, setTheme, nextTheme } = useTheme();
+const { t } = useI18n();
 const route = useRoute();
 
-const themeLabel = computed(() => t(`theme.${theme.value}`));
-const appVersion = packageJson.version as string;
 const activeQuestCode = computed(() => {
   if (route.name === "quest") {
     return String(route.params.questCode || "");
@@ -174,86 +171,59 @@ const breadcrumbItems = computed(() => {
   return items;
 });
 
-function toggleLocale() {
-  setLocale(locale.value === "fr" ? "en" : "fr");
-}
-
-function cycleTheme() {
-  setTheme(nextTheme(theme.value));
-}
+onMounted(() => {
+  appStore.ensureBootstrapped().catch((err) => {
+    console.error("app bootstrap failed", err);
+  });
+});
 </script>
 
 <template>
   <div class="app-shell min-h-screen">
     <header class="app-toolbar border-b">
-      <div class="app-container px-6 py-4">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <div class="app-toolbar-muted text-xs font-bold uppercase tracking-[0.3em]">
-              Le Pupitre
+      <div class="app-container px-4 py-3 sm:px-6">
+        <div class="flex flex-col gap-3">
+          <div class="flex items-center justify-between gap-3">
+            <RouterLink class="app-toolbar-link app-focus-ring rounded-lg px-1 py-1 text-sm font-bold tracking-[0.22em] uppercase" to="/">
+              LE PUPITRE
+            </RouterLink>
+
+            <div class="flex items-center gap-2">
+              <WorkspaceSwitcher />
+              <AppHeaderMenu />
             </div>
-            <div class="app-toolbar-muted text-[10px] font-semibold">v{{ appVersion }}</div>
           </div>
-          <div class="flex items-center gap-2">
-            <RouterLink
-              class="app-toolbar-button cursor-pointer rounded-full border px-3 py-1 text-xs transition"
-              to="/profiles"
-            >
-              {{ t("nav.profiles") }}
-            </RouterLink>
-            <RouterLink
-              class="app-toolbar-button cursor-pointer rounded-full border px-3 py-1 text-xs transition"
-              to="/packs"
-            >
-              {{ t("nav.import") }}
-            </RouterLink>
-            <RouterLink
-              class="app-toolbar-button cursor-pointer rounded-full border px-3 py-1 text-xs transition"
-              to="/settings"
-            >
-              {{ t("nav.settings") }}
-            </RouterLink>
-            <button
-              class="app-toolbar-button cursor-pointer rounded-full border px-3 py-1 text-xs transition"
-              type="button"
-              @click="cycleTheme"
-            >
-              {{ t("theme.label") }}: {{ themeLabel }}
-            </button>
-            <button
-              class="app-toolbar-button cursor-pointer rounded-full border px-3 py-1 text-xs transition"
-              type="button"
-              @click="toggleLocale"
-            >
-              {{ locale.toUpperCase() }}
-            </button>
+
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <nav class="app-nav-text flex flex-wrap items-center gap-2" aria-label="Primary">
+              <RouterLink
+                class="app-top-tab app-focus-ring rounded-full px-3 py-2 transition"
+                exact-active-class="app-top-tab-active"
+                to="/"
+              >
+                {{ t("nav.home") }}
+              </RouterLink>
+              <RouterLink
+                class="app-top-tab app-focus-ring rounded-full px-3 py-2 transition"
+                exact-active-class="app-top-tab-active"
+                to="/talks"
+              >
+                {{ talkLabel }}
+              </RouterLink>
+            </nav>
+
+            <UBreadcrumb
+              v-if="breadcrumbItems.length > 0"
+              class="app-breadcrumb app-nav-text"
+              separator-icon="i-lucide-arrow-right"
+              :items="breadcrumbItems"
+            />
           </div>
         </div>
-        <nav class="app-nav-text mt-3 flex flex-wrap items-center gap-3">
-          <RouterLink
-            class="app-toolbar-link app-pill rounded-full px-3 py-1 transition"
-            exact-active-class="app-pill-active font-semibold"
-            to="/"
-          >
-            {{ t("nav.home") }}
-          </RouterLink>
-          <RouterLink
-            class="app-toolbar-link app-pill rounded-full px-3 py-1 transition"
-            exact-active-class="app-pill-active font-semibold"
-            to="/talks"
-          >
-            {{ talkLabel }}
-          </RouterLink>
-          <UBreadcrumb
-            v-if="breadcrumbItems.length > 0"
-            class="app-breadcrumb app-nav-text"
-            separator-icon="i-lucide-arrow-right"
-            :items="breadcrumbItems"
-          />
-        </nav>
       </div>
     </header>
-    <main class="px-6 py-6">
+
+    <main class="px-4 py-4 sm:px-6 sm:py-6">
       <div class="app-container">
         <slot />
       </div>

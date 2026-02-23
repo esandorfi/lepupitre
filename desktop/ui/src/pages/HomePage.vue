@@ -9,13 +9,6 @@ import type { QuestAttemptSummary } from "../schemas/ipc";
 const { t } = useI18n();
 const state = computed(() => appStore.state);
 const recentAttempts = computed(() => appStore.state.recentAttempts);
-const activeProfileName = computed(() => {
-  const activeId = appStore.state.activeProfileId;
-  if (!activeId) {
-    return null;
-  }
-  return appStore.state.profiles.find((profile) => profile.id === activeId)?.name ?? null;
-});
 
 function formatDate(value: string) {
   const date = new Date(value);
@@ -112,12 +105,7 @@ watch(
         <div class="app-subtle text-xs uppercase tracking-[0.2em]">
           {{ t("home.profile_title") }}
         </div>
-        <div class="app-text mt-2 text-sm">
-          <span v-if="state.activeProfileId">
-            {{ t("home.profile_active") }}: {{ activeProfileName || state.activeProfileId }}
-          </span>
-          <span v-else>{{ t("home.profile_empty") }}</span>
-        </div>
+        <p class="app-text mt-2 text-sm">{{ t("home.profile_manage_copy") }}</p>
         <RouterLink class="app-link mt-3 inline-block text-xs underline" to="/profiles">
           {{ t("home.profile_action") }}
         </RouterLink>
