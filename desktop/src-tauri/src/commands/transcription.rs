@@ -28,14 +28,6 @@ pub struct TranscribeResponse {
     pub job_id: String,
 }
 
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TranscribeAudioPayload {
-    profile_id: String,
-    audio_artifact_id: String,
-    asr_settings: Option<AsrSettingsPayload>,
-}
-
 #[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AsrSettingsPayload {
@@ -130,12 +122,12 @@ pub enum TranscriptExportFormat {
 #[tauri::command]
 pub fn transcribe_audio(
     app: tauri::AppHandle,
-    payload: TranscribeAudioPayload,
+    profile_id: String,
+    audio_artifact_id: String,
+    asr_settings: Option<AsrSettingsPayload>,
 ) -> Result<TranscribeResponse, String> {
-    let profile_id = payload.profile_id;
-    let audio_artifact_id = payload.audio_artifact_id;
     db::ensure_profile_exists(&app, &profile_id)?;
-    let asr_settings = normalize_asr_settings(payload.asr_settings);
+    let asr_settings = normalize_asr_settings(asr_settings);
     let artifact = artifacts::get_artifact(&app, &profile_id, &audio_artifact_id)?;
     if artifact.artifact_type != "audio" {
         return Err("artifact_not_audio".to_string());

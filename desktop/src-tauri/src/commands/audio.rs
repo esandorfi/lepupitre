@@ -41,13 +41,6 @@ const DEFAULT_MODEL_ID: &str = "tiny";
 const SIDECAR_ENV_PATH: &str = "LEPUPITRE_ASR_SIDECAR";
 const SIDECAR_MODEL_ENV_PATH: &str = "LEPUPITRE_ASR_MODEL_PATH";
 
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct RecordingStartPayload {
-    profile_id: String,
-    asr_settings: Option<AsrSettingsPayload>,
-}
-
 #[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AsrSettingsPayload {
@@ -242,11 +235,11 @@ impl Default for RecordingManager {
 pub fn recording_start(
     app: tauri::AppHandle,
     state: State<RecordingManager>,
-    payload: RecordingStartPayload,
+    profile_id: String,
+    asr_settings: Option<AsrSettingsPayload>,
 ) -> Result<RecordingStartResult, String> {
-    let profile_id = payload.profile_id;
     db::ensure_profile_exists(&app, &profile_id)?;
-    let asr_settings = normalize_asr_settings(payload.asr_settings);
+    let asr_settings = normalize_asr_settings(asr_settings);
 
     let mut guard = state.session.lock().map_err(|_| "recording_lock")?;
     if guard.is_some() {

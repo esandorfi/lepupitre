@@ -131,7 +131,7 @@ function mapStageToKey(stage: string | null, message?: string | null) {
 }
 
 function clearError() {
-  clearError();
+  error.value = null;
   errorCode.value = null;
 }
 
