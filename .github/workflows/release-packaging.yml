@@ -62,6 +62,7 @@ jobs:
         run: |
           set -euo pipefail
           curl -L -o /tmp/ggml-tiny.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin
+          echo "be07e048e1e599ad46341c8d2a135645097a538221678b7acdd1b1919c6e1b21  /tmp/ggml-tiny.bin" | shasum -a 256 -c -
           chmod +x desktop/src-tauri/sidecar/lepupitre-asr
           LEPUPITRE_ASR_SMOKE=1 \
             LEPUPITRE_ASR_SIDECAR="$PWD/desktop/src-tauri/sidecar/lepupitre-asr" \
@@ -74,6 +75,9 @@ jobs:
         run: |
           $modelPath = Join-Path $env:RUNNER_TEMP "ggml-tiny.bin"
           Invoke-WebRequest -Uri "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin" -OutFile $modelPath
+          $expected = "be07e048e1e599ad46341c8d2a135645097a538221678b7acdd1b1919c6e1b21"
+          $actual = (Get-FileHash -Algorithm SHA256 $modelPath).Hash.ToLower()
+          if ($actual -ne $expected) { throw "Model checksum mismatch: $actual" }
           $sidecar = Join-Path $pwd "desktop\\src-tauri\\sidecar\\lepupitre-asr.exe"
           $env:LEPUPITRE_ASR_SMOKE = "1"
           $env:LEPUPITRE_ASR_SIDECAR = $sidecar
