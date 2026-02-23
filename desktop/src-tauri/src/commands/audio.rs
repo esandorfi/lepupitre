@@ -28,6 +28,8 @@ const LIVE_WINDOW_MS: i64 = 12_000;
 const LIVE_STEP_MS: u64 = 800;
 const LIVE_COMMIT_DELAY_MS: i64 = 2_800;
 const LIVE_SEGMENT_MS: i64 = 1_200;
+const AUTO_BENCH_WINDOW_MS: i64 = 2_000;
+const AUTO_BENCH_MAX_RATIO: f64 = 1.2;
 
 const ASR_PARTIAL_EVENT: &str = "asr/partial/v1";
 const ASR_COMMIT_EVENT: &str = "asr/commit/v1";
@@ -56,12 +58,14 @@ struct AsrRuntimeSettings {
     model_id: String,
     language: String,
     live_enabled: bool,
+    auto_benchmark: bool,
 }
 
 fn normalize_asr_settings(payload: Option<AsrSettingsPayload>) -> AsrRuntimeSettings {
     let mut model_id = DEFAULT_MODEL_ID.to_string();
     let mut language = "auto".to_string();
     let mut live_enabled = true;
+    let mut auto_benchmark = false;
 
     if let Some(payload) = payload {
         if let Some(model) = payload.model.as_deref() {
@@ -77,6 +81,8 @@ fn normalize_asr_settings(payload: Option<AsrSettingsPayload>) -> AsrRuntimeSett
         if let Some(mode) = payload.mode.as_deref() {
             if mode == "final-only" {
                 live_enabled = false;
+            } else if mode == "auto" && model_id == "tiny" {
+                auto_benchmark = true;
             }
         }
     }
@@ -85,6 +91,7 @@ fn normalize_asr_settings(payload: Option<AsrSettingsPayload>) -> AsrRuntimeSett
         model_id,
         language,
         live_enabled,
+        auto_benchmark,
     }
 }
 
@@ -507,6 +514,30 @@ fn run_live_asr(
     crate::commands::assert_valid_event_name(ASR_PARTIAL_EVENT);
     crate::commands::assert_valid_event_name(ASR_COMMIT_EVENT);
 
+    let mut settings = settings;
+    let mut sidecar_decoder: Option<asr_sidecar::SidecarDecoder> = None;
+    if settings.auto_benchmark {
+        match try_spawn_sidecar(&app, &settings) {
+            Ok(mut decoder) => match benchmark_sidecar(&mut decoder) {
+                Ok(true) => {
+                    sidecar_decoder = Some(decoder);
+                }
+                Ok(false) => {
+                    eprintln!("asr auto benchmark: disabling live");
+                    settings.live_enabled = false;
+                }
+                Err(err) => {
+                    eprintln!("asr auto benchmark failed: {err}");
+                    settings.live_enabled = false;
+                }
+            },
+            Err(err) => {
+                eprintln!("asr auto benchmark sidecar missing: {err}");
+                settings.live_enabled = false;
+            }
+        }
+    }
+
     if !settings.live_enabled {
         let _ = stop_rx.recv();
         return;
@@ -518,11 +549,15 @@ fn run_live_asr(
     let mut speech_start_ms: i64 = 0;
     let mut pending_flush = false;
     let mut transcript_state = LiveTranscriptState::new();
-    let mut decoder: Box<dyn LiveDecoder> = match try_spawn_sidecar(&app, &settings) {
-        Ok(sidecar) => Box::new(SidecarLiveDecoder::new(sidecar)),
-        Err(err) => {
-            eprintln!("asr sidecar unavailable: {err}");
-            Box::new(MockAsrDecoder::new(LIVE_SEGMENT_MS))
+    let mut decoder: Box<dyn LiveDecoder> = if let Some(sidecar) = sidecar_decoder {
+        Box::new(SidecarLiveDecoder::new(sidecar))
+    } else {
+        match try_spawn_sidecar(&app, &settings) {
+            Ok(sidecar) => Box::new(SidecarLiveDecoder::new(sidecar)),
+            Err(err) => {
+                eprintln!("asr sidecar unavailable: {err}");
+                Box::new(MockAsrDecoder::new(LIVE_SEGMENT_MS))
+            }
         }
     };
     let window_samples = (TARGET_SAMPLE_RATE as i64 * LIVE_WINDOW_MS / 1000) as usize;
@@ -684,6 +719,15 @@ impl LiveDecoder for MockAsrDecoder {
         }
         segments
     }
+}
+
+fn benchmark_sidecar(decoder: &mut asr_sidecar::SidecarDecoder) -> Result<bool, String> {
+    let samples = vec![0.0f32; (TARGET_SAMPLE_RATE as i64 * AUTO_BENCH_WINDOW_MS / 1000) as usize];
+    let start = std::time::Instant::now();
+    let _ = decoder.decode_window(&samples, 0, AUTO_BENCH_WINDOW_MS)?;
+    let elapsed_ms = start.elapsed().as_millis() as f64;
+    let allowed_ms = AUTO_BENCH_WINDOW_MS as f64 * AUTO_BENCH_MAX_RATIO;
+    Ok(elapsed_ms <= allowed_ms)
 }
 
 fn current_recording_ms(state: &Arc<Mutex<RecordingState>>) -> i64 {
