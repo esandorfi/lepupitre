@@ -630,3 +630,32 @@ fn decode_wav_mono_16k(bytes: &[u8]) -> Result<(Vec<f32>, i64), String> {
     let duration_ms = ((samples.len() as f64 / sample_rate as f64) * 1000.0).round() as i64;
     Ok((samples, duration_ms))
 }
+
+#[cfg(test)]
+mod transcription_tests {
+    use super::*;
+
+    fn fixture_bytes() -> Vec<u8> {
+        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("tests")
+            .join("fixtures")
+            .join("sine_16k_mono.wav");
+        std::fs::read(path).expect("fixture wav")
+    }
+
+    #[test]
+    fn decode_wav_fixture() {
+        let bytes = fixture_bytes();
+        let (samples, duration_ms) = decode_wav_mono_16k(&bytes).expect("decode wav");
+        assert!(!samples.is_empty());
+        assert!(duration_ms > 0);
+    }
+
+    #[test]
+    fn decode_wav_rejects_wrong_rate() {
+        let mut bytes = fixture_bytes();
+        bytes[24..28].copy_from_slice(&8000u32.to_le_bytes());
+        let err = decode_wav_mono_16k(&bytes).expect_err("should fail");
+        assert_eq!(err, "wav_sample_rate");
+    }
+}
