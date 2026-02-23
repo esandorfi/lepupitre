@@ -571,7 +571,7 @@ fn decode_with_sidecar(
         asr_sidecar::SidecarDecoder::spawn(&sidecar_path, &model_path, &settings.language)?;
 
     let total_ms = duration_ms.max(0);
-    let chunk_ms: i64 = 20_000;
+    let chunk_ms: i64 = 12_000;
     let sample_rate = 16_000i64;
     let mut segments = Vec::new();
     let mut cursor_ms = 0i64;
