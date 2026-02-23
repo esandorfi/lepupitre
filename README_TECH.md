@@ -114,6 +114,13 @@ Each step must preserve local data compatibility.
 
 ## ASR sidecar (whisper.cpp)
 
+## Dev ASR sidecar (local)
+- Build the sidecar locally (no copy into repo): `./scripts/build-asr-sidecar.sh`
+- Configure env vars:
+  - `./scripts/dev-asr-env.sh /path/to/ggml-tiny.bin`
+- Run: `pnpm -C desktop dev`
+
+
 ## ASR troubleshooting
 - `sidecar_missing`: the bundled sidecar is missing; rebuild the app or ensure `desktop/src-tauri/sidecar/lepupitre-asr` exists (use `./scripts/build-asr-sidecar.sh --copy`).
 - `model_missing`: the selected model is not installed; download it in Settings or set `LEPUPITRE_ASR_MODEL_PATH` in dev.

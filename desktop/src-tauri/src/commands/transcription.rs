@@ -152,6 +152,7 @@ pub fn transcribe_audio(
         let (samples, duration_ms) = decode_wav_mono_16k(&audio_bytes)?;
         let total_ms = duration_ms;
         let segments = decode_with_sidecar(&app, &asr_settings, &samples, total_ms)?;
+        let segments = transcript::apply_spoken_punctuation(&segments, &asr_settings.language);
         let transcript = models::TranscriptV1 {
             schema_version: "1.0.0".to_string(),
             language: asr_settings.language.clone(),
