@@ -70,6 +70,14 @@ enum SidecarResponse {
         seq: u64,
         segments: Vec<SidecarSegment>,
     },
+    Progress {
+        #[allow(dead_code)]
+        seq: u64,
+        #[allow(dead_code)]
+        processed_ms: i64,
+        #[allow(dead_code)]
+        total_ms: i64,
+    },
     Error {
         seq: Option<u64>,
         message: String,

@@ -27,6 +27,7 @@ enum SidecarRequest {
 enum SidecarResponse {
     Ready,
     Segments { seq: u64, segments: Vec<SidecarSegment> },
+    Progress { seq: u64, processed_ms: i64, total_ms: i64 },
     Error { seq: Option<u64>, message: String },
 }
 
@@ -105,6 +106,15 @@ fn main() {
                     );
                     continue;
                 }
+                let total_ms = (window_end_ms - window_start_ms).max(0);
+                emit(
+                    &mut stdout,
+                    SidecarResponse::Progress {
+                        seq,
+                        processed_ms: total_ms,
+                        total_ms,
+                    },
+                );
                 let segments = build_segments(window_start_ms, window_end_ms, seq);
                 emit(&mut stdout, SidecarResponse::Segments { seq, segments });
             }
