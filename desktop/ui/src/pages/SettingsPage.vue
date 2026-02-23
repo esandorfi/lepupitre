@@ -65,6 +65,13 @@ const modeOptions = computed(() => [
   { value: "final-only", label: t("settings.transcription.mode_final_only") },
 ]);
 
+const spokenPunctuationEnabled = computed({
+  get: () => settings.value.spokenPunctuation,
+  set: (value: boolean) => {
+    updateSettings({ spokenPunctuation: value });
+  },
+});
+
 const languageOptions = computed(() => [
   { value: "auto", label: t("settings.transcription.language_auto") },
   { value: "en", label: t("settings.transcription.language_en") },
@@ -303,6 +310,25 @@ onBeforeUnmount(() => {
           </select>
           <p class="app-muted mt-2 text-xs">
             {{ t("settings.transcription.language_note") }}
+          </p>
+        </div>
+        <div>
+          <label class="app-nav-text text-xs font-semibold">
+            {{ t("settings.transcription.spoken_punctuation_label") }}
+          </label>
+          <button
+            type="button"
+            class="app-toggle mt-2 inline-flex items-center gap-2 text-xs"
+            :class="spokenPunctuationEnabled ? 'app-toggle-on' : 'app-toggle-off'"
+            @click="spokenPunctuationEnabled = !spokenPunctuationEnabled"
+          >
+            <span class="app-toggle-dot"></span>
+            <span>
+              {{ spokenPunctuationEnabled ? t("settings.transcription.spoken_punctuation_on") : t("settings.transcription.spoken_punctuation_off") }}
+            </span>
+          </button>
+          <p class="app-muted mt-2 text-xs">
+            {{ t("settings.transcription.spoken_punctuation_note") }}
           </p>
         </div>
       </div>

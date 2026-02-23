@@ -33,17 +33,20 @@ pub struct TranscribeResponse {
 pub struct AsrSettingsPayload {
     model: Option<String>,
     language: Option<String>,
+    spoken_punctuation: Option<bool>,
 }
 
 #[derive(Debug, Clone)]
 struct AsrRuntimeSettings {
     model_id: String,
     language: String,
+    spoken_punctuation: bool,
 }
 
 fn normalize_asr_settings(payload: Option<AsrSettingsPayload>) -> AsrRuntimeSettings {
     let mut model_id = DEFAULT_MODEL_ID.to_string();
     let mut language = "auto".to_string();
+    let mut spoken_punctuation = false;
 
     if let Some(payload) = payload {
         if let Some(model) = payload.model.as_deref() {
@@ -56,9 +59,16 @@ fn normalize_asr_settings(payload: Option<AsrSettingsPayload>) -> AsrRuntimeSett
                 language = language_value.to_string();
             }
         }
+        if let Some(value) = payload.spoken_punctuation {
+            spoken_punctuation = value;
+        }
     }
 
-    AsrRuntimeSettings { model_id, language }
+    AsrRuntimeSettings {
+        model_id,
+        language,
+        spoken_punctuation,
+    }
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -152,7 +162,11 @@ pub fn transcribe_audio(
         let (samples, duration_ms) = decode_wav_mono_16k(&audio_bytes)?;
         let total_ms = duration_ms;
         let segments = decode_with_sidecar(&app, &asr_settings, &samples, total_ms)?;
-        let segments = transcript::apply_spoken_punctuation(&segments, &asr_settings.language);
+        let segments = if asr_settings.spoken_punctuation {
+            transcript::apply_spoken_punctuation(&segments, &asr_settings.language)
+        } else {
+            segments
+        };
         let transcript = models::TranscriptV1 {
             schema_version: "1.0.0".to_string(),
             language: asr_settings.language.clone(),

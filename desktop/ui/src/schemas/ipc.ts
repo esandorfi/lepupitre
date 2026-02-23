@@ -318,6 +318,7 @@ export const AsrSettingsSchema = z.object({
   model: z.enum(["tiny", "base"]).optional(),
   mode: z.enum(["auto", "live+final", "final-only"]).optional(),
   language: z.enum(["auto", "en", "fr"]).optional(),
+  spokenPunctuation: z.boolean().optional(),
 });
 
 export const RecordingStartPayloadSchema = z.object({

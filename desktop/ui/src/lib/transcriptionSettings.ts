@@ -8,6 +8,7 @@ type TranscriptionSettings = {
   model: TranscriptionModel;
   mode: TranscriptionMode;
   language: TranscriptionLanguage;
+  spokenPunctuation: boolean;
 };
 
 const STORAGE_KEY = "lepupitre_transcription_settings";
@@ -16,6 +17,7 @@ const defaultSettings: TranscriptionSettings = {
   model: "tiny",
   mode: "auto",
   language: "auto",
+  spokenPunctuation: false,
 };
 
 function loadSettings(): TranscriptionSettings {
