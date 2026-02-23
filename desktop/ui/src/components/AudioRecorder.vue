@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { RouterLink } from "vue-router";
 import { useI18n } from "../lib/i18n";
 import { useTranscriptionSettings } from "../lib/transcriptionSettings";
 import { appStore } from "../stores/app";
@@ -58,6 +59,7 @@ const activeProfileId = computed(() => appStore.state.activeProfileId);
 const isRecording = ref(false);
 const statusKey = ref<AudioStatusKey>("audio.status_idle");
 const error = ref<string | null>(null);
+const errorCode = ref<string | null>(null);
 const lastSavedPath = ref<string | null>(null);
 const lastArtifactId = ref<string | null>(null);
 const lastDurationSec = ref<number | null>(null);
@@ -128,6 +130,16 @@ function mapStageToKey(stage: string | null, message?: string | null) {
   return "audio.stage_processing";
 }
 
+function clearError() {
+  clearError();
+  errorCode.value = null;
+}
+
+function setError(message: string, code: string | null = null) {
+  error.value = message;
+  errorCode.value = code;
+}
+
 function resetTranscription() {
   isTranscribing.value = false;
   transcribeProgress.value = 0;
@@ -165,14 +177,14 @@ async function refreshStatus() {
     liveDurationSec.value = status.durationMs / 1000;
     liveLevel.value = status.level;
   } catch (err) {
-    error.value = err instanceof Error ? err.message : String(err);
+    setError(err instanceof Error ? err.message : String(err));
   }
 }
 
 async function startRecording() {
-  error.value = null;
+  clearError();
   if (!activeProfileId.value) {
-    error.value = t("audio.profile_required");
+    setError(t("audio.profile_required"));
     return;
   }
   lastSavedPath.value = null;
@@ -197,7 +209,7 @@ async function startRecording() {
     clearStatusTimer();
     statusTimer = window.setInterval(refreshStatus, 200);
   } catch (err) {
-    error.value = err instanceof Error ? err.message : String(err);
+    setError(err instanceof Error ? err.message : String(err));
     statusKey.value = "audio.status_idle";
   }
 }
@@ -224,7 +236,7 @@ async function stopRecording() {
     liveLevel.value = 0;
     statusKey.value = "audio.status_idle";
   } catch (err) {
-    error.value = err instanceof Error ? err.message : String(err);
+    setError(err instanceof Error ? err.message : String(err));
     statusKey.value = "audio.status_idle";
   } finally {
     recordingId.value = null;
@@ -232,7 +244,7 @@ async function stopRecording() {
 }
 
 async function transcribeRecording() {
-  error.value = null;
+  clearError();
   if (!activeProfileId.value || !lastArtifactId.value) {
     return;
   }
@@ -269,7 +281,8 @@ async function transcribeRecording() {
     transcribeProgress.value = 100;
     transcribeStageKey.value = "audio.stage_done";
   } catch (err) {
-    error.value = formatTranscribeError(err);
+    const formatted = formatTranscribeError(err);
+    setError(formatted.message, formatted.code);
   } finally {
     isTranscribing.value = false;
   }
@@ -278,15 +291,15 @@ async function transcribeRecording() {
 function formatTranscribeError(err: unknown) {
   const raw = err instanceof Error ? err.message : String(err);
   if (raw.includes("sidecar_missing")) {
-    return t("audio.error_sidecar_missing");
+    return { message: t("audio.error_sidecar_missing"), code: "sidecar_missing" };
   }
   if (raw.includes("model_missing")) {
-    return t("audio.error_model_missing");
+    return { message: t("audio.error_model_missing"), code: "model_missing" };
   }
   if (raw.includes("sidecar_init_timeout") || raw.includes("sidecar_decode_timeout")) {
-    return t("audio.error_asr_timeout");
+    return { message: t("audio.error_asr_timeout"), code: "asr_timeout" };
   }
-  return raw;
+  return { message: raw, code: null };
 }
 
 async function exportTranscript(format: TranscriptExportFormat) {
@@ -294,7 +307,7 @@ async function exportTranscript(format: TranscriptExportFormat) {
     return;
   }
   isExporting.value = true;
-  error.value = null;
+  clearError();
   try {
     const result = await invokeChecked(
       "transcript_export",
@@ -308,7 +321,7 @@ async function exportTranscript(format: TranscriptExportFormat) {
     );
     exportPath.value = result.path;
   } catch (err) {
-    error.value = err instanceof Error ? err.message : String(err);
+    setError(err instanceof Error ? err.message : String(err));
   } finally {
     isExporting.value = false;
   }
@@ -362,7 +375,7 @@ onMounted(async () => {
     if (transcribeJobId.value && event.payload.jobId !== transcribeJobId.value) {
       return;
     }
-    error.value = event.payload.message;
+    setError(event.payload.message, event.payload.errorCode);
   });
 
   unlistenAsrPartial = await listen("asr/partial/v1", (event) => {
@@ -441,11 +454,11 @@ async function revealRecording() {
     return;
   }
   isRevealing.value = true;
-  error.value = null;
+  clearError();
   try {
     await invoke("audio_reveal_wav", { path: lastSavedPath.value });
   } catch (err) {
-    error.value = err instanceof Error ? err.message : String(err);
+    setError(err instanceof Error ? err.message : String(err));
   } finally {
     isRevealing.value = false;
   }
@@ -603,5 +616,12 @@ async function revealRecording() {
       </span>
     </div>
     <div v-if="error" class="app-danger-text text-xs">{{ error }}</div>
+    <RouterLink
+      v-if="errorCode === 'model_missing'"
+      to="/settings"
+      class="app-link text-xs underline"
+    >
+      {{ t('audio.error_model_missing_action') }}
+    </RouterLink>
   </div>
 </template>

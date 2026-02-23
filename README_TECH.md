@@ -114,6 +114,12 @@ Each step must preserve local data compatibility.
 
 ## ASR sidecar (whisper.cpp)
 
+## ASR troubleshooting
+- `sidecar_missing`: the bundled sidecar is missing; rebuild the app or ensure `desktop/src-tauri/sidecar/lepupitre-asr` exists.
+- `model_missing`: the selected model is not installed; download it in Settings or set `LEPUPITRE_ASR_MODEL_PATH` in dev.
+- `sidecar_init_timeout` / `sidecar_decode_timeout`: the sidecar is slow or unresponsive; try a smaller model or shorter audio.
+
+
 The app uses a bundled whisper.cpp sidecar binary for live transcription. By default it is resolved from the app resources; in dev you can override the path with environment variables.
 
 ### Dev overrides
