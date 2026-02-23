@@ -21,6 +21,13 @@
   - Windows: `%APPDATA%\LePupitre\models\whisper`
 - **Events**: versioned payloads (e.g., `asr/partial/v1`).
 
+
+## Status snapshot
+- MR4: Live streaming scaffolding wired (mock + sidecar protocol). Whisper.cpp integration pending.
+- MR5: Final transcription uses sidecar protocol; still stubbed.
+- MR6: Model management and download are implemented.
+
+
 ## MR plan (incremental)
 
 ### MR1 — Architecture + contracts (ADR, settings, events)
@@ -71,7 +78,7 @@
 - Unit tests pass.
 - No hallucinations during silence in dev recording.
 
-### MR4 — Streaming ASR (live)
+### MR4 — Streaming ASR (live) [in progress]
 **Goals**
 - Sliding window decode (12s window, 0.8s step, 2s overlap).
 - Two-pass decode (partial + refine).
@@ -85,7 +92,7 @@
 - No rewrite of committed segments.
 - Perceived latency ~1–2s on tiny/base.
 
-### MR5 — Final transcript + exports
+### MR5 — Final transcript + exports [in progress]
 **Goals**
 - Full-pass decode after stop.
 - Progress events.

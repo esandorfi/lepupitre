@@ -1,7 +1,7 @@
 # ADR-ASR-0004: Local Whisper Sidecar, Model Management, and Event Versioning
 
 ## Status
-Proposed
+Accepted
 
 ## Context
 We need a local-first live + final transcription experience with whisper.cpp across macOS and Windows.
@@ -27,7 +27,7 @@ We also need a model lifecycle that starts lightweight (tiny) and allows upgrade
    - **Tiny** defaults to Auto: run a quick local benchmark to decide Live + Final vs Final only.
 
 4) **Event versioning**:
-   - All ASR events are versioned (e.g., `asr.partial.v1`) to enable future evolution.
+   - All ASR events are versioned (e.g., `asr/partial/v1`) to enable future evolution.
 
 ## Alternatives considered
 - **FFI integration**: direct whisper.cpp linking inside Rust.
@@ -44,12 +44,12 @@ We also need a model lifecycle that starts lightweight (tiny) and allows upgrade
 - Event versioning adds a small overhead but protects future changes.
 
 ## Divergence
-**Divergent**. Current implementation uses a mock transcription pipeline and does not run whisper.cpp, lacks sidecar integration, model management, and versioned ASR events.
+**Partially resolved**. We now have a sidecar protocol, bundled sidecar placeholders, live streaming scaffolding, final transcription via sidecar, and versioned ASR events. Whisper.cpp inference is still stubbed, and auto-benchmarking for tiny remains open.
 
 **Remediation plan**
-- MR1: Define event schemas + settings contract, add UI settings placeholders.
-- MR2–MR4: Implement capture, VAD, streaming ASR, and event emission.
-- MR5–MR6: Add final transcription + model download management.
+- Implement whisper.cpp inside the sidecar binary (live + final decode).
+- Add tiny auto-benchmark to decide Live + Final vs Final only.
+- Tune streaming cadence and commit heuristics after real decode integration.
 
 ## References
 - `spec/spec_whisper.md`
