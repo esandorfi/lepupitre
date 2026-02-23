@@ -43,6 +43,8 @@ Shared exit criteria: the “hello quest” app can record a 16k mono WAV into a
 - format: `cargo fmt --all -- --check`
 - lint: `cargo clippy --all-targets --all-features -- -D warnings`
 - tests: `cargo test --all`
+- ASR smoke (opt-in, requires sidecar + model): `./scripts/asr-smoke.sh /path/to/lepupitre-asr /path/to/ggml-*.bin`
+  - Or set env vars and run: `LEPUPITRE_ASR_SMOKE=1 LEPUPITRE_ASR_SIDECAR=... LEPUPITRE_ASR_MODEL_PATH=... cargo test --manifest-path desktop/src-tauri/Cargo.toml asr_sidecar_smoke_decode`
 
 ## Frontend
 - lint: `pnpm -C desktop ui:lint`

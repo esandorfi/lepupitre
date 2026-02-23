@@ -56,6 +56,30 @@ jobs:
         shell: bash
         run: ./scripts/build-asr-sidecar.sh
 
+      - name: ASR smoke test (macOS)
+        if: matrix.os == 'macos-latest'
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -L -o /tmp/ggml-tiny.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin
+          chmod +x desktop/src-tauri/sidecar/lepupitre-asr
+          LEPUPITRE_ASR_SMOKE=1 \
+            LEPUPITRE_ASR_SIDECAR="$PWD/desktop/src-tauri/sidecar/lepupitre-asr" \
+            LEPUPITRE_ASR_MODEL_PATH=/tmp/ggml-tiny.bin \
+            ./scripts/asr-smoke.sh "$PWD/desktop/src-tauri/sidecar/lepupitre-asr" /tmp/ggml-tiny.bin
+
+      - name: ASR smoke test (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          $modelPath = Join-Path $env:RUNNER_TEMP "ggml-tiny.bin"
+          Invoke-WebRequest -Uri "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin" -OutFile $modelPath
+          $sidecar = Join-Path $pwd "desktop\\src-tauri\\sidecar\\lepupitre-asr.exe"
+          $env:LEPUPITRE_ASR_SMOKE = "1"
+          $env:LEPUPITRE_ASR_SIDECAR = $sidecar
+          $env:LEPUPITRE_ASR_MODEL_PATH = $modelPath
+          cargo test --manifest-path desktop\\src-tauri\\Cargo.toml asr_sidecar_smoke_decode
+
       - name: Build artifacts (manual run)
         if: github.event_name == 'workflow_dispatch'
         run: pnpm -C desktop build
