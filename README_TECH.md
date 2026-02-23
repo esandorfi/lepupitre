@@ -121,9 +121,9 @@ The app uses a bundled whisper.cpp sidecar binary for live transcription. By def
 
 ### Packaging
 
-### Build the stub sidecar
+### Build the sidecar
 
-To build the stub sidecar that implements the JSON protocol (no real ASR yet), run:
+The Rust sidecar embeds whisper.cpp via `whisper-rs` (requires `cmake` and a C++ toolchain). To build it, run:
 
 ```
 ./scripts/build-asr-sidecar.sh

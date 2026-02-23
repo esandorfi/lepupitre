@@ -44,12 +44,11 @@ We also need a model lifecycle that starts lightweight (tiny) and allows upgrade
 - Event versioning adds a small overhead but protects future changes.
 
 ## Divergence
-**Partially resolved**. We now have a sidecar protocol, bundled sidecar placeholders, live streaming scaffolding, final transcription via sidecar, and versioned ASR events. Whisper.cpp inference is still stubbed, and auto-benchmarking for tiny remains open.
+**Mostly resolved**. The sidecar now runs whisper.cpp (via `whisper-rs`), live + final decoding are wired, and tiny auto-benchmarking is implemented.
 
-**Remediation plan**
-- Implement whisper.cpp inside the sidecar binary (live + final decode).
-- Add tiny auto-benchmark to decide Live + Final vs Final only.
-- Tune streaming cadence and commit heuristics after real decode integration.
+**Remaining work**
+- Tune streaming cadence and commit heuristics with real model output.
+- Evaluate live latency defaults per device class.
 
 ## References
 - `spec/spec_whisper.md`

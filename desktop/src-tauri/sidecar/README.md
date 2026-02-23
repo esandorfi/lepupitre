@@ -24,6 +24,6 @@ The Tauri config bundles `sidecar/lepupitre-asr` into app resources. Windows pac
 This repository includes placeholder files for `lepupitre-asr` and `lepupitre-asr.exe` so builds pass. Replace them with the real sidecar binaries before release.
 
 
-## Stub sidecar
+## Rust sidecar
 
-A Rust stub sidecar lives in `desktop/asr-sidecar`. Build it with `./scripts/build-asr-sidecar.sh` and replace the placeholders in this folder. This is a protocol harness only; it does not run whisper.cpp.
+The Rust sidecar lives in `desktop/asr-sidecar` and embeds whisper.cpp via `whisper-rs` (requires `cmake`). Build it with `./scripts/build-asr-sidecar.sh` and replace the placeholders in this folder before release.

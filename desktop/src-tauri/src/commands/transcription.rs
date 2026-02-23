@@ -591,6 +591,7 @@ fn decode_with_sidecar(
             chunk,
             cursor_ms,
             end_ms,
+            asr_sidecar::DecodeMode::Final,
             |processed_ms: i64, total_chunk_ms: i64| {
                 if total_chunk_ms <= 0 {
                     return;

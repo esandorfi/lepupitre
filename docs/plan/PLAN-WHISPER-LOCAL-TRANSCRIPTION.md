@@ -23,8 +23,8 @@
 
 
 ## Status snapshot
-- MR4: Live streaming scaffolding wired (mock + sidecar protocol). Whisper.cpp integration pending.
-- MR5: Final transcription uses sidecar protocol; still stubbed.
+- MR4: Live streaming uses the whisper sidecar (greedy decode).
+- MR5: Final transcription uses the whisper sidecar (beam decode).
 - MR6: Model management and download are implemented.
 
 

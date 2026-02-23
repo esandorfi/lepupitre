@@ -9,8 +9,8 @@ use std::thread;
 use std::time::Duration;
 use tauri::Manager;
 
-const INIT_TIMEOUT: Duration = Duration::from_secs(3);
-const DECODE_TIMEOUT: Duration = Duration::from_secs(3);
+const INIT_TIMEOUT: Duration = Duration::from_secs(10);
+const DECODE_TIMEOUT: Duration = Duration::from_secs(30);
 
 fn sidecar_basename() -> &'static str {
     if cfg!(target_os = "windows") {
@@ -58,8 +58,16 @@ enum SidecarRequest {
         window_end_ms: i64,
         encoding: String,
         audio_b64: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        mode: Option<String>,
     },
     Shutdown,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum DecodeMode {
+    Live,
+    Final,
 }
 
 #[derive(Debug, Deserialize)]
@@ -164,8 +172,9 @@ impl SidecarDecoder {
         window: &[f32],
         window_start_ms: i64,
         window_end_ms: i64,
+        mode: DecodeMode,
     ) -> Result<Vec<models::TranscriptSegment>, String> {
-        self.decode_window_with_progress(window, window_start_ms, window_end_ms, |_, _| {})
+        self.decode_window_with_progress(window, window_start_ms, window_end_ms, mode, |_, _| {})
     }
 
     pub fn decode_window_with_progress<F>(
@@ -173,6 +182,7 @@ impl SidecarDecoder {
         window: &[f32],
         window_start_ms: i64,
         window_end_ms: i64,
+        mode: DecodeMode,
         mut on_progress: F,
     ) -> Result<Vec<models::TranscriptSegment>, String>
     where
@@ -187,6 +197,10 @@ impl SidecarDecoder {
         }
         let audio_b64 = base64::engine::general_purpose::STANDARD.encode(bytes);
 
+        let mode_value = match mode {
+            DecodeMode::Live => "live",
+            DecodeMode::Final => "final",
+        };
         self.send_request(SidecarRequest::Decode {
             seq,
             sample_rate: 16_000,
@@ -194,6 +208,7 @@ impl SidecarDecoder {
             window_end_ms,
             encoding: "f32le".to_string(),
             audio_b64,
+            mode: Some(mode_value.to_string()),
         })?;
 
         let deadline = std::time::Instant::now() + DECODE_TIMEOUT;

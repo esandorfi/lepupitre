@@ -667,7 +667,7 @@ impl LiveDecoder for SidecarLiveDecoder {
     ) -> Vec<models::TranscriptSegment> {
         match self
             .decoder
-            .decode_window(window, window_start_ms, window_end_ms)
+            .decode_window(window, window_start_ms, window_end_ms, asr_sidecar::DecodeMode::Live)
         {
             Ok(segments) => segments,
             Err(err) => {
@@ -724,7 +724,7 @@ impl LiveDecoder for MockAsrDecoder {
 fn benchmark_sidecar(decoder: &mut asr_sidecar::SidecarDecoder) -> Result<bool, String> {
     let samples = vec![0.0f32; (TARGET_SAMPLE_RATE as i64 * AUTO_BENCH_WINDOW_MS / 1000) as usize];
     let start = std::time::Instant::now();
-    let _ = decoder.decode_window(&samples, 0, AUTO_BENCH_WINDOW_MS)?;
+    let _ = decoder.decode_window(&samples, 0, AUTO_BENCH_WINDOW_MS, asr_sidecar::DecodeMode::Live)?;
     let elapsed_ms = start.elapsed().as_millis() as f64;
     let allowed_ms = AUTO_BENCH_WINDOW_MS as f64 * AUTO_BENCH_MAX_RATIO;
     Ok(elapsed_ms <= allowed_ms)
