@@ -269,10 +269,24 @@ async function transcribeRecording() {
     transcribeProgress.value = 100;
     transcribeStageKey.value = "audio.stage_done";
   } catch (err) {
-    error.value = err instanceof Error ? err.message : String(err);
+    error.value = formatTranscribeError(err);
   } finally {
     isTranscribing.value = false;
   }
+}
+
+function formatTranscribeError(err: unknown) {
+  const raw = err instanceof Error ? err.message : String(err);
+  if (raw.includes("sidecar_missing")) {
+    return t("audio.error_sidecar_missing");
+  }
+  if (raw.includes("model_missing")) {
+    return t("audio.error_model_missing");
+  }
+  if (raw.includes("sidecar_init_timeout") || raw.includes("sidecar_decode_timeout")) {
+    return t("audio.error_asr_timeout");
+  }
+  return raw;
 }
 
 async function exportTranscript(format: TranscriptExportFormat) {
