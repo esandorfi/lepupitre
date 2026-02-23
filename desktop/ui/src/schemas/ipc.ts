@@ -5,6 +5,7 @@ const OptionalString = z.string().min(1).optional().nullable();
 export const EmptyPayloadSchema = z.object({});
 export const IdSchema = z.string().min(1);
 export const VoidResponseSchema = z.union([z.null(), z.undefined()]);
+export const AsrSidecarStatusResponseSchema = z.union([z.null(), z.undefined()]);
 
 export const ProfileCreatePayloadSchema = z.object({
   name: z.string().min(1).max(80),

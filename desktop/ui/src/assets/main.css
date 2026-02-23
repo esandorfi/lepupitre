@@ -226,6 +226,21 @@
   color: var(--app-link-hover);
 }
 
+.app-badge-success {
+  background-color: var(--app-success);
+  color: var(--app-success-contrast);
+}
+
+.app-badge-danger {
+  background-color: var(--app-danger);
+  color: var(--app-danger-contrast);
+}
+
+.app-badge-neutral {
+  background-color: var(--app-pill);
+  color: var(--app-pill-text);
+}
+
 .app-input {
   background-color: var(--app-input-bg);
   border-color: var(--app-border);

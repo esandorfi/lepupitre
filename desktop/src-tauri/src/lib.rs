@@ -57,6 +57,7 @@ pub fn run() {
                 commands::transcription::asr_model_download,
                 commands::transcription::asr_model_remove,
                 commands::transcription::asr_model_verify,
+                commands::transcription::asr_sidecar_status,
                 commands::security::security_prepare_appdata_file,
                 commands::security::security_probe_fs
             ])

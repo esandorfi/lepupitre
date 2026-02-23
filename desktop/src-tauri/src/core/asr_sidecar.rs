@@ -21,6 +21,12 @@ fn sidecar_basename() -> &'static str {
 }
 
 pub fn resolve_sidecar_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    if let Ok(env_path) = std::env::var("LEPUPITRE_ASR_SIDECAR") {
+        let candidate = PathBuf::from(env_path);
+        if candidate.exists() {
+            return Ok(candidate);
+        }
+    }
     let resource_dir = app
         .path()
         .resource_dir()

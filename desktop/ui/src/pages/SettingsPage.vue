@@ -10,10 +10,11 @@ import {
   AsrModelDownloadProgressEventSchema,
   AsrModelDownloadResultSchema,
   AsrModelRemovePayloadSchema,
-  AsrModelStatus,
   AsrModelVerifyPayloadSchema,
   AsrModelVerifyResultSchema,
+  AsrModelStatus,
   AsrModelsListSchema,
+  AsrSidecarStatusResponseSchema,
   EmptyPayloadSchema,
   VoidResponseSchema,
 } from "../schemas/ipc";
@@ -24,6 +25,9 @@ const { settings, updateSettings } = useTranscriptionSettings();
 const models = ref<AsrModelStatus[]>([]);
 const isLoadingModels = ref(false);
 const downloadingModelId = ref<string | null>(null);
+const sidecarStatus = ref<"ready" | "missing" | "unknown">("unknown");
+const sidecarMessage = ref<string | null>(null);
+
 const verifyingModelId = ref<string | null>(null);
 const downloadError = ref<string | null>(null);
 const downloadProgress = ref<Record<string, { downloadedBytes: number; totalBytes: number }>>({});
@@ -117,6 +121,23 @@ function formatBytes(value?: number | null) {
   return `${size.toFixed(size >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
 }
 
+async function refreshSidecarStatus() {
+  try {
+    await invokeChecked("asr_sidecar_status", EmptyPayloadSchema, AsrSidecarStatusResponseSchema, {});
+    sidecarStatus.value = "ready";
+    sidecarMessage.value = null;
+  } catch (err) {
+    const raw = err instanceof Error ? err.message : String(err);
+    if (raw.includes("sidecar_missing")) {
+      sidecarStatus.value = "missing";
+      sidecarMessage.value = t("settings.transcription.sidecar_missing");
+    } else {
+      sidecarStatus.value = "unknown";
+      sidecarMessage.value = t("settings.transcription.sidecar_unknown");
+    }
+  }
+}
+
 function shortHash(value: string) {
   return value.slice(0, 8);
 }
@@ -174,6 +195,7 @@ async function removeModel(modelId: string) {
       { modelId }
     );
     await refreshModels();
+    await refreshSidecarStatus();
   } catch (err) {
     downloadError.value = err instanceof Error ? err.message : String(err);
   }
@@ -193,6 +215,7 @@ async function verifyModel(modelId: string) {
       { modelId }
     );
     await refreshModels();
+    await refreshSidecarStatus();
   } catch (err) {
     downloadError.value = err instanceof Error ? err.message : String(err);
   } finally {
@@ -216,6 +239,7 @@ async function downloadModel(modelId: string) {
       { modelId }
     );
     await refreshModels();
+    await refreshSidecarStatus();
   } catch (err) {
     downloadError.value = err instanceof Error ? err.message : String(err);
   } finally {
@@ -228,6 +252,7 @@ async function downloadModel(modelId: string) {
 
 onMounted(async () => {
   await refreshModels();
+  await refreshSidecarStatus();
   unlistenDownloadProgress = await listen("asr/model_download_progress/v1", (event) => {
     const parsed = AsrModelDownloadProgressEventSchema.safeParse(event.payload);
     if (!parsed.success) {
@@ -256,9 +281,19 @@ onBeforeUnmount(() => {
           <h2 class="app-nav-text text-lg font-semibold">
             {{ t("settings.transcription.title") }}
           </h2>
+          <div class="mt-1 flex items-center gap-2 text-xs">
+            <span class="app-muted">{{ t("settings.transcription.sidecar_label") }}</span>
+            <span
+              class="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+              :class="sidecarStatus === 'ready' ? 'app-badge-success' : sidecarStatus === 'missing' ? 'app-badge-danger' : 'app-badge-neutral'"
+            >
+              {{ sidecarStatus === "ready" ? t("settings.transcription.sidecar_ready") : sidecarStatus === "missing" ? t("settings.transcription.sidecar_missing_label") : t("settings.transcription.sidecar_unknown_label") }}
+            </span>
+          </div>
           <p class="app-muted text-xs">
             {{ t("settings.transcription.subtitle") }}
           </p>
+          <p v-if="sidecarMessage" class="app-danger-text text-xs">{{ sidecarMessage }}</p>
         </div>
         <div class="app-muted text-xs">
           {{ t("settings.transcription.scope") }}
@@ -329,6 +364,9 @@ onBeforeUnmount(() => {
           </button>
           <p class="app-muted mt-2 text-xs">
             {{ t("settings.transcription.spoken_punctuation_note") }}
+          </p>
+          <p class="app-muted text-xs">
+            {{ t("settings.transcription.spoken_punctuation_help") }}
           </p>
         </div>
       </div>
