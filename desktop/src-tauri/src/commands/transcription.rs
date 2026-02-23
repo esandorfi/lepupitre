@@ -37,7 +37,6 @@ pub struct TranscribeAudioPayload {
 #[serde(rename_all = "camelCase")]
 pub struct AsrSettingsPayload {
     model: Option<String>,
-    mode: Option<String>,
     language: Option<String>,
 }
 
@@ -52,7 +51,6 @@ fn normalize_asr_settings(payload: Option<AsrSettingsPayload>) -> AsrRuntimeSett
     let mut language = "auto".to_string();
 
     if let Some(payload) = payload {
-        let _ = payload.mode.as_deref();
         if let Some(model) = payload.model.as_deref() {
             if model == "tiny" || model == "base" {
                 model_id = model.to_string();
@@ -158,8 +156,6 @@ pub fn transcribe_audio(
 
         let (samples, duration_ms) = decode_wav_mono_16k(&audio_bytes)?;
         let total_ms = duration_ms;
-        emit_final_progress(&app, 0, total_ms)?;
-
         let segments = decode_with_sidecar(&app, &asr_settings, &samples, total_ms)?;
         let transcript = models::TranscriptV1 {
             schema_version: "1.0.0".to_string(),
@@ -193,7 +189,6 @@ pub fn transcribe_audio(
             &metadata,
         )?;
 
-        emit_final_progress(&app, total_ms, total_ms)?;
         let text = transcript::transcript_text(&transcript).unwrap_or_else(|_| {
             transcript
                 .segments
@@ -574,7 +569,31 @@ fn decode_with_sidecar(
 
     let mut decoder =
         asr_sidecar::SidecarDecoder::spawn(&sidecar_path, &model_path, &settings.language)?;
-    decoder.decode_window(samples, 0, duration_ms)
+
+    let total_ms = duration_ms.max(0);
+    let chunk_ms: i64 = 20_000;
+    let sample_rate = 16_000i64;
+    let mut segments = Vec::new();
+    let mut cursor_ms = 0i64;
+
+    emit_final_progress(app, 0, total_ms)?;
+
+    while cursor_ms < total_ms {
+        let end_ms = (cursor_ms + chunk_ms).min(total_ms);
+        let start_idx = (cursor_ms * sample_rate / 1000).max(0) as usize;
+        let end_idx = (end_ms * sample_rate / 1000).max(0) as usize;
+        if start_idx >= samples.len() {
+            break;
+        }
+        let end_idx = end_idx.min(samples.len());
+        let chunk = &samples[start_idx..end_idx];
+        let mut chunk_segments = decoder.decode_window(chunk, cursor_ms, end_ms)?;
+        segments.append(&mut chunk_segments);
+        emit_final_progress(app, end_ms, total_ms)?;
+        cursor_ms = end_ms;
+    }
+
+    Ok(segments)
 }
 
 fn decode_wav_mono_16k(bytes: &[u8]) -> Result<(Vec<f32>, i64), String> {
