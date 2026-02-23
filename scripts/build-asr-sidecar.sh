@@ -12,7 +12,16 @@ for arg in "$@"; do
   fi
 done
 
-cargo build --release --manifest-path "$SIDECAR_DIR/Cargo.toml"
+# Work around a ggml/whisper.cpp ARM feature detection mismatch seen on some
+# macOS CI runners (Xcode 16.4 / AppleClang 17) where i8mm code can be emitted
+# even when the compile flags resolve to +noi8mm. ggml disables GGML_NATIVE when
+# SOURCE_DATE_EPOCH is set, which avoids that code path.
+if [ "$(uname -s)" = "Darwin" ] && [ "$(uname -m)" = "arm64" ]; then
+  SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-1}" \
+    cargo build --release --manifest-path "$SIDECAR_DIR/Cargo.toml"
+else
+  cargo build --release --manifest-path "$SIDECAR_DIR/Cargo.toml"
+fi
 
 if [ "$COPY" -eq 1 ]; then
   mkdir -p "$OUT_DIR"

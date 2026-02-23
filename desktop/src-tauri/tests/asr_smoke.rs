@@ -2,7 +2,10 @@ use lepupitre_lib::core::asr_sidecar;
 use std::path::PathBuf;
 
 fn env_enabled() -> bool {
-    matches!(std::env::var("LEPUPITRE_ASR_SMOKE").ok().as_deref(), Some("1"))
+    matches!(
+        std::env::var("LEPUPITRE_ASR_SMOKE").ok().as_deref(),
+        Some("1")
+    )
 }
 
 fn env_path(key: &str) -> Option<PathBuf> {
@@ -32,8 +35,8 @@ fn asr_sidecar_smoke_decode() {
         }
     };
 
-    let mut decoder = asr_sidecar::SidecarDecoder::spawn(&sidecar, &model, "auto")
-        .expect("sidecar spawn failed");
+    let mut decoder =
+        asr_sidecar::SidecarDecoder::spawn(&sidecar, &model, "auto").expect("sidecar spawn failed");
 
     let samples = vec![0.0f32; 16_000];
     let segments = decoder

@@ -59,8 +59,11 @@ impl LiveTranscriptState {
             .collect();
 
         ordered.sort_by(|left, right| {
-            (left.t_start_ms, left.t_end_ms, &left.text)
-                .cmp(&(right.t_start_ms, right.t_end_ms, &right.text))
+            (left.t_start_ms, left.t_end_ms, &left.text).cmp(&(
+                right.t_start_ms,
+                right.t_end_ms,
+                &right.text,
+            ))
         });
         ordered.dedup_by(|left, right| {
             left.t_start_ms == right.t_start_ms

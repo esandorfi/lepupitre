@@ -15,7 +15,6 @@ pub fn load_transcript(
     serde_json::from_slice(&bytes).map_err(|e| format!("transcript_parse: {e}"))
 }
 
-
 #[derive(Clone, Copy)]
 enum PunctInsert {
     Attach,

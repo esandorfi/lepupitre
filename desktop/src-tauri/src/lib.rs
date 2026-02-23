@@ -118,7 +118,8 @@ pub fn run() {
                 commands::transcription::asr_models_list,
                 commands::transcription::asr_model_download,
                 commands::transcription::asr_model_remove,
-                commands::transcription::asr_model_verify
+                commands::transcription::asr_model_verify,
+                commands::transcription::asr_sidecar_status
             ])
             .run(tauri::generate_context!())
             .expect("error while running tauri application");

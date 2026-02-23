@@ -672,10 +672,12 @@ impl LiveDecoder for SidecarLiveDecoder {
         }
 
         let decode_start = Instant::now();
-        match self
-            .decoder
-            .decode_window(window, window_start_ms, window_end_ms, asr_sidecar::DecodeMode::Live)
-        {
+        match self.decoder.decode_window(
+            window,
+            window_start_ms,
+            window_end_ms,
+            asr_sidecar::DecodeMode::Live,
+        ) {
             Ok(segments) => {
                 self.cooldown_until = None;
                 let window_ms = (window_end_ms - window_start_ms).max(0) as f64;
@@ -685,7 +687,9 @@ impl LiveDecoder for SidecarLiveDecoder {
                     if ratio > ASR_SLOW_DECODE_RATIO {
                         let should_log = self
                             .last_slow_log
-                            .map(|last| last.elapsed().as_millis() as u64 >= ASR_SLOW_LOG_COOLDOWN_MS)
+                            .map(|last| {
+                                last.elapsed().as_millis() as u64 >= ASR_SLOW_LOG_COOLDOWN_MS
+                            })
                             .unwrap_or(true);
                         if should_log {
                             eprintln!(
@@ -705,7 +709,8 @@ impl LiveDecoder for SidecarLiveDecoder {
                     eprintln!("asr sidecar decode error: {err}");
                     self.last_error = Some(err);
                 }
-                self.cooldown_until = Some(Instant::now() + Duration::from_millis(SIDECAR_DECODE_BACKOFF_MS));
+                self.cooldown_until =
+                    Some(Instant::now() + Duration::from_millis(SIDECAR_DECODE_BACKOFF_MS));
                 Vec::new()
             }
         }
@@ -755,7 +760,12 @@ impl LiveDecoder for MockAsrDecoder {
 fn benchmark_sidecar(decoder: &mut asr_sidecar::SidecarDecoder) -> Result<bool, String> {
     let samples = vec![0.0f32; (TARGET_SAMPLE_RATE as i64 * AUTO_BENCH_WINDOW_MS / 1000) as usize];
     let start = std::time::Instant::now();
-    let _ = decoder.decode_window(&samples, 0, AUTO_BENCH_WINDOW_MS, asr_sidecar::DecodeMode::Live)?;
+    let _ = decoder.decode_window(
+        &samples,
+        0,
+        AUTO_BENCH_WINDOW_MS,
+        asr_sidecar::DecodeMode::Live,
+    )?;
     let elapsed_ms = start.elapsed().as_millis() as f64;
     let allowed_ms = AUTO_BENCH_WINDOW_MS as f64 * AUTO_BENCH_MAX_RATIO;
     Ok(elapsed_ms <= allowed_ms)
