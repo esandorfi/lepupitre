@@ -139,7 +139,7 @@ jobs:
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
         run: |
           if [ -z "${HOMEBREW_TAP_TOKEN}" ]; then
-            echo "HOMEBREW_TAP_TOKEN not set, skipping Homebrew update."
+            echo "HOMEBREW_TAP_TOKEN not set; skipping optional Homebrew update."
             exit 0
           fi
           sudo apt-get update && sudo apt-get install -y jq
@@ -150,7 +150,7 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "${HOMEBREW_TAP_TOKEN}" ]; then
-            echo "HOMEBREW_TAP_TOKEN not set, skipping Homebrew update."
+            echo "HOMEBREW_TAP_TOKEN not set; skipping optional Homebrew update."
             exit 0
           fi
           VERSION="${GITHUB_REF_NAME#v}"
