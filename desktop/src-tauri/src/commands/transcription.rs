@@ -587,7 +587,19 @@ fn decode_with_sidecar(
         }
         let end_idx = end_idx.min(samples.len());
         let chunk = &samples[start_idx..end_idx];
-        let mut chunk_segments = decoder.decode_window(chunk, cursor_ms, end_ms)?;
+        let mut chunk_segments = decoder.decode_window_with_progress(
+            chunk,
+            cursor_ms,
+            end_ms,
+            |processed_ms: i64, total_chunk_ms: i64| {
+                if total_chunk_ms <= 0 {
+                    return;
+                }
+                let clamped = processed_ms.clamp(0, total_chunk_ms);
+                let absolute_ms = (cursor_ms + clamped).min(total_ms);
+                let _ = emit_final_progress(app, absolute_ms, total_ms);
+            },
+        )?;
         segments.append(&mut chunk_segments);
         emit_final_progress(app, end_ms, total_ms)?;
         cursor_ms = end_ms;

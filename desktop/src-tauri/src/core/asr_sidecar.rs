@@ -165,6 +165,19 @@ impl SidecarDecoder {
         window_start_ms: i64,
         window_end_ms: i64,
     ) -> Result<Vec<models::TranscriptSegment>, String> {
+        self.decode_window_with_progress(window, window_start_ms, window_end_ms, |_, _| {})
+    }
+
+    pub fn decode_window_with_progress<F>(
+        &mut self,
+        window: &[f32],
+        window_start_ms: i64,
+        window_end_ms: i64,
+        mut on_progress: F,
+    ) -> Result<Vec<models::TranscriptSegment>, String>
+    where
+        F: FnMut(i64, i64),
+    {
         self.seq = self.seq.wrapping_add(1);
         let seq = self.seq;
 
@@ -211,6 +224,16 @@ impl SidecarDecoder {
                         })
                         .collect();
                     return Ok(mapped);
+                }
+                SidecarResponse::Progress {
+                    seq: resp_seq,
+                    processed_ms,
+                    total_ms,
+                } => {
+                    if resp_seq != seq {
+                        continue;
+                    }
+                    on_progress(processed_ms, total_ms);
                 }
                 SidecarResponse::Error {
                     seq: resp_seq,
