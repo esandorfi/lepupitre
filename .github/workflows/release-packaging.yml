@@ -126,7 +126,7 @@ jobs:
           projectPath: desktop
           releaseName: "LePupitre ${{ github.ref_name }}"
           tagName: ${{ github.ref_name }}
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
 
   update-homebrew:
@@ -155,21 +155,45 @@ jobs:
           fi
           VERSION="${GITHUB_REF_NAME#v}"
           API_URL="https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/${GITHUB_REF_NAME}"
-          RELEASE=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" "${API_URL}")
-          ARM_URL=$(echo "${RELEASE}" | jq -r '.assets[] | select(.name | test("aarch64|arm64")) | .browser_download_url' | head -n 1)
-          INTEL_URL=$(echo "${RELEASE}" | jq -r '.assets[] | select(.name | test("x64|x86_64")) | .browser_download_url' | head -n 1)
+          RELEASE=""
+          for ATTEMPT in $(seq 1 20); do
+            RELEASE=$(curl -fsSL \
+              -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              "${API_URL}" || true)
+            if [ -n "${RELEASE}" ]; then
+              DMG_COUNT=$(echo "${RELEASE}" | jq -r '[((.assets // [])[]) | select(.name | test("\\.dmg$"; "i"))] | length')
+              if [ "${DMG_COUNT}" -gt 0 ]; then
+                break
+              fi
+              API_MESSAGE=$(echo "${RELEASE}" | jq -r '.message // empty')
+              if [ -n "${API_MESSAGE}" ]; then
+                echo "Release lookup not ready (attempt ${ATTEMPT}/20): ${API_MESSAGE}"
+              else
+                echo "Release found but no DMG assets yet (attempt ${ATTEMPT}/20)."
+              fi
+            else
+              echo "Empty release API response (attempt ${ATTEMPT}/20)."
+            fi
+            if [ "${ATTEMPT}" -lt 20 ]; then
+              sleep 15
+            fi
+          done
+          ARM_URL=$(echo "${RELEASE}" | jq -r '((.assets // [])[] | select(.name | test("\\.dmg$"; "i")) | select(.name | test("aarch64|arm64"; "i")) | .browser_download_url) // empty' | head -n 1)
+          INTEL_URL=$(echo "${RELEASE}" | jq -r '((.assets // [])[] | select(.name | test("\\.dmg$"; "i")) | select(.name | test("x64|x86_64"; "i")) | .browser_download_url) // empty' | head -n 1)
           if [ -z "${ARM_URL}" ] && [ -z "${INTEL_URL}" ]; then
-            echo "No DMG assets found."
+            echo "No DMG assets found after waiting for the release."
+            echo "${RELEASE}" | jq -C '.' || echo "${RELEASE}"
             exit 1
           fi
           mkdir -p /tmp/lepupitre
           if [ -n "${ARM_URL}" ]; then
-            curl -L -o /tmp/lepupitre/arm.dmg "${ARM_URL}"
+            curl -fL -o /tmp/lepupitre/arm.dmg "${ARM_URL}"
             ARM_SHA=$(shasum -a 256 /tmp/lepupitre/arm.dmg | awk '{print $1}')
             ARM_NAME=$(basename "${ARM_URL}")
           fi
           if [ -n "${INTEL_URL}" ]; then
-            curl -L -o /tmp/lepupitre/intel.dmg "${INTEL_URL}"
+            curl -fL -o /tmp/lepupitre/intel.dmg "${INTEL_URL}"
             INTEL_SHA=$(shasum -a 256 /tmp/lepupitre/intel.dmg | awk '{print $1}')
             INTEL_NAME=$(basename "${INTEL_URL}")
           fi
@@ -232,13 +256,46 @@ jobs:
           }
           $version = $env:GITHUB_REF_NAME -replace '^v',''
           $apiUrl = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/releases/tags/$env:GITHUB_REF_NAME"
-          $release = Invoke-RestMethod -Headers @{ Authorization = "token $env:GITHUB_TOKEN" } -Uri $apiUrl
-          $asset = $release.assets | Where-Object { $_.name -like "*.msi" } | Select-Object -First 1
-          if (-not $asset) {
-            $asset = $release.assets | Where-Object { $_.name -like "*.exe" } | Select-Object -First 1
+          $headers = @{
+            Authorization = "Bearer $env:GITHUB_TOKEN"
+            Accept = "application/vnd.github+json"
+          }
+          $release = $null
+          $asset = $null
+          for ($attempt = 1; $attempt -le 20; $attempt++) {
+            try {
+              $release = Invoke-RestMethod -Headers $headers -Uri $apiUrl
+            } catch {
+              Write-Host "Release lookup not ready (attempt $attempt/20): $($_.Exception.Message)"
+              if ($attempt -eq 20) { throw }
+              Start-Sleep -Seconds 15
+              continue
+            }
+
+            $assets = @()
+            if ($null -ne $release -and $null -ne $release.assets) {
+              $assets = @($release.assets)
+            }
+
+            $asset = $assets | Where-Object { $_.name -like "*.msi" } | Select-Object -First 1
+            if (-not $asset) {
+              $asset = $assets | Where-Object { $_.name -like "*.exe" } | Select-Object -First 1
+            }
+            if ($asset) {
+              break
+            }
+
+            if ($null -ne $release -and ($release.PSObject.Properties.Name -contains 'message') -and $release.message) {
+              Write-Host "Release found but not ready (attempt $attempt/20): $($release.message)"
+            } else {
+              Write-Host "Release found but no installer asset yet (attempt $attempt/20)."
+            }
+            if ($attempt -lt 20) {
+              Start-Sleep -Seconds 15
+            }
           }
           if (-not $asset) {
-            throw "No installer asset found."
+            throw "No installer asset found after waiting for the release assets."
           }
           $url = $asset.browser_download_url
           $installerPath = Join-Path $env:RUNNER_TEMP $asset.name
