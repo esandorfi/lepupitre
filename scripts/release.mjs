@@ -7,7 +7,7 @@ const repoDir = fs.existsSync(path.join(rootDir, "desktop"))
   ? rootDir
   : path.resolve(rootDir, "..");
 
-const args = process.argv.slice(2);
+const args = process.argv.slice(2).filter((arg) => arg !== "--");
 const bump = args[0];
 const noTag = args.includes("--no-tag");
 const noChangelog = args.includes("--no-changelog");
@@ -89,15 +89,46 @@ function git(command) {
   return execSync(command, { encoding: "utf8" }).trim();
 }
 
+function gitOk(command) {
+  try {
+    execSync(command, { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 const desktopPackagePath = path.join(repoDir, "desktop", "package.json");
 const uiPackagePath = path.join(repoDir, "desktop", "ui", "package.json");
 const tauriConfigPath = path.join(repoDir, "desktop", "src-tauri", "tauri.conf.json");
 const cargoTomlPath = path.join(repoDir, "desktop", "src-tauri", "Cargo.toml");
 const cargoLockPath = path.join(repoDir, "desktop", "src-tauri", "Cargo.lock");
+const changelogPath = path.join(repoDir, "CHANGELOG.md");
+const changelogScriptPath = path.join(repoDir, "scripts", "changelog.mjs");
 
 const desktopPackage = JSON.parse(fs.readFileSync(desktopPackagePath, "utf8"));
 const currentVersion = desktopPackage.version;
 const nextVersion = bumpVersion(currentVersion, bump);
+const nextTag = `v${nextVersion}`;
+
+if (!noTag && gitOk(`git rev-parse -q --verify refs/tags/${nextTag}`)) {
+  console.error(`Tag ${nextTag} already exists.`);
+  process.exit(1);
+}
+
+if (!noChangelog) {
+  const currentTag = `v${currentVersion}`;
+  const hasCurrentTag = gitOk(`git rev-parse -q --verify refs/tags/${currentTag}`);
+  const changelog = fs.existsSync(changelogPath)
+    ? fs.readFileSync(changelogPath, "utf8")
+    : "";
+  const changelogHasCurrent = new RegExp(`^##\\s+v?${currentVersion}\\b`, "m").test(changelog);
+
+  if (hasCurrentTag && !changelogHasCurrent) {
+    console.log(`Backfilling changelog entry for ${currentTag} before bumping version...`);
+    execSync(`node ${changelogScriptPath} ${currentVersion}`, { stdio: "inherit" });
+  }
+}
 
 desktopPackage.version = nextVersion;
 writeJson(desktopPackagePath, desktopPackage);
@@ -111,12 +142,11 @@ updateCargoToml(cargoTomlPath, nextVersion);
 updateCargoLock(cargoLockPath, nextVersion);
 
 if (!noChangelog) {
-  const scriptPath = path.join(repoDir, "scripts", "changelog.mjs");
-  execSync(`node ${scriptPath} ${nextVersion}`, { stdio: "inherit" });
+  execSync(`node ${changelogScriptPath} ${nextVersion}`, { stdio: "inherit" });
 }
 
 if (!noTag) {
-  execSync(`git tag v${nextVersion}`, { stdio: "inherit" });
+  execSync(`git tag ${nextTag}`, { stdio: "inherit" });
 }
 
 if (doCommit) {

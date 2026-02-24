@@ -7,7 +7,8 @@ const repoDir = fs.existsSync(path.join(rootDir, "desktop"))
   ? rootDir
   : path.resolve(rootDir, "..");
 
-const versionArg = process.argv[2];
+const args = process.argv.slice(2).filter((arg) => arg !== "--");
+const versionArg = args[0];
 const changelogPath = path.join(repoDir, "CHANGELOG.md");
 
 function parseVersion(value) {
@@ -177,7 +178,7 @@ if (latestGitTag) {
   if (latestTagVersion !== version && !changelogContainsVersion(changelog, latestTagVersion)) {
     console.error(
       `Changelog is missing the latest tag ${latestGitTag}. ` +
-        `Run "pnpm -C desktop changelog -- ${latestTagVersion}" to backfill it first.`
+        `Run "pnpm -C desktop changelog ${latestTagVersion}" to backfill it first.`
     );
     process.exit(1);
   }
