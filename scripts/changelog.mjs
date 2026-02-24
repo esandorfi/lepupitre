@@ -178,7 +178,8 @@ if (latestGitTag) {
   if (latestTagVersion !== version && !changelogContainsVersion(changelog, latestTagVersion)) {
     console.error(
       `Changelog is missing the latest tag ${latestGitTag}. ` +
-        `Run "pnpm -C desktop changelog ${latestTagVersion}" to backfill it first.`
+        `Run "pnpm -C desktop changelog ${latestTagVersion}" to backfill it first ` +
+        `or delete the local tag if it was created accidentally ("git tag -d ${latestGitTag}").`
     );
     process.exit(1);
   }

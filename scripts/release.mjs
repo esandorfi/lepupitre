@@ -1,6 +1,7 @@
 import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import readline from "node:readline/promises";
 
 const rootDir = path.resolve(process.cwd(), ".");
 const repoDir = fs.existsSync(path.join(rootDir, "desktop"))
@@ -13,10 +14,11 @@ const noTag = args.includes("--no-tag");
 const noChangelog = args.includes("--no-changelog");
 const doCommit = args.includes("--commit");
 const doPush = args.includes("--push");
+const assumeYes = args.includes("--yes") || args.includes("-y");
 
 if (!bump) {
   console.error(
-    "Usage: node scripts/release.mjs <patch|minor|major|x.y.z> [--no-tag] [--no-changelog] [--commit] [--push]"
+    "Usage: node scripts/release.mjs <patch|minor|major|x.y.z> [--no-tag] [--no-changelog] [--commit] [--push] [--yes]"
   );
   process.exit(1);
 }
@@ -98,6 +100,59 @@ function gitOk(command) {
   }
 }
 
+function getLatestGitTag() {
+  const tags = git("git tag --sort=-v:refname").split("\n").filter(Boolean);
+  return tags[0] ?? null;
+}
+
+function stripTagPrefix(tag) {
+  return tag.replace(/^v/, "");
+}
+
+function changelogContainsVersion(content, version) {
+  return new RegExp(`^##\\s+v?${version}\\b`, "m").test(content);
+}
+
+async function confirmReleasePlan({ currentVersion, nextVersion, bump }) {
+  if (assumeYes) {
+    return;
+  }
+
+  if (!process.stdin.isTTY || !process.stdout.isTTY) {
+    console.error(
+      `Non-interactive terminal. Re-run with --yes to confirm release ${currentVersion} -> ${nextVersion}.`
+    );
+    process.exit(1);
+  }
+
+  const actions = [
+    "update version files",
+    noChangelog ? null : "update CHANGELOG.md",
+    noTag ? null : "create local git tag",
+    doCommit ? "commit release changes" : null,
+    doPush ? "push branch/tag" : null,
+  ].filter(Boolean);
+
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  try {
+    const answer = await rl.question(
+      `Prepare release (${bump}): ${currentVersion} -> ${nextVersion}\n` +
+        `Actions: ${actions.join(", ")}\n` +
+        "Continue? [y/N] "
+    );
+    if (!/^(y|yes)$/i.test(answer.trim())) {
+      console.error("Release cancelled.");
+      process.exit(1);
+    }
+  } finally {
+    rl.close();
+  }
+}
+
 const desktopPackagePath = path.join(repoDir, "desktop", "package.json");
 const uiPackagePath = path.join(repoDir, "desktop", "ui", "package.json");
 const tauriConfigPath = path.join(repoDir, "desktop", "src-tauri", "tauri.conf.json");
@@ -110,6 +165,26 @@ const desktopPackage = JSON.parse(fs.readFileSync(desktopPackagePath, "utf8"));
 const currentVersion = desktopPackage.version;
 const nextVersion = bumpVersion(currentVersion, bump);
 const nextTag = `v${nextVersion}`;
+const changelogBefore = fs.existsSync(changelogPath) ? fs.readFileSync(changelogPath, "utf8") : "";
+const latestGitTag = getLatestGitTag();
+const latestGitTagVersion = latestGitTag ? stripTagPrefix(latestGitTag) : null;
+
+if (
+  latestGitTag &&
+  latestGitTagVersion !== currentVersion &&
+  latestGitTagVersion !== nextVersion &&
+  !changelogContainsVersion(changelogBefore, latestGitTagVersion)
+) {
+  console.error(
+    `Changelog is missing the latest git tag ${latestGitTag}. ` +
+      `This often means a local tag was created accidentally.`
+  );
+  console.error(`If ${latestGitTag} is a real release, backfill it first: pnpm -C desktop changelog ${latestGitTagVersion}`);
+  console.error(`If ${latestGitTag} is accidental/local-only, delete it: git tag -d ${latestGitTag}`);
+  process.exit(1);
+}
+
+await confirmReleasePlan({ currentVersion, nextVersion, bump });
 
 if (!noTag && gitOk(`git rev-parse -q --verify refs/tags/${nextTag}`)) {
   console.error(`Tag ${nextTag} already exists.`);
@@ -119,9 +194,7 @@ if (!noTag && gitOk(`git rev-parse -q --verify refs/tags/${nextTag}`)) {
 if (!noChangelog) {
   const currentTag = `v${currentVersion}`;
   const hasCurrentTag = gitOk(`git rev-parse -q --verify refs/tags/${currentTag}`);
-  const changelog = fs.existsSync(changelogPath)
-    ? fs.readFileSync(changelogPath, "utf8")
-    : "";
+  const changelog = fs.existsSync(changelogPath) ? fs.readFileSync(changelogPath, "utf8") : "";
   const changelogHasCurrent = new RegExp(`^##\\s+v?${currentVersion}\\b`, "m").test(changelog);
 
   if (hasCurrentTag && !changelogHasCurrent) {
@@ -144,19 +217,20 @@ updateCargoLock(cargoLockPath, nextVersion);
 if (!noChangelog) {
   execSync(`node ${changelogScriptPath} ${nextVersion}`, { stdio: "inherit" });
 }
-
-if (!noTag) {
-  execSync(`git tag ${nextTag}`, { stdio: "inherit" });
-}
+const releaseCommitMessage = `chore(release): v${nextVersion}`;
 
 if (doCommit) {
   execSync("git add -A", { stdio: "inherit" });
   const status = git("git status --porcelain");
   if (status) {
-    execSync(`git commit -m "chore(release): v${nextVersion}"`, { stdio: "inherit" });
+    execSync(`git commit -m "${releaseCommitMessage}"`, { stdio: "inherit" });
   } else {
     console.log("No changes to commit.");
   }
+}
+
+if (!noTag) {
+  execSync(`git tag ${nextTag}`, { stdio: "inherit" });
 }
 
 if (doPush) {
@@ -167,4 +241,12 @@ if (doPush) {
   }
 }
 
-console.log(`Version bumped to ${nextVersion}`);
+console.log(`Prepared release ${nextVersion}`);
+console.log(`Commit message: ${releaseCommitMessage}`);
+if (!doCommit && !doPush) {
+  console.log("Next steps:");
+  console.log("  1. Review changes");
+  console.log("  2. git add -A");
+  console.log(`  3. git commit -m "${releaseCommitMessage}"`);
+  console.log("  4. just release-tagpush");
+}

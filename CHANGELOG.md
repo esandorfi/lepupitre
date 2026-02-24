@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.2.4 - 2026-02-24
+Summary: 3 chores, 1 ci.
+Comparing from v0.2.2 to HEAD.
+
+### Chores
+- chore(release): v0.2.3
+- chore: add justfile
+- chore(release): v0.2.2
+
+### CI
+- ci: fix release
+
 ## v0.2.3 - 2026-02-24
 Summary: 2 chores, 1 ci.
 Comparing from v0.2.2 to HEAD.

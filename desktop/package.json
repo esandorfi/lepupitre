@@ -1,7 +1,7 @@
 {
   "name": "lepupitre-desktop",
   "private": true,
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Local-first coach for preparing technical talks with daily quests, Boss Run audio sessions, actionable feedback, and peer review packs.",
   "type": "module",
   "scripts": {
@@ -14,12 +14,10 @@
     "ui:typecheck": "pnpm -C ui typecheck",
     "ui:test": "pnpm -C ui test",
     "changelog": "node ../scripts/changelog.mjs",
-    "release:patch": "node ../scripts/release.mjs patch",
-    "release:minor": "node ../scripts/release.mjs minor",
-    "release:major": "node ../scripts/release.mjs major",
-    "release:patch:push": "node ../scripts/release.mjs patch --commit --push",
-    "release:minor:push": "node ../scripts/release.mjs minor --commit --push",
-    "release:major:push": "node ../scripts/release.mjs major --commit --push"
+    "release:patch": "node ../scripts/release.mjs patch --no-tag",
+    "release:minor": "node ../scripts/release.mjs minor --no-tag",
+    "release:major": "node ../scripts/release.mjs major --no-tag",
+    "release:tagpush": "node ../scripts/release-tagpush.mjs"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2"
