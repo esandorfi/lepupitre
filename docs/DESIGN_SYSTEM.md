@@ -28,6 +28,11 @@ It is the implementation-facing version of the UI specs (including theme colors 
   - complete App Shell layout spec (exact header heights, page structure variants)
   - page-specific IA and screen copy for every page
 
+### Companion docs (audit + upcoming implementation spec)
+
+- `docs/UI_AUDIT_MACOS_DESKTOP_REPORT.md` (UI/UX audit and macOS desktop direction analysis)
+- `spec/spec_ui_design_macos_desktop_system.md` (concrete desktop design system implementation spec)
+
 ## 1) Core Rules (always apply)
 
 - Use Tailwind utilities for layout, spacing, sizing, positioning, and responsive behavior.
