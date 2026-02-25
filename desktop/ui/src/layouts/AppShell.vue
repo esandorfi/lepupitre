@@ -21,6 +21,7 @@ const activeQuestCode = computed(() => {
 const showQuestTab = computed(() => activeQuestCode.value.length > 0);
 const talkLabel = computed(() => t("nav.talk"));
 const talksCount = computed(() => appStore.state.projects.length);
+const currentTalk = computed(() => appStore.state.activeProject);
 const activeFeedbackId = computed(() => {
   if (route.name === "feedback") {
     return String(route.params.feedbackId || "");
@@ -68,6 +69,25 @@ const activeTalkNumber = computed(() => {
     return appStore.state.activeProject?.talk_number ?? null;
   }
   return appStore.getTalkNumber(activeTalkId.value);
+});
+const currentTalkLink = computed(() => {
+  const id = currentTalk.value?.id || "";
+  return id ? `/talks/${id}/train` : "/talks";
+});
+const currentTalkTabLabel = computed(() => {
+  if (!currentTalk.value) {
+    return t("nav.current_talk");
+  }
+  const number = currentTalk.value.talk_number;
+  const prefix = number ? `T${number} ` : "";
+  return `${prefix}${truncateLabel(currentTalk.value.title, 16)}`;
+});
+const isCurrentTalkNavActive = computed(() => {
+  const currentId = currentTalk.value?.id;
+  if (!currentId) {
+    return false;
+  }
+  return showTalkTab.value && activeTalkId.value === currentId;
 });
 const showTalkTab = computed(() => {
   return (
@@ -184,8 +204,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="app-shell min-h-screen">
-    <header class="app-toolbar border-b">
+  <div class="app-shell flex h-screen min-h-screen flex-col overflow-hidden">
+    <header class="app-toolbar sticky top-0 z-40 shrink-0 border-b">
       <div class="app-container px-4 py-3 sm:px-6">
         <div class="flex flex-col gap-3">
           <div class="flex items-center justify-between gap-3">
@@ -220,21 +240,39 @@ onMounted(() => {
                   </span>
                 </span>
               </RouterLink>
+              <RouterLink
+                v-if="currentTalk"
+                class="app-top-tab app-focus-ring rounded-full px-3 py-2 transition"
+                :class="{ 'app-top-tab-active': isCurrentTalkNavActive }"
+                :to="currentTalkLink"
+              >
+                {{ currentTalkTabLabel }}
+              </RouterLink>
+              <button
+                v-else
+                class="app-top-tab app-top-tab-disabled rounded-full px-3 py-2 transition"
+                type="button"
+                disabled
+              >
+                {{ t("nav.current_talk") }}
+              </button>
             </nav>
+          </div>
+        </div>
+      </div>
+    </header>
 
+    <main class="min-h-0 flex-1 overflow-y-auto">
+      <div class="app-container px-4 py-4 sm:px-6 sm:py-6">
+        <div v-if="breadcrumbItems.length > 0" class="mb-4">
+          <div class="app-surface rounded-xl border px-3 py-2 shadow-sm">
             <UBreadcrumb
-              v-if="breadcrumbItems.length > 0"
               class="app-breadcrumb app-nav-text"
               separator-icon="i-lucide-arrow-right"
               :items="breadcrumbItems"
             />
           </div>
         </div>
-      </div>
-    </header>
-
-    <main class="px-4 py-4 sm:px-6 sm:py-6">
-      <div class="app-container">
         <slot />
       </div>
     </main>

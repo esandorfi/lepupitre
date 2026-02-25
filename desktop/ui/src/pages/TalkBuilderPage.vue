@@ -54,6 +54,17 @@ function toError(err: unknown) {
   return err instanceof Error ? err.message : String(err);
 }
 
+async function markBuilderStage() {
+  if (!selectedProjectId.value) {
+    return;
+  }
+  try {
+    await appStore.ensureProjectStageAtLeast(selectedProjectId.value, "builder");
+  } catch {
+    // keep save/export non-blocking
+  }
+}
+
 async function loadOutline() {
   error.value = null;
   exportPath.value = null;
@@ -86,6 +97,7 @@ async function saveOutline() {
   error.value = null;
   try {
     await appStore.saveOutline(selectedProjectId.value, outline.value);
+    await markBuilderStage();
     saveStatus.value = "saved";
     setTimeout(() => {
       saveStatus.value = "idle";
@@ -106,6 +118,7 @@ async function exportOutline() {
   isExporting.value = true;
   error.value = null;
   try {
+    await markBuilderStage();
     const result = await appStore.exportOutline(selectedProjectId.value);
     exportPath.value = result.path;
   } catch (err) {

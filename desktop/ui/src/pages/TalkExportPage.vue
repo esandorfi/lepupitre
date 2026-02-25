@@ -57,6 +57,17 @@ function runStatus(run: RunSummary) {
   return t("talk_report.timeline_started");
 }
 
+async function markExportStage() {
+  if (!projectId.value) {
+    return;
+  }
+  try {
+    await appStore.ensureProjectStageAtLeast(projectId.value, "export");
+  } catch {
+    // keep export actions non-blocking
+  }
+}
+
 const summary = computed(() => {
   const total = report.value.length;
   const started = report.value.filter((item) => item.attempt_id).length;
@@ -74,6 +85,7 @@ async function exportPack(runId: string) {
   exportingRunId.value = runId;
   exportError.value = null;
   try {
+    await markExportStage();
     const result = await appStore.exportPack(runId);
     exportPath.value = result.path;
   } catch (err) {
@@ -91,6 +103,7 @@ async function exportOutline() {
   isExportingOutline.value = true;
   exportError.value = null;
   try {
+    await markExportStage();
     const result = await appStore.exportOutline(projectId.value);
     exportPath.value = result.path;
   } catch (err) {
@@ -306,6 +319,7 @@ onMounted(loadData);
         <RouterLink
           class="app-button-secondary app-focus-ring inline-flex min-h-11 items-center rounded-full px-4 py-2 text-sm font-semibold"
           to="/packs"
+          @click="markExportStage"
         >
           {{ t("talk_report.packs") }}
         </RouterLink>

@@ -175,6 +175,8 @@
   background-image: linear-gradient(135deg, var(--color-toolbar-bg-start), var(--color-toolbar-bg-end));
   border-color: var(--color-toolbar-border);
   color: var(--color-toolbar-text);
+  backdrop-filter: saturate(120%) blur(6px);
+  box-shadow: 0 1px 0 0 color-mix(in srgb, var(--color-toolbar-border) 70%, transparent);
 }
 
 .app-toolbar-muted {
@@ -441,6 +443,13 @@ body {
   border-color: var(--color-toolbar-border);
   color: var(--color-toolbar-text);
   box-shadow: inset 0 -2px 0 0 var(--color-accent);
+}
+
+.app-top-tab-disabled {
+  border: 1px dashed color-mix(in srgb, var(--color-toolbar-border) 70%, transparent);
+  color: color-mix(in srgb, var(--color-toolbar-text-muted) 80%, transparent);
+  opacity: 0.75;
+  cursor: not-allowed;
 }
 
 .app-menu-panel {

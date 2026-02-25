@@ -214,6 +214,42 @@ async function updateProject(projectId: string, payload: ProjectUpdatePayload) {
   }
 }
 
+function stageRank(stage: string | null | undefined) {
+  switch (stage) {
+    case "builder":
+      return 1;
+    case "train":
+      return 2;
+    case "export":
+      return 3;
+    case "draft":
+    default:
+      return 0;
+  }
+}
+
+async function ensureProjectStageAtLeast(
+  projectId: string,
+  minimumStage: "draft" | "builder" | "train" | "export"
+) {
+  const project =
+    state.projects.find((item) => item.id === projectId) ??
+    (state.activeProject?.id === projectId ? state.activeProject : null);
+  if (!project) {
+    throw new Error("project_not_found");
+  }
+  if (stageRank(project.stage) >= stageRank(minimumStage)) {
+    return;
+  }
+  await updateProject(projectId, {
+    title: project.title,
+    audience: project.audience ?? null,
+    goal: project.goal ?? null,
+    duration_target_sec: project.duration_target_sec ?? null,
+    stage: minimumStage,
+  });
+}
+
 async function setActiveProject(projectId: string) {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
@@ -698,6 +734,7 @@ export const appStore = {
   loadActiveProject,
   createProject,
   updateProject,
+  ensureProjectStageAtLeast,
   setActiveProject,
   ensureTrainingProject,
   loadDailyQuest,

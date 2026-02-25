@@ -22,11 +22,61 @@ function formatDuration(seconds: number | null | undefined) {
   return Math.round(seconds / 60).toString();
 }
 
+function formatLastActivity(value: string | null | undefined) {
+  if (!value) {
+    return t("talks.last_activity_unknown");
+  }
+  const date = new Date(value);
+  const now = Date.now();
+  const time = date.getTime();
+  if (Number.isNaN(time)) {
+    return t("talks.last_activity_unknown");
+  }
+  const diffMs = Math.max(0, now - time);
+  const minutes = Math.floor(diffMs / 60000);
+  if (minutes < 1) {
+    return t("talks.last_activity_just_now");
+  }
+  if (minutes < 60) {
+    return `${minutes}m`;
+  }
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) {
+    return `${hours}h`;
+  }
+  const days = Math.floor(hours / 24);
+  if (days < 7) {
+    return `${days}d`;
+  }
+  return date.toLocaleDateString();
+}
+
 function talkNumberLabel(number: number | null | undefined) {
   if (!number) {
     return null;
   }
   return `T${number}`;
+}
+
+function normalizedStage(stage: string | null | undefined) {
+  if (stage === "builder" || stage === "train" || stage === "export") {
+    return stage;
+  }
+  return "draft";
+}
+
+function talkStageLabel(stage: string | null | undefined) {
+  const key = normalizedStage(stage);
+  if (key === "draft") {
+    return t("talk_steps.define");
+  }
+  if (key === "builder") {
+    return t("talk_steps.builder");
+  }
+  if (key === "train") {
+    return t("talk_steps.train");
+  }
+  return t("talk_steps.export");
 }
 
 async function bootstrap() {
@@ -114,11 +164,15 @@ onMounted(bootstrap);
                 >
                   {{ talkNumberLabel(project.talk_number) }}
                 </span>
+                <span class="app-badge-neutral rounded-full px-2 py-0.5 text-[10px] font-semibold">
+                  {{ talkStageLabel(project.stage) }}
+                </span>
                 <div class="app-text text-sm font-semibold">{{ project.title }}</div>
               </div>
-              <div class="app-muted text-xs">
+              <div class="app-subtle mt-1 text-[11px]">
                 {{ t("talks.duration") }}: {{ formatDuration(project.duration_target_sec) }}
-                {{ t("talks.minutes") }}
+                {{ t("talks.minutes") }} ·
+                {{ t("talks.last_activity") }}: {{ formatLastActivity(project.updated_at) }}
               </div>
             </div>
             <div class="flex items-center gap-2">

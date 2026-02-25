@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "../lib/i18n";
 import { appStore } from "../stores/app";
@@ -19,7 +19,11 @@ const questPickerError = ref<string | null>(null);
 const questPickerSearch = ref("");
 const questPickerCategory = ref("all");
 const questPickerSort = ref<"recent" | "az" | "category">("recent");
+const trainingActivityTab = ref<"feedback" | "history">("feedback");
 const availableQuests = ref<Quest[]>([]);
+const questPickerSearchEl = ref<HTMLInputElement | null>(null);
+const questPickerListEl = ref<HTMLElement | null>(null);
+const questPickerActiveCode = ref<string | null>(null);
 
 const feedbackAttempts = computed(() =>
   recentAttempts.value.filter((attempt) => Boolean(attempt.feedback_id))
@@ -97,6 +101,10 @@ const pickerMainQuests = computed(() => {
 const showRecentQuestSection = computed(
   () => questPickerSort.value === "recent" && recentPickerQuests.value.length > 0
 );
+const pickerVisibleQuests = computed(() => [
+  ...recentPickerQuests.value,
+  ...pickerMainQuests.value,
+]);
 
 function formatDate(value: string) {
   const date = new Date(value);
@@ -138,6 +146,32 @@ function toError(err: unknown) {
   return err instanceof Error ? err.message : String(err);
 }
 
+function trainingHeroQuestStorageKey(profileId: string) {
+  return `lepupitre.training.heroQuest.${profileId}`;
+}
+
+function readStoredHeroQuestCode(profileId: string): string | null {
+  try {
+    const value = window.localStorage.getItem(trainingHeroQuestStorageKey(profileId));
+    return value && value.trim() ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredHeroQuestCode(profileId: string, questCode: string | null) {
+  try {
+    const key = trainingHeroQuestStorageKey(profileId);
+    if (!questCode) {
+      window.localStorage.removeItem(key);
+      return;
+    }
+    window.localStorage.setItem(key, questCode);
+  } catch {
+    // local-only preference; ignore storage failures
+  }
+}
+
 function questRoute(code: string) {
   if (!trainingProjectId.value) {
     return "/training";
@@ -149,13 +183,23 @@ function isSelectedHeroQuest(code: string) {
   return heroQuest.value?.code === code;
 }
 
+function isQuestPickerActive(code: string) {
+  return questPickerActiveCode.value === code;
+}
+
 function selectHeroQuest(quest: Quest) {
   selectedHeroQuest.value = quest;
+  if (state.value.activeProfileId) {
+    writeStoredHeroQuestCode(state.value.activeProfileId, quest.code);
+  }
   closeQuestPicker();
 }
 
 function resetHeroQuestToDaily() {
   selectedHeroQuest.value = null;
+  if (state.value.activeProfileId) {
+    writeStoredHeroQuestCode(state.value.activeProfileId, null);
+  }
 }
 
 async function loadTrainingData() {
@@ -178,6 +222,22 @@ async function loadTrainingData() {
     ) {
       selectedHeroQuest.value = null;
     }
+    const activeProfileId = state.value.activeProfileId;
+    if (activeProfileId) {
+      const storedQuestCode = readStoredHeroQuestCode(activeProfileId);
+      if (storedQuestCode && storedQuestCode !== trainingDailyQuest.value.quest.code) {
+        if (selectedHeroQuest.value?.code !== storedQuestCode) {
+          try {
+            selectedHeroQuest.value = await appStore.getQuestByCode(storedQuestCode);
+          } catch {
+            writeStoredHeroQuestCode(activeProfileId, null);
+            selectedHeroQuest.value = null;
+          }
+        }
+      } else if (storedQuestCode === trainingDailyQuest.value.quest.code) {
+        writeStoredHeroQuestCode(activeProfileId, null);
+      }
+    }
     recentAttempts.value = await appStore.getQuestAttempts(projectId, 6);
   } catch (err) {
     trainingError.value = toError(err);
@@ -190,6 +250,8 @@ async function loadTrainingData() {
 
 async function openQuestPicker() {
   isQuestPickerOpen.value = true;
+  await nextTick();
+  questPickerSearchEl.value?.focus();
   if (availableQuests.value.length > 0 || isQuestPickerLoading.value) {
     return;
   }
@@ -208,6 +270,99 @@ function closeQuestPicker() {
   isQuestPickerOpen.value = false;
 }
 
+function syncQuestPickerActive() {
+  if (!isQuestPickerOpen.value) {
+    questPickerActiveCode.value = null;
+    return;
+  }
+  const visible = pickerVisibleQuests.value;
+  if (visible.length === 0) {
+    questPickerActiveCode.value = null;
+    return;
+  }
+  if (questPickerActiveCode.value && visible.some((quest) => quest.code === questPickerActiveCode.value)) {
+    return;
+  }
+  const preferredCode = heroQuest.value?.code;
+  const preferred = preferredCode
+    ? visible.find((quest) => quest.code === preferredCode)
+    : null;
+  questPickerActiveCode.value = preferred?.code ?? visible[0]?.code ?? null;
+  scrollQuestPickerActiveIntoView();
+}
+
+function moveQuestPickerActive(delta: 1 | -1) {
+  const visible = pickerVisibleQuests.value;
+  if (visible.length === 0) {
+    return;
+  }
+  const currentIndex = questPickerActiveCode.value
+    ? visible.findIndex((quest) => quest.code === questPickerActiveCode.value)
+    : -1;
+  const nextIndex =
+    currentIndex < 0
+      ? 0
+      : (currentIndex + delta + visible.length) % visible.length;
+  questPickerActiveCode.value = visible[nextIndex]?.code ?? null;
+  scrollQuestPickerActiveIntoView();
+}
+
+function activateQuestPickerActive() {
+  const code = questPickerActiveCode.value;
+  if (!code) {
+    return;
+  }
+  const quest = pickerVisibleQuests.value.find((item) => item.code === code);
+  if (quest) {
+    selectHeroQuest(quest);
+  }
+}
+
+function scrollQuestPickerActiveIntoView() {
+  void nextTick(() => {
+    const code = questPickerActiveCode.value;
+    const listEl = questPickerListEl.value;
+    if (!code || !listEl) {
+      return;
+    }
+    const rows = Array.from(listEl.querySelectorAll<HTMLElement>("[data-quest-code]"));
+    const activeEl = rows.find((row) => row.dataset.questCode === code);
+    activeEl?.scrollIntoView({ block: "nearest" });
+  });
+}
+
+function onQuestPickerKeydown(event: KeyboardEvent) {
+  if (!isQuestPickerOpen.value) {
+    return;
+  }
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeQuestPicker();
+    return;
+  }
+  if (isQuestPickerLoading.value || Boolean(questPickerError.value) || pickerVisibleQuests.value.length === 0) {
+    return;
+  }
+  if (event.key === "ArrowDown") {
+    event.preventDefault();
+    moveQuestPickerActive(1);
+    return;
+  }
+  if (event.key === "ArrowUp") {
+    event.preventDefault();
+    moveQuestPickerActive(-1);
+    return;
+  }
+  if (event.key === "Enter") {
+    const target = event.target as HTMLElement | null;
+    if (target?.closest("[data-quest-row-action]")) {
+      return;
+    }
+    event.preventDefault();
+    activateQuestPickerActive();
+  }
+}
+
 onMounted(async () => {
   await appStore.bootstrap();
   await loadTrainingData();
@@ -221,9 +376,18 @@ watch(
     questPickerSearch.value = "";
     questPickerCategory.value = "all";
     questPickerSort.value = "recent";
+    trainingActivityTab.value = "feedback";
     selectedHeroQuest.value = null;
     await loadTrainingData();
   }
+);
+
+watch(
+  [isQuestPickerOpen, pickerVisibleQuests],
+  () => {
+    syncQuestPickerActive();
+  },
+  { deep: false }
 );
 </script>
 
@@ -301,7 +465,11 @@ watch(
         </RouterLink>
       </div>
 
-      <div v-if="isQuestPickerOpen" class="mt-4 rounded-xl border border-[var(--app-border)] p-3">
+      <div
+        v-if="isQuestPickerOpen"
+        class="mt-4 rounded-xl border border-[var(--app-border)] p-3"
+        @keydown="onQuestPickerKeydown"
+      >
         <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div class="app-text text-sm font-semibold">{{ t("training.quest_picker_title") }}</div>
           <button
@@ -315,6 +483,7 @@ watch(
 
         <div class="space-y-3">
           <input
+            ref="questPickerSearchEl"
             v-model="questPickerSearch"
             class="app-input app-focus-ring h-10 w-full rounded-xl border px-3 text-sm"
             type="text"
@@ -366,21 +535,25 @@ watch(
           <div v-else-if="filteredQuests.length === 0" class="app-muted text-sm">
             {{ t("training.quest_picker_empty") }}
           </div>
-          <div v-else class="max-h-72 space-y-3 overflow-y-auto pr-1">
+          <div v-else ref="questPickerListEl" class="max-h-72 space-y-3 overflow-y-auto pr-1">
             <div v-if="showRecentQuestSection" class="space-y-2">
               <p class="app-subtle text-[11px] font-semibold uppercase tracking-[0.16em]">
                 {{ t("training.quest_recent_title") }}
               </p>
-              <button
+              <div
                 v-for="quest in recentPickerQuests"
                 :key="`recent-${quest.code}`"
-                class="block w-full rounded-xl border px-3 py-2 text-left transition"
+                class="block w-full cursor-pointer rounded-xl border px-3 py-2 text-left transition"
                 :class="
-                  isSelectedHeroQuest(quest.code)
-                    ? 'border-[var(--color-accent)] bg-[var(--color-surface-selected)]'
-                    : 'border-[var(--app-border)] hover:bg-[var(--color-surface-elevated)]'
+                  [
+                    isSelectedHeroQuest(quest.code)
+                      ? 'border-[var(--color-accent)] bg-[var(--color-surface-selected)]'
+                      : 'border-[var(--app-border)] hover:bg-[var(--color-surface-elevated)]',
+                    isQuestPickerActive(quest.code) ? 'outline outline-1 outline-[var(--color-accent)]' : '',
+                  ]
                 "
-                type="button"
+                :data-quest-code="quest.code"
+                :aria-selected="isQuestPickerActive(quest.code)"
                 @click="selectHeroQuest(quest)"
               >
                 <div class="flex flex-wrap items-start justify-between gap-2">
@@ -400,6 +573,14 @@ watch(
                     </div>
                   </div>
                   <div class="flex items-center gap-2">
+                    <RouterLink
+                      data-quest-row-action
+                      class="app-link text-xs underline"
+                      :to="questRoute(quest.code)"
+                      @click.stop="closeQuestPicker"
+                    >
+                      {{ t("training.quest_start_now") }}
+                    </RouterLink>
                     <span
                       v-if="isSelectedHeroQuest(quest.code)"
                       class="app-badge-success rounded-full px-2 py-1 text-[10px] font-semibold"
@@ -409,7 +590,7 @@ watch(
                     <span class="app-subtle text-[11px] font-semibold">{{ quest.category }}</span>
                   </div>
                 </div>
-              </button>
+              </div>
             </div>
 
             <div v-if="pickerMainQuests.length > 0" class="space-y-2">
@@ -419,16 +600,20 @@ watch(
               >
                 {{ t("training.quest_all_title") }}
               </p>
-            <button
+            <div
               v-for="quest in pickerMainQuests"
               :key="quest.code"
-              class="block w-full rounded-xl border px-3 py-2 text-left transition"
+              class="block w-full cursor-pointer rounded-xl border px-3 py-2 text-left transition"
               :class="
-                isSelectedHeroQuest(quest.code)
-                  ? 'border-[var(--color-accent)] bg-[var(--color-surface-selected)]'
-                  : 'border-[var(--app-border)] hover:bg-[var(--color-surface-elevated)]'
+                [
+                  isSelectedHeroQuest(quest.code)
+                    ? 'border-[var(--color-accent)] bg-[var(--color-surface-selected)]'
+                    : 'border-[var(--app-border)] hover:bg-[var(--color-surface-elevated)]',
+                  isQuestPickerActive(quest.code) ? 'outline outline-1 outline-[var(--color-accent)]' : '',
+                ]
               "
-              type="button"
+              :data-quest-code="quest.code"
+              :aria-selected="isQuestPickerActive(quest.code)"
               @click="selectHeroQuest(quest)"
             >
               <div class="flex flex-wrap items-start justify-between gap-2">
@@ -448,6 +633,14 @@ watch(
                   </div>
                 </div>
                 <div class="flex items-center gap-2">
+                  <RouterLink
+                    data-quest-row-action
+                    class="app-link text-xs underline"
+                    :to="questRoute(quest.code)"
+                    @click.stop="closeQuestPicker"
+                  >
+                    {{ t("training.quest_start_now") }}
+                  </RouterLink>
                   <span
                     v-if="isSelectedHeroQuest(quest.code)"
                     class="app-badge-success rounded-full px-2 py-1 text-[10px] font-semibold"
@@ -457,7 +650,7 @@ watch(
                   <span class="app-subtle text-[11px] font-semibold">{{ quest.category }}</span>
                 </div>
               </div>
-            </button>
+            </div>
             </div>
           </div>
         </div>
@@ -465,31 +658,91 @@ watch(
     </div>
 
     <div class="app-surface rounded-2xl border p-4">
-      <div class="app-subtle text-xs uppercase tracking-[0.2em]">
-        {{ t("training.feedback_title") }}
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="app-subtle text-xs uppercase tracking-[0.2em]">
+          {{ t("training.history_title") }}
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button
+            class="app-focus-ring rounded-full px-3 py-1.5 text-xs font-semibold transition"
+            :class="trainingActivityTab === 'feedback' ? 'app-button-secondary' : 'app-button-ghost'"
+            type="button"
+            @click="trainingActivityTab = 'feedback'"
+          >
+            {{ t("training.feedback_title") }} · {{ feedbackAttempts.length }}
+          </button>
+          <button
+            class="app-focus-ring rounded-full px-3 py-1.5 text-xs font-semibold transition"
+            :class="trainingActivityTab === 'history' ? 'app-button-secondary' : 'app-button-ghost'"
+            type="button"
+            @click="trainingActivityTab = 'history'"
+          >
+            {{ t("training.history_title") }} · {{ recentAttempts.length }}
+          </button>
+        </div>
       </div>
-      <div v-if="isTrainingLoading" class="app-muted mt-2 text-sm">{{ t("talks.loading") }}</div>
-      <div v-else-if="feedbackAttempts.length === 0" class="app-muted mt-2 text-sm">
-        {{ t("training.feedback_empty") }}
-      </div>
-      <div v-else class="mt-3 space-y-3">
-        <div class="space-y-2 text-xs">
+
+      <div v-if="isTrainingLoading" class="app-muted mt-3 text-sm">{{ t("talks.loading") }}</div>
+
+      <template v-else-if="trainingActivityTab === 'feedback'">
+        <div v-if="feedbackAttempts.length === 0" class="app-muted mt-3 text-sm">
+          {{ t("training.feedback_empty") }}
+        </div>
+        <div v-else class="mt-3 space-y-3">
+          <div class="space-y-2 text-xs">
+            <div
+              v-for="attempt in feedbackAttempts"
+              :key="attempt.id"
+              class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--app-border)] px-3 py-2"
+            >
+              <div>
+                <div class="app-text text-sm">{{ attempt.quest_title }}</div>
+                <div class="app-muted text-[11px]">
+                  {{ formatDate(attempt.created_at) }} · {{ outputLabel(attempt.output_type) }} ·
+                  {{ questCodeLabel(attempt.quest_code) }}
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="app-badge-success rounded-full px-2 py-1 text-[10px] font-semibold">
+                  {{ t("training.feedback_ready") }}
+                </span>
+                <RouterLink
+                  v-if="attempt.feedback_id"
+                  class="app-link text-xs underline"
+                  :to="`/feedback/${attempt.feedback_id}`"
+                >
+                  {{ t("home.quest_followup_feedback") }}
+                </RouterLink>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <template v-else>
+        <div v-if="recentAttempts.length === 0" class="app-muted mt-3 text-sm">
+          {{ t("training.history_empty") }}
+        </div>
+        <div v-else class="mt-3 space-y-2 text-xs">
           <div
-            v-for="attempt in feedbackAttempts"
+            v-for="attempt in recentAttempts"
             :key="attempt.id"
             class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--app-border)] px-3 py-2"
           >
             <div>
               <div class="app-text text-sm">{{ attempt.quest_title }}</div>
               <div class="app-muted text-[11px]">
-                {{ formatDate(attempt.created_at) }} · {{ outputLabel(attempt.output_type) }} ·
+                {{ formatDate(attempt.created_at) }} · {{ attemptStatus(attempt) }} ·
                 {{ questCodeLabel(attempt.quest_code) }}
               </div>
             </div>
             <div class="flex items-center gap-2">
-              <span class="app-badge-success rounded-full px-2 py-1 text-[10px] font-semibold">
-                {{ t("training.feedback_ready") }}
-              </span>
+              <RouterLink
+                class="app-link text-xs underline"
+                :to="`/quest/${attempt.quest_code}?projectId=${trainingProjectId}&from=training`"
+              >
+                {{ t("home.quest_followup_replay") }}
+              </RouterLink>
               <RouterLink
                 v-if="attempt.feedback_id"
                 class="app-link text-xs underline"
@@ -500,47 +753,7 @@ watch(
             </div>
           </div>
         </div>
-      </div>
-    </div>
-
-    <div class="app-surface rounded-2xl border p-4">
-      <div class="app-subtle text-xs uppercase tracking-[0.2em]">
-        {{ t("training.history_title") }}
-      </div>
-      <div v-if="isTrainingLoading" class="app-muted mt-2 text-sm">{{ t("talks.loading") }}</div>
-      <div v-else-if="recentAttempts.length === 0" class="app-muted mt-2 text-sm">
-        {{ t("training.history_empty") }}
-      </div>
-      <div v-else class="mt-3 space-y-2 text-xs">
-        <div
-          v-for="attempt in recentAttempts"
-          :key="attempt.id"
-          class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--app-border)] px-3 py-2"
-        >
-          <div>
-            <div class="app-text text-sm">{{ attempt.quest_title }}</div>
-            <div class="app-muted text-[11px]">
-              {{ formatDate(attempt.created_at) }} · {{ attemptStatus(attempt) }} ·
-              {{ questCodeLabel(attempt.quest_code) }}
-            </div>
-          </div>
-          <div class="flex items-center gap-2">
-            <RouterLink
-              class="app-link text-xs underline"
-              :to="`/quest/${attempt.quest_code}?projectId=${trainingProjectId}&from=training`"
-            >
-              {{ t("home.quest_followup_replay") }}
-            </RouterLink>
-            <RouterLink
-              v-if="attempt.feedback_id"
-              class="app-link text-xs underline"
-              :to="`/feedback/${attempt.feedback_id}`"
-            >
-              {{ t("home.quest_followup_feedback") }}
-            </RouterLink>
-          </div>
-        </div>
-      </div>
+      </template>
     </div>
   </section>
 </template>

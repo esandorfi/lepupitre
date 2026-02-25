@@ -186,6 +186,17 @@ async function setActive() {
   }
 }
 
+async function markTrainStage() {
+  if (!projectId.value) {
+    return;
+  }
+  try {
+    await appStore.ensureProjectStageAtLeast(projectId.value, "train");
+  } catch {
+    // non-blocking UI progression hint
+  }
+}
+
 onMounted(loadData);
 </script>
 
@@ -262,12 +273,14 @@ onMounted(loadData);
         <RouterLink
           class="app-button-secondary app-focus-ring inline-flex min-h-11 items-center rounded-full px-4 py-2 text-sm font-semibold"
           to="/boss-run"
+          @click="markTrainStage"
         >
           {{ t("boss_run.title") }}
         </RouterLink>
         <RouterLink
           class="app-button-secondary app-focus-ring inline-flex min-h-11 items-center rounded-full px-4 py-2 text-sm font-semibold"
           :to="`/quest/FREE?from=talk&projectId=${projectId}`"
+          @click="markTrainStage"
         >
           {{ t("home.prototype_action_free") }}
         </RouterLink>
@@ -301,6 +314,7 @@ onMounted(loadData);
             <RouterLink
               class="app-button-info inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold"
               :to="`/quest/${quest.quest_code}?from=talk&projectId=${projectId}`"
+              @click="markTrainStage"
             >
               {{ t("talk_report.open_quest") }}
             </RouterLink>

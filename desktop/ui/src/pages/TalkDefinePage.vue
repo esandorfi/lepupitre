@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import TalkStepTabs from "../components/TalkStepTabs.vue";
 import { useI18n } from "../lib/i18n";
 import { appStore } from "../stores/app";
 
 const { t } = useI18n();
 const route = useRoute();
+const router = useRouter();
 
 const error = ref<string | null>(null);
 const isLoading = ref(false);
@@ -25,6 +26,48 @@ const activeProfileId = computed(() => appStore.state.activeProfileId);
 const project = computed(() =>
   appStore.state.projects.find((item) => item.id === projectId.value) ?? null
 );
+const stageOptions = computed(() => [
+  { value: "draft", label: t("talk_steps.define") },
+  { value: "builder", label: t("talk_steps.builder") },
+  { value: "train", label: t("talk_steps.train") },
+  { value: "export", label: t("talk_steps.export") },
+]);
+const projectStage = computed(() => {
+  const stage = project.value?.stage || "draft";
+  return ["draft", "builder", "train", "export"].includes(stage) ? stage : "draft";
+});
+const nextAction = computed(() => {
+  const id = project.value?.id;
+  if (!id) {
+    return null;
+  }
+  if (projectStage.value === "draft") {
+    return {
+      nextStage: "builder",
+      route: `/talks/${id}/builder`,
+      label: t("talk_define.continue_builder"),
+    };
+  }
+  if (projectStage.value === "builder") {
+    return {
+      nextStage: "train",
+      route: `/talks/${id}/train`,
+      label: t("talk_define.continue_train"),
+    };
+  }
+  if (projectStage.value === "train") {
+    return {
+      nextStage: "export",
+      route: `/talks/${id}/export`,
+      label: t("talk_define.continue_export"),
+    };
+  }
+  return {
+    nextStage: "export",
+    route: `/talks/${id}/export`,
+    label: t("talk_define.open_export"),
+  };
+});
 
 function toError(err: unknown) {
   return err instanceof Error ? err.message : String(err);
@@ -58,7 +101,7 @@ function normalizeOptional(value: string) {
   return trimmed.length ? trimmed : null;
 }
 
-function buildPayload() {
+function buildPayload(stageOverride?: string) {
   if (!project.value) {
     throw new Error("project_not_found");
   }
@@ -80,7 +123,7 @@ function buildPayload() {
     audience: normalizeOptional(form.audience),
     goal: normalizeOptional(form.goal),
     duration_target_sec,
-    stage: project.value.stage,
+    stage: stageOverride ?? project.value.stage,
   };
 }
 
@@ -97,31 +140,55 @@ function payloadMatchesProject(payload: ReturnType<typeof buildPayload>) {
   );
 }
 
-async function saveDefine() {
+async function persistDefine(stageOverride?: string) {
   if (!project.value || !activeProfileId.value) {
-    return;
+    return false;
   }
   saveError.value = null;
   let payload: ReturnType<typeof buildPayload>;
   try {
-    payload = buildPayload();
+    payload = buildPayload(stageOverride);
   } catch (err) {
     saveState.value = "error";
     saveError.value = toError(err);
-    return;
+    return false;
   }
   if (payloadMatchesProject(payload)) {
     saveState.value = "saved";
-    return;
+    return true;
   }
   saveState.value = "saving";
   try {
     await appStore.updateProject(project.value.id, payload);
     saveState.value = "saved";
+    return true;
   } catch (err) {
     saveState.value = "error";
     saveError.value = toError(err);
+    return false;
   }
+}
+
+async function saveDefine() {
+  await persistDefine();
+}
+
+async function setStage(stage: string) {
+  if (!project.value || stage === project.value.stage) {
+    return;
+  }
+  await persistDefine(stage);
+}
+
+async function runNextAction() {
+  if (!nextAction.value) {
+    return;
+  }
+  const didSave = await persistDefine(nextAction.value.nextStage);
+  if (!didSave) {
+    return;
+  }
+  await router.push(nextAction.value.route);
 }
 
 async function bootstrap() {
@@ -243,19 +310,58 @@ watch(project, () => {
               @blur="saveDefine"
             />
           </div>
+          <div class="app-card rounded-xl border p-3 md:col-span-2">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <div class="app-subtle text-[11px] uppercase tracking-[0.2em]">
+                  {{ t("talk_define.stage_title") }}
+                </div>
+                <p class="app-muted mt-1 text-xs">{{ t("talk_define.stage_hint") }}</p>
+              </div>
+              <span class="app-badge-neutral rounded-full px-2 py-1 text-[10px] font-semibold">
+                {{ stageOptions.find((option) => option.value === projectStage)?.label }}
+              </span>
+            </div>
+            <div class="mt-3 flex flex-wrap gap-2">
+              <button
+                v-for="option in stageOptions"
+                :key="option.value"
+                class="app-focus-ring rounded-full px-3 py-1.5 text-xs font-semibold transition"
+                :class="projectStage === option.value ? 'app-button-secondary' : 'app-button-ghost'"
+                type="button"
+                @click="setStage(option.value)"
+              >
+                {{ option.label }}
+              </button>
+            </div>
+          </div>
         </div>
         <div class="mt-4 flex flex-wrap items-center gap-2">
-          <RouterLink
+          <button
+            v-if="nextAction"
             class="app-button-primary app-focus-ring inline-flex min-h-11 items-center rounded-full px-4 py-2 text-sm font-semibold"
+            type="button"
+            @click="runNextAction"
+          >
+            {{ nextAction.label }}
+          </button>
+          <RouterLink
+            class="app-button-secondary app-focus-ring inline-flex min-h-11 items-center rounded-full px-4 py-2 text-sm font-semibold"
             :to="`/talks/${project.id}/builder`"
           >
-            {{ t("talk_define.continue_builder") }}
+            {{ t("talk_steps.builder") }}
           </RouterLink>
           <RouterLink
             class="app-button-secondary app-focus-ring inline-flex min-h-11 items-center rounded-full px-4 py-2 text-sm font-semibold"
             :to="`/talks/${project.id}/train`"
           >
             {{ t("talk_steps.train") }}
+          </RouterLink>
+          <RouterLink
+            class="app-button-secondary app-focus-ring inline-flex min-h-11 items-center rounded-full px-4 py-2 text-sm font-semibold"
+            :to="`/talks/${project.id}/export`"
+          >
+            {{ t("talk_steps.export") }}
           </RouterLink>
         </div>
       </div>
