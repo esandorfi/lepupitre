@@ -82,7 +82,7 @@ onBeforeUnmount(() => {
   <div class="relative">
     <button
       ref="triggerRef"
-      class="app-icon-button app-toolbar-button app-focus-ring inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border"
+      class="app-icon-button app-icon-button-xl app-toolbar-button app-focus-ring inline-flex cursor-pointer items-center justify-center border"
       type="button"
       :aria-label="t('shell.menu_toggle')"
       aria-haspopup="menu"
@@ -110,12 +110,12 @@ onBeforeUnmount(() => {
       role="menu"
     >
       <div>
-        <div class="app-subtle text-[11px] font-semibold uppercase tracking-[0.18em]">
+        <div class="app-text-eyebrow">
           {{ t("shell.menu_theme") }}
         </div>
         <div class="mt-2 grid grid-cols-2 gap-2">
           <button
-            class="app-focus-ring min-h-11 cursor-pointer rounded-xl px-3 py-2 text-sm font-semibold"
+            class="app-focus-ring app-control-md cursor-pointer rounded-xl px-3 py-2 app-text-body font-semibold"
             :class="theme === 'orange' ? 'app-pill-active' : 'app-menu-item'"
             type="button"
             @click="updateTheme('orange')"
@@ -123,7 +123,7 @@ onBeforeUnmount(() => {
             {{ t("theme.orange") }}
           </button>
           <button
-            class="app-focus-ring min-h-11 cursor-pointer rounded-xl px-3 py-2 text-sm font-semibold"
+            class="app-focus-ring app-control-md cursor-pointer rounded-xl px-3 py-2 app-text-body font-semibold"
             :class="theme === 'terminal' ? 'app-pill-active' : 'app-menu-item'"
             type="button"
             @click="updateTheme('terminal')"
@@ -136,12 +136,12 @@ onBeforeUnmount(() => {
       <div class="app-divider my-3"></div>
 
       <div>
-        <div class="app-subtle text-[11px] font-semibold uppercase tracking-[0.18em]">
+        <div class="app-text-eyebrow">
           {{ t("shell.menu_language") }}
         </div>
         <div class="mt-2 grid grid-cols-2 gap-2">
           <button
-            class="app-focus-ring min-h-11 cursor-pointer rounded-xl px-3 py-2 text-sm font-semibold"
+            class="app-focus-ring app-control-md cursor-pointer rounded-xl px-3 py-2 app-text-body font-semibold"
             :class="locale === 'fr' ? 'app-pill-active' : 'app-menu-item'"
             type="button"
             @click="updateLocale('fr')"
@@ -149,7 +149,7 @@ onBeforeUnmount(() => {
             FR
           </button>
           <button
-            class="app-focus-ring min-h-11 cursor-pointer rounded-xl px-3 py-2 text-sm font-semibold"
+            class="app-focus-ring app-control-md cursor-pointer rounded-xl px-3 py-2 app-text-body font-semibold"
             :class="locale === 'en' ? 'app-pill-active' : 'app-menu-item'"
             type="button"
             @click="updateLocale('en')"
@@ -163,21 +163,21 @@ onBeforeUnmount(() => {
 
       <div class="grid gap-1">
         <button
-          class="app-menu-item app-focus-ring min-h-11 cursor-pointer rounded-xl px-3 py-2 text-left text-sm"
+          class="app-menu-item app-focus-ring app-control-md cursor-pointer rounded-xl px-3 py-2 text-left app-text-body"
           type="button"
           @click="goTo('/settings')"
         >
           {{ t("shell.menu_settings") }}
         </button>
         <button
-          class="app-menu-item app-focus-ring min-h-11 cursor-pointer rounded-xl px-3 py-2 text-left text-sm"
+          class="app-menu-item app-focus-ring app-control-md cursor-pointer rounded-xl px-3 py-2 text-left app-text-body"
           type="button"
           @click="goTo('/packs')"
         >
           {{ t("shell.menu_packs") }}
         </button>
         <button
-          class="app-menu-item app-focus-ring min-h-11 cursor-pointer rounded-xl px-3 py-2 text-left text-sm"
+          class="app-menu-item app-focus-ring app-control-md cursor-pointer rounded-xl px-3 py-2 text-left app-text-body"
           type="button"
           @click="goToAbout"
         >

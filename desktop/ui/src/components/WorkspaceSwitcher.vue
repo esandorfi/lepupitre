@@ -466,7 +466,7 @@ onBeforeUnmount(() => {
   <div class="relative">
     <button
       ref="triggerRef"
-      class="app-toolbar-button app-focus-ring flex min-h-11 max-w-[260px] cursor-pointer items-center gap-2 rounded-full border px-3 py-2 text-left text-xs transition"
+      class="app-toolbar-button app-focus-ring app-control-md flex max-w-[260px] cursor-pointer items-center gap-2 rounded-full border px-3 text-left app-text-meta transition"
       type="button"
       aria-haspopup="menu"
       :aria-expanded="open ? 'true' : 'false'"
@@ -513,13 +513,13 @@ onBeforeUnmount(() => {
         ref="searchInputRef"
         v-model="search"
         type="text"
-        class="app-input app-focus-ring mb-3 h-11 w-full rounded-xl border px-3 text-sm"
+        class="app-input app-focus-ring app-control-md mb-3 w-full rounded-xl border px-3 app-text-body"
         :placeholder="t('shell.workspaces_search')"
       />
 
       <div v-if="!hasNoProfiles && !hasNoSearchResults" class="max-h-72 space-y-3 overflow-y-auto overflow-x-visible pr-1">
         <div v-if="showRecentSection" class="space-y-1">
-          <p class="app-subtle px-2 text-[11px] font-semibold uppercase tracking-[0.18em]">
+          <p class="app-text-eyebrow px-2">
             {{ t("shell.workspaces_recent") }}
           </p>
           <button
@@ -539,7 +539,7 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="space-y-1">
-          <p v-if="showRecentSection" class="app-subtle px-2 text-[11px] font-semibold uppercase tracking-[0.18em]">
+          <p v-if="showRecentSection" class="app-text-eyebrow px-2">
             {{ t("shell.workspaces_all") }}
           </p>
           <div v-for="profile in mainProfiles" :key="profile.id" class="space-y-1">
@@ -626,7 +626,7 @@ onBeforeUnmount(() => {
       <div class="app-divider my-3"></div>
       <div class="grid gap-2">
         <button
-          class="app-button-secondary app-focus-ring min-h-11 cursor-pointer rounded-xl px-3 py-2 text-left text-sm font-semibold"
+          class="app-button-secondary app-focus-ring app-control-md cursor-pointer rounded-xl px-3 py-2 text-left app-text-body font-semibold"
           type="button"
           @click="toggleCreate"
         >

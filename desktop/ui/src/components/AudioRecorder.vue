@@ -479,7 +479,7 @@ async function revealRecording() {
 
 
 <template>
-  <div class="app-surface space-y-3 rounded-2xl border p-4">
+  <div class="app-panel app-panel-compact space-y-3">
     <div class="flex items-center justify-between">
       <div>
         <h2 class="text-lg font-bold">{{ t(props.titleKey) }}</h2>

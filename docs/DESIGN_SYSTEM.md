@@ -91,13 +91,26 @@ These are reusable baseline rules extracted from the UI design spec and aligned 
 ### Layout and spacing
 
 - Use an 8px spacing scale (`8, 16, 24, 32, 48...`).
+- Preferred desktop spacing ramp: `4, 8, 12, 16, 24, 32, 40, 48`.
 - Prefer consistent panel/card padding in the `16-24px` range.
+- Panel padding defaults:
+  - compact panel: `16px`
+  - standard panel: `20px`
+  - hero panel: `24px`
 - Prefer rounded corners in the `10-16px` range depending on component density.
 - Use larger radii for panels/popovers than for dense controls.
 
 ### Typography
 
-- Base body size defaults to `16px`.
+- macOS desktop default body size is `13px` for dense app screens.
+- Desktop semantic ramp:
+  - caption: `11px`
+  - meta: `12px`
+  - body: `13px`
+  - subheadline: `15px`
+  - section title: `17px`
+  - page title: `21px`
+- Avoid new arbitrary `text-[10px]` / `text-[11px]` utilities in page templates; use semantic classes.
 - Titles should prioritize clarity over style contrast (avoid decorative weight jumps).
 - Secondary/meta text should use semantic muted roles (`app-muted`, `app-subtle`) rather than reduced opacity hacks.
 
@@ -105,6 +118,7 @@ These are reusable baseline rules extracted from the UI design spec and aligned 
 
 - Primary button = filled accent (`app-button-primary`).
 - Secondary button = outlined/neutral (`app-button-secondary`) and preferred inside lightweight switchers/popovers unless create is the dominant task.
+- Default desktop control height is `32px`; use semantic control tiers (`24/28/32/36/44`) instead of ad-hoc `min-h-*`.
 - Icon-only buttons require accessible labels and visible focus styling.
 - Practical minimum hit target is ~44x44px where layout permits.
 
@@ -211,6 +225,7 @@ These rules apply to per-entity color personalization (workspace, project, etc.)
 
 - Edit theme tokens in `desktop/ui/src/assets/main.css`.
 - Prefer semantic class reuse before introducing new component-specific classes.
+- Prefer shared page primitives (`PageShell`, `PageHeader`, `SectionPanel`, `TalkStepPageShell`) for desktop pages.
 - Add small targeted classes only when the semantic utility set is insufficient.
 - Keep `--color-*` as canonical; derive `--app-*` and `--ui-*` from the same semantic source.
 

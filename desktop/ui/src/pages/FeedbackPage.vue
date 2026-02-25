@@ -98,7 +98,7 @@ onMounted(async () => {
   <section class="space-y-6">
     <p class="app-muted text-sm font-semibold">{{ t("feedback.subtitle") }}</p>
 
-    <div class="app-surface rounded-2xl border p-4 text-sm">
+    <div class="app-panel app-panel-compact text-sm">
       <div class="app-subtle text-xs uppercase tracking-[0.2em]">
         {{ t("feedback.score") }}
       </div>

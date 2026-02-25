@@ -235,7 +235,7 @@ onMounted(() => {
               >
                 <span class="inline-flex items-center gap-2">
                   <span>{{ talkLabel }}</span>
-                  <span class="app-badge-neutral inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold">
+                  <span class="app-badge-neutral app-text-caption inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 font-semibold">
                     {{ talksCount }}
                   </span>
                 </span>

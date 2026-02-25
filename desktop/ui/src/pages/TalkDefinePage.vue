@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import TalkStepTabs from "../components/TalkStepTabs.vue";
+import TalkStepPageShell from "../components/TalkStepPageShell.vue";
 import { useI18n } from "../lib/i18n";
 import { appStore } from "../stores/app";
 
@@ -211,42 +211,42 @@ watch(project, () => {
 </script>
 
 <template>
-  <section class="space-y-4">
-    <TalkStepTabs v-if="projectId" :project-id="projectId" active="define" />
+  <TalkStepPageShell
+    :project-id="projectId"
+    active="define"
+    :eyebrow="t('talk_define.title')"
+    :title="t('talk_define.title')"
+    :subtitle="t('talk_define.subtitle')"
+  >
 
-    <div class="app-surface rounded-2xl border p-4">
-      <div class="app-subtle text-xs uppercase tracking-[0.2em]">{{ t("talk_define.title") }}</div>
-      <div class="app-text mt-2 text-sm">{{ t("talk_define.subtitle") }}</div>
-    </div>
-
-    <div v-if="!activeProfileId" class="app-surface rounded-2xl border p-4">
-      <p class="app-muted text-sm">{{ t("talk.need_profile") }}</p>
-      <RouterLink class="app-link mt-3 inline-block text-xs underline" to="/profiles">
+    <div v-if="!activeProfileId" class="app-panel app-panel-compact">
+      <p class="app-muted app-text-body">{{ t("talk.need_profile") }}</p>
+      <RouterLink class="app-link app-text-meta mt-3 inline-block underline" to="/profiles">
         {{ t("talk.goto_profiles") }}
       </RouterLink>
     </div>
 
-    <div v-else-if="isLoading" class="app-surface rounded-2xl border p-4">
-      <p class="app-muted text-sm">{{ t("talks.loading") }}</p>
+    <div v-else-if="isLoading" class="app-panel app-panel-compact">
+      <p class="app-muted app-text-body">{{ t("talks.loading") }}</p>
     </div>
 
-    <div v-else-if="error" class="app-surface rounded-2xl border p-4">
-      <p class="app-danger-text text-sm">{{ error }}</p>
+    <div v-else-if="error" class="app-panel app-panel-compact">
+      <p class="app-danger-text app-text-body">{{ error }}</p>
     </div>
 
-    <div v-else-if="!project" class="app-surface rounded-2xl border p-4">
-      <p class="app-muted text-sm">{{ t("talk_define.missing") }}</p>
-      <RouterLink class="app-link mt-3 inline-block text-xs underline" to="/talks">
+    <div v-else-if="!project" class="app-panel app-panel-compact">
+      <p class="app-muted app-text-body">{{ t("talk_define.missing") }}</p>
+      <RouterLink class="app-link app-text-meta mt-3 inline-block underline" to="/talks">
         {{ t("talk_report.back") }}
       </RouterLink>
     </div>
 
     <div v-else class="space-y-4">
-      <div class="app-surface rounded-2xl border p-4">
+      <div class="app-panel">
         <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
-          <p class="app-muted text-xs">{{ t("talk_define.autosave_hint") }}</p>
+          <p class="app-muted app-text-meta">{{ t("talk_define.autosave_hint") }}</p>
           <p
-            class="text-xs"
+            class="app-text-meta"
             :class="{
               'app-muted': saveState === 'idle' || saveState === 'saved',
               'app-subtle': saveState === 'saving',
@@ -263,33 +263,33 @@ watch(project, () => {
           </p>
         </div>
         <div class="grid gap-3 md:grid-cols-2">
-          <div class="app-card rounded-xl border p-3 md:col-span-2">
-            <div class="app-subtle text-[11px] uppercase tracking-[0.2em]">{{ t("talk_define.field_title") }}</div>
+          <div class="app-card app-radius-card border p-3 md:col-span-2">
+            <div class="app-text-eyebrow">{{ t("talk_define.field_title") }}</div>
             <input
               v-model="form.title"
-              class="app-input app-focus-ring mt-2 h-12 w-full rounded-xl border px-4 text-base font-semibold"
+              class="app-input app-focus-ring app-radius-control app-control-lg mt-2 w-full border px-4 app-text-subheadline font-semibold"
               type="text"
               :placeholder="t('talk.title_placeholder')"
               @blur="saveDefine"
               @keydown.enter.prevent="saveDefine"
             />
           </div>
-          <div class="app-card rounded-xl border p-3">
-            <div class="app-subtle text-[11px] uppercase tracking-[0.2em]">{{ t("talk_define.field_audience") }}</div>
+          <div class="app-card app-radius-card border p-3">
+            <div class="app-text-eyebrow">{{ t("talk_define.field_audience") }}</div>
             <input
               v-model="form.audience"
-              class="app-input app-focus-ring mt-2 h-11 w-full rounded-xl border px-3 text-sm"
+              class="app-input app-focus-ring app-radius-control app-control-md mt-2 w-full border px-3 app-text-body"
               type="text"
               :placeholder="t('talk.audience_placeholder')"
               @blur="saveDefine"
               @keydown.enter.prevent="saveDefine"
             />
           </div>
-          <div class="app-card rounded-xl border p-3">
-            <div class="app-subtle text-[11px] uppercase tracking-[0.2em]">{{ t("talk_define.field_duration") }}</div>
+          <div class="app-card app-radius-card border p-3">
+            <div class="app-text-eyebrow">{{ t("talk_define.field_duration") }}</div>
             <input
               v-model="form.durationMinutes"
-              class="app-input app-focus-ring mt-2 h-11 w-full rounded-xl border px-3 text-sm"
+              class="app-input app-focus-ring app-radius-control app-control-md mt-2 w-full border px-3 app-text-body"
               type="number"
               min="1"
               step="1"
@@ -297,28 +297,28 @@ watch(project, () => {
               @blur="saveDefine"
               @keydown.enter.prevent="saveDefine"
             />
-            <p class="app-muted mt-2 text-xs">
+            <p class="app-muted app-text-meta mt-2">
               {{ minutesLabel(project.duration_target_sec) }}
             </p>
           </div>
-          <div class="app-card rounded-xl border p-3 md:col-span-2">
-            <div class="app-subtle text-[11px] uppercase tracking-[0.2em]">{{ t("talk_define.field_goal") }}</div>
+          <div class="app-card app-radius-card border p-3 md:col-span-2">
+            <div class="app-text-eyebrow">{{ t("talk_define.field_goal") }}</div>
             <textarea
               v-model="form.goal"
-              class="app-input app-focus-ring mt-2 min-h-28 w-full rounded-xl border px-3 py-2 text-sm"
+              class="app-input app-focus-ring app-radius-control mt-2 min-h-28 w-full border px-3 py-2 app-text-body"
               :placeholder="t('talk.goal_placeholder')"
               @blur="saveDefine"
             />
           </div>
-          <div class="app-card rounded-xl border p-3 md:col-span-2">
+          <div class="app-card app-radius-card border p-3 md:col-span-2">
             <div class="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <div class="app-subtle text-[11px] uppercase tracking-[0.2em]">
+                <div class="app-text-eyebrow">
                   {{ t("talk_define.stage_title") }}
                 </div>
-                <p class="app-muted mt-1 text-xs">{{ t("talk_define.stage_hint") }}</p>
+                <p class="app-muted app-text-meta mt-1">{{ t("talk_define.stage_hint") }}</p>
               </div>
-              <span class="app-badge-neutral rounded-full px-2 py-1 text-[10px] font-semibold">
+              <span class="app-badge-neutral app-text-caption rounded-full px-2 py-1 font-semibold">
                 {{ stageOptions.find((option) => option.value === projectStage)?.label }}
               </span>
             </div>
@@ -326,7 +326,7 @@ watch(project, () => {
               <button
                 v-for="option in stageOptions"
                 :key="option.value"
-                class="app-focus-ring rounded-full px-3 py-1.5 text-xs font-semibold transition"
+                class="app-focus-ring app-button-sm inline-flex items-center transition"
                 :class="projectStage === option.value ? 'app-button-secondary' : 'app-button-ghost'"
                 type="button"
                 @click="setStage(option.value)"
@@ -339,26 +339,26 @@ watch(project, () => {
         <div class="mt-4 flex flex-wrap items-center gap-2">
           <button
             v-if="nextAction"
-            class="app-button-primary app-focus-ring inline-flex min-h-11 items-center rounded-full px-4 py-2 text-sm font-semibold"
+            class="app-button-primary app-focus-ring app-button-lg inline-flex items-center"
             type="button"
             @click="runNextAction"
           >
             {{ nextAction.label }}
           </button>
           <RouterLink
-            class="app-button-secondary app-focus-ring inline-flex min-h-11 items-center rounded-full px-4 py-2 text-sm font-semibold"
+            class="app-button-secondary app-focus-ring app-button-lg inline-flex items-center"
             :to="`/talks/${project.id}/builder`"
           >
             {{ t("talk_steps.builder") }}
           </RouterLink>
           <RouterLink
-            class="app-button-secondary app-focus-ring inline-flex min-h-11 items-center rounded-full px-4 py-2 text-sm font-semibold"
+            class="app-button-secondary app-focus-ring app-button-lg inline-flex items-center"
             :to="`/talks/${project.id}/train`"
           >
             {{ t("talk_steps.train") }}
           </RouterLink>
           <RouterLink
-            class="app-button-secondary app-focus-ring inline-flex min-h-11 items-center rounded-full px-4 py-2 text-sm font-semibold"
+            class="app-button-secondary app-focus-ring app-button-lg inline-flex items-center"
             :to="`/talks/${project.id}/export`"
           >
             {{ t("talk_steps.export") }}
@@ -366,5 +366,5 @@ watch(project, () => {
         </div>
       </div>
     </div>
-  </section>
+  </TalkStepPageShell>
 </template>

@@ -153,7 +153,7 @@ watch(
 
 <template>
   <section class="space-y-6">
-    <div class="app-surface rounded-2xl border p-4">
+    <div class="app-panel app-panel-compact">
       <div class="app-subtle text-xs uppercase tracking-[0.2em]">
         {{ t("boss_run.title") }}
       </div>
@@ -162,14 +162,14 @@ watch(
       <div v-else class="app-muted mt-2 text-xs">{{ t("boss_run.no_talk") }}</div>
     </div>
 
-    <div v-if="!activeProfileId" class="app-surface rounded-2xl border p-4">
+    <div v-if="!activeProfileId" class="app-panel app-panel-compact">
       <p class="app-muted text-sm">{{ t("boss_run.need_profile") }}</p>
       <RouterLink class="app-link mt-3 inline-block text-xs underline" to="/profiles">
         {{ t("boss_run.setup_profile") }}
       </RouterLink>
     </div>
 
-    <div v-else-if="!activeProject" class="app-surface rounded-2xl border p-4">
+    <div v-else-if="!activeProject" class="app-panel app-panel-compact">
       <p class="app-muted text-sm">{{ t("boss_run.need_talk") }}</p>
       <RouterLink class="app-link mt-3 inline-block text-xs underline" to="/project/new">
         {{ t("boss_run.setup_talk") }}
@@ -207,7 +207,7 @@ watch(
         {{ t("boss_run.transcript_optional") }}
       </p>
 
-      <div class="app-surface rounded-2xl border p-4">
+      <div class="app-panel app-panel-compact">
         <div class="app-subtle text-xs uppercase tracking-[0.2em]">
           {{ t("boss_run.latest_title") }}
         </div>

@@ -58,14 +58,14 @@ onMounted(bootstrap);
   <section class="space-y-6">
     <p class="app-muted text-sm font-semibold">{{ t("talk.subtitle") }}</p>
 
-    <div v-if="!activeProfileId" class="app-surface rounded-2xl border p-4">
+    <div v-if="!activeProfileId" class="app-panel app-panel-compact">
       <p class="app-text text-sm">{{ t("talk.need_profile") }}</p>
       <RouterLink class="app-link text-xs underline underline-offset-4" to="/profiles">
         {{ t("talk.goto_profiles") }}
       </RouterLink>
     </div>
 
-    <div v-else class="app-surface rounded-2xl border p-4">
+    <div v-else class="app-panel app-panel-compact">
       <div v-if="activeProject" class="app-card mb-4 rounded-xl border p-3">
         <div class="app-subtle text-xs uppercase tracking-[0.2em]">
           {{ t("talk.active_title") }}

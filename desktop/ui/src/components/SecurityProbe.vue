@@ -71,7 +71,7 @@ async function testFsAllowed() {
 </script>
 
 <template>
-  <div class="app-surface space-y-3 rounded-2xl border p-4">
+  <div class="app-panel app-panel-compact space-y-3">
     <div class="flex items-center justify-between">
       <div>
         <h3 class="app-subtle text-sm font-semibold uppercase tracking-[0.2em]">

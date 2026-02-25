@@ -41,6 +41,9 @@ jobs:
       - name: UI lint
         run: pnpm -C desktop ui:lint
 
+      - name: UI design guard
+        run: pnpm -C desktop ui:lint:design
+
       - name: UI typecheck
         run: pnpm -C desktop ui:typecheck
 

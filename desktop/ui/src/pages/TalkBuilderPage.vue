@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, RouterLink } from "vue-router";
 import { invoke } from "@tauri-apps/api/core";
-import TalkStepTabs from "../components/TalkStepTabs.vue";
+import TalkStepPageShell from "../components/TalkStepPageShell.vue";
 import { useI18n } from "../lib/i18n";
 import { appStore } from "../stores/app";
 
@@ -153,44 +153,44 @@ watch(
 </script>
 
 <template>
-  <section class="space-y-6">
-    <TalkStepTabs v-if="selectedProjectId" :project-id="selectedProjectId" active="builder" />
+  <TalkStepPageShell
+    :project-id="selectedProjectId"
+    active="builder"
+    :eyebrow="t('builder.title')"
+    :title="t('builder.title')"
+    :subtitle="t('builder.subtitle')"
+  >
+    <template v-if="talkLabel" #meta>
+      <span>{{ talkLabel }}</span>
+    </template>
 
-    <div class="app-surface rounded-2xl border p-4">
-      <div class="app-subtle text-xs uppercase tracking-[0.2em]">
-        {{ t("builder.title") }}
-      </div>
-      <div class="app-text mt-2 text-sm">{{ t("builder.subtitle") }}</div>
-      <div v-if="talkLabel" class="app-muted mt-2 text-xs">{{ talkLabel }}</div>
-    </div>
-
-    <div v-if="!activeProfileId" class="app-surface rounded-2xl border p-4">
-      <p class="app-muted text-sm">{{ t("builder.no_profile") }}</p>
-      <RouterLink class="app-link mt-3 inline-block text-xs underline" to="/profiles">
+    <div v-if="!activeProfileId" class="app-panel app-panel-compact">
+      <p class="app-muted app-text-body">{{ t("builder.no_profile") }}</p>
+      <RouterLink class="app-link app-text-meta mt-3 inline-block underline" to="/profiles">
         {{ t("builder.setup_profile") }}
       </RouterLink>
     </div>
 
-    <div v-else-if="!selectedProjectId" class="app-surface rounded-2xl border p-4">
-      <p class="app-muted text-sm">{{ t("builder.no_talk") }}</p>
-      <RouterLink class="app-link mt-3 inline-block text-xs underline" to="/project/new">
+    <div v-else-if="!selectedProjectId" class="app-panel app-panel-compact">
+      <p class="app-muted app-text-body">{{ t("builder.no_talk") }}</p>
+      <RouterLink class="app-link app-text-meta mt-3 inline-block underline" to="/project/new">
         {{ t("builder.setup_talk") }}
       </RouterLink>
     </div>
 
     <div v-else class="space-y-4">
-      <div class="app-surface rounded-2xl border p-4">
-        <div class="app-subtle text-xs uppercase tracking-[0.2em]">
+      <div class="app-panel">
+        <div class="app-text-eyebrow">
           {{ t("builder.outline_label") }}
         </div>
         <textarea
           v-model="outline"
           rows="12"
-          class="app-input mt-3 w-full rounded-lg border px-3 py-2 text-sm"
+          class="app-input app-focus-ring app-radius-control mt-3 w-full border px-3 py-2 app-text-body"
         ></textarea>
-        <div class="mt-3 flex flex-wrap items-center gap-3 text-xs">
+        <div class="mt-3 flex flex-wrap items-center gap-3">
           <button
-            class="app-button-primary cursor-pointer rounded-full px-4 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
+            class="app-button-primary app-focus-ring app-button-md inline-flex items-center disabled:cursor-not-allowed disabled:opacity-60"
             type="button"
             :disabled="isSaving"
             @click="saveOutline"
@@ -198,42 +198,42 @@ watch(
             {{ t("builder.save") }}
           </button>
           <button
-            class="app-button-secondary cursor-pointer rounded-full px-4 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
+            class="app-button-secondary app-focus-ring app-button-md inline-flex items-center disabled:cursor-not-allowed disabled:opacity-60"
             type="button"
             :disabled="isExporting"
             @click="exportOutline"
           >
             {{ t("builder.export") }}
           </button>
-          <span v-if="saveStatus === 'saving'" class="app-muted text-xs">
+          <span v-if="saveStatus === 'saving'" class="app-muted app-text-meta">
             {{ t("builder.saving") }}
           </span>
-          <span v-else-if="saveStatus === 'saved'" class="app-subtle text-xs">
+          <span v-else-if="saveStatus === 'saved'" class="app-subtle app-text-meta">
             {{ t("builder.saved") }}
           </span>
         </div>
-        <div v-if="exportPath" class="mt-3 flex flex-wrap items-center gap-2 text-xs">
-          <span class="app-muted">{{ t("builder.export_path") }}:</span>
+        <div v-if="exportPath" class="mt-3 flex flex-wrap items-center gap-2">
+          <span class="app-muted app-text-meta">{{ t("builder.export_path") }}:</span>
           <span class="app-text max-w-[360px] truncate" style="direction: rtl; text-align: left;">
             {{ exportPath }}
           </span>
           <button
-            class="app-link text-xs underline"
+            class="app-link app-text-meta underline"
             type="button"
             :disabled="isRevealing"
             @click="revealExport"
           >
             {{ t("builder.export_reveal") }}
           </button>
-          <span class="app-subtle text-xs">{{ t("builder.export_ready") }}</span>
+          <span class="app-subtle app-text-meta">{{ t("builder.export_ready") }}</span>
         </div>
-        <div v-if="isLoading" class="app-muted mt-3 text-xs">
+        <div v-if="isLoading" class="app-muted app-text-meta mt-3">
           {{ t("builder.loading") }}
         </div>
-        <div v-if="error" class="app-danger-text mt-3 text-xs">
+        <div v-if="error" class="app-danger-text app-text-meta mt-3">
           {{ error }}
         </div>
       </div>
     </div>
-  </section>
+  </TalkStepPageShell>
 </template>

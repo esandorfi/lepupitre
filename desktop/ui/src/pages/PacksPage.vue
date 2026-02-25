@@ -148,14 +148,14 @@ onBeforeUnmount(() => {
 
 <template>
   <section class="space-y-6">
-    <div class="app-surface rounded-2xl border p-4">
+    <div class="app-panel app-panel-compact">
       <div class="app-subtle text-xs uppercase tracking-[0.2em]">
         {{ t("packs.title") }}
       </div>
       <div class="app-text mt-2 text-sm">{{ t("packs.subtitle") }}</div>
     </div>
 
-    <div v-if="!activeProfileId" class="app-surface rounded-2xl border p-4">
+    <div v-if="!activeProfileId" class="app-panel app-panel-compact">
       <p class="app-muted text-sm">{{ t("packs.no_profile") }}</p>
       <RouterLink class="app-link mt-3 inline-block text-xs underline" to="/profiles">
         {{ t("packs.setup_profile") }}
@@ -163,7 +163,7 @@ onBeforeUnmount(() => {
     </div>
 
     <div v-else class="space-y-4">
-      <div class="app-surface rounded-2xl border p-4">
+      <div class="app-panel app-panel-compact">
         <div class="app-subtle text-xs uppercase tracking-[0.2em]">
           {{ t("packs.import_title") }}
         </div>

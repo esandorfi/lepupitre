@@ -275,7 +275,7 @@ onBeforeUnmount(() => {
 
 <template>
   <section class="space-y-4">
-    <div class="app-card rounded-2xl border p-4">
+    <div class="app-card app-radius-panel-lg border p-4">
       <div class="flex items-center justify-between">
         <div>
           <h2 class="app-nav-text text-lg font-semibold">
@@ -284,7 +284,7 @@ onBeforeUnmount(() => {
           <div class="mt-1 flex items-center gap-2 text-xs">
             <span class="app-muted">{{ t("settings.transcription.sidecar_label") }}</span>
             <span
-              class="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+              class="app-text-caption rounded-full px-2 py-0.5 font-semibold"
               :class="sidecarStatus === 'ready' ? 'app-badge-success' : sidecarStatus === 'missing' ? 'app-badge-danger' : 'app-badge-neutral'"
             >
               {{ sidecarStatus === "ready" ? t("settings.transcription.sidecar_ready") : sidecarStatus === "missing" ? t("settings.transcription.sidecar_missing_label") : t("settings.transcription.sidecar_unknown_label") }}

@@ -392,28 +392,30 @@ watch(
 </script>
 
 <template>
-  <section class="space-y-6">
-    <div class="app-surface rounded-2xl border p-4">
-      <div class="app-subtle text-xs uppercase tracking-[0.2em]">{{ t("training.hero_label") }}</div>
-      <div v-if="trainingError" class="app-danger-text mt-2 text-xs">{{ trainingError }}</div>
-      <div v-else-if="isTrainingLoading" class="app-muted mt-2 text-sm">{{ t("talks.loading") }}</div>
+  <section class="app-page-shell">
+    <div class="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(0,0.95fr)] xl:items-start">
+      <div class="space-y-4">
+    <div class="app-panel app-panel-hero">
+      <div class="app-text-eyebrow">{{ t("training.hero_label") }}</div>
+      <div v-if="trainingError" class="app-danger-text app-text-meta mt-2">{{ trainingError }}</div>
+      <div v-else-if="isTrainingLoading" class="app-muted app-text-body mt-2">{{ t("talks.loading") }}</div>
       <div v-else-if="heroQuest" class="mt-2 space-y-2">
         <div class="flex flex-wrap items-center gap-2">
-          <span class="app-badge-neutral rounded-full px-2 py-1 text-[10px] font-semibold">
+          <span class="app-badge-neutral app-text-caption rounded-full px-2 py-1 font-semibold">
             {{ heroQuestIsOverride ? t("training.hero_selected_badge") : t("training.hero_daily_badge") }}
           </span>
           <button
             v-if="heroQuestIsOverride && trainingDailyQuest"
-            class="app-link text-xs underline"
+            class="app-link app-text-meta underline"
             type="button"
             @click="resetHeroQuestToDaily"
           >
             {{ t("training.use_daily_quest") }}
           </button>
         </div>
-        <div class="app-text text-base font-semibold">{{ heroQuest.title }}</div>
-        <div class="app-muted text-sm">{{ heroQuest.prompt }}</div>
-        <div class="flex flex-wrap items-center gap-2 text-[11px]">
+        <div class="app-text app-text-page-title">{{ heroQuest.title }}</div>
+        <div class="app-muted app-text-body">{{ heroQuest.prompt }}</div>
+        <div class="flex flex-wrap items-center gap-2 app-text-meta">
           <span class="app-badge-neutral rounded-full px-2 py-1 font-semibold">
             {{ outputLabel(heroQuest.output_type) }}
           </span>
@@ -426,39 +428,39 @@ watch(
         </div>
         <div class="pt-1">
           <RouterLink
-            class="app-button-primary app-focus-ring inline-flex min-h-11 items-center rounded-full px-4 py-2 text-sm font-semibold"
+            class="app-button-primary app-focus-ring app-button-lg inline-flex items-center"
             :to="questRoute(heroQuest.code)"
           >
             {{ t("training.start") }}
           </RouterLink>
         </div>
       </div>
-      <div v-else class="app-muted mt-2 text-sm">
+      <div v-else class="app-muted app-text-body mt-2">
         {{ t("home.quest_empty") }}
       </div>
     </div>
 
-    <div class="app-surface rounded-2xl border p-4">
-      <div class="app-subtle text-xs uppercase tracking-[0.2em]">{{ t("training.alternate_title") }}</div>
-      <p class="app-muted mt-2 text-sm">{{ t("training.alternate_subtitle") }}</p>
+    <div class="app-panel">
+      <div class="app-text-eyebrow">{{ t("training.alternate_title") }}</div>
+      <p class="app-muted app-text-body mt-2">{{ t("training.alternate_subtitle") }}</p>
       <div class="mt-3 flex flex-wrap gap-2">
         <RouterLink
           v-if="trainingProjectId"
-          class="app-button-secondary app-focus-ring inline-flex min-h-11 items-center rounded-full px-4 py-2 text-sm font-semibold"
+          class="app-button-secondary app-focus-ring app-button-lg inline-flex items-center"
           :to="`/quest/FREE?projectId=${trainingProjectId}&from=training`"
         >
           {{ t("training.free_quest") }}
         </RouterLink>
         <button
           v-if="trainingProjectId"
-          class="app-button-secondary app-focus-ring inline-flex min-h-11 items-center rounded-full px-4 py-2 text-sm font-semibold"
+          class="app-button-secondary app-focus-ring app-button-lg inline-flex items-center"
           type="button"
           @click="openQuestPicker"
         >
           {{ t("training.change_quest") }}
         </button>
         <RouterLink
-          class="app-link inline-flex min-h-11 items-center text-xs underline"
+          class="app-link app-text-meta inline-flex items-center underline"
           to="/talks"
         >
           {{ t("training.go_talks") }}
@@ -471,9 +473,9 @@ watch(
         @keydown="onQuestPickerKeydown"
       >
         <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <div class="app-text text-sm font-semibold">{{ t("training.quest_picker_title") }}</div>
+          <div class="app-text app-text-section-title">{{ t("training.quest_picker_title") }}</div>
           <button
-            class="app-button-ghost app-focus-ring inline-flex h-9 items-center rounded-full px-3 text-xs font-semibold"
+            class="app-button-ghost app-focus-ring app-button-md inline-flex items-center"
             type="button"
             @click="closeQuestPicker"
           >
@@ -485,7 +487,7 @@ watch(
           <input
             ref="questPickerSearchEl"
             v-model="questPickerSearch"
-            class="app-input app-focus-ring h-10 w-full rounded-xl border px-3 text-sm"
+            class="app-input app-focus-ring app-control-md app-radius-control w-full border px-3 app-text-body"
             type="text"
             :placeholder="t('training.quest_search_placeholder')"
           />
@@ -494,7 +496,7 @@ watch(
             <button
               v-for="category in questCategories"
               :key="category"
-              class="app-focus-ring rounded-full px-3 py-1.5 text-xs font-semibold transition"
+              class="app-focus-ring app-button-sm inline-flex items-center transition"
               :class="questPickerCategory === category ? 'app-button-secondary' : 'app-button-ghost'"
               type="button"
               @click="questPickerCategory = category"
@@ -505,7 +507,7 @@ watch(
 
           <div class="flex flex-wrap gap-2">
             <button
-              class="app-focus-ring rounded-full px-3 py-1.5 text-xs font-semibold transition"
+              class="app-focus-ring app-button-sm inline-flex items-center transition"
               :class="questPickerSort === 'recent' ? 'app-button-secondary' : 'app-button-ghost'"
               type="button"
               @click="questPickerSort = 'recent'"
@@ -513,7 +515,7 @@ watch(
               {{ t("training.quest_sort_recent") }}
             </button>
             <button
-              class="app-focus-ring rounded-full px-3 py-1.5 text-xs font-semibold transition"
+              class="app-focus-ring app-button-sm inline-flex items-center transition"
               :class="questPickerSort === 'az' ? 'app-button-secondary' : 'app-button-ghost'"
               type="button"
               @click="questPickerSort = 'az'"
@@ -521,7 +523,7 @@ watch(
               {{ t("training.quest_sort_az") }}
             </button>
             <button
-              class="app-focus-ring rounded-full px-3 py-1.5 text-xs font-semibold transition"
+              class="app-focus-ring app-button-sm inline-flex items-center transition"
               :class="questPickerSort === 'category' ? 'app-button-secondary' : 'app-button-ghost'"
               type="button"
               @click="questPickerSort = 'category'"
@@ -530,14 +532,14 @@ watch(
             </button>
           </div>
 
-          <div v-if="isQuestPickerLoading" class="app-muted text-sm">{{ t("talks.loading") }}</div>
-          <div v-else-if="questPickerError" class="app-danger-text text-xs">{{ questPickerError }}</div>
-          <div v-else-if="filteredQuests.length === 0" class="app-muted text-sm">
+          <div v-if="isQuestPickerLoading" class="app-muted app-text-body">{{ t("talks.loading") }}</div>
+          <div v-else-if="questPickerError" class="app-danger-text app-text-meta">{{ questPickerError }}</div>
+          <div v-else-if="filteredQuests.length === 0" class="app-muted app-text-body">
             {{ t("training.quest_picker_empty") }}
           </div>
           <div v-else ref="questPickerListEl" class="max-h-72 space-y-3 overflow-y-auto pr-1">
             <div v-if="showRecentQuestSection" class="space-y-2">
-              <p class="app-subtle text-[11px] font-semibold uppercase tracking-[0.16em]">
+              <p class="app-text-eyebrow">
                 {{ t("training.quest_recent_title") }}
               </p>
               <div
@@ -560,7 +562,7 @@ watch(
                   <div class="min-w-0 flex-1">
                     <div class="app-text text-sm font-semibold">{{ quest.title }}</div>
                     <div class="app-muted mt-1 line-clamp-2 text-xs">{{ quest.prompt }}</div>
-                    <div class="mt-2 flex flex-wrap items-center gap-2 text-[10px]">
+                    <div class="mt-2 flex flex-wrap items-center gap-2 app-text-caption">
                       <span class="app-badge-neutral rounded-full px-2 py-1 font-semibold">
                         {{ questCodeLabel(quest.code) }}
                       </span>
@@ -575,7 +577,7 @@ watch(
                   <div class="flex items-center gap-2">
                     <RouterLink
                       data-quest-row-action
-                      class="app-link text-xs underline"
+                      class="app-link app-text-meta underline"
                       :to="questRoute(quest.code)"
                       @click.stop="closeQuestPicker"
                     >
@@ -583,11 +585,11 @@ watch(
                     </RouterLink>
                     <span
                       v-if="isSelectedHeroQuest(quest.code)"
-                      class="app-badge-success rounded-full px-2 py-1 text-[10px] font-semibold"
+                      class="app-badge-success app-text-caption rounded-full px-2 py-1 font-semibold"
                     >
                       {{ t("training.quest_selected") }}
                     </span>
-                    <span class="app-subtle text-[11px] font-semibold">{{ quest.category }}</span>
+                    <span class="app-subtle app-text-meta font-semibold">{{ quest.category }}</span>
                   </div>
                 </div>
               </div>
@@ -596,7 +598,7 @@ watch(
             <div v-if="pickerMainQuests.length > 0" class="space-y-2">
               <p
                 v-if="showRecentQuestSection"
-                class="app-subtle text-[11px] font-semibold uppercase tracking-[0.16em]"
+                class="app-text-eyebrow"
               >
                 {{ t("training.quest_all_title") }}
               </p>
@@ -620,7 +622,7 @@ watch(
                 <div class="min-w-0 flex-1">
                   <div class="app-text text-sm font-semibold">{{ quest.title }}</div>
                   <div class="app-muted mt-1 line-clamp-2 text-xs">{{ quest.prompt }}</div>
-                  <div class="mt-2 flex flex-wrap items-center gap-2 text-[10px]">
+                  <div class="mt-2 flex flex-wrap items-center gap-2 app-text-caption">
                     <span class="app-badge-neutral rounded-full px-2 py-1 font-semibold">
                       {{ questCodeLabel(quest.code) }}
                     </span>
@@ -635,7 +637,7 @@ watch(
                 <div class="flex items-center gap-2">
                   <RouterLink
                     data-quest-row-action
-                    class="app-link text-xs underline"
+                    class="app-link app-text-meta underline"
                     :to="questRoute(quest.code)"
                     @click.stop="closeQuestPicker"
                   >
@@ -643,11 +645,11 @@ watch(
                   </RouterLink>
                   <span
                     v-if="isSelectedHeroQuest(quest.code)"
-                    class="app-badge-success rounded-full px-2 py-1 text-[10px] font-semibold"
+                    class="app-badge-success app-text-caption rounded-full px-2 py-1 font-semibold"
                   >
                     {{ t("training.quest_selected") }}
                   </span>
-                  <span class="app-subtle text-[11px] font-semibold">{{ quest.category }}</span>
+                  <span class="app-subtle app-text-meta font-semibold">{{ quest.category }}</span>
                 </div>
               </div>
             </div>
@@ -656,15 +658,16 @@ watch(
         </div>
       </div>
     </div>
+      </div>
 
-    <div class="app-surface rounded-2xl border p-4">
+    <div class="app-panel xl:sticky xl:top-4">
       <div class="flex flex-wrap items-center justify-between gap-2">
-        <div class="app-subtle text-xs uppercase tracking-[0.2em]">
+        <div class="app-text-eyebrow">
           {{ t("training.history_title") }}
         </div>
         <div class="flex flex-wrap gap-2">
           <button
-            class="app-focus-ring rounded-full px-3 py-1.5 text-xs font-semibold transition"
+            class="app-focus-ring app-button-sm inline-flex items-center transition"
             :class="trainingActivityTab === 'feedback' ? 'app-button-secondary' : 'app-button-ghost'"
             type="button"
             @click="trainingActivityTab = 'feedback'"
@@ -672,7 +675,7 @@ watch(
             {{ t("training.feedback_title") }} · {{ feedbackAttempts.length }}
           </button>
           <button
-            class="app-focus-ring rounded-full px-3 py-1.5 text-xs font-semibold transition"
+            class="app-focus-ring app-button-sm inline-flex items-center transition"
             :class="trainingActivityTab === 'history' ? 'app-button-secondary' : 'app-button-ghost'"
             type="button"
             @click="trainingActivityTab = 'history'"
@@ -682,14 +685,14 @@ watch(
         </div>
       </div>
 
-      <div v-if="isTrainingLoading" class="app-muted mt-3 text-sm">{{ t("talks.loading") }}</div>
+      <div v-if="isTrainingLoading" class="app-muted app-text-body mt-3">{{ t("talks.loading") }}</div>
 
       <template v-else-if="trainingActivityTab === 'feedback'">
-        <div v-if="feedbackAttempts.length === 0" class="app-muted mt-3 text-sm">
+        <div v-if="feedbackAttempts.length === 0" class="app-muted app-text-body mt-3">
           {{ t("training.feedback_empty") }}
         </div>
         <div v-else class="mt-3 space-y-3">
-          <div class="space-y-2 text-xs">
+          <div class="space-y-2 app-text-meta">
             <div
               v-for="attempt in feedbackAttempts"
               :key="attempt.id"
@@ -697,18 +700,18 @@ watch(
             >
               <div>
                 <div class="app-text text-sm">{{ attempt.quest_title }}</div>
-                <div class="app-muted text-[11px]">
+                <div class="app-muted app-text-meta">
                   {{ formatDate(attempt.created_at) }} · {{ outputLabel(attempt.output_type) }} ·
                   {{ questCodeLabel(attempt.quest_code) }}
                 </div>
               </div>
               <div class="flex items-center gap-2">
-                <span class="app-badge-success rounded-full px-2 py-1 text-[10px] font-semibold">
+                <span class="app-badge-success app-text-caption rounded-full px-2 py-1 font-semibold">
                   {{ t("training.feedback_ready") }}
                 </span>
                 <RouterLink
                   v-if="attempt.feedback_id"
-                  class="app-link text-xs underline"
+                  class="app-link app-text-meta underline"
                   :to="`/feedback/${attempt.feedback_id}`"
                 >
                   {{ t("home.quest_followup_feedback") }}
@@ -720,10 +723,10 @@ watch(
       </template>
 
       <template v-else>
-        <div v-if="recentAttempts.length === 0" class="app-muted mt-3 text-sm">
+        <div v-if="recentAttempts.length === 0" class="app-muted app-text-body mt-3">
           {{ t("training.history_empty") }}
         </div>
-        <div v-else class="mt-3 space-y-2 text-xs">
+        <div v-else class="mt-3 space-y-2 app-text-meta">
           <div
             v-for="attempt in recentAttempts"
             :key="attempt.id"
@@ -731,21 +734,21 @@ watch(
           >
             <div>
               <div class="app-text text-sm">{{ attempt.quest_title }}</div>
-              <div class="app-muted text-[11px]">
+              <div class="app-muted app-text-meta">
                 {{ formatDate(attempt.created_at) }} · {{ attemptStatus(attempt) }} ·
                 {{ questCodeLabel(attempt.quest_code) }}
               </div>
             </div>
             <div class="flex items-center gap-2">
               <RouterLink
-                class="app-link text-xs underline"
+                class="app-link app-text-meta underline"
                 :to="`/quest/${attempt.quest_code}?projectId=${trainingProjectId}&from=training`"
               >
                 {{ t("home.quest_followup_replay") }}
               </RouterLink>
               <RouterLink
                 v-if="attempt.feedback_id"
-                class="app-link text-xs underline"
+                class="app-link app-text-meta underline"
                 :to="`/feedback/${attempt.feedback_id}`"
               >
                 {{ t("home.quest_followup_feedback") }}
@@ -754,6 +757,7 @@ watch(
           </div>
         </div>
       </template>
+    </div>
     </div>
   </section>
 </template>

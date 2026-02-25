@@ -87,7 +87,7 @@ onMounted(async () => {
   <section class="space-y-6">
     <p class="app-muted text-sm font-semibold">{{ t("peer_review.subtitle") }}</p>
 
-    <div class="app-surface rounded-2xl border p-4 text-sm">
+    <div class="app-panel app-panel-compact text-sm">
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div class="app-subtle text-xs uppercase tracking-[0.2em]">
           {{ t("peer_review.title") }}

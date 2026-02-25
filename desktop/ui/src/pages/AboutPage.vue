@@ -24,7 +24,7 @@ const readmeIntroHtml = computed(() => renderMarkdown(readmeIntro.value));
       <p class="app-muted mt-1 text-sm">{{ t("about.subtitle") }}</p>
     </header>
 
-    <div class="app-card rounded-2xl border p-4">
+    <div class="app-card app-radius-panel-lg border p-4">
       <div class="app-subtle text-xs font-semibold uppercase tracking-[0.2em]">
         {{ t("settings.about.version") }}
       </div>
@@ -32,7 +32,7 @@ const readmeIntroHtml = computed(() => renderMarkdown(readmeIntro.value));
       <div class="app-muted text-sm">v{{ appVersion }}</div>
     </div>
 
-    <div class="app-surface rounded-2xl border p-4">
+    <div class="app-panel app-panel-compact">
       <div class="app-subtle text-xs font-semibold uppercase tracking-[0.2em]">
         {{ t("about.readme_intro") }}
       </div>

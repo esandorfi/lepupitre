@@ -11,6 +11,7 @@
     "ui:dev": "pnpm -C ui dev",
     "ui:build": "pnpm -C ui build",
     "ui:lint": "pnpm -C ui lint",
+    "ui:lint:design": "pnpm -C ui lint:design",
     "ui:typecheck": "pnpm -C ui typecheck",
     "ui:test": "pnpm -C ui test",
     "changelog": "node ../scripts/changelog.mjs",

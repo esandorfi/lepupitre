@@ -260,21 +260,21 @@ watch(text, (nextValue) => {
 </script>
 
 <template>
-  <section class="space-y-6">
-    <p class="app-muted text-sm font-semibold">
+  <section class="app-page-shell">
+    <p class="app-muted app-text-body-strong">
       {{ t("quest.code") }}: {{ displayQuestCode }}
     </p>
 
-    <div v-if="isLoading" class="app-surface rounded-2xl border p-4">
-      <p class="app-muted text-sm">{{ t("quest.loading") }}</p>
+    <div v-if="isLoading" class="app-panel app-panel-compact">
+      <p class="app-muted app-text-body">{{ t("quest.loading") }}</p>
     </div>
 
     <div v-else-if="quest" class="space-y-4">
-      <div class="app-surface rounded-2xl border p-4">
-        <div class="app-subtle text-xs uppercase tracking-[0.2em]">{{ t("quest.step_brief") }}</div>
-        <div class="app-text mt-2 text-sm font-semibold">{{ quest.title }}</div>
-        <div class="app-muted mt-2 text-xs">{{ quest.prompt }}</div>
-        <div class="mt-3 flex flex-wrap items-center gap-2 text-[11px]">
+      <div class="app-panel">
+        <div class="app-text-eyebrow">{{ t("quest.step_brief") }}</div>
+        <div class="app-text app-text-section-title mt-2">{{ quest.title }}</div>
+        <div class="app-muted app-text-meta mt-2">{{ quest.prompt }}</div>
+        <div class="mt-3 flex flex-wrap items-center gap-2 app-text-meta">
           <span class="app-badge-neutral rounded-full px-2 py-1 font-semibold">
             {{ isAudioQuest ? t("quest.output_audio") : t("quest.output_text") }}
           </span>
@@ -287,13 +287,13 @@ watch(text, (nextValue) => {
         </div>
       </div>
 
-      <div class="app-surface rounded-2xl border p-4">
-        <div class="app-subtle text-xs uppercase tracking-[0.2em]">{{ t("quest.step_capture") }}</div>
+      <div class="app-panel">
+        <div class="app-text-eyebrow">{{ t("quest.step_capture") }}</div>
 
         <div v-if="isAudioQuest" class="mt-3 space-y-4">
-          <p class="app-muted text-sm font-semibold">{{ t("quest.audio_hint") }}</p>
+          <p class="app-muted app-text-body-strong">{{ t("quest.audio_hint") }}</p>
           <AudioRecorder @saved="handleAudioSaved" @transcribed="handleTranscribed" />
-          <p v-if="audioArtifactId && !transcriptId" class="app-muted text-xs">
+          <p v-if="audioArtifactId && !transcriptId" class="app-muted app-text-meta">
             {{ t("quest.transcript_optional") }}
           </p>
         </div>
@@ -302,26 +302,26 @@ watch(text, (nextValue) => {
           <textarea
             v-model="text"
             rows="6"
-            class="app-input w-full rounded-lg border px-3 py-2 text-sm"
+            class="app-input app-focus-ring app-radius-control w-full border px-3 py-2 app-text-body"
             :placeholder="t('quest.response_placeholder')"
           ></textarea>
 
           <div class="flex flex-wrap items-center gap-3">
             <button
-              class="app-button-primary cursor-pointer rounded-full px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
+              class="app-button-primary app-focus-ring app-button-lg inline-flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
               type="button"
               :disabled="!canSubmitText"
               @click="submit"
             >
               {{ submitTextLabel }}
             </button>
-            <span v-if="attemptId" class="app-badge-success rounded-full px-2 py-1 text-[10px] font-semibold">
+            <span v-if="attemptId" class="app-badge-success app-text-caption rounded-full px-2 py-1 font-semibold">
               {{ t("quest.capture_saved") }}
             </span>
           </div>
           <p
             v-if="submittedTextSnapshot"
-            class="app-muted text-xs"
+            class="app-muted app-text-meta"
           >
             {{
               text.trim() === submittedTextSnapshot
@@ -332,11 +332,11 @@ watch(text, (nextValue) => {
         </div>
       </div>
 
-      <div class="app-surface rounded-2xl border p-4">
-        <div class="app-subtle text-xs uppercase tracking-[0.2em]">{{ t("quest.step_analysis") }}</div>
+      <div class="app-panel">
+        <div class="app-text-eyebrow">{{ t("quest.step_analysis") }}</div>
         <div class="mt-3 flex flex-wrap items-center gap-3">
           <button
-            class="app-button-info cursor-pointer rounded-full px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
+            class="app-button-info app-focus-ring app-button-lg inline-flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
             type="button"
             :disabled="!canAnalyze || isAnalyzing"
             @click="requestFeedback"
@@ -345,25 +345,25 @@ watch(text, (nextValue) => {
           </button>
           <button
             v-if="canLeaveWithoutFeedback"
-            class="app-button-secondary cursor-pointer rounded-full px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
+            class="app-button-secondary app-focus-ring app-button-lg inline-flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
             type="button"
             @click="skipTranscription"
           >
             {{ t("quest.keep_without_feedback") }}
           </button>
-          <RouterLink class="app-muted text-xs underline" :to="backLink">
+          <RouterLink class="app-muted app-text-meta underline" :to="backLink">
             {{ t("quest.back") }}
           </RouterLink>
         </div>
-        <p v-if="captureStatusLabel" class="app-subtle mt-2 text-xs">{{ captureStatusLabel }}</p>
-        <p class="app-muted mt-2 text-xs">{{ analysisHint }}</p>
+        <p v-if="captureStatusLabel" class="app-subtle app-text-meta mt-2">{{ captureStatusLabel }}</p>
+        <p class="app-muted app-text-meta mt-2">{{ analysisHint }}</p>
       </div>
 
-      <p v-if="error" class="app-danger-text text-xs">{{ error }}</p>
+      <p v-if="error" class="app-danger-text app-text-meta">{{ error }}</p>
     </div>
 
-    <div v-else class="app-surface rounded-2xl border p-4">
-      <p class="app-muted text-sm">{{ error || t("quest.empty") }}</p>
+    <div v-else class="app-panel app-panel-compact">
+      <p class="app-muted app-text-body">{{ error || t("quest.empty") }}</p>
     </div>
   </section>
 </template>

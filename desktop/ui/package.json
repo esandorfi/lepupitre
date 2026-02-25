@@ -9,6 +9,7 @@
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext .ts,.vue",
+    "lint:design": "node ./scripts/design-guard.mjs",
     "typecheck": "vue-tsc --noEmit",
     "test": "vitest run --passWithNoTests"
   },

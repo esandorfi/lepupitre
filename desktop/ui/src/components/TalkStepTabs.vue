@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import SectionPanel from "./SectionPanel.vue";
 import { useI18n } from "../lib/i18n";
 
 const props = defineProps<{
@@ -18,17 +19,17 @@ const tabs = computed(() => [
 </script>
 
 <template>
-  <div class="app-surface rounded-2xl border p-2">
+  <SectionPanel variant="compact">
     <nav class="flex flex-wrap items-center gap-2" :aria-label="t('talk_steps.aria')">
       <RouterLink
         v-for="tab in tabs"
         :key="tab.key"
         :to="tab.to"
-        class="app-top-tab app-focus-ring rounded-full px-3 py-2 text-xs transition"
+        class="app-top-tab app-focus-ring app-button-md inline-flex items-center transition"
         :class="tab.key === active ? 'app-top-tab-active' : ''"
       >
         {{ tab.label }}
       </RouterLink>
     </nav>
-  </div>
+  </SectionPanel>
 </template>

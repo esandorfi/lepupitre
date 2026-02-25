@@ -273,7 +273,7 @@ onBeforeUnmount(() => {
         <p class="app-muted mt-1 text-sm">{{ t("profiles.subtitle") }}</p>
       </div>
       <button
-        class="app-button-primary app-focus-ring min-h-11 cursor-pointer rounded-full px-4 py-2 text-sm font-semibold"
+        class="app-button-primary app-focus-ring app-button-lg inline-flex items-center cursor-pointer"
         type="button"
         @click="focusCreateForm"
       >
@@ -288,7 +288,7 @@ onBeforeUnmount(() => {
       <h2 class="app-text text-lg font-semibold">{{ t("profiles.empty_title") }}</h2>
       <p class="app-muted mx-auto mt-2 max-w-xl text-sm">{{ t("profiles.empty_body") }}</p>
       <button
-        class="app-button-primary app-focus-ring mt-4 min-h-11 cursor-pointer rounded-full px-4 py-2 text-sm font-semibold"
+        class="app-button-primary app-focus-ring app-button-lg mt-4 inline-flex items-center cursor-pointer"
         type="button"
         @click="focusCreateForm"
       >
@@ -296,7 +296,7 @@ onBeforeUnmount(() => {
       </button>
     </div>
 
-    <section v-else class="app-surface rounded-2xl border p-4">
+    <section v-else class="app-panel app-panel-compact">
       <div class="flex items-center justify-between gap-3">
         <h2 class="app-subtle text-xs font-semibold uppercase tracking-[0.2em]">
           {{ t("profiles.existing_title") }}
@@ -324,7 +324,7 @@ onBeforeUnmount(() => {
                   :ref="setRenameInput(profile.id)"
                   v-model="renameValue"
                   :disabled="isRenaming"
-                  class="app-input app-focus-ring min-h-11 min-w-[240px] flex-1 rounded-lg border px-3 py-2 text-sm"
+                  class="app-input app-focus-ring app-control-md min-w-[240px] flex-1 rounded-lg border px-3 app-text-body"
                   type="text"
                   @blur="confirmRename(profile.id)"
                   @keyup.enter="confirmRename(profile.id)"
@@ -338,7 +338,7 @@ onBeforeUnmount(() => {
           <div class="flex items-center gap-2">
             <button
               v-if="profile.id !== activeProfileId"
-              class="app-button-secondary app-focus-ring min-h-11 cursor-pointer rounded-full px-4 py-2 text-sm font-semibold"
+              class="app-button-secondary app-focus-ring app-button-lg inline-flex items-center cursor-pointer"
               type="button"
               @click="switchProfile(profile.id)"
             >
@@ -346,14 +346,14 @@ onBeforeUnmount(() => {
             </button>
             <span
               v-else
-              class="app-badge-accent inline-flex min-h-11 items-center rounded-full px-4 py-2 text-sm font-semibold"
+              class="app-badge-accent app-button-lg inline-flex items-center"
             >
               {{ t("profiles.active") }}
             </span>
 
             <div class="relative" data-profile-menu-root="true">
               <button
-                class="app-button-secondary app-focus-ring inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full"
+                class="app-button-secondary app-focus-ring app-icon-button-xl inline-flex cursor-pointer items-center justify-center"
                 type="button"
                 :aria-label="`${t('profiles.row_actions')}: ${profile.name}`"
                 :aria-expanded="openMenuId === profile.id ? 'true' : 'false'"
@@ -406,7 +406,7 @@ onBeforeUnmount(() => {
       <p v-if="error" class="app-danger-text mt-3 text-xs">{{ error }}</p>
     </section>
 
-    <section ref="createSection" class="app-card rounded-2xl border p-4">
+    <section ref="createSection" class="app-card app-radius-panel-lg border p-4">
       <h2 class="app-subtle text-xs font-semibold uppercase tracking-[0.2em]">
         {{ t("profiles.add_title") }}
       </h2>
@@ -420,7 +420,7 @@ onBeforeUnmount(() => {
             ref="createInput"
             v-model="name"
             type="text"
-            class="app-input app-focus-ring mt-2 h-11 w-full rounded-lg border px-3 text-sm"
+            class="app-input app-focus-ring app-control-md mt-2 w-full rounded-lg border px-3 app-text-body"
             :placeholder="t('profiles.create_placeholder')"
             @keyup.enter="createProfile"
             @keyup.escape="name = ''"
@@ -428,7 +428,7 @@ onBeforeUnmount(() => {
           <p class="app-muted mt-2 text-xs">{{ t("profiles.create_helper") }}</p>
         </div>
         <button
-          class="app-button-primary app-focus-ring min-h-11 cursor-pointer rounded-full px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+          class="app-button-primary app-focus-ring app-button-lg inline-flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
           type="button"
           :disabled="isSaving"
           @click="createProfile"
