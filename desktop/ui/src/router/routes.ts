@@ -4,11 +4,12 @@ import HomePage from "../pages/HomePage.vue";
 import ProfilesPage from "../pages/ProfilesPage.vue";
 import TalksPage from "../pages/TalksPage.vue";
 import TalkDefinePage from "../pages/TalkDefinePage.vue";
+import TalkTrainPage from "../pages/TalkTrainPage.vue";
+import TalkExportPage from "../pages/TalkExportPage.vue";
 import ProjectSetupPage from "../pages/ProjectSetupPage.vue";
 import QuestPage from "../pages/QuestPage.vue";
 import FeedbackPage from "../pages/FeedbackPage.vue";
 import PeerReviewPage from "../pages/PeerReviewPage.vue";
-import TalkReportPage from "../pages/TalkReportPage.vue";
 import TalkBuilderPage from "../pages/TalkBuilderPage.vue";
 import BossRunPage from "../pages/BossRunPage.vue";
 import PacksPage from "../pages/PacksPage.vue";
@@ -22,8 +23,8 @@ export const routes: RouteRecordRaw[] = [
   { path: "/talks", name: "talks", component: TalksPage },
   { path: "/talks/:projectId/define", name: "talk-define", component: TalkDefinePage },
   { path: "/talks/:projectId/builder", name: "talk-builder", component: TalkBuilderPage },
-  { path: "/talks/:projectId/train", name: "talk-train", component: TalkReportPage },
-  { path: "/talks/:projectId/export", name: "talk-export", component: TalkReportPage },
+  { path: "/talks/:projectId/train", name: "talk-train", component: TalkTrainPage },
+  { path: "/talks/:projectId/export", name: "talk-export", component: TalkExportPage },
   {
     path: "/talks/:projectId",
     name: "talk-report",

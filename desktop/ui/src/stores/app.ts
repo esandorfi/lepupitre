@@ -9,6 +9,8 @@ import {
   ProfileRenamePayloadSchema,
   ProfileSummary,
   ProjectCreateRequestSchema,
+  ProjectUpdatePayload,
+  ProjectUpdateRequestSchema,
   ProjectIdPayloadSchema,
   ProjectListItem,
   ProjectListResponseSchema,
@@ -45,6 +47,8 @@ import {
   QuestDaily,
   QuestDailySchema,
   QuestSchema,
+  QuestListPayloadSchema,
+  QuestListResponseSchema,
   QuestGetByCodePayloadSchema,
   QuestGetDailyPayloadSchema,
   Quest,
@@ -192,6 +196,22 @@ async function createProject(payload: {
   await loadProjects();
   await loadDailyQuest();
   return id;
+}
+
+async function updateProject(projectId: string, payload: ProjectUpdatePayload) {
+  if (!state.activeProfileId) {
+    throw new Error("no_active_profile");
+  }
+  await invokeChecked(
+    "project_update",
+    ProjectUpdateRequestSchema,
+    VoidResponseSchema,
+    { profileId: state.activeProfileId, projectId, payload }
+  );
+  await loadProjects();
+  if (state.activeProject?.id === projectId) {
+    await loadActiveProject();
+  }
 }
 
 async function setActiveProject(projectId: string) {
@@ -368,6 +388,18 @@ async function getQuestByCode(questCode: string): Promise<Quest> {
     QuestGetByCodePayloadSchema,
     QuestSchema,
     { profileId: state.activeProfileId, questCode }
+  );
+}
+
+async function getQuestList(): Promise<Quest[]> {
+  if (!state.activeProfileId) {
+    throw new Error("no_active_profile");
+  }
+  return invokeChecked(
+    "quest_list",
+    QuestListPayloadSchema,
+    QuestListResponseSchema,
+    { profileId: state.activeProfileId }
   );
 }
 
@@ -665,6 +697,7 @@ export const appStore = {
   switchProfile,
   loadActiveProject,
   createProject,
+  updateProject,
   setActiveProject,
   ensureTrainingProject,
   loadDailyQuest,
@@ -676,6 +709,7 @@ export const appStore = {
   submitQuestAudio,
   submitQuestAudioForProject,
   getQuestByCode,
+  getQuestList,
   getQuestReport,
   getTalkNumber,
   formatQuestCode,

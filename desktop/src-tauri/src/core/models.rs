@@ -19,6 +19,15 @@ pub struct ProjectCreatePayload {
     pub duration_target_sec: Option<i64>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct ProjectUpdatePayload {
+    pub title: String,
+    pub audience: Option<String>,
+    pub goal: Option<String>,
+    pub duration_target_sec: Option<i64>,
+    pub stage: String,
+}
+
 #[derive(Debug, Serialize)]
 pub struct ProjectSummary {
     pub id: String,

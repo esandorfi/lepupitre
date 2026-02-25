@@ -35,6 +35,20 @@ export const ProjectCreateRequestSchema = z.object({
   payload: ProjectCreatePayloadSchema,
 });
 
+export const ProjectUpdatePayloadSchema = z.object({
+  title: z.string().trim().min(1).max(120),
+  audience: OptionalString,
+  goal: OptionalString,
+  duration_target_sec: z.number().int().positive().optional().nullable(),
+  stage: z.string().min(1),
+});
+
+export const ProjectUpdateRequestSchema = z.object({
+  profileId: IdSchema,
+  projectId: IdSchema,
+  payload: ProjectUpdatePayloadSchema,
+});
+
 export const ProjectSummarySchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1),
@@ -246,6 +260,9 @@ export const QuestGetByCodePayloadSchema = z.object({
   profileId: IdSchema,
   questCode: z.string().min(1),
 });
+
+export const QuestListPayloadSchema = ProfileIdPayloadSchema;
+export const QuestListResponseSchema = z.array(QuestSchema);
 
 export const QuestSubmitTextPayloadSchema = z.object({
   profileId: IdSchema,
@@ -542,6 +559,7 @@ export type RecordingStopResponse = z.infer<typeof RecordingStopResponseSchema>;
 export type ProfileSummary = z.infer<typeof ProfileSummarySchema>;
 export type ProjectSummary = z.infer<typeof ProjectSummarySchema>;
 export type ProjectListItem = z.infer<typeof ProjectListItemSchema>;
+export type ProjectUpdatePayload = z.infer<typeof ProjectUpdatePayloadSchema>;
 export type OutlineDoc = z.infer<typeof OutlineDocSchema>;
 export type ExportResult = z.infer<typeof ExportResultSchema>;
 export type PackInspectResponse = z.infer<typeof PackInspectResponseSchema>;

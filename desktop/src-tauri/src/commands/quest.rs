@@ -34,6 +34,27 @@ pub fn quest_get_by_code(
     Ok(quest)
 }
 
+#[tauri::command]
+pub fn quest_list(app: tauri::AppHandle, profile_id: String) -> Result<Vec<Quest>, String> {
+    db::ensure_profile_exists(&app, &profile_id)?;
+    let conn = db::open_profile(&app, &profile_id)?;
+
+    let mut stmt = conn
+        .prepare(
+            "SELECT code, title, category, estimated_sec, prompt, output_type, targets_issues_json
+             FROM quests
+             ORDER BY category ASC, code ASC",
+        )
+        .map_err(|e| format!("prepare: {e}"))?;
+
+    let mut rows = stmt.query([]).map_err(|e| format!("query: {e}"))?;
+    let mut quests = Vec::new();
+    while let Some(row) = rows.next().map_err(|e| format!("row: {e}"))? {
+        quests.push(quest_from_row(row)?);
+    }
+    Ok(quests)
+}
+
 #[derive(Debug, Serialize)]
 pub struct QuestAttemptSummary {
     pub id: String,

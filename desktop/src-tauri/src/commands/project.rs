@@ -1,4 +1,7 @@
-use crate::core::{db, ids, models::ProjectCreatePayload, models::ProjectSummary, time};
+use crate::core::{
+    db, ids, models::ProjectCreatePayload, models::ProjectSummary, models::ProjectUpdatePayload,
+    time,
+};
 use rusqlite::{params, OptionalExtension};
 use serde::Serialize;
 
@@ -55,6 +58,66 @@ pub fn project_ensure_training(app: tauri::AppHandle, profile_id: String) -> Res
     db::ensure_profile_exists(&app, &profile_id)?;
     let conn = db::open_profile(&app, &profile_id)?;
     ensure_training_project(&conn)
+}
+
+#[tauri::command]
+pub fn project_update(
+    app: tauri::AppHandle,
+    profile_id: String,
+    project_id: String,
+    payload: ProjectUpdatePayload,
+) -> Result<(), String> {
+    db::ensure_profile_exists(&app, &profile_id)?;
+    let conn = db::open_profile(&app, &profile_id)?;
+    let now = time::now_rfc3339();
+
+    let title = payload.title.trim();
+    if title.is_empty() {
+        return Err("project_title_required".to_string());
+    }
+    if title.chars().count() > 120 {
+        return Err("project_title_too_long".to_string());
+    }
+
+    let stage = payload.stage.trim();
+    if stage.is_empty() {
+        return Err("project_stage_required".to_string());
+    }
+
+    let audience = normalize_optional_text(payload.audience, 240);
+    let goal = normalize_optional_text(payload.goal, 1000);
+    let duration_target_sec = match payload.duration_target_sec {
+        Some(value) if value > 0 => Some(value),
+        Some(_) => return Err("project_duration_invalid".to_string()),
+        None => None,
+    };
+
+    let updated = conn
+        .execute(
+            "UPDATE talk_projects
+             SET title = ?2,
+                 audience = ?3,
+                 goal = ?4,
+                 duration_target_sec = ?5,
+                 stage = ?6,
+                 updated_at = ?7
+             WHERE id = ?1",
+            params![
+                project_id,
+                title,
+                audience,
+                goal,
+                duration_target_sec,
+                stage,
+                now
+            ],
+        )
+        .map_err(|e| format!("project_update: {e}"))?;
+
+    if updated == 0 {
+        return Err("project_not_found".to_string());
+    }
+    Ok(())
 }
 
 #[tauri::command]
@@ -290,4 +353,12 @@ fn is_training_project(conn: &rusqlite::Connection, project_id: &str) -> Result<
         .optional()
         .map_err(|e| format!("training_check: {e}"))?;
     Ok(value.unwrap_or(0) > 0)
+}
+
+fn normalize_optional_text(value: Option<String>, max_len: usize) -> Option<String> {
+    let trimmed = value.as_deref().map(str::trim).unwrap_or("");
+    if trimmed.is_empty() {
+        return None;
+    }
+    Some(trimmed.chars().take(max_len).collect())
 }
