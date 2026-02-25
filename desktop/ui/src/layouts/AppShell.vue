@@ -71,6 +71,10 @@ const activeTalkNumber = computed(() => {
 });
 const showTalkTab = computed(() => {
   return (
+    route.name === "talk-define" ||
+    route.name === "talk-builder" ||
+    route.name === "talk-train" ||
+    route.name === "talk-export" ||
     route.name === "talk-report" ||
     route.name === "quest" ||
     route.name === "feedback" ||
@@ -81,7 +85,7 @@ const showTalkTab = computed(() => {
 const talkReportLink = computed(() => {
   const id = activeTalkId.value || appStore.state.activeProject?.id || "";
   if (id) {
-    return `/talks/${id}`;
+    return `/talks/${id}/train`;
   }
   return "/talks";
 });
@@ -200,9 +204,9 @@ onMounted(() => {
               <RouterLink
                 class="app-top-tab app-focus-ring rounded-full px-3 py-2 transition"
                 exact-active-class="app-top-tab-active"
-                to="/"
+                to="/training"
               >
-                {{ t("nav.home") }}
+                {{ t("nav.training") }}
               </RouterLink>
               <RouterLink
                 class="app-top-tab app-focus-ring rounded-full px-3 py-2 transition"

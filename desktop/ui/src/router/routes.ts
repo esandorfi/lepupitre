@@ -3,6 +3,7 @@ import type { RouteRecordRaw } from "vue-router";
 import HomePage from "../pages/HomePage.vue";
 import ProfilesPage from "../pages/ProfilesPage.vue";
 import TalksPage from "../pages/TalksPage.vue";
+import TalkDefinePage from "../pages/TalkDefinePage.vue";
 import ProjectSetupPage from "../pages/ProjectSetupPage.vue";
 import QuestPage from "../pages/QuestPage.vue";
 import FeedbackPage from "../pages/FeedbackPage.vue";
@@ -15,10 +16,19 @@ import SettingsPage from "../pages/SettingsPage.vue";
 import AboutPage from "../pages/AboutPage.vue";
 
 export const routes: RouteRecordRaw[] = [
-  { path: "/", name: "home", component: HomePage },
+  { path: "/", redirect: "/training" },
+  { path: "/training", name: "training", component: HomePage },
   { path: "/profiles", name: "profiles", component: ProfilesPage },
   { path: "/talks", name: "talks", component: TalksPage },
-  { path: "/talks/:projectId", name: "talk-report", component: TalkReportPage },
+  { path: "/talks/:projectId/define", name: "talk-define", component: TalkDefinePage },
+  { path: "/talks/:projectId/builder", name: "talk-builder", component: TalkBuilderPage },
+  { path: "/talks/:projectId/train", name: "talk-train", component: TalkReportPage },
+  { path: "/talks/:projectId/export", name: "talk-export", component: TalkReportPage },
+  {
+    path: "/talks/:projectId",
+    name: "talk-report",
+    redirect: (to) => `/talks/${String(to.params.projectId || "")}/train`,
+  },
   { path: "/project/new", name: "project-new", component: ProjectSetupPage },
   { path: "/quest/:questCode", name: "quest", component: QuestPage },
   { path: "/feedback/:feedbackId", name: "feedback", component: FeedbackPage },

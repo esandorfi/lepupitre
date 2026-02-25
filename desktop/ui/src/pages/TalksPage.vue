@@ -55,7 +55,7 @@ async function setActive(projectId: string) {
 }
 
 function goToReport(projectId: string) {
-  router.push(`/talks/${projectId}`);
+  router.push(`/talks/${projectId}/define`);
 }
 
 onMounted(bootstrap);

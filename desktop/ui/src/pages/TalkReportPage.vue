@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from "vue";
 import { useRoute, RouterLink } from "vue-router";
 import { invoke } from "@tauri-apps/api/core";
+import TalkStepTabs from "../components/TalkStepTabs.vue";
 import { useI18n } from "../lib/i18n";
 import { appStore } from "../stores/app";
 import type {
@@ -32,6 +33,12 @@ const project = computed(() =>
 );
 const isActive = computed(() => appStore.state.activeProject?.id === projectId.value);
 const talkNumber = computed(() => project.value?.talk_number ?? null);
+const activeStep = computed<"train" | "export">(() => {
+  if (route.name === "talk-export") {
+    return "export";
+  }
+  return "train";
+});
 
 function toError(err: unknown) {
   return err instanceof Error ? err.message : String(err);
@@ -229,6 +236,8 @@ onMounted(loadReport);
 
 <template>
   <section class="space-y-6">
+    <TalkStepTabs v-if="projectId" :project-id="projectId" :active="activeStep" />
+
     <div class="app-surface rounded-2xl border p-4">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -249,13 +258,13 @@ onMounted(loadReport);
             <RouterLink class="app-link underline" to="/talks">
               {{ t("talk_report.back") }}
             </RouterLink>
-            <RouterLink class="app-link underline" :to="`/builder?projectId=${projectId}`">
+            <RouterLink class="app-link underline" :to="`/talks/${projectId}/builder`">
               {{ t("talk_report.builder") }}
             </RouterLink>
             <RouterLink class="app-link underline" to="/boss-run">
               {{ t("talk_report.boss_run") }}
             </RouterLink>
-            <RouterLink class="app-link underline" to="/packs">
+            <RouterLink class="app-link underline" :to="`/talks/${projectId}/export`">
               {{ t("talk_report.packs") }}
             </RouterLink>
           </div>

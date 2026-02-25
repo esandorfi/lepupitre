@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, RouterLink } from "vue-router";
 import { invoke } from "@tauri-apps/api/core";
+import TalkStepTabs from "../components/TalkStepTabs.vue";
 import { useI18n } from "../lib/i18n";
 import { appStore } from "../stores/app";
 
@@ -19,6 +20,10 @@ const isRevealing = ref(false);
 
 const activeProfileId = computed(() => appStore.state.activeProfileId);
 const selectedProjectId = computed(() => {
+  const paramId = String(route.params.projectId || "");
+  if (paramId) {
+    return paramId;
+  }
   const queryId = String(route.query.projectId || "");
   if (queryId) {
     return queryId;
@@ -136,6 +141,8 @@ watch(
 
 <template>
   <section class="space-y-6">
+    <TalkStepTabs v-if="selectedProjectId" :project-id="selectedProjectId" active="builder" />
+
     <div class="app-surface rounded-2xl border p-4">
       <div class="app-subtle text-xs uppercase tracking-[0.2em]">
         {{ t("builder.title") }}
