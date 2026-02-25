@@ -370,6 +370,11 @@ function rowMenuButtonAriaLabel(profileName: string) {
   return `${t("shell.workspaces_more_actions")} ${profileName}`;
 }
 
+function workspaceMetaLabel(profile: { talks_count: number; size_bytes: number }) {
+  const talksLabel = profile.talks_count === 1 ? "talk" : "talks";
+  return `${profile.talks_count} ${talksLabel} · ${Math.round(profile.size_bytes / 1024)} KB`;
+}
+
 function toolbarColorPreviewStyle(profileId: string | null | undefined) {
   void toolbarColorTick.value;
   const key = getWorkspaceToolbarColor(profileId);
@@ -527,7 +532,7 @@ onBeforeUnmount(() => {
           >
             <span class="min-w-0 flex-1">
               <span class="app-text block truncate text-sm font-semibold">{{ profile.name }}</span>
-              <span class="app-muted block text-xs">{{ Math.round(profile.size_bytes / 1024) }} KB</span>
+              <span class="app-muted block text-xs">{{ workspaceMetaLabel(profile) }}</span>
             </span>
             <span v-if="switchingId === profile.id" class="app-muted shrink-0 text-xs">…</span>
           </button>
@@ -566,7 +571,7 @@ onBeforeUnmount(() => {
             >
               <span class="min-w-0 flex-1">
                 <span class="app-switcher-row-title block truncate text-sm font-semibold">{{ profile.name }}</span>
-                <span class="app-switcher-row-meta block text-xs">{{ Math.round(profile.size_bytes / 1024) }} KB</span>
+                <span class="app-switcher-row-meta block text-xs">{{ workspaceMetaLabel(profile) }}</span>
               </span>
               <span
                 v-if="profile.id === activeProfileId"

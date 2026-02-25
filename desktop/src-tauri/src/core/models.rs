@@ -8,6 +8,7 @@ pub struct ProfileSummary {
     pub last_opened_at: Option<String>,
     pub is_active: bool,
     pub size_bytes: u64,
+    pub talks_count: u64,
 }
 
 #[derive(Debug, Deserialize)]

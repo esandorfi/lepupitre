@@ -18,6 +18,7 @@ export const ProfileSummarySchema = z.object({
   last_opened_at: z.string().min(1).nullable().optional(),
   is_active: z.boolean(),
   size_bytes: z.number().nonnegative(),
+  talks_count: z.number().nonnegative(),
 });
 
 export const ProfileListResponseSchema = z.array(ProfileSummarySchema);

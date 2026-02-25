@@ -70,6 +70,11 @@ function formatBytes(bytes: number) {
   return `${mb.toFixed(1)} MB`;
 }
 
+function formatProfileMeta(profile: { talks_count: number; size_bytes: number }) {
+  const talksLabel = profile.talks_count === 1 ? "talk" : "talks";
+  return `${profile.talks_count} ${talksLabel} · ${formatBytes(profile.size_bytes)}`;
+}
+
 function initialsFor(nameValue: string) {
   const parts = nameValue.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) {
@@ -326,9 +331,7 @@ onBeforeUnmount(() => {
                   @keyup.escape="cancelRename"
                 />
               </div>
-              <div class="app-muted mt-1 text-xs">
-                {{ formatBytes(profile.size_bytes) }}
-              </div>
+              <div class="app-muted mt-1 text-xs">{{ formatProfileMeta(profile) }}</div>
             </div>
           </div>
 

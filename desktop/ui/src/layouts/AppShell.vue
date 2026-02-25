@@ -20,6 +20,7 @@ const activeQuestCode = computed(() => {
 });
 const showQuestTab = computed(() => activeQuestCode.value.length > 0);
 const talkLabel = computed(() => t("nav.talk"));
+const talksCount = computed(() => appStore.state.projects.length);
 const activeFeedbackId = computed(() => {
   if (route.name === "feedback") {
     return String(route.params.feedbackId || "");
@@ -208,7 +209,12 @@ onMounted(() => {
                 exact-active-class="app-top-tab-active"
                 to="/talks"
               >
-                {{ talkLabel }}
+                <span class="inline-flex items-center gap-2">
+                  <span>{{ talkLabel }}</span>
+                  <span class="app-badge-neutral inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold">
+                    {{ talksCount }}
+                  </span>
+                </span>
               </RouterLink>
             </nav>
 

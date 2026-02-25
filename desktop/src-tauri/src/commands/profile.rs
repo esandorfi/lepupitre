@@ -23,6 +23,7 @@ pub fn profile_list(app: tauri::AppHandle) -> Result<Vec<ProfileSummary>, String
                 last_opened_at: row.get(3)?,
                 is_active: row.get::<_, i64>(4)? == 1,
                 size_bytes: 0,
+                talks_count: 0,
             })
         })
         .map_err(|e| format!("query: {e}"))?;
@@ -32,6 +33,9 @@ pub fn profile_list(app: tauri::AppHandle) -> Result<Vec<ProfileSummary>, String
         let mut profile = row.map_err(|e| format!("row: {e}"))?;
         if let Ok(profile_dir) = db::profile_dir(&app, &profile.id) {
             profile.size_bytes = dir_size(&profile_dir);
+        }
+        if let Ok(profile_conn) = db::open_profile(&app, &profile.id) {
+            profile.talks_count = talk_count(&profile_conn);
         }
         profiles.push(profile);
     }
@@ -59,6 +63,11 @@ fn dir_size(path: &Path) -> u64 {
         }
     }
     total
+}
+
+fn talk_count(conn: &rusqlite::Connection) -> u64 {
+    conn.query_row("SELECT COUNT(*) FROM talk_projects", [], |row| row.get::<_, u64>(0))
+        .unwrap_or(0)
 }
 
 #[tauri::command]
