@@ -235,9 +235,11 @@ jobs:
           EOF
           fi
           cd homebrew-tap
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add "Casks/${HOMEBREW_CASK}.rb"
           git commit -m "Update ${HOMEBREW_CASK} to ${VERSION}"
-          git push
+          git push -u origin HEAD
 
   update-winget:
     if: startsWith(github.ref, 'refs/tags/')
@@ -302,4 +304,4 @@ jobs:
           Invoke-WebRequest -Uri $url -OutFile $installerPath
           $sha = (Get-FileHash -Algorithm SHA256 $installerPath).Hash.ToLower()
           winget install --id Microsoft.WingetCreate -e --accept-package-agreements --accept-source-agreements
-          wingetcreate update $env:WINGET_ID --version $version --urls $url --sha256 $sha --submit --token $env:WINGETCREATE_TOKEN
+          wingetcreate update $env:WINGET_ID --version $version --urls $url --submit --token $env:WINGETCREATE_TOKEN

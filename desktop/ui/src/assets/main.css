@@ -45,68 +45,66 @@
   --app-text-base: 1rem;
   --app-input-bg: #ffffff;
   --app-meter-bg: #ffe0c3;
+  /* Canonical semantic tokens (derived from existing app tokens for low-risk migration) */
   --color-bg: var(--app-bg);
+  --color-bg-start: var(--app-bg-start);
+  --color-bg-end: var(--app-bg-end);
   --color-surface: var(--app-surface);
   --color-surface-elevated: var(--app-card);
   --color-text: var(--app-text);
   --color-text-muted: var(--app-muted);
+  --color-text-dimmed: var(--app-subtle);
   --color-border: var(--app-border);
+  --color-border-muted: color-mix(in srgb, var(--app-border) 68%, var(--app-surface));
   --color-accent: var(--app-accent);
+  --color-accent-hover: var(--app-accent-hover);
   --color-accent-soft: var(--app-pill);
+  --color-on-accent-soft: var(--app-pill-text);
   --color-on-accent: var(--app-accent-contrast);
+  --color-success: var(--app-success);
+  --color-success-hover: var(--app-success-hover);
+  --color-on-success: var(--app-success-contrast);
+  --color-info: var(--app-info);
+  --color-info-hover: var(--app-info-hover);
+  --color-on-info: var(--app-info-contrast);
+  --color-link: var(--app-link);
+  --color-link-hover: var(--app-link-hover);
   --color-danger: var(--app-danger);
+  --color-danger-hover: var(--app-danger-hover);
   --color-danger-soft: var(--app-danger-surface);
+  --color-danger-text: var(--app-danger-text);
   --color-on-danger: var(--app-danger-contrast);
+  --color-breadcrumb-sep: var(--app-breadcrumb-sep);
+  --color-input-bg: var(--app-input-bg);
+  --color-meter-bg: var(--app-meter-bg);
+  --color-toolbar-bg: var(--workspace-toolbar-bg, var(--app-toolbar-bg));
+  --color-toolbar-bg-start: var(--workspace-toolbar-bg-start, var(--app-toolbar-start));
+  --color-toolbar-bg-end: var(--workspace-toolbar-bg-end, var(--app-toolbar-end));
+  --color-toolbar-text: var(--workspace-toolbar-text, var(--app-toolbar-text));
+  --color-toolbar-text-muted: var(--workspace-toolbar-text-muted, var(--app-toolbar-muted));
+  --color-toolbar-border: var(--workspace-toolbar-border, var(--app-toolbar-border));
+  --color-toolbar-button-bg: var(--workspace-toolbar-button-bg, var(--app-toolbar-button-bg));
+  --color-toolbar-button-hover: var(--workspace-toolbar-button-hover, var(--app-toolbar-button-hover));
+  --size-text-xs: var(--app-text-xs);
   --color-focus: #2563eb;
+  /* Bridge semantic app tokens into Nuxt UI runtime variables */
+  --ui-bg: var(--color-bg);
+  --ui-bg-muted: var(--color-surface);
+  --ui-bg-elevated: var(--color-surface-elevated);
+  --ui-bg-accented: var(--color-accent-soft);
+  --ui-bg-inverted: var(--color-text);
+  --ui-text: var(--color-text);
+  --ui-text-muted: var(--color-text-muted);
+  --ui-text-dimmed: var(--color-text-dimmed);
+  --ui-text-toned: var(--color-text-muted);
+  --ui-text-highlighted: var(--color-text);
+  --ui-text-inverted: var(--color-bg);
+  --ui-border: var(--color-border);
+  --ui-border-muted: var(--color-border-muted);
+  --ui-border-accented: var(--color-focus);
+  --ui-border-inverted: var(--ui-bg-inverted);
   --shadow-sm: 0 8px 24px rgb(15 23 42 / 0.08);
   --shadow-md: 0 16px 42px rgb(15 23 42 / 0.16);
-  color-scheme: light;
-}
-
-:root[data-theme="orange"] {
-  --app-bg: #ffd7ad;
-  --app-bg-start: #ffbe6f;
-  --app-bg-end: #ffe7c9;
-  --app-toolbar-bg: #ff9a38;
-  --app-toolbar-start: #ff8517;
-  --app-toolbar-end: #ffb867;
-  --app-toolbar-text: #1a1009;
-  --app-toolbar-muted: #1a1009;
-  --app-toolbar-border: #ffa24c;
-  --app-toolbar-button-bg: #fff1e2;
-  --app-toolbar-button-hover: #ffe2c8;
-  --app-surface: #fff0e1;
-  --app-card: #fff8f2;
-  --app-border: #f1b98c;
-  --app-text: #3a2316;
-  --app-muted: #7f4f33;
-  --app-subtle: #956142;
-  --app-accent: #ff8a2a;
-  --app-accent-hover: #ff7a10;
-  --app-accent-contrast: #ffffff;
-  --app-link: #d96518;
-  --app-link-hover: #b64a0d;
-  --app-success: #22c55e;
-  --app-success-hover: #16a34a;
-  --app-success-contrast: #052e16;
-  --app-info: #3b82f6;
-  --app-info-hover: #2563eb;
-  --app-info-contrast: #eff6ff;
-  --app-danger: #ef4444;
-  --app-danger-hover: #dc2626;
-  --app-danger-contrast: #fff7f1;
-  --app-danger-surface: #ffe5e2;
-  --app-danger-text: #b42318;
-  --app-pill: #ffe5cf;
-  --app-pill-text: #1a1009;
-  --app-pill-active: #ffb36a;
-  --app-pill-active-text: #1a1009;
-  --app-breadcrumb-sep: #ffd0a3;
-  --app-text-xs: 0.75rem;
-  --app-text-sm: 0.875rem;
-  --app-text-base: 1rem;
-  --app-input-bg: #ffffff;
-  --app-meter-bg: #ffe0c3;
   color-scheme: light;
 }
 
@@ -161,9 +159,9 @@
 }
 
 .app-shell {
-  background-color: var(--app-bg);
-  background-image: linear-gradient(180deg, var(--app-bg-start), var(--app-bg-end));
-  color: var(--app-text);
+  background-color: var(--color-bg);
+  background-image: linear-gradient(180deg, var(--color-bg-start), var(--color-bg-end));
+  color: var(--color-text);
 }
 
 .app-container {
@@ -173,39 +171,39 @@
 }
 
 .app-toolbar {
-  background-color: var(--app-toolbar-bg);
-  background-image: linear-gradient(135deg, var(--app-toolbar-start), var(--app-toolbar-end));
-  border-color: var(--app-toolbar-border);
-  color: var(--app-toolbar-text);
+  background-color: var(--color-toolbar-bg);
+  background-image: linear-gradient(135deg, var(--color-toolbar-bg-start), var(--color-toolbar-bg-end));
+  border-color: var(--color-toolbar-border);
+  color: var(--color-toolbar-text);
 }
 
 .app-toolbar-muted {
-  color: var(--app-toolbar-muted);
+  color: var(--color-toolbar-text-muted);
 }
 
 .app-toolbar-link {
-  color: var(--app-toolbar-text);
+  color: var(--color-toolbar-text);
   font-weight: 700;
 }
 
 .app-toolbar-link:hover {
-  color: var(--app-toolbar-text);
+  color: var(--color-toolbar-text);
 }
 
 .app-toolbar-button {
-  border-color: var(--app-toolbar-border);
-  background-color: var(--app-toolbar-button-bg);
-  color: var(--app-toolbar-text);
+  border-color: var(--color-toolbar-border);
+  background-color: var(--color-toolbar-button-bg);
+  color: var(--color-toolbar-text);
   font-weight: 700;
 }
 
 .app-toolbar-button:hover {
-  background-color: var(--app-toolbar-button-hover);
-  color: var(--app-toolbar-text);
+  background-color: var(--color-toolbar-button-hover);
+  color: var(--color-toolbar-text);
 }
 
 .app-nav-text {
-  font-size: var(--app-text-xs);
+  font-size: var(--size-text-xs);
   font-weight: 700;
   line-height: 1rem;
 }
@@ -221,7 +219,7 @@
 }
 
 .app-border {
-  border-color: var(--app-border);
+  border-color: var(--color-border);
 }
 
 .app-text {
@@ -233,40 +231,40 @@
 }
 
 .app-subtle {
-  color: var(--app-subtle);
+  color: var(--color-text-dimmed);
 }
 
 .app-link {
-  color: var(--app-link);
+  color: var(--color-link);
 }
 
 .app-link:hover {
-  color: var(--app-link-hover);
+  color: var(--color-link-hover);
 }
 
 .app-badge-success {
-  background-color: var(--app-success);
-  color: var(--app-success-contrast);
+  background-color: var(--color-success);
+  color: var(--color-on-success);
 }
 
 .app-badge-danger {
-  background-color: var(--app-danger);
-  color: var(--app-danger-contrast);
+  background-color: var(--color-danger);
+  color: var(--color-on-danger);
 }
 
 .app-badge-neutral {
-  background-color: var(--app-pill);
-  color: var(--app-pill-text);
+  background-color: var(--color-accent-soft);
+  color: var(--color-on-accent-soft);
 }
 
 .app-input {
-  background-color: var(--app-input-bg);
+  background-color: var(--color-input-bg);
   border-color: var(--color-border);
   color: var(--color-text);
 }
 
 .app-input::placeholder {
-  color: var(--app-subtle);
+  color: var(--color-text-dimmed);
 }
 
 .app-button-primary {
@@ -275,7 +273,7 @@
 }
 
 .app-button-primary:hover {
-  background-color: var(--app-accent-hover);
+  background-color: var(--color-accent-hover);
 }
 
 .app-button-secondary {
@@ -285,7 +283,7 @@
 }
 
 .app-button-secondary:hover {
-  background-color: var(--app-surface);
+  background-color: var(--color-surface);
 }
 
 .app-button-danger {
@@ -294,72 +292,72 @@
 }
 
 .app-button-danger:hover {
-  background-color: var(--app-danger-hover);
+  background-color: var(--color-danger-hover);
 }
 
 .app-button-success {
-  background-color: var(--app-success);
-  color: var(--app-success-contrast);
+  background-color: var(--color-success);
+  color: var(--color-on-success);
 }
 
 .app-button-success:hover {
-  background-color: var(--app-success-hover);
+  background-color: var(--color-success-hover);
 }
 
 .app-button-info {
-  background-color: var(--app-info);
-  color: var(--app-info-contrast);
+  background-color: var(--color-info);
+  color: var(--color-on-info);
 }
 
 .app-button-info:hover {
-  background-color: var(--app-info-hover);
+  background-color: var(--color-info-hover);
 }
 
 .app-button-danger-soft {
   background-color: var(--color-danger-soft);
   border: 1px solid var(--color-danger);
-  color: var(--app-danger-text);
+  color: var(--color-danger-text);
 }
 
 .app-button-danger-soft:hover {
-  background-color: var(--app-danger);
-  color: var(--app-danger-contrast);
+  background-color: var(--color-danger);
+  color: var(--color-on-danger);
 }
 
 .app-danger-surface {
-  background-color: var(--app-danger-surface);
-  border-color: var(--app-danger);
-  color: var(--app-danger-text);
+  background-color: var(--color-danger-soft);
+  border-color: var(--color-danger);
+  color: var(--color-danger-text);
 }
 
 .app-danger-text {
-  color: var(--app-danger-text);
+  color: var(--color-danger-text);
 }
 
 .app-pill {
-  background-color: var(--app-pill);
-  color: var(--app-pill-text);
+  background-color: var(--color-accent-soft);
+  color: var(--color-on-accent-soft);
 }
 
 .app-pill-active {
-  background-color: var(--app-info);
-  color: var(--app-info-contrast);
+  background-color: var(--color-info);
+  color: var(--color-on-info);
 }
 
 .app-pill-active:hover {
-  background-color: var(--app-info-hover);
-  color: var(--app-info-contrast);
+  background-color: var(--color-info-hover);
+  color: var(--color-on-info);
 }
 
 .app-breadcrumb {
-  color: var(--app-subtle);
+  color: var(--color-text-dimmed);
   font-size: inherit;
   font-weight: inherit;
   line-height: inherit;
 }
 
 .app-breadcrumb a {
-  color: var(--app-text);
+  color: var(--color-text);
 }
 
 .app-breadcrumb * {
@@ -369,17 +367,17 @@
 }
 
 .app-breadcrumb a:hover {
-  color: var(--app-link-hover);
+  color: var(--color-link-hover);
 }
 
 .app-breadcrumb svg {
-  color: var(--app-breadcrumb-sep);
+  color: var(--color-breadcrumb-sep);
 }
 
 .app-breadcrumb [aria-current="page"],
 .app-breadcrumb a[aria-current="page"] {
-  background-color: var(--app-info);
-  color: var(--app-info-contrast);
+  background-color: var(--color-info);
+  color: var(--color-on-info);
   padding: 0.25rem 0.5rem;
   border-radius: 9999px;
   display: inline-flex;
@@ -387,13 +385,13 @@
 }
 
 .app-breadcrumb [aria-current="page"] a {
-  color: var(--app-info-contrast);
+  color: var(--color-on-info);
 }
 
 .app-pill-active-neutral {
-  background-color: var(--app-card);
-  border: 1px solid var(--app-border);
-  color: var(--app-text);
+  background-color: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
   font-weight: 600;
 }
 
@@ -407,11 +405,11 @@
 }
 
 .app-meter-bg {
-  background-color: var(--app-meter-bg);
+  background-color: var(--color-meter-bg);
 }
 
 body {
-  background-color: var(--app-bg);
+  background-color: var(--color-bg);
 }
 
 .app-focus-ring:focus-visible,
@@ -427,7 +425,7 @@ body {
 }
 
 .app-top-tab {
-  color: var(--app-toolbar-text);
+  color: var(--color-toolbar-text);
   background-color: transparent;
   border: 1px solid transparent;
   font-weight: 700;
@@ -435,13 +433,13 @@ body {
 }
 
 .app-top-tab:hover {
-  background-color: color-mix(in srgb, var(--app-toolbar-button-bg) 84%, transparent);
+  background-color: color-mix(in srgb, var(--color-toolbar-button-bg) 84%, transparent);
 }
 
 .app-top-tab-active {
-  background-color: var(--app-toolbar-button-bg);
-  border-color: var(--app-toolbar-border);
-  color: var(--app-toolbar-text);
+  background-color: var(--color-toolbar-button-bg);
+  border-color: var(--color-toolbar-border);
+  color: var(--color-toolbar-text);
   box-shadow: inset 0 -2px 0 0 var(--color-accent);
 }
 
@@ -462,7 +460,7 @@ body {
 }
 
 .app-divider {
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--color-border-muted);
 }
 
 .app-avatar {
@@ -476,8 +474,45 @@ body {
   color: var(--color-text);
 }
 
+.app-switcher-row-title {
+  color: var(--color-text);
+}
+
+.app-switcher-row-meta {
+  color: var(--color-text-muted);
+}
+
 .app-switcher-row:hover {
   background-color: color-mix(in srgb, var(--color-accent-soft) 65%, transparent);
+}
+
+.app-switcher-row-active {
+  background-color: color-mix(in srgb, var(--color-accent-soft) 72%, var(--color-surface-elevated));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 22%, var(--color-border));
+  color: var(--app-switcher-active-text, var(--color-text));
+}
+
+.app-switcher-row-active:hover {
+  filter: saturate(1.03) brightness(0.98);
+}
+
+.app-switcher-row-active .app-switcher-row-title {
+  color: var(--app-switcher-active-text, var(--color-text));
+}
+
+.app-switcher-row-active .app-switcher-row-meta {
+  color: var(--app-switcher-active-muted, var(--color-text-muted));
+}
+
+.app-switcher-row-check {
+  color: var(--app-switcher-active-text, currentColor);
+}
+
+.app-switcher-row-color-indicator {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-color: color-mix(in srgb, var(--app-switcher-active-text, #fff) 22%, transparent);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.15);
 }
 
 .app-switcher-row:disabled {
@@ -546,12 +581,12 @@ body {
 }
 
 .app-markdown a {
-  color: var(--app-link);
+  color: var(--color-link);
   text-decoration: underline;
 }
 
 .app-markdown a:hover {
-  color: var(--app-link-hover);
+  color: var(--color-link-hover);
 }
 
 .app-markdown code {
