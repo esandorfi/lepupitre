@@ -51,6 +51,13 @@ pub fn project_create(
 }
 
 #[tauri::command]
+pub fn project_ensure_training(app: tauri::AppHandle, profile_id: String) -> Result<String, String> {
+    db::ensure_profile_exists(&app, &profile_id)?;
+    let conn = db::open_profile(&app, &profile_id)?;
+    ensure_training_project(&conn)
+}
+
+#[tauri::command]
 pub fn project_get_active(
     app: tauri::AppHandle,
     profile_id: String,
@@ -59,8 +66,10 @@ pub fn project_get_active(
     let conn = db::open_profile(&app, &profile_id)?;
 
     if let Some(active_id) = get_active_project_id(&conn)? {
-        if let Some(active) = fetch_project_by_id(&conn, &active_id)? {
-            return Ok(Some(active));
+        if !is_training_project(&conn, &active_id)? {
+            if let Some(active) = fetch_project_by_id(&conn, &active_id)? {
+                return Ok(Some(active));
+            }
         }
     }
 
@@ -85,6 +94,7 @@ pub fn project_list(
         .prepare(
             "SELECT id, title, audience, goal, duration_target_sec, talk_number, stage, created_at, updated_at
              FROM talk_projects
+             WHERE COALESCE(is_training, 0) = 0
              ORDER BY updated_at DESC",
         )
         .map_err(|e| format!("prepare: {e}"))?;
@@ -127,15 +137,19 @@ pub fn project_set_active(
     db::ensure_profile_exists(&app, &profile_id)?;
     let conn = db::open_profile(&app, &profile_id)?;
 
-    let exists: i64 = conn
+    let row: Option<i64> = conn
         .query_row(
-            "SELECT COUNT(*) FROM talk_projects WHERE id = ?1",
+            "SELECT COALESCE(is_training, 0) FROM talk_projects WHERE id = ?1",
             params![project_id],
             |row| row.get(0),
         )
+        .optional()
         .map_err(|e| format!("project_check: {e}"))?;
-    if exists == 0 {
+    let Some(is_training) = row else {
         return Err("project_not_found".to_string());
+    };
+    if is_training > 0 {
+        return Err("project_training_not_activatable".to_string());
     }
 
     set_active_project_id(&conn, &project_id)?;
@@ -179,6 +193,7 @@ fn fetch_latest_project(conn: &rusqlite::Connection) -> Result<Option<ProjectSum
         .prepare(
             "SELECT id, title, audience, goal, duration_target_sec, talk_number, stage, created_at, updated_at
              FROM talk_projects
+             WHERE COALESCE(is_training, 0) = 0
              ORDER BY updated_at DESC
              LIMIT 1",
         )
@@ -227,10 +242,52 @@ fn set_active_project_id(conn: &rusqlite::Connection, project_id: &str) -> Resul
 fn next_talk_number(conn: &rusqlite::Connection) -> Result<i64, String> {
     let max_value: i64 = conn
         .query_row(
-            "SELECT COALESCE(MAX(talk_number), 0) FROM talk_projects",
+            "SELECT COALESCE(MAX(talk_number), 0)
+             FROM talk_projects
+             WHERE COALESCE(is_training, 0) = 0",
             [],
             |row| row.get(0),
         )
         .map_err(|e| format!("talk_number_max: {e}"))?;
     Ok(max_value + 1)
+}
+
+fn ensure_training_project(conn: &rusqlite::Connection) -> Result<String, String> {
+    if let Some(id) = find_training_project_id(conn)? {
+        return Ok(id);
+    }
+
+    let id = ids::new_id("proj");
+    let now = time::now_rfc3339();
+
+    conn.execute(
+        "INSERT INTO talk_projects (id, title, audience, goal, duration_target_sec, talk_number, stage, created_at, updated_at, is_training)
+         VALUES (?1, ?2, NULL, NULL, NULL, NULL, ?3, ?4, ?4, 1)",
+        params![id, "Training", "draft", now],
+    )
+    .map_err(|e| format!("training_insert: {e}"))?;
+
+    Ok(id)
+}
+
+fn find_training_project_id(conn: &rusqlite::Connection) -> Result<Option<String>, String> {
+    conn.query_row(
+        "SELECT id FROM talk_projects WHERE COALESCE(is_training, 0) = 1 LIMIT 1",
+        [],
+        |row| row.get::<_, String>(0),
+    )
+    .optional()
+    .map_err(|e| format!("training_find: {e}"))
+}
+
+fn is_training_project(conn: &rusqlite::Connection, project_id: &str) -> Result<bool, String> {
+    let value = conn
+        .query_row(
+            "SELECT COALESCE(is_training, 0) FROM talk_projects WHERE id = ?1",
+            params![project_id],
+            |row| row.get::<_, i64>(0),
+        )
+        .optional()
+        .map_err(|e| format!("training_check: {e}"))?;
+    Ok(value.unwrap_or(0) > 0)
 }

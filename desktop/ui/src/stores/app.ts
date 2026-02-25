@@ -76,6 +76,7 @@ const state = reactive({
   hasBootstrapped: false,
   isBootstrapping: false,
   activeProject: null as ProjectSummary | null,
+  trainingProjectId: null as string | null,
   projects: [] as ProjectListItem[],
   dailyQuest: null as QuestDaily | null,
   recentAttempts: [] as QuestAttemptSummary[],
@@ -96,6 +97,7 @@ async function loadProfiles() {
   state.profiles = profiles;
   const active = profiles.find((profile) => profile.is_active);
   state.activeProfileId = active?.id ?? null;
+  state.trainingProjectId = null;
 }
 
 async function loadProjects() {
@@ -110,6 +112,23 @@ async function loadProjects() {
     { profileId: state.activeProfileId }
   );
   state.projects = projects;
+}
+
+async function ensureTrainingProject() {
+  if (!state.activeProfileId) {
+    throw new Error("no_active_profile");
+  }
+  if (state.trainingProjectId) {
+    return state.trainingProjectId;
+  }
+  const id = await invokeChecked(
+    "project_ensure_training",
+    ProfileIdPayloadSchema,
+    IdSchema,
+    { profileId: state.activeProfileId }
+  );
+  state.trainingProjectId = id;
+  return id;
 }
 
 async function createProfile(name: string) {
@@ -195,15 +214,7 @@ async function loadDailyQuest() {
     state.dailyQuest = null;
     return;
   }
-  const quest = await invokeChecked(
-    "quest_get_daily",
-    QuestGetDailyPayloadSchema,
-    QuestDailySchema,
-    {
-      profileId: state.activeProfileId,
-      projectId: state.activeProject.id,
-    }
-  );
+  const quest = await getDailyQuestForProject(state.activeProject.id);
   state.dailyQuest = quest;
 }
 
@@ -228,6 +239,21 @@ async function getQuestAttempts(projectId: string, limit = 10) {
       profileId: state.activeProfileId,
       projectId,
       limit,
+    }
+  );
+}
+
+async function getDailyQuestForProject(projectId: string): Promise<QuestDaily> {
+  if (!state.activeProfileId) {
+    throw new Error("no_active_profile");
+  }
+  return invokeChecked(
+    "quest_get_daily",
+    QuestGetDailyPayloadSchema,
+    QuestDailySchema,
+    {
+      profileId: state.activeProfileId,
+      projectId,
     }
   );
 }
@@ -273,13 +299,20 @@ async function submitQuestText(questCode: string, text: string) {
   if (!state.activeProfileId || !state.activeProject) {
     throw new Error("quest_context_missing");
   }
+  return submitQuestTextForProject(state.activeProject.id, questCode, text);
+}
+
+async function submitQuestTextForProject(projectId: string, questCode: string, text: string) {
+  if (!state.activeProfileId) {
+    throw new Error("quest_context_missing");
+  }
   const attemptId = await invokeChecked(
     "quest_submit_text",
     QuestSubmitTextPayloadSchema,
     IdSchema,
     {
       profileId: state.activeProfileId,
-      projectId: state.activeProject.id,
+      projectId,
       questCode,
       text,
     }
@@ -296,13 +329,27 @@ async function submitQuestAudio(payload: {
   if (!state.activeProfileId || !state.activeProject) {
     throw new Error("quest_context_missing");
   }
+  return submitQuestAudioForProject(state.activeProject.id, payload);
+}
+
+async function submitQuestAudioForProject(
+  projectId: string,
+  payload: {
+    questCode: string;
+    audioArtifactId: string;
+    transcriptId?: string | null;
+  }
+) {
+  if (!state.activeProfileId) {
+    throw new Error("quest_context_missing");
+  }
   const attemptId = await invokeChecked(
     "quest_submit_audio",
     QuestSubmitAudioPayloadSchema,
     IdSchema,
     {
       profileId: state.activeProfileId,
-      projectId: state.activeProject.id,
+      projectId,
       questCode: payload.questCode,
       audioArtifactId: payload.audioArtifactId,
       transcriptId: payload.transcriptId ?? null,
@@ -619,11 +666,15 @@ export const appStore = {
   loadActiveProject,
   createProject,
   setActiveProject,
+  ensureTrainingProject,
   loadDailyQuest,
   loadRecentAttempts,
+  getDailyQuestForProject,
   getQuestAttempts,
   submitQuestText,
+  submitQuestTextForProject,
   submitQuestAudio,
+  submitQuestAudioForProject,
   getQuestByCode,
   getQuestReport,
   getTalkNumber,

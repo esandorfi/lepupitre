@@ -83,6 +83,7 @@ pub fn open_profile(app: &tauri::AppHandle, profile_id: &str) -> Result<Connecti
     }
 
     ensure_outline_table(&mut conn)?;
+    ensure_talk_training_flag(&mut conn)?;
     ensure_talk_numbers(&mut conn)?;
     ensure_runs_nullable(&mut conn)?;
 
@@ -149,17 +150,26 @@ fn ensure_talk_numbers(conn: &mut Connection) -> Result<(), String> {
 
     let max_existing: i64 = conn
         .query_row(
-            "SELECT COALESCE(MAX(talk_number), 0) FROM talk_projects WHERE talk_number > 0",
+            "SELECT COALESCE(MAX(talk_number), 0)
+             FROM talk_projects
+             WHERE talk_number > 0 AND COALESCE(is_training, 0) = 0",
             [],
             |row| row.get(0),
         )
         .map_err(|e| format!("talk_number_max: {e}"))?;
 
+    conn.execute(
+        "UPDATE talk_projects SET talk_number = NULL WHERE COALESCE(is_training, 0) = 1",
+        [],
+    )
+    .map_err(|e| format!("talk_number_training_clear: {e}"))?;
+
     let mut next_number = max_existing + 1;
     let mut stmt = conn
         .prepare(
             "SELECT id FROM talk_projects
-             WHERE talk_number IS NULL OR talk_number <= 0
+             WHERE (talk_number IS NULL OR talk_number <= 0)
+               AND COALESCE(is_training, 0) = 0
              ORDER BY created_at ASC",
         )
         .map_err(|e| format!("talk_number_prepare: {e}"))?;
@@ -176,6 +186,27 @@ fn ensure_talk_numbers(conn: &mut Connection) -> Result<(), String> {
         .map_err(|e| format!("talk_number_update: {e}"))?;
         next_number += 1;
     }
+
+    Ok(())
+}
+
+fn ensure_talk_training_flag(conn: &mut Connection) -> Result<(), String> {
+    let has_column = db_helpers::column_exists(conn, "talk_projects", "is_training")?;
+    if !has_column {
+        conn.execute(
+            "ALTER TABLE talk_projects ADD COLUMN is_training INTEGER NOT NULL DEFAULT 0",
+            [],
+        )
+        .map_err(|e| format!("is_training_add: {e}"))?;
+    }
+
+    conn.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_talk_projects_one_training
+         ON talk_projects(is_training)
+         WHERE is_training = 1",
+        [],
+    )
+    .map_err(|e| format!("is_training_index: {e}"))?;
 
     Ok(())
 }

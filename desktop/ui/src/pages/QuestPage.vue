@@ -11,14 +11,19 @@ const route = useRoute();
 const router = useRouter();
 
 const questCode = computed(() => String(route.params.questCode || ""));
+const routeProjectId = computed(() => String(route.query.projectId || ""));
+const contextProjectId = computed(() => routeProjectId.value || appStore.state.activeProject?.id || "");
 const backLink = computed(() => {
+  if (route.query.from === "training") {
+    return "/training";
+  }
   if (route.query.projectId) {
-    return `/talks/${route.query.projectId}`;
+    return `/talks/${route.query.projectId}/train`;
   }
   if (appStore.state.activeProject?.id) {
-    return `/talks/${appStore.state.activeProject.id}`;
+    return `/talks/${appStore.state.activeProject.id}/train`;
   }
-  return "/";
+  return "/training";
 });
 const displayQuestCode = computed(() => {
   const code = questCode.value;
@@ -69,7 +74,7 @@ async function loadQuest() {
   isLoading.value = true;
   try {
     await bootstrap();
-    if (!appStore.state.activeProfileId || !appStore.state.activeProject) {
+    if (!appStore.state.activeProfileId || !contextProjectId.value) {
       error.value = t("home.quest_empty");
       return;
     }
@@ -98,7 +103,11 @@ async function submit() {
   isSubmitting.value = true;
   error.value = null;
   try {
-    const attempt = await appStore.submitQuestText(quest.value.code, text.value.trim());
+    const attempt = await appStore.submitQuestTextForProject(
+      contextProjectId.value,
+      quest.value.code,
+      text.value.trim()
+    );
     const feedbackId = await appStore.analyzeAttempt(attempt);
     await router.push(`/feedback/${feedbackId}`);
   } catch (err) {
@@ -116,7 +125,7 @@ async function handleAudioSaved(payload: { artifactId: string }) {
   transcriptId.value = null;
   audioArtifactId.value = payload.artifactId;
   try {
-    const attempt = await appStore.submitQuestAudio({
+    const attempt = await appStore.submitQuestAudioForProject(contextProjectId.value, {
       questCode: quest.value.code,
       audioArtifactId: payload.artifactId,
       transcriptId: null,
@@ -134,7 +143,7 @@ async function handleTranscribed(payload: { transcriptId: string }) {
   error.value = null;
   transcriptId.value = payload.transcriptId;
   try {
-    const attempt = await appStore.submitQuestAudio({
+    const attempt = await appStore.submitQuestAudioForProject(contextProjectId.value, {
       questCode: quest.value.code,
       audioArtifactId: audioArtifactId.value,
       transcriptId: payload.transcriptId,
@@ -163,7 +172,7 @@ async function requestFeedback() {
 }
 
 async function skipTranscription() {
-  await router.push("/");
+  await router.push(backLink.value);
 }
 
 onMounted(loadQuest);

@@ -66,8 +66,12 @@ fn dir_size(path: &Path) -> u64 {
 }
 
 fn talk_count(conn: &rusqlite::Connection) -> u64 {
-    conn.query_row("SELECT COUNT(*) FROM talk_projects", [], |row| row.get::<_, u64>(0))
-        .unwrap_or(0)
+    conn.query_row(
+        "SELECT COUNT(*) FROM talk_projects WHERE COALESCE(is_training, 0) = 0",
+        [],
+        |row| row.get::<_, u64>(0),
+    )
+    .unwrap_or(0)
 }
 
 #[tauri::command]
