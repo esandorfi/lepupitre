@@ -10,8 +10,8 @@
 ## Decisions locked
 - **ASR engine**: whisper.cpp.
 - **Integration**: sidecar process (preferred over FFI for packaging + maintainability).
-- **Default model**: tiny bundled.
-- **Upgrade model**: base downloadable in Settings.
+- **Installer payload**: sidecar bundled by default.
+- **Model policy**: no model bundled; tiny/base downloadable in Settings.
 - **Modes**:
   - Base: Live + Final by default.
   - Tiny: Auto benchmark -> Live + Final if fast enough; else Final only.
@@ -107,8 +107,7 @@
 
 ### MR6 — Model management + downloads
 **Goals**
-- Bundled tiny model.
-- Download base model with checksum.
+- Download tiny/base models with checksum.
 - Auto benchmark for tiny to decide mode.
 
 **Deliverables**

@@ -15,8 +15,9 @@ We also need a model lifecycle that starts lightweight (tiny) and allows upgrade
    - The app keeps the model loaded for the session to avoid re-init overhead.
 
 2) **Model policy**:
-   - Bundle **tiny** model for first-run.
-   - Offer **base** as a user-initiated download (opt-in network).
+   - Bundle the ASR sidecar binary in installer builds.
+   - Do not bundle whisper models in installers.
+   - Offer **tiny** and **base** as user-initiated downloads (opt-in network).
    - Store models in app data with checksums and version metadata.
    - Storage path: `AppDataDir/LePupitre/models/whisper`
      - macOS: `~/Library/Application Support/LePupitre/models/whisper`
@@ -40,11 +41,12 @@ We also need a model lifecycle that starts lightweight (tiny) and allows upgrade
 
 ## Consequences
 - Sidecar adds an extra binary per OS/arch; packaging and updates are required.
+- Fresh installs require an explicit model download before first transcription.
 - Model downloads require explicit user action and checksum validation.
 - Event versioning adds a small overhead but protects future changes.
 
 ## Divergence
-**Mostly resolved**. The sidecar now runs whisper.cpp (via `whisper-rs`), live + final decoding are wired, and tiny auto-benchmarking is implemented.
+**Aligned**. The sidecar runs whisper.cpp (via `whisper-rs`) and is bundled in installers. Models are managed in app data and downloaded explicitly by users.
 
 **Remaining work**
 - Tune streaming cadence and commit heuristics with real model output.

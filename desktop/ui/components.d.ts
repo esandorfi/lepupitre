@@ -23,7 +23,7 @@ declare module 'vue' {
     SecurityProbe: typeof import('./src/components/SecurityProbe.vue')['default']
     TalkStepPageShell: typeof import('./src/components/TalkStepPageShell.vue')['default']
     TalkStepTabs: typeof import('./src/components/TalkStepTabs.vue')['default']
-    UBreadcrumb: typeof import('./../node_modules/.pnpm/@nuxt+ui@4.4.0_@tiptap+extensions@3.20.0_@tiptap+core@3.20.0_@tiptap+pm@3.20.0__@tiptap_de8bba3212ab9ac0762d9b96edb9e4e2/node_modules/@nuxt/ui/dist/runtime/components/Breadcrumb.vue')['default']
+    UBreadcrumb: typeof import('./../node_modules/.pnpm/@nuxt+ui@4.4.0_@tiptap+exte_de8bba3212ab9ac0762d9b96edb9e4e2/node_modules/@nuxt/ui/dist/runtime/components/Breadcrumb.vue')['default']
     WorkspaceSwitcher: typeof import('./src/components/WorkspaceSwitcher.vue')['default']
   }
 }

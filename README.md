@@ -31,6 +31,36 @@ Specs remain the source of reference:
 - Tauri v2 toolchain (per OS)
 - Local SQLite
 
+### Install prerequisites (Windows/macOS)
+Follow official Tauri v2 prerequisites first: https://v2.tauri.app/start/prerequisites/
+
+Windows (PowerShell):
+- `winget install --id Rustlang.Rustup -e`
+- `winget install --id OpenJS.NodeJS.LTS -e`
+- `winget install --id Microsoft.VisualStudio.2022.BuildTools -e`
+- Open a new terminal, then:
+  - `rustup default stable`
+  - `corepack enable`
+  - `corepack prepare pnpm@latest --activate`
+
+macOS (Terminal):
+- `xcode-select --install`
+- Install Homebrew if missing: https://brew.sh
+- `brew install rustup-init node`
+- `rustup-init -y`
+- `source "$HOME/.cargo/env"`
+- `corepack enable`
+- `corepack prepare pnpm@latest --activate`
+
+Quick checks:
+- `rustc --version`
+- `node --version`
+- `pnpm --version`
+
+Install repo deps and run:
+- `pnpm -C desktop install`
+- `pnpm -C desktop dev`
+
 ## Recommended path (newcomer)
 1. Read `README.md` (this document).
 2. Read `README_TECH.md` (architecture details).

@@ -54,7 +54,10 @@ pub fn project_create(
 }
 
 #[tauri::command]
-pub fn project_ensure_training(app: tauri::AppHandle, profile_id: String) -> Result<String, String> {
+pub fn project_ensure_training(
+    app: tauri::AppHandle,
+    profile_id: String,
+) -> Result<String, String> {
     db::ensure_profile_exists(&app, &profile_id)?;
     let conn = db::open_profile(&app, &profile_id)?;
     ensure_training_project(&conn)

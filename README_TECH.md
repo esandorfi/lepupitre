@@ -52,9 +52,33 @@ Shared exit criteria: the “hello quest” app can record a 16k mono WAV into a
 - tests: `pnpm -C desktop ui:test`
 
 ## 6.1 Local dev quickstart
-- Install deps: `pnpm -C desktop install`
-- Run desktop app (Tauri): `pnpm -C desktop dev`
-- Run UI only (browser): `pnpm -C desktop ui:dev`
+1. Install platform prerequisites.
+   - Official Tauri v2 prerequisites (required): https://v2.tauri.app/start/prerequisites/
+   - Windows (PowerShell):
+     - `winget install --id Rustlang.Rustup -e`
+     - `winget install --id OpenJS.NodeJS.LTS -e`
+     - `winget install --id Microsoft.VisualStudio.2022.BuildTools -e`
+     - Open a new terminal, then:
+       - `rustup default stable`
+       - `corepack enable`
+       - `corepack prepare pnpm@latest --activate`
+   - macOS (Terminal):
+     - `xcode-select --install`
+     - Install Homebrew if missing: https://brew.sh
+     - `brew install rustup-init node`
+     - `rustup-init -y`
+     - `source "$HOME/.cargo/env"`
+     - `corepack enable`
+     - `corepack prepare pnpm@latest --activate`
+2. Verify toolchain.
+   - `rustc --version`
+   - `node --version`
+   - `pnpm --version`
+3. Install project dependencies.
+   - `pnpm -C desktop install`
+4. Run the app.
+   - Desktop app (Tauri): `pnpm -C desktop dev`
+   - UI only (browser): `pnpm -C desktop ui:dev`
 
 ## Minimal E2E
 - Profile creation -> project creation -> text quest submission -> feedback displayed.
@@ -114,45 +138,23 @@ Each step must preserve local data compatibility.
 
 ## ASR sidecar (whisper.cpp)
 
-## Dev ASR sidecar (local)
-- Build the sidecar locally (no copy into repo): `./scripts/build-asr-sidecar.sh`
-- Configure env vars:
-  - `./scripts/dev-asr-env.sh /path/to/ggml-tiny.bin`
-- Run: `pnpm -C desktop dev`
+- Installer builds (`.dmg`, `.msi`, `.exe`) ship the ASR sidecar by default.
+- Whisper models are not bundled; users download a model explicitly from Settings (`tiny` or `base`).
 
+## Dev ASR sidecar (local)
+- Build the sidecar locally: `./scripts/build-asr-sidecar.sh`
+- Configure env vars:
+  - `LEPUPITRE_ASR_SIDECAR=/absolute/path/to/lepupitre-asr`
+  - `LEPUPITRE_ASR_MODEL_PATH=/absolute/path/to/ggml-*.bin`
+- Or use helper script: `./scripts/dev-asr-env.sh /path/to/ggml-tiny.bin`
+- Run app: `pnpm -C desktop dev`
+
+## Packaging and validation
+- Copy the built sidecar into package resources: `./scripts/build-asr-sidecar.sh --copy`
+- Verify sidecar binary is real (not placeholder): `node scripts/verify-asr-sidecar.mjs`
+- `pnpm -C desktop build` runs sidecar verification automatically before `tauri build`.
 
 ## ASR troubleshooting
-- `sidecar_missing`: the bundled sidecar is missing; rebuild the app or ensure `desktop/src-tauri/sidecar/lepupitre-asr` exists (use `./scripts/build-asr-sidecar.sh --copy`).
-- `model_missing`: the selected model is not installed; download it in Settings or set `LEPUPITRE_ASR_MODEL_PATH` in dev.
-- `sidecar_init_timeout` / `sidecar_decode_timeout`: the sidecar is slow or unresponsive; try a smaller model or shorter audio.
-
-
-The app uses a bundled whisper.cpp sidecar binary for live transcription. By default it is resolved from the app resources; in dev you can override the path with environment variables.
-
-### Dev overrides
-
-- `LEPUPITRE_ASR_SIDECAR=/absolute/path/to/lepupitre-asr`
-- `LEPUPITRE_ASR_MODEL_PATH=/absolute/path/to/ggml-*.bin`
-
-### Packaging
-
-### Build the sidecar
-
-The Rust sidecar embeds whisper.cpp via `whisper-rs` (requires `cmake` and a C++ toolchain). To build it, run:
-
-```
-./scripts/build-asr-sidecar.sh
-```
-
-For release packaging, copy the binary into `desktop/src-tauri/sidecar/` with:
-
-```
-./scripts/build-asr-sidecar.sh --copy
-```
-
-This copies the binary into `desktop/src-tauri/sidecar/` for packaging.
-
-
-Place the built sidecar binary in `desktop/src-tauri/sidecar/` before running `pnpm -C desktop tauri build`. Tauri will bundle the `sidecar/lepupitre-asr` resource.
-
-Note: placeholder sidecar files are checked in to keep builds green. Replace them with real binaries before release.
+- `sidecar_missing`: installation is incomplete/corrupted; reinstall the app.
+- `model_missing`: selected model is not installed; download it in Settings.
+- `sidecar_init_timeout` / `sidecar_decode_timeout`: sidecar is slow or unresponsive; try a smaller model or shorter audio.

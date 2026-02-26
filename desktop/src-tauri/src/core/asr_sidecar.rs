@@ -20,6 +20,29 @@ fn sidecar_basename() -> &'static str {
     }
 }
 
+fn sidecar_candidate_paths(resource_dir: Option<&Path>, exe_dir: Option<&Path>) -> Vec<PathBuf> {
+    let basename = sidecar_basename();
+    let mut candidates = Vec::new();
+
+    if let Some(resource_dir) = resource_dir {
+        // Bundled resources in Tauri keep the sidecar under the `sidecar` subdirectory.
+        candidates.push(resource_dir.join("sidecar").join(basename));
+        // Backward-compatible fallback for older layouts.
+        candidates.push(resource_dir.join(basename));
+    }
+
+    if let Some(exe_dir) = exe_dir {
+        candidates.push(exe_dir.join(basename));
+
+        // Dev fallback: target/debug -> target -> src-tauri/sidecar
+        if let Some(dev_root) = exe_dir.parent().and_then(|parent| parent.parent()) {
+            candidates.push(dev_root.join("sidecar").join(basename));
+        }
+    }
+
+    candidates
+}
+
 pub fn resolve_sidecar_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     if let Ok(env_path) = std::env::var("LEPUPITRE_ASR_SIDECAR") {
         let candidate = PathBuf::from(env_path);
@@ -31,26 +54,12 @@ pub fn resolve_sidecar_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
         .path()
         .resource_dir()
         .map_err(|e| format!("sidecar_resource_dir: {e}"))?;
-    let resource_path = resource_dir.join(sidecar_basename());
-    if resource_path.exists() {
-        return Ok(resource_path);
-    }
-
     let exe_dir = std::env::current_exe()
         .ok()
         .and_then(|path| path.parent().map(|dir| dir.to_path_buf()));
-    if let Some(dir) = exe_dir {
-        let exe_path = dir.join(sidecar_basename());
-        if exe_path.exists() {
-            return Ok(exe_path);
-        }
-
-        // Dev fallback: target/debug -> target -> src-tauri/sidecar
-        if let Some(dev_root) = dir.parent().and_then(|parent| parent.parent()) {
-            let dev_path = dev_root.join("sidecar").join(sidecar_basename());
-            if dev_path.exists() {
-                return Ok(dev_path);
-            }
+    for candidate in sidecar_candidate_paths(Some(resource_dir.as_path()), exe_dir.as_deref()) {
+        if candidate.exists() {
+            return Ok(candidate);
         }
     }
 
@@ -301,5 +310,45 @@ impl SidecarDecoder {
 impl Drop for SidecarDecoder {
     fn drop(&mut self) {
         let _ = self.send_request(SidecarRequest::Shutdown);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    #[test]
+    fn sidecar_candidates_prioritize_packaged_resource_subdir() {
+        let resource_dir = PathBuf::from("app").join("resources");
+        let exe_dir = PathBuf::from("app").join("target").join("debug");
+        let candidates =
+            sidecar_candidate_paths(Some(resource_dir.as_path()), Some(exe_dir.as_path()));
+        assert_eq!(
+            candidates,
+            vec![
+                resource_dir.join("sidecar").join(sidecar_basename()),
+                resource_dir.join(sidecar_basename()),
+                exe_dir.join(sidecar_basename()),
+                PathBuf::from("app")
+                    .join("sidecar")
+                    .join(sidecar_basename()),
+            ]
+        );
+    }
+
+    #[test]
+    fn sidecar_candidates_include_dev_path_when_exe_is_target_debug() {
+        let exe_dir = PathBuf::from("repo").join("target").join("debug");
+        let candidates = sidecar_candidate_paths(None, Some(exe_dir.as_path()));
+        assert_eq!(
+            candidates,
+            vec![
+                exe_dir.join(sidecar_basename()),
+                PathBuf::from("repo")
+                    .join("sidecar")
+                    .join(sidecar_basename()),
+            ]
+        );
     }
 }

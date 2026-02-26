@@ -139,6 +139,10 @@ fn seed_quests(conn: &mut Connection) -> Result<(), String> {
 }
 
 fn ensure_talk_numbers(conn: &mut Connection) -> Result<(), String> {
+    // `is_training` was introduced after the initial profile schema.
+    // Ensure the flag exists before using it in talk numbering queries.
+    ensure_talk_training_flag(conn)?;
+
     let has_column = db_helpers::column_exists(conn, "talk_projects", "talk_number")?;
     if !has_column {
         conn.execute(
