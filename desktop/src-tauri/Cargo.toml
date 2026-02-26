@@ -1,6 +1,6 @@
 [package]
 name = "lepupitre"
-version = "0.2.5"
+version = "0.2.6"
 description = "Local-first coach for preparing technical talks with daily quests, Boss Run audio sessions, actionable feedback, and peer review packs."
 authors = ["you"]
 edition = "2021"

@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.2.6 - 2026-02-26
+Summary: 1 features, 1 fixes.
+Comparing from v0.2.5 to HEAD.
+
+### Features
+- feat: sidebar - feature flag on
+
+### Fixes
+- fix(ci): create sidecar placeholders before Rust clippy/tests in Linux workflow
+
 ## v0.2.5 - 2026-02-26
 Summary: 7 features, 1 docs.
 Comparing from v0.2.4 to HEAD.
