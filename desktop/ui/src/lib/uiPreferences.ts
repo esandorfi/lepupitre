@@ -10,7 +10,7 @@ export type UiSettings = {
 const STORAGE_KEY = "lepupitre_ui_settings_v1";
 
 const defaultSettings: UiSettings = {
-  primaryNavMode: "top",
+  primaryNavMode: "sidebar-icon",
   sidebarPinned: false,
 };
 

@@ -39,10 +39,10 @@ describe("uiPreferences", () => {
     Reflect.deleteProperty(globalThis, "localStorage");
   });
 
-  it("defaults to top navigation mode", async () => {
+  it("defaults to sidebar navigation mode", async () => {
     const { useUiPreferences } = await import("./uiPreferences");
     const { settings } = useUiPreferences();
-    expect(settings.value.primaryNavMode).toBe("top");
+    expect(settings.value.primaryNavMode).toBe("sidebar-icon");
     expect(settings.value.sidebarPinned).toBe(false);
   });
 
