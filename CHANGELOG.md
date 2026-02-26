@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.2.5 - 2026-02-26
+Summary: 7 features, 1 docs.
+Comparing from v0.2.4 to HEAD.
+
+### Features
+- feat: update asr
+- feat: update asr generation
+- feat: quest
+- feat: ui talk and quest
+- feat: ui split talk
+- feat: talk count
+- feat(ui): adapt workspace
+
+### Docs
+- docs: update design system
+
 ## v0.2.4 - 2026-02-24
 Summary: 3 chores, 1 ci.
 Comparing from v0.2.2 to HEAD.
