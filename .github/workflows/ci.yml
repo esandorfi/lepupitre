@@ -55,6 +55,17 @@ jobs:
         with:
           components: rustfmt, clippy
 
+      - name: Ensure sidecar resource placeholders for Rust checks
+        run: |
+          mkdir -p desktop/src-tauri/sidecar
+          if [ ! -f desktop/src-tauri/sidecar/lepupitre-asr ]; then
+            printf "CI placeholder sidecar for Rust checks\n" > desktop/src-tauri/sidecar/lepupitre-asr
+            chmod +x desktop/src-tauri/sidecar/lepupitre-asr
+          fi
+          if [ ! -f desktop/src-tauri/sidecar/lepupitre-asr.exe ]; then
+            printf "CI placeholder sidecar for Rust checks\n" > desktop/src-tauri/sidecar/lepupitre-asr.exe
+          fi
+
       - name: Rust fmt
         run: cargo fmt --all -- --check
         working-directory: desktop/src-tauri
