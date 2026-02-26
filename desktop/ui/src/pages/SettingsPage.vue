@@ -3,7 +3,10 @@ import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-shell";
 import { useI18n } from "../lib/i18n";
+import { useNavMetrics } from "../lib/navMetrics";
 import { useTranscriptionSettings } from "../lib/transcriptionSettings";
+import type { PrimaryNavMode } from "../lib/uiPreferences";
+import { useUiPreferences } from "../lib/uiPreferences";
 import { invokeChecked } from "../composables/useIpc";
 import {
   AsrModelDownloadPayloadSchema,
@@ -21,6 +24,8 @@ import {
 
 const { t } = useI18n();
 const { settings, updateSettings } = useTranscriptionSettings();
+const { settings: uiSettings, setPrimaryNavMode } = useUiPreferences();
+const { metrics: navMetrics, resetNavMetrics } = useNavMetrics();
 
 const models = ref<AsrModelStatus[]>([]);
 const isLoadingModels = ref(false);
@@ -68,6 +73,10 @@ const modeOptions = computed(() => [
   { value: "live+final", label: t("settings.transcription.mode_live_final") },
   { value: "final-only", label: t("settings.transcription.mode_final_only") },
 ]);
+const navModeOptions = computed(() => [
+  { value: "top", label: t("settings.navigation.mode_top") },
+  { value: "sidebar-icon", label: t("settings.navigation.mode_sidebar") },
+]);
 
 const spokenPunctuationEnabled = computed({
   get: () => settings.value.spokenPunctuation,
@@ -106,6 +115,17 @@ const selectedLanguage = computed({
     updateSettings({ language: value as "auto" | "en" | "fr" });
   },
 });
+
+const selectedNavMode = computed({
+  get: () => uiSettings.value.primaryNavMode,
+  set: (value: string) => {
+    if (value === "top" || value === "sidebar-icon") {
+      setPrimaryNavMode(value as PrimaryNavMode);
+    }
+  },
+});
+
+const averageNavLatencyMs = computed(() => Math.round(navMetrics.value.avgLatencyMs));
 
 function formatBytes(value?: number | null) {
   if (!value || value <= 0) {
@@ -275,6 +295,69 @@ onBeforeUnmount(() => {
 
 <template>
   <section class="space-y-4">
+    <div class="app-card app-radius-panel-lg border p-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="app-nav-text text-lg font-semibold">
+            {{ t("settings.navigation.title") }}
+          </h2>
+          <p class="app-muted text-xs">
+            {{ t("settings.navigation.subtitle") }}
+          </p>
+        </div>
+        <div class="app-muted text-xs">
+          {{ t("settings.navigation.scope") }}
+        </div>
+      </div>
+
+      <div class="mt-4 grid gap-4 md:grid-cols-2">
+        <div>
+          <label class="app-nav-text text-xs font-semibold">
+            {{ t("settings.navigation.mode_label") }}
+          </label>
+          <select v-model="selectedNavMode" class="app-input mt-2 w-full rounded-lg border px-3 py-2 text-sm">
+            <option
+              v-for="option in navModeOptions"
+              :key="option.value"
+              :value="option.value"
+            >
+              {{ option.label }}
+            </option>
+          </select>
+          <p class="app-muted mt-2 text-xs">
+            {{ t("settings.navigation.mode_note") }}
+          </p>
+        </div>
+
+        <div class="app-surface rounded-xl border px-3 py-3">
+          <div class="app-nav-text text-sm font-semibold">
+            {{ t("settings.navigation.metrics_title") }}
+          </div>
+          <div class="mt-2 grid grid-cols-2 gap-2 text-xs">
+            <div class="app-muted">{{ t("settings.navigation.metrics_switch_count") }}</div>
+            <div class="text-right font-semibold">{{ navMetrics.switchCount }}</div>
+            <div class="app-muted">{{ t("settings.navigation.metrics_avg_latency") }}</div>
+            <div class="text-right font-semibold">{{ averageNavLatencyMs }} ms</div>
+            <div class="app-muted">{{ t("settings.navigation.metrics_top_switch") }}</div>
+            <div class="text-right font-semibold">{{ navMetrics.topSwitchCount }}</div>
+            <div class="app-muted">{{ t("settings.navigation.metrics_sidebar_switch") }}</div>
+            <div class="text-right font-semibold">{{ navMetrics.sidebarSwitchCount }}</div>
+            <div class="app-muted">{{ t("settings.navigation.metrics_sidebar_sessions") }}</div>
+            <div class="text-right font-semibold">{{ navMetrics.sidebarSessionCount }}</div>
+          </div>
+          <div class="mt-3 flex justify-end">
+            <button
+              class="app-button-secondary app-focus-ring cursor-pointer rounded-full px-3 py-1.5 text-xs font-semibold"
+              type="button"
+              @click="resetNavMetrics"
+            >
+              {{ t("settings.navigation.metrics_reset") }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="app-card app-radius-panel-lg border p-4">
       <div class="flex items-center justify-between">
         <div>

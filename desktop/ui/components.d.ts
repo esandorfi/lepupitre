@@ -17,13 +17,17 @@ declare module 'vue' {
     EntityRow: typeof import('./src/components/EntityRow.vue')['default']
     PageHeader: typeof import('./src/components/PageHeader.vue')['default']
     PageShell: typeof import('./src/components/PageShell.vue')['default']
+    RouteContextBar: typeof import('./src/components/shell/RouteContextBar.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SectionPanel: typeof import('./src/components/SectionPanel.vue')['default']
     SecurityProbe: typeof import('./src/components/SecurityProbe.vue')['default']
+    SidebarIconNav: typeof import('./src/components/shell/SidebarIconNav.vue')['default']
     TalkStepPageShell: typeof import('./src/components/TalkStepPageShell.vue')['default']
     TalkStepTabs: typeof import('./src/components/TalkStepTabs.vue')['default']
+    TopPrimaryNav: typeof import('./src/components/shell/TopPrimaryNav.vue')['default']
     UBreadcrumb: typeof import('./../node_modules/.pnpm/@nuxt+ui@4.4.0_@tiptap+exte_de8bba3212ab9ac0762d9b96edb9e4e2/node_modules/@nuxt/ui/dist/runtime/components/Breadcrumb.vue')['default']
+    WindowChrome: typeof import('./src/components/shell/WindowChrome.vue')['default']
     WorkspaceSwitcher: typeof import('./src/components/WorkspaceSwitcher.vue')['default']
   }
 }
