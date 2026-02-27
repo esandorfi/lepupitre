@@ -58,6 +58,17 @@ describe("uiPreferences", () => {
     expect(stored).toContain("sidebar-icon");
   });
 
+  it("updates and persists sidebar pin setting", async () => {
+    const { useUiPreferences } = await import("./uiPreferences");
+    const { settings, setSidebarPinned } = useUiPreferences();
+
+    setSidebarPinned(true);
+
+    expect(settings.value.sidebarPinned).toBe(true);
+    const stored = globalThis.localStorage.getItem("lepupitre_ui_settings_v1") ?? "";
+    expect(stored).toContain("\"sidebarPinned\":true");
+  });
+
   it("updates and persists onboarding completion", async () => {
     const { useUiPreferences } = await import("./uiPreferences");
     const { settings, setOnboardingSeen } = useUiPreferences();
@@ -67,5 +78,39 @@ describe("uiPreferences", () => {
     expect(settings.value.onboardingSeen).toBe(true);
     const stored = globalThis.localStorage.getItem("lepupitre_ui_settings_v1") ?? "";
     expect(stored).toContain("\"onboardingSeen\":true");
+  });
+
+  it("marks onboarding seen for legacy saved settings", async () => {
+    vi.resetModules();
+    Object.defineProperty(globalThis, "localStorage", {
+      value: createStorage({
+        lepupitre_ui_settings_v1: JSON.stringify({
+          primaryNavMode: "top",
+          sidebarPinned: false,
+        }),
+      }),
+      configurable: true,
+      writable: true,
+    });
+    const { useUiPreferences } = await import("./uiPreferences");
+    const { settings } = useUiPreferences();
+    expect(settings.value.primaryNavMode).toBe("top");
+    expect(settings.value.onboardingSeen).toBe(true);
+  });
+
+  it("falls back to defaults for malformed saved settings", async () => {
+    vi.resetModules();
+    Object.defineProperty(globalThis, "localStorage", {
+      value: createStorage({
+        lepupitre_ui_settings_v1: "{bad-json",
+      }),
+      configurable: true,
+      writable: true,
+    });
+    const { useUiPreferences } = await import("./uiPreferences");
+    const { settings } = useUiPreferences();
+    expect(settings.value.primaryNavMode).toBe("sidebar-icon");
+    expect(settings.value.sidebarPinned).toBe(false);
+    expect(settings.value.onboardingSeen).toBe(false);
   });
 });
