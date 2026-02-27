@@ -25,8 +25,30 @@ The secondary levels :
 --- winner feature ---
 
 - record your voice and transcript 
-- do a quest to train
+- do a quest to train and view your proression
+- view you talks going to public
 - get feedback
 
 -- onboarding ---
 
+have a nice onboarding
+
+-- quest ---
+
+ability to have specific quest contributor from the hub or in the app,
+with a specific declaration and metrics,
+have fun, be in a quest
+
+-- feedback --
+
+based on the transcript and the voice analyse,
+or simply the user text input,
+or the input from the user and the analyse of the input from specific talk/quest framework specification knowledge,
+either the transcript/markdown, either the voice
+
+-- talks --
+
+best is to invite you  to challenge yourself
+to be creatif or let the computer help you and focus on how to put it in voice
+with talk, we challenge ourself
+with talk, the audience is the hero

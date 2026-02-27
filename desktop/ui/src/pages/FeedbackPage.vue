@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { useRoute, RouterLink } from "vue-router";
+import { resolveFeedbackBackLink, resolveFeedbackContextLabel } from "../lib/feedbackContext";
 import { useI18n } from "../lib/i18n";
 import { appStore } from "../stores/app";
 import type { FeedbackContext, FeedbackV1 } from "../schemas/ipc";
@@ -15,27 +16,11 @@ const isLoading = ref(false);
 const note = ref("");
 const lastSavedNote = ref("");
 const noteStatus = ref<"idle" | "saving" | "saved" | "error">("idle");
-const isRunFeedback = computed(() => context.value?.subject_type === "run");
 const backLink = computed(() => {
-  if (isRunFeedback.value) {
-    return context.value?.run_id ? `/boss-run?runId=${context.value.run_id}` : "/boss-run";
-  }
-  if (context.value?.quest_code && context.value?.project_id) {
-    return `/quest/${context.value.quest_code}?from=talk&projectId=${context.value.project_id}`;
-  }
-  if (appStore.state.activeProject?.id) {
-    return `/talks/${appStore.state.activeProject.id}`;
-  }
-  return "/";
+  return resolveFeedbackBackLink(context.value, appStore.state.activeProject?.id ?? null);
 });
 const contextLabel = computed(() => {
-  if (isRunFeedback.value) {
-    return t("feedback.run_label");
-  }
-  if (context.value?.quest_code && context.value?.project_id) {
-    return appStore.formatQuestCode(context.value.project_id, context.value.quest_code);
-  }
-  return "";
+  return resolveFeedbackContextLabel(context.value, appStore.formatQuestCode, t("feedback.run_label"));
 });
 
 function toError(err: unknown) {

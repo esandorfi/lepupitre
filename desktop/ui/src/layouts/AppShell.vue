@@ -8,6 +8,7 @@ import SidebarIconNav from "../components/shell/SidebarIconNav.vue";
 import TopPrimaryNav from "../components/shell/TopPrimaryNav.vue";
 import WindowChrome from "../components/shell/WindowChrome.vue";
 import { buildContextBreadcrumbs, resolvePrimaryNavItems } from "../lib/navigation";
+import { resolveEffectiveNavMode } from "../lib/navigationMode";
 import { flushNavIntent, markSidebarSession, recordNavIntent } from "../lib/navMetrics";
 import { useI18n } from "../lib/i18n";
 import { useUiPreferences } from "../lib/uiPreferences";
@@ -34,12 +35,9 @@ const shellContext = computed(() => ({
 const primaryNavItems = computed(() => resolvePrimaryNavItems(shellContext.value, t));
 const breadcrumbItems = computed(() => buildContextBreadcrumbs(shellContext.value, t));
 
-const effectiveNavMode = computed(() => {
-  if (uiSettings.value.primaryNavMode === "sidebar-icon" && viewportWidth.value >= 1024) {
-    return "sidebar-icon";
-  }
-  return "top";
-});
+const effectiveNavMode = computed(() =>
+  resolveEffectiveNavMode(uiSettings.value.primaryNavMode, viewportWidth.value)
+);
 
 function onResize() {
   viewportWidth.value = window.innerWidth;

@@ -20,6 +20,18 @@ const defaultSettings: TranscriptionSettings = {
   spokenPunctuation: false,
 };
 
+function isTranscriptionModel(value: unknown): value is TranscriptionModel {
+  return value === "tiny" || value === "base";
+}
+
+function isTranscriptionMode(value: unknown): value is TranscriptionMode {
+  return value === "auto" || value === "live+final" || value === "final-only";
+}
+
+function isTranscriptionLanguage(value: unknown): value is TranscriptionLanguage {
+  return value === "auto" || value === "en" || value === "fr";
+}
+
 function loadSettings(): TranscriptionSettings {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -28,8 +40,15 @@ function loadSettings(): TranscriptionSettings {
     }
     const parsed = JSON.parse(stored) as Partial<TranscriptionSettings>;
     return {
-      ...defaultSettings,
-      ...parsed,
+      model: isTranscriptionModel(parsed.model) ? parsed.model : defaultSettings.model,
+      mode: isTranscriptionMode(parsed.mode) ? parsed.mode : defaultSettings.mode,
+      language: isTranscriptionLanguage(parsed.language)
+        ? parsed.language
+        : defaultSettings.language,
+      spokenPunctuation:
+        typeof parsed.spokenPunctuation === "boolean"
+          ? parsed.spokenPunctuation
+          : defaultSettings.spokenPunctuation,
     };
   } catch {
     return defaultSettings;

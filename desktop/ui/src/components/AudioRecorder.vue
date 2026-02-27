@@ -4,6 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-shell";
 import { RouterLink } from "vue-router";
+import { classifyAsrError } from "../lib/asrErrors";
 import { useI18n } from "../lib/i18n";
 import { useTranscriptionSettings } from "../lib/transcriptionSettings";
 import { appStore } from "../stores/app";
@@ -291,14 +292,15 @@ async function transcribeRecording() {
 
 function formatTranscribeError(err: unknown) {
   const raw = err instanceof Error ? err.message : String(err);
-  if (raw.includes("sidecar_missing")) {
-    return { message: t("audio.error_sidecar_missing"), code: "sidecar_missing" };
+  const code = classifyAsrError(raw);
+  if (code === "sidecar_missing") {
+    return { message: t("audio.error_sidecar_missing"), code };
   }
-  if (raw.includes("model_missing")) {
-    return { message: t("audio.error_model_missing"), code: "model_missing" };
+  if (code === "model_missing") {
+    return { message: t("audio.error_model_missing"), code };
   }
-  if (raw.includes("sidecar_init_timeout") || raw.includes("sidecar_decode_timeout")) {
-    return { message: t("audio.error_asr_timeout"), code: "asr_timeout" };
+  if (code === "asr_timeout") {
+    return { message: t("audio.error_asr_timeout"), code };
   }
   return { message: raw, code: null };
 }

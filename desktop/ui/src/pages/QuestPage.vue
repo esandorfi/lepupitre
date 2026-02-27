@@ -3,6 +3,12 @@ import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import AudioRecorder from "../components/AudioRecorder.vue";
 import { useI18n } from "../lib/i18n";
+import {
+  canAnalyzeQuest,
+  canLeaveQuestWithoutFeedback,
+  canSubmitQuestText,
+  questAnalysisHintKey,
+} from "../lib/questFlow";
 import { appStore } from "../stores/app";
 import type { Quest } from "../schemas/ipc";
 
@@ -49,28 +55,17 @@ const transcriptId = ref<string | null>(null);
 const isAudioQuest = computed(
   () => quest.value?.output_type.toLowerCase() === "audio"
 );
-const canSubmitText = computed(() => {
-  if (isAudioQuest.value) {
-    return false;
-  }
-  if (isSubmitting.value) {
-    return false;
-  }
-  const trimmed = text.value.trim();
-  if (!trimmed) {
-    return false;
-  }
-  return submittedTextSnapshot.value !== trimmed;
-});
-const canAnalyze = computed(() => {
-  if (!attemptId.value) {
-    return false;
-  }
-  if (!isAudioQuest.value) {
-    return true;
-  }
-  return Boolean(transcriptId.value);
-});
+const flowState = computed(() => ({
+  isAudioQuest: isAudioQuest.value,
+  isSubmitting: isSubmitting.value,
+  text: text.value,
+  submittedTextSnapshot: submittedTextSnapshot.value,
+  attemptId: attemptId.value,
+  transcriptId: transcriptId.value,
+  audioArtifactId: audioArtifactId.value,
+}));
+const canSubmitText = computed(() => canSubmitQuestText(flowState.value));
+const canAnalyze = computed(() => canAnalyzeQuest(flowState.value));
 const submitTextLabel = computed(() => {
   if (submittedTextSnapshot.value && text.value.trim() !== submittedTextSnapshot.value) {
     return t("quest.submit_update");
@@ -95,22 +90,9 @@ const captureStatusLabel = computed(() => {
   return t("quest.capture_saved_audio");
 });
 const analysisHint = computed(() => {
-  if (!attemptId.value) {
-    if (isAudioQuest.value) {
-      return t("quest.analysis_wait_record");
-    }
-    return text.value.trim()
-      ? t("quest.analysis_wait_submit")
-      : t("quest.analysis_wait_capture");
-  }
-  if (isAudioQuest.value && !transcriptId.value) {
-    return t("quest.analysis_wait_transcript");
-  }
-  return t("quest.analysis_ready");
+  return t(questAnalysisHintKey(flowState.value));
 });
-const canLeaveWithoutFeedback = computed(
-  () => isAudioQuest.value && Boolean(audioArtifactId.value) && !transcriptId.value
-);
+const canLeaveWithoutFeedback = computed(() => canLeaveQuestWithoutFeedback(flowState.value));
 
 function toError(err: unknown) {
   return err instanceof Error ? err.message : String(err);

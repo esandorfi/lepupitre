@@ -6,6 +6,14 @@ function routeByName(name: string) {
 }
 
 describe("routes", () => {
+  it("registers core navigation routes", () => {
+    expect(routeByName("training")?.path).toBe("/training");
+    expect(routeByName("talks")?.path).toBe("/talks");
+    expect(routeByName("talk-train")?.path).toBe("/talks/:projectId/train");
+    expect(routeByName("quest")?.path).toBe("/quest/:questCode");
+    expect(routeByName("feedback")?.path).toBe("/feedback/:feedbackId");
+  });
+
   it("registers onboarding and help pages", () => {
     const onboarding = routeByName("onboarding");
     const help = routeByName("help");
