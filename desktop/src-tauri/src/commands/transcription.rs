@@ -718,4 +718,36 @@ mod transcription_tests {
         let err = decode_wav_mono_16k(&bytes).expect_err("should fail");
         assert_eq!(err, "wav_sample_rate");
     }
+
+    #[test]
+    fn decode_wav_rejects_short_header() {
+        let bytes = vec![0u8; 10];
+        let err = decode_wav_mono_16k(&bytes).expect_err("should fail");
+        assert_eq!(err, "wav_header");
+    }
+
+    #[test]
+    fn decode_wav_rejects_non_pcm() {
+        let mut bytes = fixture_bytes();
+        bytes[20..22].copy_from_slice(&3u16.to_le_bytes());
+        let err = decode_wav_mono_16k(&bytes).expect_err("should fail");
+        assert_eq!(err, "wav_format");
+    }
+
+    #[test]
+    fn decode_wav_rejects_stereo() {
+        let mut bytes = fixture_bytes();
+        bytes[22..24].copy_from_slice(&2u16.to_le_bytes());
+        let err = decode_wav_mono_16k(&bytes).expect_err("should fail");
+        assert_eq!(err, "wav_format");
+    }
+
+    #[test]
+    fn decode_wav_rejects_bad_data_size() {
+        let mut bytes = fixture_bytes();
+        let inflated = (bytes.len() as u32) + 1024;
+        bytes[40..44].copy_from_slice(&inflated.to_le_bytes());
+        let err = decode_wav_mono_16k(&bytes).expect_err("should fail");
+        assert_eq!(err, "wav_data");
+    }
 }

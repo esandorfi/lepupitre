@@ -202,4 +202,46 @@ mod tests {
         assert_eq!(committed.t_start_ms, 0);
         assert_eq!(committed.t_end_ms, 100);
     }
+
+    #[test]
+    fn caps_segments_per_decode_to_last_window() {
+        let mut state = LiveTranscriptState::new();
+        let segments: Vec<models::TranscriptSegment> = (0..250)
+            .map(|idx| {
+                let start = idx * 100;
+                seg(start, start + 100, &format!("s{idx}"))
+            })
+            .collect();
+
+        let update = state.apply_decode(&segments, 100_000);
+        assert_eq!(update.committed.len(), 200);
+        assert_eq!(
+            update.committed.first().map(|s| s.text.as_str()),
+            Some("s50")
+        );
+        assert_eq!(
+            update.committed.last().map(|s| s.text.as_str()),
+            Some("s249")
+        );
+        assert!(update.partial.is_none());
+    }
+
+    #[test]
+    fn does_not_recommit_already_stable_segments() {
+        let mut state = LiveTranscriptState::new();
+        let segments = vec![
+            seg(0, 1000, "a"),
+            seg(1000, 2000, "b"),
+            seg(2000, 3000, "c"),
+        ];
+
+        let first = state.apply_decode(&segments, 9999);
+        assert_eq!(first.committed.len(), 3);
+        assert_eq!(state.committed_segments().len(), 3);
+
+        let second = state.apply_decode(&segments, 9999);
+        assert_eq!(second.committed.len(), 0);
+        assert!(second.partial.is_none());
+        assert_eq!(state.committed_segments().len(), 3);
+    }
 }
