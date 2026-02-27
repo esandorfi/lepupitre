@@ -88,6 +88,7 @@ Avoir une application fonctionnelle après chaque passe, avec valeur visible.
 - gestion erreurs et retry
 - tests de non-régression
 - docs ADR + runbook
+- politique release/signature explicite (statut actuel + gate notarization/signing)
 
 ## Règle de passage
 Une passe n’est close que si:

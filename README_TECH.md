@@ -88,6 +88,8 @@ Shared exit criteria: the “hello quest” app can record a 16k mono WAV into a
 - Changelog: `pnpm -C desktop changelog` (or `node scripts/changelog.mjs <version>`).
 - If the latest Git tag is missing in `CHANGELOG.md`, backfill it first: `pnpm -C desktop changelog -- <tag-version>`.
 - CI release: `.github/workflows/release-packaging.yml` (macOS/Windows matrix).
+- Current signing policy (v0.2.x): artifacts are built and attached to releases unsigned/not notarized.
+- Planned hardening gate: enable macOS notarization and Windows code signing once CI secrets and certificates are provisioned.
 - Versioning: `pnpm -C desktop release:patch|minor|major` updates `package.json`, `tauri.conf.json`, `Cargo.toml`, `Cargo.lock`, and creates a `vX.Y.Z` tag.
 - Tag flow (CLI, precise):
   1. Automated bump + commit + push (recommended):
@@ -100,6 +102,7 @@ Shared exit criteria: the “hello quest” app can record a 16k mono WAV into a
      - To push all local tags: `git push origin --tags`
   - The DMG name follows `productName` (set to `LePupitre` in `tauri.conf.json`).
   - The workflow attaches built installers to the tag release as draft assets.
+  - ASR sidecar packaging invariant: both `sidecar/lepupitre-asr` and `sidecar/lepupitre-asr.exe` resource paths must exist in CI before Rust/ASR smoke tests.
 - CI secrets (optional):
   - `HOMEBREW_TAP_TOKEN` for pushing cask updates.
   - `WINGETCREATE_TOKEN` for submitting winget updates.

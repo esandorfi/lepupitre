@@ -20,8 +20,12 @@ Specs remain the source of reference:
 - Ports/adapters model, migrations, artifacts, and transcription/analysis pipeline.
 
 ### Open points to challenge
-1. **Release/signing**: decide the signing/notarization policy for macOS/Windows.
-2. **Pack roadmap**: clarify external review format (template vs final review).
+1. **Pack roadmap**: clarify external review format (template vs final review).
+
+### Release policy (current)
+- **v0.2.x policy**: GitHub release artifacts are built and published by CI, but remain unsigned/not notarized.
+- **User impact**: macOS Gatekeeper and Windows SmartScreen may show trust warnings.
+- **Planned gate**: move to signed/notarized installers in the next distribution hardening cycle, once certificate and notarization credentials are provisioned in CI.
 
 ## 4) Quick onboarding (human)
 ## Prerequisites
@@ -100,6 +104,7 @@ Install repo deps and run:
 - Changelog only (from Git history): `pnpm -C desktop changelog` (optionally `-- <version>`).
 - Packaging CI: the `Release` workflow generates `.dmg` (macOS) and `.msi/.exe` (Windows) on native runners.
 - Artifacts are attached to a GitHub release when a `v*` tag is pushed.
+- Current trust level: unsigned/not notarized installers for `v0.2.x`.
 
 ## 9) Documentation rules
 See `docs/CODEX_RULES.md` for ADR, testing, and response format rules.
