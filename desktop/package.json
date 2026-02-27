@@ -1,7 +1,7 @@
 {
   "name": "lepupitre-desktop",
   "private": true,
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "Local-first coach for preparing technical talks with daily quests, Boss Run audio sessions, actionable feedback, and peer review packs.",
   "type": "module",
   "scripts": {

@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.2.7 - 2026-02-27
+Summary: 1 features, 2 fixes, 1 docs, 3 tests, 1 ci.
+Comparing from v0.2.6 to HEAD.
+
+### Features
+- feat(onboarding): add first-run onboarding and help foundation (#1)
+
+### Fixes
+- fix(ui): make design guard path resolution cross-platform
+- fix(ci): harden windows asr smoke sidecar resource checks
+
+### Docs
+- docs(release): define signing policy and hardening gate
+
+### Tests
+- test(ui): enforce core logic contracts for redesign safety
+- test(ui): lock navigation and onboarding/help route contracts
+- test(asr): add MR7 guardrail tests and voiceup draft spec
+
+### CI
+- ci: release asr
+
 ## v0.2.6 - 2026-02-26
 Summary: 1 features, 1 fixes.
 Comparing from v0.2.5 to HEAD.
