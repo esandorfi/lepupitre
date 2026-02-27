@@ -133,6 +133,22 @@ jobs:
           $expected = "be07e048e1e599ad46341c8d2a135645097a538221678b7acdd1b1919c6e1b21"
           $actual = (Get-FileHash -Algorithm SHA256 $modelPath).Hash.ToLower()
           if ($actual -ne $expected) { throw "Model checksum mismatch: $actual" }
+          $sidecarDir = Join-Path $pwd "desktop\\src-tauri\\sidecar"
+          $sidecarUnix = Join-Path $sidecarDir "lepupitre-asr"
+          $sidecarExe = Join-Path $sidecarDir "lepupitre-asr.exe"
+          if (-not (Test-Path $sidecarUnix) -and (Test-Path $sidecarExe)) {
+            Copy-Item -LiteralPath $sidecarExe -Destination $sidecarUnix -Force
+          }
+          if (-not (Test-Path $sidecarExe) -and (Test-Path $sidecarUnix)) {
+            Copy-Item -LiteralPath $sidecarUnix -Destination $sidecarExe -Force
+          }
+          if (-not (Test-Path $sidecarUnix) -or -not (Test-Path $sidecarExe)) {
+            Write-Host "Current sidecar directory contents:"
+            if (Test-Path $sidecarDir) {
+              Get-ChildItem -LiteralPath $sidecarDir | Format-Table -AutoSize
+            }
+            throw "Missing Tauri sidecar resources; expected both lepupitre-asr and lepupitre-asr.exe"
+          }
           $sidecar = Join-Path $pwd "desktop\\src-tauri\\sidecar\\lepupitre-asr.exe"
           $env:LEPUPITRE_ASR_SMOKE = "1"
           $env:LEPUPITRE_ASR_SIDECAR = $sidecar
