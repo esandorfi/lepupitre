@@ -240,6 +240,39 @@ export const QuestDailySchema = z.object({
   due_boss_run: z.boolean(),
 });
 
+export const ProgressSnapshotPayloadSchema = z.object({
+  profileId: IdSchema,
+  projectId: IdSchema.optional().nullable(),
+});
+
+export const ProgressSnapshotSchema = z.object({
+  project_id: IdSchema,
+  attempts_total: z.number().int().nonnegative(),
+  feedback_ready_total: z.number().int().nonnegative(),
+  streak_days: z.number().int().nonnegative(),
+  weekly_target: z.number().int().positive(),
+  weekly_completed: z.number().int().nonnegative(),
+  credits: z.number().int().nonnegative(),
+  next_milestone: z.number().int().positive(),
+  last_attempt_at: z.string().min(1).optional().nullable(),
+});
+
+export const MascotMessagePayloadSchema = z.object({
+  profileId: IdSchema,
+  routeName: z.string().min(1),
+  projectId: IdSchema.optional().nullable(),
+  locale: z.string().min(2).max(12).optional().nullable(),
+});
+
+export const MascotMessageSchema = z.object({
+  id: z.string().min(1),
+  kind: z.string().min(1),
+  title: z.string().min(1),
+  body: z.string().min(1),
+  cta_label: z.string().min(1).optional().nullable(),
+  cta_route: z.string().min(1).optional().nullable(),
+});
+
 export const ProfileIdPayloadSchema = z.object({
   profileId: IdSchema,
 });
@@ -568,6 +601,8 @@ export type PeerReviewDetail = z.infer<typeof PeerReviewDetailSchema>;
 export type RunSummary = z.infer<typeof RunSummarySchema>;
 export type Quest = z.infer<typeof QuestSchema>;
 export type QuestDaily = z.infer<typeof QuestDailySchema>;
+export type ProgressSnapshot = z.infer<typeof ProgressSnapshotSchema>;
+export type MascotMessage = z.infer<typeof MascotMessageSchema>;
 export type QuestAttemptSummary = z.infer<typeof QuestAttemptSummarySchema>;
 export type QuestReportItem = z.infer<typeof QuestReportItemSchema>;
 export type TranscriptSegment = z.infer<typeof TranscriptSegmentSchema>;

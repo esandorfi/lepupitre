@@ -5,7 +5,11 @@ import { open } from "@tauri-apps/plugin-shell";
 import { useI18n } from "../lib/i18n";
 import { useNavMetrics } from "../lib/navMetrics";
 import { useTranscriptionSettings } from "../lib/transcriptionSettings";
-import type { PrimaryNavMode } from "../lib/uiPreferences";
+import type {
+  GamificationMode,
+  MascotIntensity,
+  PrimaryNavMode,
+} from "../lib/uiPreferences";
 import { useUiPreferences } from "../lib/uiPreferences";
 import { invokeChecked } from "../composables/useIpc";
 import {
@@ -24,7 +28,13 @@ import {
 
 const { t } = useI18n();
 const { settings, updateSettings } = useTranscriptionSettings();
-const { settings: uiSettings, setPrimaryNavMode } = useUiPreferences();
+const {
+  settings: uiSettings,
+  setPrimaryNavMode,
+  setGamificationMode,
+  setMascotEnabled,
+  setMascotIntensity,
+} = useUiPreferences();
 const { metrics: navMetrics, resetNavMetrics } = useNavMetrics();
 
 const models = ref<AsrModelStatus[]>([]);
@@ -77,6 +87,15 @@ const navModeOptions = computed(() => [
   { value: "top", label: t("settings.navigation.mode_top") },
   { value: "sidebar-icon", label: t("settings.navigation.mode_sidebar") },
 ]);
+const gamificationModeOptions = computed(() => [
+  { value: "minimal", label: t("settings.voiceup.gamification_minimal") },
+  { value: "balanced", label: t("settings.voiceup.gamification_balanced") },
+  { value: "quest-world", label: t("settings.voiceup.gamification_quest_world") },
+]);
+const mascotIntensityOptions = computed(() => [
+  { value: "minimal", label: t("settings.voiceup.mascot_minimal") },
+  { value: "contextual", label: t("settings.voiceup.mascot_contextual") },
+]);
 
 const spokenPunctuationEnabled = computed({
   get: () => settings.value.spokenPunctuation,
@@ -121,6 +140,28 @@ const selectedNavMode = computed({
   set: (value: string) => {
     if (value === "top" || value === "sidebar-icon") {
       setPrimaryNavMode(value as PrimaryNavMode);
+    }
+  },
+});
+const selectedGamificationMode = computed({
+  get: () => uiSettings.value.gamificationMode,
+  set: (value: string) => {
+    if (value === "minimal" || value === "balanced" || value === "quest-world") {
+      setGamificationMode(value as GamificationMode);
+    }
+  },
+});
+const mascotEnabled = computed({
+  get: () => uiSettings.value.mascotEnabled,
+  set: (value: boolean) => {
+    setMascotEnabled(value);
+  },
+});
+const selectedMascotIntensity = computed({
+  get: () => uiSettings.value.mascotIntensity,
+  set: (value: string) => {
+    if (value === "minimal" || value === "contextual") {
+      setMascotIntensity(value as MascotIntensity);
     }
   },
 });
@@ -354,6 +395,87 @@ onBeforeUnmount(() => {
               {{ t("settings.navigation.metrics_reset") }}
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="app-card app-radius-panel-lg border p-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="app-nav-text text-lg font-semibold">
+            {{ t("settings.voiceup.title") }}
+          </h2>
+          <p class="app-muted text-xs">
+            {{ t("settings.voiceup.subtitle") }}
+          </p>
+        </div>
+        <div class="app-muted text-xs">
+          {{ t("settings.voiceup.scope") }}
+        </div>
+      </div>
+
+      <div class="mt-4 grid gap-4 md:grid-cols-3">
+        <div>
+          <label class="app-nav-text text-xs font-semibold">
+            {{ t("settings.voiceup.gamification_label") }}
+          </label>
+          <select
+            v-model="selectedGamificationMode"
+            class="app-input mt-2 w-full rounded-lg border px-3 py-2 text-sm"
+          >
+            <option
+              v-for="option in gamificationModeOptions"
+              :key="option.value"
+              :value="option.value"
+            >
+              {{ option.label }}
+            </option>
+          </select>
+          <p class="app-muted mt-2 text-xs">
+            {{ t("settings.voiceup.gamification_note") }}
+          </p>
+        </div>
+
+        <div>
+          <label class="app-nav-text text-xs font-semibold">
+            {{ t("settings.voiceup.mascot_enabled_label") }}
+          </label>
+          <button
+            type="button"
+            class="app-toggle mt-2 inline-flex items-center gap-2 text-xs"
+            :class="mascotEnabled ? 'app-toggle-on' : 'app-toggle-off'"
+            @click="mascotEnabled = !mascotEnabled"
+          >
+            <span class="app-toggle-dot"></span>
+            <span>
+              {{ mascotEnabled ? t("settings.voiceup.mascot_on") : t("settings.voiceup.mascot_off") }}
+            </span>
+          </button>
+          <p class="app-muted mt-2 text-xs">
+            {{ t("settings.voiceup.mascot_note") }}
+          </p>
+        </div>
+
+        <div>
+          <label class="app-nav-text text-xs font-semibold">
+            {{ t("settings.voiceup.mascot_intensity_label") }}
+          </label>
+          <select
+            v-model="selectedMascotIntensity"
+            class="app-input mt-2 w-full rounded-lg border px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+            :disabled="!mascotEnabled"
+          >
+            <option
+              v-for="option in mascotIntensityOptions"
+              :key="option.value"
+              :value="option.value"
+            >
+              {{ option.label }}
+            </option>
+          </select>
+          <p class="app-muted mt-2 text-xs">
+            {{ t("settings.voiceup.mascot_intensity_note") }}
+          </p>
         </div>
       </div>
     </div>

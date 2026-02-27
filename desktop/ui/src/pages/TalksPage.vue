@@ -1,19 +1,37 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import EntityRow from "../components/EntityRow.vue";
 import PageHeader from "../components/PageHeader.vue";
 import PageShell from "../components/PageShell.vue";
 import SectionPanel from "../components/SectionPanel.vue";
 import { useI18n } from "../lib/i18n";
+import { useUiPreferences } from "../lib/uiPreferences";
 import { appStore } from "../stores/app";
+import type { MascotMessage } from "../schemas/ipc";
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
+const { settings: uiSettings } = useUiPreferences();
 const state = computed(() => appStore.state);
 const error = ref<string | null>(null);
 const isLoading = ref(false);
 const isSwitching = ref<string | null>(null);
+const mascotMessage = ref<MascotMessage | null>(null);
 const router = useRouter();
+const showMascotCard = computed(() => uiSettings.value.mascotEnabled);
+const mascotBody = computed(() =>
+  uiSettings.value.mascotIntensity === "minimal" ? "" : mascotMessage.value?.body ?? ""
+);
+
+function mascotToneClass(kind: string | null | undefined) {
+  if (kind === "celebrate") {
+    return "border-[var(--color-success)] bg-[color-mix(in_srgb,var(--color-success)_15%,var(--color-surface))]";
+  }
+  if (kind === "nudge") {
+    return "border-[var(--color-accent)] bg-[color-mix(in_srgb,var(--color-accent-soft)_35%,var(--color-surface))]";
+  }
+  return "border-[var(--color-border)] bg-[var(--color-surface-elevated)]";
+}
 
 function toError(err: unknown) {
   return err instanceof Error ? err.message : String(err);
@@ -89,10 +107,27 @@ async function bootstrap() {
   try {
     await appStore.bootstrap();
     await appStore.loadProjects();
+    await refreshMascotMessage();
   } catch (err) {
     error.value = toError(err);
   } finally {
     isLoading.value = false;
+  }
+}
+
+async function refreshMascotMessage() {
+  if (!showMascotCard.value || !state.value.activeProfileId) {
+    mascotMessage.value = null;
+    return;
+  }
+  try {
+    mascotMessage.value = await appStore.getMascotContextMessage({
+      routeName: "talks",
+      projectId: state.value.activeProject?.id ?? null,
+      locale: locale.value,
+    });
+  } catch {
+    mascotMessage.value = null;
   }
 }
 
@@ -113,6 +148,13 @@ function goToReport(projectId: string) {
 }
 
 onMounted(bootstrap);
+
+watch(
+  () => [locale.value, uiSettings.value.mascotEnabled, uiSettings.value.mascotIntensity] as const,
+  async () => {
+    await refreshMascotMessage();
+  }
+);
 </script>
 
 <template>
@@ -127,6 +169,28 @@ onMounted(bootstrap);
         </RouterLink>
       </template>
     </PageHeader>
+
+    <SectionPanel
+      v-if="showMascotCard && mascotMessage"
+      variant="compact"
+      class="border"
+      :class="mascotToneClass(mascotMessage.kind)"
+    >
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div class="min-w-0 flex-1">
+          <div class="app-text-eyebrow">{{ t("talks.mascot_label") }}</div>
+          <div class="app-text app-text-subheadline mt-1">{{ mascotMessage.title }}</div>
+          <div v-if="mascotBody" class="app-muted app-text-body mt-1">{{ mascotBody }}</div>
+        </div>
+        <RouterLink
+          v-if="mascotMessage.cta_route && mascotMessage.cta_label"
+          class="app-button-secondary app-focus-ring app-button-md inline-flex items-center"
+          :to="mascotMessage.cta_route"
+        >
+          {{ mascotMessage.cta_label }}
+        </RouterLink>
+      </div>
+    </SectionPanel>
 
     <SectionPanel v-if="!state.activeProfileId" variant="compact">
       <p class="app-text app-text-body">{{ t("talk.need_profile") }}</p>

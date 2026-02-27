@@ -2,15 +2,25 @@
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "../lib/i18n";
+import { useUiPreferences } from "../lib/uiPreferences";
 import { appStore } from "../stores/app";
-import type { Quest, QuestAttemptSummary, QuestDaily } from "../schemas/ipc";
+import type {
+  MascotMessage,
+  ProgressSnapshot,
+  Quest,
+  QuestAttemptSummary,
+  QuestDaily,
+} from "../schemas/ipc";
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
+const { settings: uiSettings } = useUiPreferences();
 const state = computed(() => appStore.state);
 const trainingProjectId = ref<string | null>(null);
 const trainingDailyQuest = ref<QuestDaily | null>(null);
 const selectedHeroQuest = ref<Quest | null>(null);
 const recentAttempts = ref<QuestAttemptSummary[]>([]);
+const trainingProgress = ref<ProgressSnapshot | null>(null);
+const mascotMessage = ref<MascotMessage | null>(null);
 const trainingError = ref<string | null>(null);
 const isTrainingLoading = ref(false);
 const isQuestPickerOpen = ref(false);
@@ -101,6 +111,32 @@ const pickerMainQuests = computed(() => {
 const showRecentQuestSection = computed(
   () => questPickerSort.value === "recent" && recentPickerQuests.value.length > 0
 );
+const showMascotCard = computed(() => uiSettings.value.mascotEnabled);
+const showCredits = computed(() => uiSettings.value.gamificationMode !== "minimal");
+const isQuestWorldMode = computed(() => uiSettings.value.gamificationMode === "quest-world");
+const mascotBody = computed(() => {
+  if (!mascotMessage.value) {
+    return "";
+  }
+  if (uiSettings.value.mascotIntensity === "minimal") {
+    return "";
+  }
+  return mascotMessage.value.body;
+});
+const weeklyProgressPercent = computed(() => {
+  const progress = trainingProgress.value;
+  if (!progress || progress.weekly_target <= 0) {
+    return 0;
+  }
+  return Math.min(100, Math.round((progress.weekly_completed / progress.weekly_target) * 100));
+});
+const creditsToMilestone = computed(() => {
+  const progress = trainingProgress.value;
+  if (!progress) {
+    return 0;
+  }
+  return Math.max(0, progress.next_milestone - progress.credits);
+});
 const pickerVisibleQuests = computed(() => [
   ...recentPickerQuests.value,
   ...pickerMainQuests.value,
@@ -144,6 +180,16 @@ function outputLabel(outputType: string) {
 
 function toError(err: unknown) {
   return err instanceof Error ? err.message : String(err);
+}
+
+function mascotToneClass(kind: string | null | undefined) {
+  if (kind === "celebrate") {
+    return "border-[var(--color-success)] bg-[color-mix(in_srgb,var(--color-success)_15%,var(--color-surface))]";
+  }
+  if (kind === "nudge") {
+    return "border-[var(--color-accent)] bg-[color-mix(in_srgb,var(--color-accent-soft)_35%,var(--color-surface))]";
+  }
+  return "border-[var(--color-border)] bg-[var(--color-surface-elevated)]";
 }
 
 function trainingHeroQuestStorageKey(profileId: string) {
@@ -208,6 +254,8 @@ async function loadTrainingData() {
     trainingDailyQuest.value = null;
     selectedHeroQuest.value = null;
     recentAttempts.value = [];
+    trainingProgress.value = null;
+    mascotMessage.value = null;
     return;
   }
   isTrainingLoading.value = true;
@@ -238,11 +286,26 @@ async function loadTrainingData() {
         writeStoredHeroQuestCode(activeProfileId, null);
       }
     }
-    recentAttempts.value = await appStore.getQuestAttempts(projectId, 6);
+    const [attempts, progress, mascot] = await Promise.all([
+      appStore.getQuestAttempts(projectId, 6),
+      appStore.getProgressSnapshot(projectId),
+      showMascotCard.value
+        ? appStore.getMascotContextMessage({
+            routeName: "training",
+            projectId,
+            locale: locale.value,
+          })
+        : Promise.resolve(null),
+    ]);
+    recentAttempts.value = attempts;
+    trainingProgress.value = progress;
+    mascotMessage.value = mascot;
   } catch (err) {
     trainingError.value = toError(err);
     trainingDailyQuest.value = null;
     recentAttempts.value = [];
+    trainingProgress.value = null;
+    mascotMessage.value = null;
   } finally {
     isTrainingLoading.value = false;
   }
@@ -389,6 +452,46 @@ watch(
   },
   { deep: false }
 );
+
+watch(
+  () => locale.value,
+  async () => {
+    if (!showMascotCard.value || !trainingProjectId.value || !state.value.activeProfileId) {
+      return;
+    }
+    try {
+      mascotMessage.value = await appStore.getMascotContextMessage({
+        routeName: "training",
+        projectId: trainingProjectId.value,
+        locale: locale.value,
+      });
+    } catch {
+      // non-blocking assistant copy
+    }
+  }
+);
+
+watch(
+  () => [uiSettings.value.mascotEnabled, uiSettings.value.mascotIntensity, uiSettings.value.gamificationMode] as const,
+  async ([mascotEnabled]) => {
+    if (!mascotEnabled) {
+      mascotMessage.value = null;
+      return;
+    }
+    if (!trainingProjectId.value || !state.value.activeProfileId) {
+      return;
+    }
+    try {
+      mascotMessage.value = await appStore.getMascotContextMessage({
+        routeName: "training",
+        projectId: trainingProjectId.value,
+        locale: locale.value,
+      });
+    } catch {
+      // non-blocking assistant copy
+    }
+  }
+);
 </script>
 
 <template>
@@ -437,6 +540,27 @@ watch(
       </div>
       <div v-else class="app-muted app-text-body mt-2">
         {{ t("home.quest_empty") }}
+      </div>
+    </div>
+
+    <div
+      v-if="showMascotCard && mascotMessage && !trainingError"
+      class="app-panel app-panel-compact border"
+      :class="mascotToneClass(mascotMessage.kind)"
+    >
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div class="min-w-0 flex-1">
+          <div class="app-text-eyebrow">{{ t("training.mascot_label") }}</div>
+          <div class="app-text app-text-subheadline mt-1">{{ mascotMessage.title }}</div>
+          <div v-if="mascotBody" class="app-muted app-text-body mt-1">{{ mascotBody }}</div>
+        </div>
+        <RouterLink
+          v-if="mascotMessage.cta_route && mascotMessage.cta_label"
+          class="app-button-secondary app-focus-ring app-button-md inline-flex items-center"
+          :to="mascotMessage.cta_route"
+        >
+          {{ mascotMessage.cta_label }}
+        </RouterLink>
       </div>
     </div>
 
@@ -661,6 +785,51 @@ watch(
       </div>
 
     <div class="app-panel xl:sticky xl:top-4">
+      <div
+        class="rounded-xl border border-[var(--app-border)] p-3"
+        :class="isQuestWorldMode ? 'bg-[color-mix(in_srgb,var(--color-accent-soft)_30%,var(--color-surface))]' : ''"
+      >
+        <div class="app-text-eyebrow">{{ t("training.progress_title") }}</div>
+        <div v-if="isTrainingLoading" class="app-muted app-text-meta mt-2">{{ t("talks.loading") }}</div>
+        <div v-else-if="trainingProgress" class="mt-2 space-y-2">
+          <div class="grid gap-2" :class="showCredits ? 'sm:grid-cols-2' : 'sm:grid-cols-1'">
+            <div class="rounded-lg border border-[var(--app-border)] bg-[var(--color-surface-elevated)] px-3 py-2">
+              <div class="app-muted app-text-caption">{{ t("training.progress_streak") }}</div>
+              <div class="app-text app-text-section-title mt-1">
+                {{ trainingProgress.streak_days }}
+              </div>
+            </div>
+            <div
+              v-if="showCredits"
+              class="rounded-lg border border-[var(--app-border)] bg-[var(--color-surface-elevated)] px-3 py-2"
+            >
+              <div class="app-muted app-text-caption">{{ t("training.progress_credits") }}</div>
+              <div class="app-text app-text-section-title mt-1">
+                {{ trainingProgress.credits }}
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center justify-between gap-2 app-text-meta">
+              <span class="app-muted">{{ t("training.progress_weekly") }}</span>
+              <span class="app-text">
+                {{ trainingProgress.weekly_completed }} / {{ trainingProgress.weekly_target }}
+              </span>
+            </div>
+            <div class="mt-1 h-2 overflow-hidden rounded-full app-meter-bg">
+              <div
+                class="h-full rounded-full bg-[var(--color-accent)] transition-all"
+                :style="{ width: `${weeklyProgressPercent}%` }"
+              ></div>
+            </div>
+          </div>
+          <div v-if="showCredits" class="app-muted app-text-meta">
+            {{ t("training.progress_next") }}: {{ trainingProgress.next_milestone }}
+            ({{ creditsToMilestone }} {{ t("training.progress_to_next") }})
+          </div>
+        </div>
+      </div>
+
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div class="app-text-eyebrow">
           {{ t("training.history_title") }}

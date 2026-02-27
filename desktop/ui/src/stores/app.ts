@@ -46,6 +46,9 @@ import {
   RunSummaryNullableSchema,
   QuestDaily,
   QuestDailySchema,
+  ProgressSnapshot,
+  ProgressSnapshotPayloadSchema,
+  ProgressSnapshotSchema,
   QuestSchema,
   QuestListPayloadSchema,
   QuestListResponseSchema,
@@ -68,6 +71,9 @@ import {
   FeedbackContextPayloadSchema,
   FeedbackContextSchema,
   FeedbackContext,
+  MascotMessage,
+  MascotMessagePayloadSchema,
+  MascotMessageSchema,
   FeedbackNoteGetPayloadSchema,
   FeedbackNoteResponseSchema,
   FeedbackNoteSetPayloadSchema,
@@ -310,6 +316,42 @@ async function getDailyQuestForProject(projectId: string): Promise<QuestDaily> {
     {
       profileId: state.activeProfileId,
       projectId,
+    }
+  );
+}
+
+async function getProgressSnapshot(projectId?: string | null): Promise<ProgressSnapshot> {
+  if (!state.activeProfileId) {
+    throw new Error("no_active_profile");
+  }
+  return invokeChecked(
+    "progress_get_snapshot",
+    ProgressSnapshotPayloadSchema,
+    ProgressSnapshotSchema,
+    {
+      profileId: state.activeProfileId,
+      projectId: projectId ?? null,
+    }
+  );
+}
+
+async function getMascotContextMessage(payload: {
+  routeName: string;
+  projectId?: string | null;
+  locale?: string | null;
+}): Promise<MascotMessage> {
+  if (!state.activeProfileId) {
+    throw new Error("no_active_profile");
+  }
+  return invokeChecked(
+    "mascot_get_context_message",
+    MascotMessagePayloadSchema,
+    MascotMessageSchema,
+    {
+      profileId: state.activeProfileId,
+      routeName: payload.routeName,
+      projectId: payload.projectId ?? null,
+      locale: payload.locale ?? null,
     }
   );
 }
@@ -740,6 +782,8 @@ export const appStore = {
   loadDailyQuest,
   loadRecentAttempts,
   getDailyQuestForProject,
+  getProgressSnapshot,
+  getMascotContextMessage,
   getQuestAttempts,
   submitQuestText,
   submitQuestTextForProject,
