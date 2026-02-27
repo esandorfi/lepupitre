@@ -33,6 +33,16 @@ async function goToAbout() {
   closePanel();
 }
 
+async function goToHelp() {
+  await router.push("/help");
+  closePanel();
+}
+
+async function goToOnboarding() {
+  await router.push("/onboarding");
+  closePanel();
+}
+
 function updateTheme(next: "orange" | "terminal") {
   setTheme(next);
 }
@@ -175,6 +185,20 @@ onBeforeUnmount(() => {
           @click="goTo('/packs')"
         >
           {{ t("shell.menu_packs") }}
+        </button>
+        <button
+          class="app-menu-item app-focus-ring app-control-md cursor-pointer rounded-xl px-3 py-2 text-left app-text-body"
+          type="button"
+          @click="goToHelp"
+        >
+          {{ t("shell.menu_help") }}
+        </button>
+        <button
+          class="app-menu-item app-focus-ring app-control-md cursor-pointer rounded-xl px-3 py-2 text-left app-text-body"
+          type="button"
+          @click="goToOnboarding"
+        >
+          {{ t("shell.menu_onboarding") }}
         </button>
         <button
           class="app-menu-item app-focus-ring app-control-md cursor-pointer rounded-xl px-3 py-2 text-left app-text-body"

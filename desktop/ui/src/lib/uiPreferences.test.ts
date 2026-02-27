@@ -44,6 +44,7 @@ describe("uiPreferences", () => {
     const { settings } = useUiPreferences();
     expect(settings.value.primaryNavMode).toBe("sidebar-icon");
     expect(settings.value.sidebarPinned).toBe(false);
+    expect(settings.value.onboardingSeen).toBe(false);
   });
 
   it("updates and persists navigation mode", async () => {
@@ -55,5 +56,16 @@ describe("uiPreferences", () => {
     expect(settings.value.primaryNavMode).toBe("sidebar-icon");
     const stored = globalThis.localStorage.getItem("lepupitre_ui_settings_v1") ?? "";
     expect(stored).toContain("sidebar-icon");
+  });
+
+  it("updates and persists onboarding completion", async () => {
+    const { useUiPreferences } = await import("./uiPreferences");
+    const { settings, setOnboardingSeen } = useUiPreferences();
+
+    setOnboardingSeen(true);
+
+    expect(settings.value.onboardingSeen).toBe(true);
+    const stored = globalThis.localStorage.getItem("lepupitre_ui_settings_v1") ?? "";
+    expect(stored).toContain("\"onboardingSeen\":true");
   });
 });
