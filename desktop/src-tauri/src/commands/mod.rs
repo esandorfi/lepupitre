@@ -1,4 +1,5 @@
 pub mod audio;
+pub mod coach;
 pub mod feedback;
 pub mod outline;
 pub mod pack;

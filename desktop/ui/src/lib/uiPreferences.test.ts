@@ -45,6 +45,9 @@ describe("uiPreferences", () => {
     expect(settings.value.primaryNavMode).toBe("sidebar-icon");
     expect(settings.value.sidebarPinned).toBe(false);
     expect(settings.value.onboardingSeen).toBe(false);
+    expect(settings.value.gamificationMode).toBe("balanced");
+    expect(settings.value.mascotEnabled).toBe(true);
+    expect(settings.value.mascotIntensity).toBe("contextual");
   });
 
   it("updates and persists navigation mode", async () => {
@@ -96,6 +99,9 @@ describe("uiPreferences", () => {
     const { settings } = useUiPreferences();
     expect(settings.value.primaryNavMode).toBe("top");
     expect(settings.value.onboardingSeen).toBe(true);
+    expect(settings.value.gamificationMode).toBe("balanced");
+    expect(settings.value.mascotEnabled).toBe(true);
+    expect(settings.value.mascotIntensity).toBe("contextual");
   });
 
   it("falls back to defaults for malformed saved settings", async () => {
@@ -112,5 +118,30 @@ describe("uiPreferences", () => {
     expect(settings.value.primaryNavMode).toBe("sidebar-icon");
     expect(settings.value.sidebarPinned).toBe(false);
     expect(settings.value.onboardingSeen).toBe(false);
+    expect(settings.value.gamificationMode).toBe("balanced");
+    expect(settings.value.mascotEnabled).toBe(true);
+    expect(settings.value.mascotIntensity).toBe("contextual");
+  });
+
+  it("persists voiceup mascot and gamification preferences", async () => {
+    const { useUiPreferences } = await import("./uiPreferences");
+    const {
+      settings,
+      setGamificationMode,
+      setMascotEnabled,
+      setMascotIntensity,
+    } = useUiPreferences();
+
+    setGamificationMode("quest-world");
+    setMascotEnabled(false);
+    setMascotIntensity("minimal");
+
+    expect(settings.value.gamificationMode).toBe("quest-world");
+    expect(settings.value.mascotEnabled).toBe(false);
+    expect(settings.value.mascotIntensity).toBe("minimal");
+    const stored = globalThis.localStorage.getItem("lepupitre_ui_settings_v1") ?? "";
+    expect(stored).toContain("\"gamificationMode\":\"quest-world\"");
+    expect(stored).toContain("\"mascotEnabled\":false");
+    expect(stored).toContain("\"mascotIntensity\":\"minimal\"");
   });
 });

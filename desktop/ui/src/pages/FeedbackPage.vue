@@ -1,21 +1,30 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, RouterLink } from "vue-router";
 import { resolveFeedbackBackLink, resolveFeedbackContextLabel } from "../lib/feedbackContext";
 import { useI18n } from "../lib/i18n";
+import { useUiPreferences } from "../lib/uiPreferences";
 import { appStore } from "../stores/app";
-import type { FeedbackContext, FeedbackV1 } from "../schemas/ipc";
+import type { FeedbackContext, FeedbackV1, MascotMessage } from "../schemas/ipc";
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
+const { settings: uiSettings } = useUiPreferences();
 const route = useRoute();
 const feedbackId = computed(() => String(route.params.feedbackId || ""));
 const feedback = ref<FeedbackV1 | null>(null);
 const context = ref<FeedbackContext | null>(null);
+const mascotMessage = ref<MascotMessage | null>(null);
 const error = ref<string | null>(null);
 const isLoading = ref(false);
 const note = ref("");
 const lastSavedNote = ref("");
 const noteStatus = ref<"idle" | "saving" | "saved" | "error">("idle");
+const showMascotCard = computed(() => uiSettings.value.mascotEnabled);
+const isQuestWorldMode = computed(() => uiSettings.value.gamificationMode === "quest-world");
+const mascotBody = computed(() =>
+  uiSettings.value.mascotIntensity === "minimal" ? "" : mascotMessage.value?.body ?? ""
+);
+const isRunFeedback = computed(() => context.value?.subject_type === "run");
 const backLink = computed(() => {
   return resolveFeedbackBackLink(context.value, appStore.state.activeProject?.id ?? null);
 });
@@ -25,6 +34,32 @@ const contextLabel = computed(() => {
 
 function toError(err: unknown) {
   return err instanceof Error ? err.message : String(err);
+}
+
+function mascotToneClass(kind: string | null | undefined) {
+  if (kind === "celebrate") {
+    return "border-[var(--color-success)] bg-[color-mix(in_srgb,var(--color-success)_15%,var(--color-surface))]";
+  }
+  if (kind === "nudge") {
+    return "border-[var(--color-accent)] bg-[color-mix(in_srgb,var(--color-accent-soft)_35%,var(--color-surface))]";
+  }
+  return "border-[var(--color-border)] bg-[var(--color-surface-elevated)]";
+}
+
+async function refreshMascotMessage() {
+  if (!showMascotCard.value || !appStore.state.activeProfileId) {
+    mascotMessage.value = null;
+    return;
+  }
+  try {
+    mascotMessage.value = await appStore.getMascotContextMessage({
+      routeName: "feedback",
+      projectId: context.value?.project_id ?? null,
+      locale: locale.value,
+    });
+  } catch {
+    mascotMessage.value = null;
+  }
 }
 
 async function loadNote() {
@@ -71,19 +106,51 @@ onMounted(async () => {
     feedback.value = await appStore.getFeedback(feedbackId.value);
     context.value = await appStore.getFeedbackContext(feedbackId.value);
     await loadNote();
+    await refreshMascotMessage();
   } catch (err) {
     error.value = toError(err);
   } finally {
     isLoading.value = false;
   }
 });
+
+watch(
+  () => [locale.value, uiSettings.value.mascotEnabled, uiSettings.value.mascotIntensity] as const,
+  async () => {
+    if (!feedbackId.value || !context.value) {
+      return;
+    }
+    await refreshMascotMessage();
+  }
+);
 </script>
 
 <template>
   <section class="space-y-6">
     <p class="app-muted text-sm font-semibold">{{ t("feedback.subtitle") }}</p>
 
-    <div class="app-panel app-panel-compact text-sm">
+    <div
+      v-if="showMascotCard && mascotMessage"
+      class="app-panel app-panel-compact border"
+      :class="mascotToneClass(mascotMessage.kind)"
+    >
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div class="min-w-0 flex-1">
+          <div class="app-text-eyebrow">{{ t("feedback.mascot_label") }}</div>
+          <div class="app-text app-text-subheadline mt-1">{{ mascotMessage.title }}</div>
+          <div v-if="mascotBody" class="app-muted app-text-body mt-1">{{ mascotBody }}</div>
+        </div>
+        <RouterLink
+          v-if="mascotMessage.cta_route && mascotMessage.cta_label"
+          class="app-button-secondary app-focus-ring app-button-md inline-flex items-center"
+          :to="mascotMessage.cta_route"
+        >
+          {{ mascotMessage.cta_label }}
+        </RouterLink>
+      </div>
+    </div>
+
+    <div class="app-panel app-panel-compact text-sm" :class="isQuestWorldMode ? 'bg-[color-mix(in_srgb,var(--color-accent-soft)_20%,var(--color-surface))]' : ''">
       <div class="app-subtle text-xs uppercase tracking-[0.2em]">
         {{ t("feedback.score") }}
       </div>
