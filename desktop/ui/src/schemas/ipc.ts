@@ -535,6 +535,26 @@ export const FeedbackContextSchema = z.object({
   run_id: IdSchema.optional().nullable(),
 });
 
+export const FeedbackTimelinePayloadSchema = z.object({
+  profileId: IdSchema,
+  projectId: IdSchema.optional().nullable(),
+  limit: z.number().int().positive().optional().nullable(),
+});
+
+export const FeedbackTimelineItemSchema = z.object({
+  id: IdSchema,
+  created_at: z.string().min(1),
+  overall_score: z.number().int().min(0).max(100),
+  subject_type: z.enum(["quest_attempt", "run"]),
+  project_id: IdSchema,
+  quest_code: z.string().min(1).optional().nullable(),
+  quest_title: z.string().min(1).optional().nullable(),
+  run_id: IdSchema.optional().nullable(),
+  note_updated_at: z.string().min(1).optional().nullable(),
+});
+
+export const FeedbackTimelineResponseSchema = z.array(FeedbackTimelineItemSchema);
+
 export const FeedbackNoteGetPayloadSchema = FeedbackGetPayloadSchema;
 
 export const FeedbackNoteSetPayloadSchema = z.object({
@@ -613,3 +633,4 @@ export type AsrModelDownloadResult = z.infer<typeof AsrModelDownloadResultSchema
 export type AsrModelDownloadProgressEvent = z.infer<typeof AsrModelDownloadProgressEventSchema>;
 export type FeedbackV1 = z.infer<typeof FeedbackV1Schema>;
 export type FeedbackContext = z.infer<typeof FeedbackContextSchema>;
+export type FeedbackTimelineItem = z.infer<typeof FeedbackTimelineItemSchema>;

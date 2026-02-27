@@ -21,6 +21,13 @@ describe("routes", () => {
     expect(help?.path).toBe("/help");
   });
 
+  it("registers feedback timeline and detail routes", () => {
+    const feedbackTimeline = routeByName("feedbacks");
+    const feedbackDetail = routeByName("feedback");
+    expect(feedbackTimeline?.path).toBe("/feedback");
+    expect(feedbackDetail?.path).toBe("/feedback/:feedbackId");
+  });
+
   it("keeps route names unique", () => {
     const names = routes
       .map((route) => route.name)

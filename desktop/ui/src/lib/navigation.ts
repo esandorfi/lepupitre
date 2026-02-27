@@ -1,9 +1,9 @@
 import type { FeedbackContext, ProjectListItem, ProjectSummary } from "../schemas/ipc";
 
-export type PrimaryNavIcon = "training" | "talks" | "current-talk";
+export type PrimaryNavIcon = "training" | "talks" | "feedback" | "current-talk";
 
 export type PrimaryNavItem = {
-  id: "training" | "talks" | "current-talk";
+  id: "training" | "talks" | "feedback" | "current-talk";
   labelKey: string;
   icon: PrimaryNavIcon;
   to: (context: ShellNavigationContext) => string;
@@ -36,6 +36,7 @@ type RouteName =
   | "talk-export"
   | "talk-report"
   | "quest"
+  | "feedbacks"
   | "feedback"
   | "boss-run"
   | "peer-review"
@@ -86,6 +87,13 @@ const PRIMARY_NAV_ITEMS: PrimaryNavItem[] = [
     to: () => "/talks",
     badge: (context) => context.projects.length,
     active: (context) => context.routeName === "talks",
+  },
+  {
+    id: "feedback",
+    labelKey: "nav.feedback_active",
+    icon: "feedback",
+    to: () => "/feedback",
+    active: (context) => context.routeName === "feedbacks",
   },
   {
     id: "current-talk",
