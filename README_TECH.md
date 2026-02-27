@@ -9,7 +9,9 @@
 
 ## 2) Coherence decisions
 1. **UI standardized on Vue** (React starterkit variant rejected for spec coherence).
-2. **Docs source**: `spec/` remains the RFC source; `README*` + `docs/` carry operational guidance.
+2. **Docs boundary**:
+   - `README*` + `docs/` are the OSS-facing source of truth for onboarding, operations, and implementation.
+   - `spec/` stores architecture/product/UI design-flow material during iteration and may be moved later to internal technical docs.
 3. **Hexagonal architecture** preserved: domain/application/ports/adapters.
 4. **No network by default** from the MVP.
 5. **Open decisions moved into mandatory ADRs**: ADR-AUDIO-0001 and ADR-SEC-0002 with spikes and exit criteria.

@@ -10,9 +10,18 @@ Features already in place:
 - Peer-review pack export and peer feedback import.
 - Artifact management and ZIP import validation.
 
-Specs remain the source of reference:
-- `spec/spec_lepupitre.md` (product + backend + security + architecture)
-- `spec/spec_ui.md` (UI spec Vue/Nuxt UI)
+## OSS documentation model
+- Public OSS entry docs:
+  - `README.md` (project overview + onboarding)
+  - `CONTRIBUTING.md` (how to contribute)
+  - `CODE_OF_CONDUCT.md` (community expectations)
+  - `SECURITY.md` (vulnerability reporting)
+- Maintainer/engineering docs:
+  - `README_TECH.md` (architecture and release operations)
+  - `docs/` (plans, ADRs, implementation guidance)
+- Design-flow docs:
+  - `spec/` stores architecture/product/UI design flows used during iteration.
+  - `spec/` is intentionally kept as design material and may be moved later to internal technical documentation.
 
 ## 3) Coherence review (summary)
 ### Aligned
@@ -71,7 +80,8 @@ Install repo deps and run:
 3. Read `docs/IMPLEMENTATION_PLAN.md` (incremental, executable plan).
 4. Read `docs/CODEX_RULES.md` (docs/tests/changelog/ADR rules).
 5. Read the mandatory ADRs (`docs/adr/ADR-AUDIO-0001-...` and `docs/adr/ADR-SEC-0002-...`).
-6. Open `spec/` for contracts and full spec detail.
+6. Open `docs/README.md` for the complete docs map.
+7. Open `spec/` for current design-flow references.
 
 ## 5) Quality rules (pragmatic SOTA)
 - Local-first by design (network off by default).
@@ -105,6 +115,14 @@ Install repo deps and run:
 - Packaging CI: the `Release` workflow generates `.dmg` (macOS) and `.msi/.exe` (Windows) on native runners.
 - Artifacts are attached to a GitHub release when a `v*` tag is pushed.
 - Current trust level: unsigned/not notarized installers for `v0.2.x`.
+- Open-source Windows signing option: SignPath Foundation (`https://signpath.org/`) can sign OSS builds through GitHub Actions.
+- SignPath model note: signing is done remotely via SignPath/HSM; you typically do not manage a local `.pfx` in this flow.
+- Open-source macOS note: notarized distribution still requires an Apple Developer account and notarization credentials (paid Apple program).
+- For project-owned publisher identity instead, use your own OV/EV code-signing certificate from a CA.
 
 ## 9) Documentation rules
-See `docs/CODEX_RULES.md` for ADR, testing, and response format rules.
+- Documentation map: `docs/README.md`
+- Contribution workflow: `CONTRIBUTING.md`
+- Community policy: `CODE_OF_CONDUCT.md`
+- Security reporting: `SECURITY.md`
+- ADR/testing/changelog rules: `docs/CODEX_RULES.md`
