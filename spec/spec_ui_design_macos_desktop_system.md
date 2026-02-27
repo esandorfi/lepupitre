@@ -11,7 +11,7 @@ Purpose:
 This spec complements:
 
 - `docs/DESIGN_SYSTEM.md` (canonical implemented rules)
-- `docs/UI_AUDIT_MACOS_DESKTOP_REPORT.md` (audit + rationale)
+- `docs/archive/UI_AUDIT_MACOS_DESKTOP_REPORT.md` (historical audit + rationale)
 
 When this spec is implemented/approved, the relevant rules must be merged into `docs/DESIGN_SYSTEM.md`.
 

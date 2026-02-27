@@ -1,100 +1,57 @@
-# Plan d’implémentation suivable (back -> front, incréments fonctionnels)
+# Implementation Plan
 
-## Objectif
-Avoir une application fonctionnelle après chaque passe, avec valeur visible.
+Snapshot date: 2026-02-27
 
-## Passe 0 — Fondations repo & CI
-- Générer monorepo Tauri + Vue.
-- Mettre en place CI lint/tests.
-- Ajouter migrations v1 et seed minimal.
-- Exécuter 2 spikes obligatoires:
-  - spike audio capture→whisper (ADR-AUDIO-0001)
-  - spike sécurité least-privilege + CSP (ADR-SEC-0002)
-- Critère done: pipeline CI vert + app démarre.
-- Critère de sortie ADR: app “hello quest” enregistre un WAV 16k mono, le stocke dans appdata, et l’UI ne peut rien lire hors sandbox.
+This is the active execution plan. Historical planning material should be archived.
+This file is not documentation governance; governance rules live in `docs/DOCS_GOVERNANCE.md`.
 
-## Passe 1 — Profils + projet actif (vertical slice)
-### Back
-- commands profile_list/create/switch
-- global DB + active profile
-- project_create/get_active
-### Front
-- ProfilesPage + ProjectSetupPage + état actif
-### Done
-- User peut créer profil + projet puis revenir Home.
+## Current baseline (already delivered)
+- Local-first Tauri desktop app (`desktop/`) with Rust + Vue.
+- Core workflow: profiles/workspaces, talks, quests (text/audio), feedback, Boss Run.
+- ASR sidecar integration and model management.
+- Release packaging workflow for macOS and Windows.
+- Onboarding/help pages and core logic-contract test coverage for UI redesign safety.
 
-## Passe 2 — Quête texte (MVP visible)
-### Back
-- quest_get_daily
-- quest_submit_text
-- génération feedback heuristique v1 (sans STT)
-### Front
-- Home -> QuestPage -> FeedbackPage
-### Done
-- Boucle complète quête texte en local.
+## Active priorities
 
-## Passe 3 — Artefacts + audio recording
-### Back
-- ArtifactStore (put_bytes/resolve_path)
-- audio_start/stop -> artefact WAV
-### Front
-- AudioRecorder + progression basique
-### Done
-- Capture audio persistée et consultable.
+## Track A: Distribution hardening (release trust)
+Goal: signed and trusted installers.
 
-## Passe 4 — Transcription whisper.cpp + jobs
-### Back
-- adapter whisper + JobQueue + events progression
-- transcribe_attempt
-### Front
-- ProgressToast + suivi job
-### Done
-- Audio -> transcript affiché sans freeze UI.
+Scope:
+- Windows signing workflow (OSS path: SignPath Foundation or project-owned cert).
+- macOS signing + notarization workflow with Apple credentials.
+- CI gate: release jobs fail if signing/notarization requirements are configured but not met.
 
-## Passe 5 — Analyse avancée + recommandations 2 priorités
-### Back
-- métriques (wpm/fillers/pauses) + rules_v1
-### Front
-- FeedbackPanel enrichi
-### Done
-- Feedback actionnable limité à 2 actions.
+Done when:
+- Windows artifacts are signed in release CI.
+- macOS artifacts are signed and notarized in release CI.
+- Documentation and release runbook are updated.
 
-## Passe 6 — Boss Run + rapport
-### Back
-- run_start/stop + pipeline analyse
-### Front
-- BossRunPage + navigation vers rapport
-### Done
-- Session longue complète fonctionnelle.
+## Track B: UI redesign with stable logic contracts
+Goal: allow major UI changes while preserving behavior.
 
-## Passe 7 — Talk Builder + export markdown
-### Back
-- modèle outline + export markdown
-### Front
-- TalkBuilderPage
-### Done
-- Outline éditable + export markdown.
+Scope:
+- Keep existing logic contracts tested (routing, breadcrumbs/context retention, progression guardrails, ASR settings/error mapping, IPC schema alignment).
+- Continue visual/IA redesign from active specs.
+- Prevent regressions through test-first updates on logic modules.
 
-## Passe 8 — Pair review pack
-### Back
-- export_pack + import_review + validation zip
-### Front
-- PacksPage (export/import)
-### Done
-- Revue pair offline opérationnelle.
+Done when:
+- UI can evolve without breaking contract tests.
+- Any intentional contract change updates tests and docs in the same PR.
 
-## Passe 9 — Hardening enterprise
-- sécurité import, limites ressources
-- gestion erreurs et retry
-- tests de non-régression
-- docs ADR + runbook
-- politique release/signature explicite (statut actuel + gate notarization/signing)
+## Track C: ASR robustness and CI reliability
+Goal: predictable ASR behavior across platforms and CI.
 
-## Règle de passage
-Une passe n’est close que si:
-1. lint/test OK,
-2. doc mise à jour,
-3. docs mises à jour si nécessaire.
+Scope:
+- Keep sidecar resource checks deterministic on Windows/macOS CI.
+- Maintain ASR smoke tests as opt-in but reliable when enabled.
+- Tighten error handling paths (`sidecar_missing`, `model_missing`, timeouts).
 
-## Plans associés
-- Whisper local transcription: `docs/plan/PLAN-WHISPER-LOCAL-TRANSCRIPTION.md`.
+Done when:
+- Release and smoke-test CI runs are stable.
+- ASR failure modes are deterministic in UI and logs.
+
+## Working rules for this plan
+- Keep this file short and current.
+- Move deep technical plans to `docs/plan/PLAN-*.md`.
+- If a track is completed or abandoned, update this file and `docs/STATUS.md` in the same PR.

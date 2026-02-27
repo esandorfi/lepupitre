@@ -1,37 +1,13 @@
 # Design System Rules
 
 This document defines reusable UI/UX rules for Lepupitre screens and components.
-It is the implementation-facing version of the UI specs (including theme colors and the workspace switcher decisions).
+It is the implemented UI contract.
 
-## Status & Precedence (Single Source of Truth)
+## Scope
 
-- `docs/DESIGN_SYSTEM.md` is the single source of truth for **implemented and approved UI rules**.
-- If this document conflicts with older UI proposal/spec files, this document wins for implementation work.
-- The following spec files remain useful as historical/proposal context, but are not the canonical implementation contract:
-  - `spec/spec_ui_design_system.md`
-  - `spec/spec_ui_design_theme_colors.md`
-- When a new UI rule is implemented or approved in review, update this document in the same change set.
-
-### Current consolidation status
-
-- Consolidated from `spec/spec_ui_design_theme_colors.md`:
-  - semantic token architecture (`--color-*` canonical)
-  - `--app-*` compatibility alias strategy
-  - Nuxt UI `--ui-*` bridge strategy
-  - light/dark theme behavior and contrast rules
-- Consolidated from `spec/spec_ui_design_system.md`:
-  - switcher/list interaction model
-  - action hierarchy and destructive-action handling
-  - inline rename behavior
-  - accessibility/copy conventions
-- Not fully consolidated yet (keep in product/page specs until implemented):
-  - complete App Shell layout spec (exact header heights, page structure variants)
-  - page-specific IA and screen copy for every page
-
-### Companion docs (audit + upcoming implementation spec)
-
-- `docs/UI_AUDIT_MACOS_DESKTOP_REPORT.md` (UI/UX audit and macOS desktop direction analysis)
-- `spec/spec_ui_design_macos_desktop_system.md` (concrete desktop design system implementation spec)
+- This file contains implemented and approved rules only.
+- Proposal or exploratory UI material belongs in `spec/`.
+- If a rule is implemented from a spec, update this file in the same change set.
 
 ## 1) Core Rules (always apply)
 

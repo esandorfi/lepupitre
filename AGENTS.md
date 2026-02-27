@@ -1,9 +1,9 @@
 # Agent guide (Le Pupitre)
 
 ## Sources of truth
-- Follow `README.md`, `README_TECH.md`, and `docs/IMPLEMENTATION_PLAN.md` first.
+- Follow `README.md`, `docs/ARCHITECTURE.md`, and `docs/IMPLEMENTATION_PLAN.md` first.
 - Use `spec/` only when docs are unclear or missing.
-- Apply `docs/CODEX_RULES.md` for ADR/changelog/test obligations.
+- Apply `docs/CONTRIBUTION_RULES.md` for ADR/changelog/test obligations.
 
 ## Quality and pragmatism
 - Ship vertical slices: each pass must run end-to-end (UI + backend).
@@ -20,8 +20,8 @@
 - CI runs on GitHub Actions.
 
 ## Documentation discipline
-- Update docs/ADR when required by `docs/CODEX_RULES.md`.
-- Write README/README_TECH and ADRs in English.
+- Update docs/ADR when required by `docs/CONTRIBUTION_RULES.md`.
+- Write README/docs and ADRs in English.
 - Maintain `CHANGELOG.md` in English for every version bump/release.
 - Use `pnpm -C desktop changelog` to generate a brief entry from Git history when releasing.
 - Record unresolved decisions and mismatches; challenge assumptions early.

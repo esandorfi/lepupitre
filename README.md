@@ -17,7 +17,7 @@ Features already in place:
   - `CODE_OF_CONDUCT.md` (community expectations)
   - `SECURITY.md` (vulnerability reporting)
 - Maintainer/engineering docs:
-  - `README_TECH.md` (architecture and release operations)
+  - `docs/ARCHITECTURE.md` (architecture and release operations)
   - `docs/` (plans, ADRs, implementation guidance)
 - Design-flow docs:
   - `spec/` stores architecture/product/UI design flows used during iteration.
@@ -76,12 +76,13 @@ Install repo deps and run:
 
 ## Recommended path (newcomer)
 1. Read `README.md` (this document).
-2. Read `README_TECH.md` (architecture details).
+2. Read `docs/ARCHITECTURE.md` (architecture details).
 3. Read `docs/IMPLEMENTATION_PLAN.md` (incremental, executable plan).
-4. Read `docs/CODEX_RULES.md` (docs/tests/changelog/ADR rules).
+4. Read `docs/CONTRIBUTION_RULES.md` (docs/tests/changelog/ADR rules).
 5. Read the mandatory ADRs (`docs/adr/ADR-AUDIO-0001-...` and `docs/adr/ADR-SEC-0002-...`).
 6. Open `docs/README.md` for the complete docs map.
-7. Open `spec/` for current design-flow references.
+7. Open `docs/STATUS.md` for current docs/spec lifecycle state.
+8. Open `spec/` for current design-flow references.
 
 ## 5) Quality rules (pragmatic SOTA)
 - Local-first by design (network off by default).
@@ -122,7 +123,10 @@ Install repo deps and run:
 
 ## 9) Documentation rules
 - Documentation map: `docs/README.md`
+- Documentation lifecycle and archive policy: `docs/DOCS_GOVERNANCE.md`
+- Documentation and spec status ledger: `docs/STATUS.md`
 - Contribution workflow: `CONTRIBUTING.md`
 - Community policy: `CODE_OF_CONDUCT.md`
 - Security reporting: `SECURITY.md`
-- ADR/testing/changelog rules: `docs/CODEX_RULES.md`
+- Contributor process gates: `docs/CONTRIBUTION_RULES.md`
+- Agent behavior rules: `docs/CODEX_RULES.md`

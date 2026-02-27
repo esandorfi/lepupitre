@@ -3,9 +3,9 @@
 Thanks for contributing.
 
 ## Before you start
-- Read `README.md`, `README_TECH.md`, and `docs/README.md`.
+- Read `README.md`, `docs/ARCHITECTURE.md`, and `docs/README.md`.
 - Check `docs/IMPLEMENTATION_PLAN.md` for current priorities.
-- Follow `docs/CODEX_RULES.md` for ADR/changelog/test requirements.
+- Follow `docs/CONTRIBUTION_RULES.md` for ADR/changelog/test requirements.
 
 ## Development setup
 1. Install prerequisites from `README.md`.

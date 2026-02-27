@@ -1,26 +1,36 @@
 # Documentation Map
 
-This repository uses an OSS-first documentation model.
+Use this map to avoid documentation drift.
 
-## Public docs (primary)
-- `README.md`: project overview, onboarding, release status.
-- `CONTRIBUTING.md`: contribution workflow and quality expectations.
-- `CODE_OF_CONDUCT.md`: community behavior standards.
-- `SECURITY.md`: responsible vulnerability reporting.
+## Canonical docs (source of truth)
+- `README.md`: OSS overview and onboarding.
+- `docs/ARCHITECTURE.md`: architecture and release operations.
+- `docs/IMPLEMENTATION_PLAN.md`: current delivery priorities.
+- `docs/DESIGN_SYSTEM.md`: implemented UI rules.
+- `docs/adr/`: accepted or proposed architecture decisions.
 
-## Engineering docs (primary for maintainers)
-- `README_TECH.md`: architecture, CI/release operations, technical constraints.
-- `docs/IMPLEMENTATION_PLAN.md`: incremental delivery plan.
-- `docs/adr/`: architecture decision records.
-- `docs/plan/`: focused implementation plans.
-- `docs/CODEX_RULES.md`: ADR/changelog/test obligations used in this repo.
+## Governance docs (how docs are managed)
+- `docs/CONTRIBUTION_RULES.md`: required repository process gates (tests, ADR, changelog).
+- `docs/CODEX_RULES.md`: agent-specific behavior rules.
+- `docs/DOCS_GOVERNANCE.md`: lifecycle, ownership, naming, and archive policy.
+- `docs/STATUS.md`: status ledger for docs/specs and next actions.
 
-## Design-flow docs (secondary)
-- `spec/`: architecture/product/UI design-flow material used during iteration.
-- Current policy: `spec/` supports design and exploration.
-- Future policy: selected `spec/` content may be migrated to internal technical docs.
+## Proposal docs (not implementation truth)
+- `spec/README.md`: how `spec/` is used.
+- `spec/`: architecture/product/UI design proposals and drafts.
 
-## Rule of precedence
-1. `README.md`, `README_TECH.md`, `docs/IMPLEMENTATION_PLAN.md`
-2. ADRs and `docs/CODEX_RULES.md`
-3. `spec/` when the primary docs are unclear or incomplete
+## Historical docs
+- `docs/archive/`: archived reports and superseded snapshots.
+
+## Where to write new content
+- Decision with long-term impact: `docs/adr/ADR-*.md`
+- Active execution plan: `docs/plan/PLAN-*.md`
+- Implemented cross-cutting rule: update canonical file in `docs/`
+- Early proposal or exploration: `spec/`
+- Replaced/obsolete content: `docs/archive/`
+
+## Precedence
+1. Accepted ADRs + `docs/CONTRIBUTION_RULES.md`
+2. Canonical docs (`README*` + `docs/`)
+3. Active proposals in `spec/`
+4. Archived material (history only)
