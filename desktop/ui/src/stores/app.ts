@@ -71,6 +71,9 @@ import {
   FeedbackContextPayloadSchema,
   FeedbackContextSchema,
   FeedbackContext,
+  FeedbackTimelineItem,
+  FeedbackTimelinePayloadSchema,
+  FeedbackTimelineResponseSchema,
   MascotMessage,
   MascotMessagePayloadSchema,
   MascotMessageSchema,
@@ -694,6 +697,25 @@ async function getFeedbackContext(feedbackId: string): Promise<FeedbackContext> 
   return context;
 }
 
+async function getFeedbackTimeline(
+  projectId?: string | null,
+  limit?: number | null
+): Promise<FeedbackTimelineItem[]> {
+  if (!state.activeProfileId) {
+    throw new Error("no_active_profile");
+  }
+  return invokeChecked(
+    "feedback_timeline_list",
+    FeedbackTimelinePayloadSchema,
+    FeedbackTimelineResponseSchema,
+    {
+      profileId: state.activeProfileId,
+      projectId: projectId ?? null,
+      limit: limit ?? null,
+    }
+  );
+}
+
 async function getFeedbackNote(feedbackId: string): Promise<string | null> {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
@@ -812,6 +834,7 @@ export const appStore = {
   getPeerReview,
   getFeedback,
   getFeedbackContext,
+  getFeedbackTimeline,
   getFeedbackNote,
   setFeedbackNote,
 };

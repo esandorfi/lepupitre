@@ -9,6 +9,7 @@ import TalkExportPage from "../pages/TalkExportPage.vue";
 import ProjectSetupPage from "../pages/ProjectSetupPage.vue";
 import QuestPage from "../pages/QuestPage.vue";
 import FeedbackPage from "../pages/FeedbackPage.vue";
+import FeedbackTimelinePage from "../pages/FeedbackTimelinePage.vue";
 import PeerReviewPage from "../pages/PeerReviewPage.vue";
 import TalkBuilderPage from "../pages/TalkBuilderPage.vue";
 import BossRunPage from "../pages/BossRunPage.vue";
@@ -34,6 +35,7 @@ export const routes: RouteRecordRaw[] = [
   },
   { path: "/project/new", name: "project-new", component: ProjectSetupPage },
   { path: "/quest/:questCode", name: "quest", component: QuestPage },
+  { path: "/feedback", name: "feedbacks", component: FeedbackTimelinePage },
   { path: "/feedback/:feedbackId", name: "feedback", component: FeedbackPage },
   { path: "/peer-review/:peerReviewId", name: "peer-review", component: PeerReviewPage },
   { path: "/builder", name: "builder", component: TalkBuilderPage },

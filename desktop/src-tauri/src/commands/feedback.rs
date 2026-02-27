@@ -18,6 +18,76 @@ pub struct FeedbackContext {
     pub run_id: Option<String>,
 }
 
+#[derive(Debug, Serialize)]
+pub struct FeedbackTimelineItem {
+    pub id: String,
+    pub created_at: String,
+    pub overall_score: i64,
+    pub subject_type: String,
+    pub project_id: String,
+    pub quest_code: Option<String>,
+    pub quest_title: Option<String>,
+    pub run_id: Option<String>,
+    pub note_updated_at: Option<String>,
+}
+
+#[tauri::command]
+pub fn feedback_timeline_list(
+    app: tauri::AppHandle,
+    profile_id: String,
+    project_id: Option<String>,
+    limit: Option<u32>,
+) -> Result<Vec<FeedbackTimelineItem>, String> {
+    db::ensure_profile_exists(&app, &profile_id)?;
+    let conn = db::open_profile(&app, &profile_id)?;
+    let limit = normalize_timeline_limit(limit);
+
+    if let Some(project_id) = project_id.as_ref() {
+        ensure_project_exists(&conn, project_id)?;
+    }
+
+    let mut stmt = conn
+        .prepare(
+            "SELECT af.id, af.created_at, af.overall_score, af.subject_type,
+                    COALESCE(qa.project_id, r.project_id) AS project_id,
+                    qa.quest_code, q.title, r.id, fn.updated_at
+             FROM auto_feedback af
+             LEFT JOIN quest_attempts qa
+               ON af.subject_type = 'quest_attempt' AND qa.id = af.subject_id
+             LEFT JOIN quests q ON qa.quest_code = q.code
+             LEFT JOIN runs r
+               ON af.subject_type = 'run' AND r.id = af.subject_id
+             LEFT JOIN feedback_notes fn ON fn.feedback_id = af.id
+             WHERE af.subject_type IN ('quest_attempt', 'run')
+               AND COALESCE(qa.project_id, r.project_id) IS NOT NULL
+               AND (?1 IS NULL OR COALESCE(qa.project_id, r.project_id) = ?1)
+             ORDER BY af.created_at DESC
+             LIMIT ?2",
+        )
+        .map_err(|e| format!("feedback_timeline_prepare: {e}"))?;
+    let rows = stmt
+        .query_map(params![project_id, limit], |row| {
+            Ok(FeedbackTimelineItem {
+                id: row.get(0)?,
+                created_at: row.get(1)?,
+                overall_score: row.get(2)?,
+                subject_type: row.get(3)?,
+                project_id: row.get(4)?,
+                quest_code: row.get(5)?,
+                quest_title: row.get(6)?,
+                run_id: row.get(7)?,
+                note_updated_at: row.get(8)?,
+            })
+        })
+        .map_err(|e| format!("feedback_timeline_query: {e}"))?;
+
+    let mut items = Vec::new();
+    for row in rows {
+        items.push(row.map_err(|e| format!("feedback_timeline_row: {e}"))?);
+    }
+    Ok(items)
+}
+
 #[tauri::command]
 pub fn analyze_attempt(
     app: tauri::AppHandle,
@@ -246,4 +316,40 @@ pub fn feedback_note_set(
     )
     .map_err(|e| format!("note_upsert: {e}"))?;
     Ok(())
+}
+
+fn ensure_project_exists(conn: &rusqlite::Connection, project_id: &str) -> Result<(), String> {
+    let count: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM talk_projects WHERE id = ?1",
+            params![project_id],
+            |row| row.get(0),
+        )
+        .map_err(|e| format!("project_exists: {e}"))?;
+    if count == 0 {
+        return Err("project_not_found".to_string());
+    }
+    Ok(())
+}
+
+fn normalize_timeline_limit(limit: Option<u32>) -> i64 {
+    let raw = limit.unwrap_or(30).max(1);
+    raw.min(100) as i64
+}
+
+#[cfg(test)]
+mod tests {
+    use super::normalize_timeline_limit;
+
+    #[test]
+    fn timeline_limit_defaults_to_thirty() {
+        assert_eq!(normalize_timeline_limit(None), 30);
+    }
+
+    #[test]
+    fn timeline_limit_clamps_bounds() {
+        assert_eq!(normalize_timeline_limit(Some(0)), 1);
+        assert_eq!(normalize_timeline_limit(Some(5)), 5);
+        assert_eq!(normalize_timeline_limit(Some(300)), 100);
+    }
 }
