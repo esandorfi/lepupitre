@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import AppHeaderMenu from "../components/AppHeaderMenu.vue";
 import WorkspaceSwitcher from "../components/WorkspaceSwitcher.vue";
 import RouteContextBar from "../components/shell/RouteContextBar.vue";
@@ -15,6 +15,7 @@ import { appStore } from "../stores/app";
 
 const { t } = useI18n();
 const route = useRoute();
+const router = useRouter();
 const { settings: uiSettings } = useUiPreferences();
 
 const viewportWidth = ref(typeof window === "undefined" ? 1280 : window.innerWidth);
@@ -48,6 +49,22 @@ function onNavigateIntent(payload: { source: "top" | "sidebar-icon"; itemId: str
   recordNavIntent(payload.source, payload.itemId);
 }
 
+const onboardingExemptRoutes = new Set(["onboarding", "help", "about"]);
+
+function maybeRedirectToOnboarding() {
+  if (uiSettings.value.onboardingSeen) {
+    return;
+  }
+  const routeName = typeof route.name === "string" ? route.name : null;
+  if (routeName && onboardingExemptRoutes.has(routeName)) {
+    return;
+  }
+  const next = encodeURIComponent(route.fullPath || "/training");
+  router.replace(`/onboarding?next=${next}`).catch(() => {
+    // ignore redundant navigation
+  });
+}
+
 watch(
   () => effectiveNavMode.value,
   (mode) => {
@@ -63,6 +80,14 @@ watch(
   () => {
     flushNavIntent();
   }
+);
+
+watch(
+  () => [route.fullPath, uiSettings.value.onboardingSeen] as const,
+  () => {
+    maybeRedirectToOnboarding();
+  },
+  { immediate: true }
 );
 
 onMounted(() => {

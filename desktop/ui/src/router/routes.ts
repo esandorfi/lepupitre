@@ -15,6 +15,8 @@ import BossRunPage from "../pages/BossRunPage.vue";
 import PacksPage from "../pages/PacksPage.vue";
 import SettingsPage from "../pages/SettingsPage.vue";
 import AboutPage from "../pages/AboutPage.vue";
+import OnboardingPage from "../pages/OnboardingPage.vue";
+import HelpPage from "../pages/HelpPage.vue";
 
 export const routes: RouteRecordRaw[] = [
   { path: "/", redirect: "/training" },
@@ -38,5 +40,7 @@ export const routes: RouteRecordRaw[] = [
   { path: "/boss-run", name: "boss-run", component: BossRunPage },
   { path: "/packs", name: "packs", component: PacksPage },
   { path: "/settings", name: "settings", component: SettingsPage },
+  { path: "/onboarding", name: "onboarding", component: OnboardingPage },
+  { path: "/help", name: "help", component: HelpPage },
   { path: "/about", name: "about", component: AboutPage },
 ];
