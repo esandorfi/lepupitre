@@ -77,6 +77,19 @@ jobs:
         shell: bash
         run: ./scripts/build-asr-sidecar.sh --copy
 
+      - name: Ensure sidecar resource filenames
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p desktop/src-tauri/sidecar
+          if [ ! -f desktop/src-tauri/sidecar/lepupitre-asr ] && [ -f desktop/src-tauri/sidecar/lepupitre-asr.exe ]; then
+            cp desktop/src-tauri/sidecar/lepupitre-asr.exe desktop/src-tauri/sidecar/lepupitre-asr
+            chmod +x desktop/src-tauri/sidecar/lepupitre-asr
+          fi
+          if [ ! -f desktop/src-tauri/sidecar/lepupitre-asr.exe ] && [ -f desktop/src-tauri/sidecar/lepupitre-asr ]; then
+            cp desktop/src-tauri/sidecar/lepupitre-asr desktop/src-tauri/sidecar/lepupitre-asr.exe
+          fi
+
       - name: Verify ASR sidecar binary
         run: node scripts/verify-asr-sidecar.mjs
 

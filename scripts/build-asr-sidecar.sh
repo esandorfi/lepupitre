@@ -25,12 +25,35 @@ fi
 
 if [ "$COPY" -eq 1 ]; then
   mkdir -p "$OUT_DIR"
-  if [ "$(uname -s)" = "Darwin" ] || [ "$(uname -s)" = "Linux" ]; then
+  COPIED=0
+
+  if [ -f "$SIDECAR_DIR/target/release/lepupitre-asr" ]; then
     cp "$SIDECAR_DIR/target/release/lepupitre-asr" "$OUT_DIR/lepupitre-asr"
     chmod +x "$OUT_DIR/lepupitre-asr"
-  else
-    cp "$SIDECAR_DIR/target/release/lepupitre-asr.exe" "$OUT_DIR/lepupitre-asr.exe"
+    COPIED=1
   fi
+
+  if [ -f "$SIDECAR_DIR/target/release/lepupitre-asr.exe" ]; then
+    cp "$SIDECAR_DIR/target/release/lepupitre-asr.exe" "$OUT_DIR/lepupitre-asr.exe"
+    COPIED=1
+  fi
+
+  if [ "$COPIED" -ne 1 ]; then
+    echo "No sidecar output found in $SIDECAR_DIR/target/release" >&2
+    exit 1
+  fi
+
+  # Tauri bundle resources are configured with both filenames.
+  # Keep both paths present on all platforms so CI builds don't fail
+  # when running Rust checks on a different host OS.
+  if [ ! -f "$OUT_DIR/lepupitre-asr" ] && [ -f "$OUT_DIR/lepupitre-asr.exe" ]; then
+    cp "$OUT_DIR/lepupitre-asr.exe" "$OUT_DIR/lepupitre-asr"
+    chmod +x "$OUT_DIR/lepupitre-asr"
+  fi
+  if [ ! -f "$OUT_DIR/lepupitre-asr.exe" ] && [ -f "$OUT_DIR/lepupitre-asr" ]; then
+    cp "$OUT_DIR/lepupitre-asr" "$OUT_DIR/lepupitre-asr.exe"
+  fi
+
   echo "Sidecar copied to $OUT_DIR"
 else
   echo "Sidecar built at $SIDECAR_DIR/target/release (use --copy to bundle into src-tauri/sidecar)"
