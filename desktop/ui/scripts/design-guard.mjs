@@ -1,8 +1,9 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
+import { dirname, join, relative } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const root = new URL("../src", import.meta.url);
-const rootPath = root.pathname;
+const scriptDir = dirname(fileURLToPath(import.meta.url));
+const rootPath = join(scriptDir, "../src");
 
 const hardFailPatterns = [
   { name: "text-[10px]", regex: /text-\[10px\]/g },
