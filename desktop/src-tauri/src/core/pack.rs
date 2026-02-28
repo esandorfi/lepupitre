@@ -190,20 +190,20 @@ pub fn pack_export(
         "project_id": project_id,
         "pack_id": pack_id,
     });
-    conn.execute(
-        "INSERT INTO artifacts (id, type, local_relpath, sha256, bytes, created_at, metadata_json)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-        params![
-            pack_id,
-            "pack",
-            relpath,
-            pack_sha,
-            pack_bytes as i64,
-            created_at,
-            serde_json::to_string(&metadata).map_err(|e| format!("pack_metadata: {e}"))?
-        ],
-    )
-    .map_err(|e| format!("pack_insert: {e}"))?;
+    let metadata_json =
+        serde_json::to_string(&metadata).map_err(|e| format!("pack_metadata: {e}"))?;
+    insert_pack_artifact_with_cleanup(
+        &conn,
+        PackArtifactRow {
+            artifact_id: &pack_id,
+            relpath: &relpath,
+            sha256: &pack_sha,
+            bytes: pack_bytes as i64,
+            created_at: &created_at,
+            metadata_json: &metadata_json,
+        },
+        &pack_path,
+    )?;
 
     Ok(models::ExportResult {
         path: pack_path.to_string_lossy().to_string(),
@@ -783,6 +783,51 @@ fn next_talk_number(conn: &rusqlite::Connection) -> Result<i64, String> {
     Ok(max_value + 1)
 }
 
+struct PackArtifactRow<'a> {
+    artifact_id: &'a str,
+    relpath: &'a str,
+    sha256: &'a str,
+    bytes: i64,
+    created_at: &'a str,
+    metadata_json: &'a str,
+}
+
+fn insert_pack_artifact_with_cleanup(
+    conn: &Connection,
+    row: PackArtifactRow<'_>,
+    pack_path: &Path,
+) -> Result<(), String> {
+    let insert_result = conn.execute(
+        "INSERT INTO artifacts (id, type, local_relpath, sha256, bytes, created_at, metadata_json)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        params![
+            row.artifact_id,
+            "pack",
+            row.relpath,
+            row.sha256,
+            row.bytes,
+            row.created_at,
+            row.metadata_json
+        ],
+    );
+    if let Err(err) = insert_result {
+        let persist_err = format!("pack_insert: {err}");
+        match remove_file_if_exists(pack_path) {
+            Ok(()) => Err(persist_err),
+            Err(cleanup_err) => Err(format!("{persist_err}; {cleanup_err}")),
+        }
+    } else {
+        Ok(())
+    }
+}
+
+fn remove_file_if_exists(path: &Path) -> Result<(), String> {
+    if path.exists() {
+        std::fs::remove_file(path).map_err(|e| format!("pack_cleanup_file: {e}"))?;
+    }
+    Ok(())
+}
+
 struct PeerReviewImportRows<'a> {
     project_id: &'a str,
     talk_title: &'a str,
@@ -881,7 +926,10 @@ fn cleanup_import_artifacts(
 
 #[cfg(test)]
 mod tests {
-    use super::{cleanup_import_artifacts, persist_peer_review_import_rows, PeerReviewImportRows};
+    use super::{
+        cleanup_import_artifacts, insert_pack_artifact_with_cleanup,
+        persist_peer_review_import_rows, PackArtifactRow, PeerReviewImportRows,
+    };
     use rusqlite::{params, Connection};
     use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -1057,5 +1105,33 @@ mod tests {
         assert!(!file_b.exists());
 
         let _ = std::fs::remove_dir_all(base_dir);
+    }
+
+    #[test]
+    fn insert_pack_artifact_with_cleanup_removes_zip_on_insert_failure() {
+        let conn = Connection::open_in_memory().expect("open");
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("time")
+            .as_nanos();
+        let zip_path = std::env::temp_dir().join(format!("lepupitre-pack-insert-fail-{nonce}.zip"));
+        std::fs::write(&zip_path, b"zip").expect("write zip");
+        assert!(zip_path.exists());
+
+        let err = insert_pack_artifact_with_cleanup(
+            &conn,
+            PackArtifactRow {
+                artifact_id: "pack_1",
+                relpath: "artifacts/packs/pack_1.zip",
+                sha256: "abc",
+                bytes: 3,
+                created_at: "2026-02-28T00:00:00Z",
+                metadata_json: "{}",
+            },
+            &zip_path,
+        )
+        .expect_err("insert fails because artifacts table is missing");
+        assert!(err.contains("pack_insert:"));
+        assert!(!zip_path.exists());
     }
 }

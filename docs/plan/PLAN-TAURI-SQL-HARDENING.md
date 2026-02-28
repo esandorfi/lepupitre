@@ -198,7 +198,10 @@ Acceptance:
 - Hardened artifact persistence boundary itself:
   - `store_bytes` and `finalize_draft` now auto-clean the just-written file when artifact row insert fails,
   - coverage added for cleanup-on-insert-failure and cleanup-error surfacing.
-- Remaining Workstream 3 scope: standardize this compensation/finalization contract for remaining multi-resource write paths.
+- Hardened pack export persistence:
+  - generated pack ZIP is auto-removed when pack artifact row insert fails,
+  - coverage added for cleanup-on-pack-insert-failure.
+- Remaining Workstream 3 scope: document and standardize one shared compensation/finalization helper API across all multi-resource write paths.
 
 ## Dependencies
 
