@@ -7,7 +7,7 @@ Last updated: 2026-02-28
 ## Checkpoint snapshot
 
 - Plan source: [PLAN-TAURI-SQL-HARDENING.md](PLAN-TAURI-SQL-HARDENING.md)
-- Current phase: Workstream 5 (recovery, backup, operability)
+- Current phase: Workstream 6 (reliability gates in CI)
 - Last completed slice:
   - extracted run-domain data access from `commands/run.rs` to `core/run.rs`
   - command layer now wrapper-only for run commands
@@ -22,11 +22,12 @@ Last updated: 2026-02-28
   - added DB diagnostics helpers (`DbDiagnostics`, `global_diagnostics`, `profile_diagnostics`) in `core/db.rs`
   - added startup corruption recovery (quarantine + restore from latest snapshot) in `core/db.rs`
   - added diagnostics IPC command `profile_db_diagnostics` (global + optional profile)
-- Last known checkpoint commit: `6377bfc` (updated in-progress after this checkpoint)
+  - documented operator restore workflow and `db_recovery_no_snapshot` handling in operations docs
+- Last known checkpoint commit: `b97e45e` (updated in-progress after this checkpoint)
 
 ## Resume goal
 
-Start Workstream 5 by implementing safe local backup/recovery flow around migrations and adding DB health diagnostics.
+Start Workstream 6 by adding CI reliability gates for migrations, corruption drills, and query-plan/index checks.
 
 ## Resume checklist (ordered)
 
@@ -36,16 +37,18 @@ Start Workstream 5 by implementing safe local backup/recovery flow around migrat
   - `cargo test --manifest-path desktop/src-tauri/Cargo.toml`
   - `pnpm -C desktop docs:lint`
 
-1. Workstream 5 kickoff
-- [x] Define backup trigger points (before migration on pending versions).
-- [x] Implement profile/global DB snapshot helper with deterministic naming and retention rules.
-- [x] Add restore path and failure handling for corrupted DB startup scenario.
-- [x] Add diagnostics IPC command/report:
-  - schema version
-  - migration continuity status
-  - `PRAGMA integrity_check`
-  - `PRAGMA foreign_key_check`
-- [ ] Document operator restore workflow and user-visible error handling (`db_recovery_no_snapshot`) in operations docs.
+1. Workstream 6 kickoff
+- [ ] Add migration matrix CI checks:
+  - fresh install schema path
+  - upgrade path from older fixture DBs
+- [ ] Add corruption drill CI checks:
+  - corrupted DB fixture
+  - snapshot restore assertion
+  - deterministic `db_recovery_no_snapshot` failure assertion
+- [ ] Add hot query guard rails:
+  - query-plan assertions for key reads/writes
+  - index presence checks for expected paths
+- [ ] Define CI failure thresholds and runbook links for DB reliability failures.
 
 1. Guard rails + docs per slice
 - [ ] Update [PLAN-TAURI-SQL-HARDENING.md](PLAN-TAURI-SQL-HARDENING.md) progress bullets.
@@ -54,10 +57,10 @@ Start Workstream 5 by implementing safe local backup/recovery flow around migrat
   - [docs/CONTRIBUTION_RULES.md](../CONTRIBUTION_RULES.md)
 - [ ] Keep [docs/STATUS.md](../STATUS.md) next-action aligned.
 
-1. Done criteria for Workstream 5
-- [x] Backup/restore flow is implemented and testable.
-- [ ] Corruption handling path is deterministic and documented.
-- [x] Diagnostics are available for local support and CI assertions.
+1. Done criteria for Workstream 6
+- [ ] CI blocks migration continuity and corruption-recovery regressions.
+- [ ] Hot-path query plans and index expectations are enforced.
+- [ ] Reliability failures are diagnosable from CI logs + runbook references.
 
 ## Quick commands
 

@@ -30,6 +30,48 @@
   - first app open after update applies pending global migrations,
   - each profile is upgraded on first access after update.
 
+## Database recovery runbook
+### Automatic behavior at startup
+- On DB open, the app verifies DB health (`PRAGMA quick_check`) before migrations.
+- If DB open/integrity fails:
+  - current DB files are quarantined under `corrupted/`,
+  - latest matching snapshot from `backups/` is restored,
+  - if no snapshot exists, startup fails with `db_recovery_no_snapshot`.
+
+### Storage locations
+- Global DB:
+  - database: `<appData>/global.db`
+  - snapshots: `<appData>/backups/`
+  - quarantined files: `<appData>/corrupted/`
+- Profile DB:
+  - database: `<appData>/profiles/<profileId>/profile.db`
+  - snapshots: `<appData>/profiles/<profileId>/backups/`
+  - quarantined files: `<appData>/profiles/<profileId>/corrupted/`
+
+### Snapshot policy
+- Snapshots are created automatically before pending migrations on existing DBs.
+- Snapshot naming: `<db>-<scope>-pre-<next-migration>-<timestamp>.db`.
+- Retention keeps the newest 5 snapshots per DB scope.
+
+### Operator triage steps
+1. Capture the failing error string and timestamp (`db_recovery_no_snapshot` or recovery-related open error).
+1. Collect diagnostics (global + optional profile):
+
+```ts
+import { invoke } from '@tauri-apps/api/core'
+
+const report = await invoke('profile_db_diagnostics', { profileId: 'prof_xxx' })
+```
+
+1. If `db_recovery_no_snapshot`, close the app, inspect `corrupted/` for quarantined DB files, restore a known-good `.db` from `backups/` to the active DB path, then relaunch and re-run diagnostics.
+1. If no valid backup exists, keep quarantined DB files for forensic analysis and initialize a fresh DB by relaunching the app (data loss for the affected DB scope).
+
+### Incident artifacts to keep
+- Quarantined DB files from `corrupted/`.
+- Selected restored snapshot filename.
+- `profile_db_diagnostics` output before/after restore.
+- App version and migration checkpoint (`latestMigration` / `schemaVersion`).
+
 ## Quality gates
 - Documentation:
   - `pnpm -C desktop docs:lint`

@@ -251,6 +251,10 @@ Acceptance:
     - fail with explicit `db_recovery_no_snapshot` when no safe snapshot exists.
   - added diagnostics IPC exposure via `profile_db_diagnostics` command (global + optional profile report),
   - added regression tests for snapshot-based recovery and no-snapshot failure behavior.
+- Workstream 5 slice delivered:
+  - documented operator recovery workflow and `db_recovery_no_snapshot` handling in `docs/operations/release.md`,
+  - documented diagnostics IPC contract in `docs/architecture/ipc-contracts.md`.
+- 2026-02-28: Workstream 5 completed.
 
 ## Dependencies
 

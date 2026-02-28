@@ -31,6 +31,23 @@ If one layer changes, all layers must be updated in the same PR.
 - Fallback rule:
   - UI may fall back to local browser storage when Tauri runtime/IPC is unavailable, but command payload shapes still remain the source contract.
 
+## DB diagnostics IPC
+- Command: `profile_db_diagnostics`
+- Payload:
+  - `profileId?: string` (optional; when omitted, only global diagnostics are returned)
+- Response contract:
+  - `global`: DB diagnostics object
+  - `profile`: nullable DB diagnostics object
+  - diagnostics fields include:
+    - `schemaVersion`
+    - `latestMigration`
+    - `appliedMigrationCount`
+    - `expectedMigrationCount`
+    - `continuityOk`
+    - `continuityError`
+    - `integrityCheck`
+    - `foreignKeyViolations`
+
 ## UI redesign guardrails
 When UI visual structure changes, keep these logic contracts tested:
 - navigation routing contract
