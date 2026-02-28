@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/images/app_screen_26_02_1.png" alt="Le Pupitre icon"  />
+  <img src="docs/images/app_icon_26_02_1.png" alt="Le Pupitre icon"  />
 </p>
 
 <h1 align="center">Le Pupitre</h1>
@@ -11,6 +11,13 @@
   <a href="https://github.com/esandorfi/lepupitre/releases">Download</a> |
   <a href="docs/README.md">Docs</a> |
   <a href="CONTRIBUTING.md">Contributing</a>
+</p>
+
+<hr>
+
+<p align="center">
+  <img src="docs/images/app_screen_26_02_1.png" alt="Le Pupitre Future UI"  /><br>
+  <i>Our future UI maybe ?</i>
 </p>
 
 ## Problems it solves
