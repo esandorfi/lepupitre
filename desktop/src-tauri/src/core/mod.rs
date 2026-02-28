@@ -9,6 +9,8 @@ pub mod dsp;
 pub mod feedback;
 pub mod ids;
 pub mod models;
+pub mod outline;
+pub mod project;
 pub mod quest;
 pub mod recording;
 pub mod seed;

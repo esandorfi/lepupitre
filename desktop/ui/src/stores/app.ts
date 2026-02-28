@@ -25,21 +25,22 @@ import {
   setFeedbackNote as setFeedbackNoteFromApi,
 } from "../domains/feedback/api";
 import {
+  createProject as createTalkProjectFromApi,
+  ensureTrainingProject as ensureTrainingProjectFromApi,
+  exportOutline as exportTalkOutlineFromApi,
+  getActiveProject as getActiveTalkProjectFromApi,
+  getOutline as getTalkOutlineFromApi,
+  listProjects as listTalkProjectsFromApi,
+  saveOutline as saveTalkOutlineFromApi,
+  setActiveProject as setActiveTalkProjectFromApi,
+  updateProject as updateTalkProjectFromApi,
+} from "../domains/talk/api";
+import {
   IdSchema,
-  ProfileIdPayloadSchema,
   ProfileSummary,
-  ProjectCreateRequestSchema,
   ProjectUpdatePayload,
-  ProjectUpdateRequestSchema,
-  ProjectIdPayloadSchema,
   ProjectListItem,
-  ProjectListResponseSchema,
   ProjectSummary,
-  ProjectSummaryNullableSchema,
-  OutlineGetPayloadSchema,
-  OutlineSetPayloadSchema,
-  OutlineDocSchema,
-  ExportOutlinePayloadSchema,
   ExportResultSchema,
   OutlineDoc,
   ExportResult,
@@ -71,7 +72,6 @@ import {
   Quest,
   QuestAttemptSummary,
   QuestReportItem,
-  AnalyzeResponseSchema,
   FeedbackV1,
   FeedbackContext,
   FeedbackTimelineItem,
@@ -150,12 +150,7 @@ async function loadProjects() {
     state.projects = [];
     return;
   }
-  const projects = await invokeChecked(
-    "project_list",
-    ProfileIdPayloadSchema,
-    ProjectListResponseSchema,
-    { profileId: state.activeProfileId }
-  );
+  const projects = await listTalkProjectsFromApi(state.activeProfileId);
   state.projects = projects;
 }
 
@@ -166,12 +161,7 @@ async function ensureTrainingProject() {
   if (state.trainingProjectId) {
     return state.trainingProjectId;
   }
-  const id = await invokeChecked(
-    "project_ensure_training",
-    ProfileIdPayloadSchema,
-    IdSchema,
-    { profileId: state.activeProfileId }
-  );
+  const id = await ensureTrainingProjectFromApi(state.activeProfileId);
   state.trainingProjectId = id;
   return id;
 }
@@ -212,12 +202,7 @@ async function loadActiveProject() {
     state.activeProject = null;
     return;
   }
-  const activeProject = await invokeChecked(
-    "project_get_active",
-    ProfileIdPayloadSchema,
-    ProjectSummaryNullableSchema,
-    { profileId: state.activeProfileId }
-  );
+  const activeProject = await getActiveTalkProjectFromApi(state.activeProfileId);
   state.activeProject = activeProject;
 }
 
@@ -230,12 +215,7 @@ async function createProject(payload: {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
   }
-  const id = await invokeChecked(
-    "project_create",
-    ProjectCreateRequestSchema,
-    IdSchema,
-    { profileId: state.activeProfileId, payload }
-  );
+  const id = await createTalkProjectFromApi(state.activeProfileId, payload);
   await loadActiveProject();
   await loadProjects();
   await loadDailyQuest();
@@ -246,12 +226,7 @@ async function updateProject(projectId: string, payload: ProjectUpdatePayload) {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
   }
-  await invokeChecked(
-    "project_update",
-    ProjectUpdateRequestSchema,
-    VoidResponseSchema,
-    { profileId: state.activeProfileId, projectId, payload }
-  );
+  await updateTalkProjectFromApi(state.activeProfileId, projectId, payload);
   await loadProjects();
   if (state.activeProject?.id === projectId) {
     await loadActiveProject();
@@ -298,12 +273,7 @@ async function setActiveProject(projectId: string) {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
   }
-  await invokeChecked(
-    "project_set_active",
-    ProjectIdPayloadSchema,
-    VoidResponseSchema,
-    { profileId: state.activeProfileId, projectId }
-  );
+  await setActiveTalkProjectFromApi(state.activeProfileId, projectId);
   await loadActiveProject();
   await loadProjects();
   await loadDailyQuest();
@@ -577,31 +547,21 @@ async function getOutline(projectId: string): Promise<OutlineDoc> {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
   }
-  return invokeChecked("outline_get", OutlineGetPayloadSchema, OutlineDocSchema, {
-    profileId: state.activeProfileId,
-    projectId,
-  });
+  return getTalkOutlineFromApi(state.activeProfileId, projectId);
 }
 
 async function saveOutline(projectId: string, markdown: string) {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
   }
-  await invokeChecked("outline_set", OutlineSetPayloadSchema, VoidResponseSchema, {
-    profileId: state.activeProfileId,
-    projectId,
-    markdown,
-  });
+  await saveTalkOutlineFromApi(state.activeProfileId, projectId, markdown);
 }
 
 async function exportOutline(projectId: string): Promise<ExportResult> {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
   }
-  return invokeChecked("export_outline", ExportOutlinePayloadSchema, ExportResultSchema, {
-    profileId: state.activeProfileId,
-    projectId,
-  });
+  return exportTalkOutlineFromApi(state.activeProfileId, projectId);
 }
 
 async function exportPack(runId: string): Promise<ExportResult> {
