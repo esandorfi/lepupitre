@@ -233,6 +233,16 @@
 
 ---
 
+## Code signing policy
+
+Free code signing provided by SignPath.io, certificate by SignPath Foundation.
+
+- Policy: [docs/operations/CODE_SIGNING_POLICY.md](docs/operations/CODE_SIGNING_POLICY.md)
+- Maintainer and signing roles: [docs/PROJECT_GOVERNANCE.md](docs/PROJECT_GOVERNANCE.md)
+- Privacy policy: [PRIVACY.md](PRIVACY.md)
+
+---
+
 ## Contributing
 
 - Start here: [CONTRIBUTING.md](CONTRIBUTING.md)
@@ -249,4 +259,4 @@
 ---
 
 ## License
-FSL-1.1-MIT (Fair Source License 1.1 with MIT future license)
+Apache-2.0

@@ -6,6 +6,10 @@
 - Release CI now includes a signing/notarization gate script:
   - `scripts/check-release-signing.sh`
   - gate runs in `.github/workflows/release-packaging.yml`
+- Public policy/governance pages:
+  - [Code signing policy](CODE_SIGNING_POLICY.md)
+  - [Project governance](../PROJECT_GOVERNANCE.md)
+  - [Privacy policy](../../PRIVACY.md)
 
 ## Windows signing
 - SignPath Foundation (`https://signpath.org/`) is an option when project eligibility matches their program terms.
@@ -46,3 +50,7 @@
   - `docs/operations/release.md`
   - `docs/STATUS.md`
   - `CHANGELOG.md` (for released versions)
+
+## SignPath Foundation application
+- Preparation checklist and submission form helper:
+  - [SIGNPATH_FOUNDATION_APPLICATION.md](SIGNPATH_FOUNDATION_APPLICATION.md)

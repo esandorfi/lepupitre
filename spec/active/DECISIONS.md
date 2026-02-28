@@ -81,3 +81,24 @@ Use this file for new architecture, security, IPC, and release decisions.
   - `docs/operations/signing.md`
   - `docs/operations/release.md`
   - `docs/IMPLEMENTATION_PLAN.md`
+
+### DEC-20260228-license-switch-apache2
+- Status: accepted
+- Context:
+  - SignPath Foundation terms require OSI-approved open-source licensing for participating projects.
+  - The repository previously used a Fair Source license and was not eligible for that requirement.
+- Decision:
+  - Switch repository license to Apache License 2.0.
+  - Publish explicit public trust artifacts:
+    - `README.md` section `Code signing policy`,
+    - `docs/operations/CODE_SIGNING_POLICY.md`,
+    - `docs/PROJECT_GOVERNANCE.md`,
+    - `PRIVACY.md`.
+- Consequences:
+  - Project licensing is now OSI-approved and aligned with SignPath Foundation eligibility requirements.
+  - SignPath application can proceed with explicit maintainer roles and policy links.
+- Related specs/docs:
+  - `LICENSE`
+  - `NOTICE`
+  - `README.md`
+  - `docs/operations/SIGNPATH_FOUNDATION_APPLICATION.md`

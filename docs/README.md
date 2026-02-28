@@ -4,12 +4,16 @@ Use this map to avoid documentation drift.
 
 ## Canonical docs (source of truth)
 - [README.md](../README.md): product and user onboarding.
+- [PRIVACY.md](../PRIVACY.md): privacy policy and network-data statement.
 - [docs/ARCHITECTURE.md](ARCHITECTURE.md): stable hub to architecture and operations docs.
 - [docs/architecture/overview.md](architecture/overview.md): architecture baseline.
 - [docs/architecture/ipc-contracts.md](architecture/ipc-contracts.md): IPC contract rules.
 - [docs/architecture/asr.md](architecture/asr.md): ASR architecture and troubleshooting.
 - [docs/operations/release.md](operations/release.md): release mechanics and CI flow.
 - [docs/operations/signing.md](operations/signing.md): signing and notarization status.
+- [docs/operations/CODE_SIGNING_POLICY.md](operations/CODE_SIGNING_POLICY.md): public code-signing policy.
+- [docs/operations/SIGNPATH_FOUNDATION_APPLICATION.md](operations/SIGNPATH_FOUNDATION_APPLICATION.md): SignPath Foundation submission checklist.
+- [docs/PROJECT_GOVERNANCE.md](PROJECT_GOVERNANCE.md): maintainer and signing roles.
 - [docs/IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md): current delivery priorities.
 - [docs/testing/TEST_MATRIX.md](testing/TEST_MATRIX.md): living use-case test obligations.
 

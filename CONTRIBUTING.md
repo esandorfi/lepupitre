@@ -5,6 +5,7 @@ Thanks for contributing.
 ## Before you start
 - Read [README.md](README.md) and [docs/README.md](docs/README.md).
 - Read [docs/architecture/overview.md](docs/architecture/overview.md) and [docs/operations/release.md](docs/operations/release.md).
+- Read [docs/PROJECT_GOVERNANCE.md](docs/PROJECT_GOVERNANCE.md) for maintainer/signing roles.
 - Check [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) for current priorities.
 - Follow [docs/CONTRIBUTION_RULES.md](docs/CONTRIBUTION_RULES.md) for decision/changelog/test requirements.
 

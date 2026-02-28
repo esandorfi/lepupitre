@@ -29,6 +29,8 @@
 - Release trust verification:
   - Windows (when required): Authenticode signature must be valid on MSI/NSIS installers.
   - macOS (when required): codesign, Gatekeeper assessment, and stapler validation must pass.
+- Release notes should include a `Code signing policy` link:
+  - [docs/operations/CODE_SIGNING_POLICY.md](CODE_SIGNING_POLICY.md)
 
 ## Database upgrade behavior
 - Installer/package updates do not run SQL migrations directly.

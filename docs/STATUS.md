@@ -9,12 +9,16 @@ This file tracks what is canonical, proposal-only, and archived.
 | Path | Role | State | Owner | Next action |
 |---|---|---|---|---|
 | [README.md](../README.md) | Product and user onboarding | implemented | Maintainers | Keep install and trust-level notes current |
+| [PRIVACY.md](../PRIVACY.md) | Privacy policy and network-data statement | implemented | Maintainers | Keep network-data statements aligned with product behavior |
 | [docs/ARCHITECTURE.md](ARCHITECTURE.md) | Architecture/operations hub | implemented | Maintainers | Keep links aligned with subpages |
 | [docs/architecture/overview.md](architecture/overview.md) | Architecture baseline | implemented | Maintainers | Keep module/security model current and align SQLite data-access baseline with implementation |
 | [docs/architecture/ipc-contracts.md](architecture/ipc-contracts.md) | IPC contract rules | implemented | Maintainers | Keep Rust/Zod alignment requirements explicit |
 | [docs/architecture/asr.md](architecture/asr.md) | ASR architecture and troubleshooting | implemented | ASR maintainers | Keep sidecar invariants current |
 | [docs/operations/release.md](operations/release.md) | Release operations runbook | implemented | Maintainers | Keep CI path filters and channel steps current |
-| [docs/operations/signing.md](operations/signing.md) | Signing/notarization policy | implemented | Maintainers | Enable trust toggles with production secrets and monitor first signed release |
+| [docs/operations/signing.md](operations/signing.md) | Signing/notarization policy | implemented | Maintainers | Submit SignPath Foundation application and wire approved Windows signing flow |
+| [docs/operations/CODE_SIGNING_POLICY.md](operations/CODE_SIGNING_POLICY.md) | Public code-signing policy | implemented | Maintainers | Keep roles/privacy references and approval process up to date |
+| [docs/operations/SIGNPATH_FOUNDATION_APPLICATION.md](operations/SIGNPATH_FOUNDATION_APPLICATION.md) | SignPath Foundation submission checklist | implemented | Maintainers | Track application status and post-approval actions |
+| [docs/PROJECT_GOVERNANCE.md](PROJECT_GOVERNANCE.md) | Maintainer and signing roles | implemented | Maintainers | Keep role/member mapping current |
 | [docs/README.md](README.md) | Documentation map and writing rules | implemented | Maintainers | Keep map aligned with real files |
 | [docs/IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) | Current execution priorities | implemented | Maintainers | Update tracks when scope changes |
 | [docs/CONTRIBUTION_RULES.md](CONTRIBUTION_RULES.md) | Repository process gates | accepted | Maintainers | Keep contributor requirements explicit |

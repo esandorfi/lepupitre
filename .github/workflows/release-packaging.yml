@@ -202,6 +202,9 @@ jobs:
           projectPath: desktop
           releaseName: "LePupitre ${{ github.ref_name }}"
           tagName: ${{ github.ref_name }}
+          releaseBody: |
+            ## Code signing policy
+            See [Code signing policy](https://github.com/${{ github.repository }}/blob/main/docs/operations/CODE_SIGNING_POLICY.md).
           releaseDraft: false
           prerelease: false
 

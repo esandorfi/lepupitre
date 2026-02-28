@@ -58,6 +58,9 @@ These are repository process gates for contributors.
   - `LEPUPITRE_REQUIRE_WINDOWS_SIGNING=true` enforces valid Authenticode signatures on Windows installers,
   - `LEPUPITRE_WINDOWS_SIGNING_PROVIDER=signpath|self-managed` selects Windows signing preflight requirements,
   - `LEPUPITRE_REQUIRE_MACOS_NOTARIZATION=true` enforces macOS signing/notarization verification.
+- Keep public trust documentation aligned:
+  - [README.md](../README.md) section `Code signing policy`
+  - [docs/operations/CODE_SIGNING_POLICY.md](operations/CODE_SIGNING_POLICY.md)
 
 ## 7) Docs lifecycle gate
 - If a PR touches `docs/` or `spec/`:
