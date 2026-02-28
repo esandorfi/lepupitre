@@ -7,6 +7,7 @@ Current groups:
 - `ui/`
 - `asr/`
 - `help-content/`
+- `site/`
 
 Rules:
 - These files are design input, not canonical implementation truth.
