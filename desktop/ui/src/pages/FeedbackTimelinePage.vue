@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
-import { RouterLink } from "vue-router";
+import { RouterLink, useRoute } from "vue-router";
 import EntityRow from "../components/EntityRow.vue";
 import PageHeader from "../components/PageHeader.vue";
 import PageShell from "../components/PageShell.vue";
@@ -11,6 +11,7 @@ import { appStore } from "../stores/app";
 import type { FeedbackTimelineItem, MascotMessage } from "../schemas/ipc";
 
 const { t, locale } = useI18n();
+const route = useRoute();
 const { settings: uiSettings } = useUiPreferences();
 const state = computed(() => appStore.state);
 const entries = ref<FeedbackTimelineItem[]>([]);
@@ -25,6 +26,16 @@ const mascotBody = computed(() =>
 );
 const activeProjectId = computed(() => state.value.activeProject?.id ?? null);
 const canUseTalkScope = computed(() => Boolean(activeProjectId.value));
+const focusedFeedbackId = computed(() => {
+  const value = route.query.focus;
+  if (typeof value === "string") {
+    return value.trim();
+  }
+  if (Array.isArray(value) && typeof value[0] === "string") {
+    return value[0].trim();
+  }
+  return "";
+});
 const visibleEntries = computed(() =>
   entries.value.filter((item) => {
     if (filterType.value === "all") {
@@ -42,6 +53,9 @@ const averageScore = computed(() => {
 });
 const notesCount = computed(
   () => visibleEntries.value.filter((item) => Boolean(item.note_updated_at)).length
+);
+const focusedEntry = computed(
+  () => entries.value.find((item) => item.id === focusedFeedbackId.value) ?? null
 );
 
 function toError(err: unknown) {
@@ -93,6 +107,10 @@ function feedbackTitle(item: FeedbackTimelineItem) {
   return item.quest_title || item.quest_code || t("feedback.quest_code");
 }
 
+function isFocused(item: FeedbackTimelineItem) {
+  return Boolean(focusedFeedbackId.value) && item.id === focusedFeedbackId.value;
+}
+
 async function refreshMascotMessage() {
   if (!showMascotCard.value || !state.value.activeProfileId) {
     mascotMessage.value = null;
@@ -136,6 +154,10 @@ async function loadTimeline() {
 onMounted(async () => {
   await appStore.bootstrap();
   await appStore.loadProjects();
+  if (focusedFeedbackId.value) {
+    filterType.value = "all";
+    scope.value = "workspace";
+  }
   await loadTimeline();
 });
 
@@ -152,6 +174,18 @@ watch(
 watch(
   () => scope.value,
   async () => {
+    await loadTimeline();
+  }
+);
+
+watch(
+  () => focusedFeedbackId.value,
+  async (next) => {
+    if (!next) {
+      return;
+    }
+    filterType.value = "all";
+    scope.value = "workspace";
     await loadTimeline();
   }
 );
@@ -208,6 +242,26 @@ watch(
     </SectionPanel>
 
     <template v-else>
+      <SectionPanel v-if="focusedEntry" variant="compact" class="border border-[var(--color-accent)] bg-[var(--color-surface-selected)]">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <div class="app-text-eyebrow">{{ t("feedback.timeline_focus_title") }}</div>
+            <div class="app-text app-text-subheadline mt-1">{{ feedbackTitle(focusedEntry) }}</div>
+            <div class="app-muted app-text-meta mt-1">
+              {{ t("feedback.timeline_focus_hint") }} · {{ formatDateTime(focusedEntry.created_at) }}
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="app-badge-neutral app-text-caption rounded-full px-2 py-1 font-semibold">
+              {{ t("feedback.timeline_focus_badge") }}
+            </span>
+            <RouterLink class="app-button-primary app-focus-ring app-button-sm inline-flex items-center" :to="`/feedback/${focusedEntry.id}`">
+              {{ t("feedback.timeline_open") }}
+            </RouterLink>
+          </div>
+        </div>
+      </SectionPanel>
+
       <SectionPanel variant="compact">
         <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
           <div class="rounded-xl border border-[var(--app-border)] bg-[var(--color-surface-elevated)] px-3 py-2">
@@ -284,7 +338,11 @@ watch(
           {{ t("feedback.timeline_empty") }}
         </div>
         <div v-else class="space-y-3">
-          <EntityRow v-for="item in visibleEntries" :key="item.id">
+          <EntityRow
+            v-for="item in visibleEntries"
+            :key="item.id"
+            :selected="isFocused(item)"
+          >
             <template #main>
               <div class="flex flex-wrap items-center gap-2">
                 <span class="app-badge-neutral app-text-caption inline-flex items-center rounded-full px-2 py-1 font-semibold">
