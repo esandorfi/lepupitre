@@ -16,6 +16,7 @@ type QuestMapNode = {
   id: string;
   label: string;
   reward: number;
+  category: string | null;
   done: boolean;
   current: boolean;
   offsetPx: number;
@@ -147,6 +148,21 @@ const creditsToMilestone = computed(() => {
   }
   return Math.max(0, progress.next_milestone - progress.credits);
 });
+const questCategoryPool = computed(() => {
+  const categories = Array.from(
+    new Set(
+      availableQuests.value
+        .map((quest) => quest.category.trim())
+        .filter((category) => category.length > 0)
+    )
+  ).sort();
+  const dailyCategory = trainingDailyQuest.value?.quest.category?.trim();
+  if (!dailyCategory) {
+    return categories;
+  }
+  const withoutDaily = categories.filter((category) => category !== dailyCategory);
+  return [dailyCategory, ...withoutDaily];
+});
 const practicedToday = computed(() => {
   const value = trainingProgress.value?.last_attempt_at;
   if (!value) {
@@ -170,10 +186,15 @@ const questMapNodes = computed<QuestMapNode[]>(() => {
     const order = index + 1;
     const isDone = order <= completed;
     const isCurrent = !isDone && order === completed + 1;
+    const category =
+      questCategoryPool.value.length > 0
+        ? questCategoryPool.value[index % questCategoryPool.value.length]
+        : null;
     return {
       id: `weekly-${order}`,
       label: `${t("training.quest_map_checkpoint")} ${order}`,
       reward: order === checkpoints ? 20 : 10,
+      category,
       done: isDone,
       current: isCurrent,
       offsetPx: order % 2 === 0 ? 14 : 0,
@@ -265,6 +286,11 @@ function questMapConnectorClass(done: boolean) {
   return done
     ? "bg-[var(--color-success)]"
     : "bg-[color-mix(in_srgb,var(--app-border)_70%,transparent)]";
+}
+
+function questMapNodeAriaLabel(node: QuestMapNode) {
+  const category = node.category ?? t("training.quest_map_any_category");
+  return `${node.label} (${category})`;
 }
 
 function trainingHeroQuestStorageKey(profileId: string) {
@@ -375,6 +401,7 @@ async function loadTrainingData() {
     recentAttempts.value = attempts;
     trainingProgress.value = progress;
     mascotMessage.value = mascot;
+    void preloadQuestCatalog();
   } catch (err) {
     trainingError.value = toError(err);
     trainingDailyQuest.value = null;
@@ -383,6 +410,20 @@ async function loadTrainingData() {
     mascotMessage.value = null;
   } finally {
     isTrainingLoading.value = false;
+  }
+}
+
+async function preloadQuestCatalog() {
+  if (!state.value.activeProfileId) {
+    return;
+  }
+  if (availableQuests.value.length > 0 || isQuestPickerLoading.value) {
+    return;
+  }
+  try {
+    availableQuests.value = await appStore.getQuestList();
+  } catch {
+    // non-blocking; quest picker still loads on demand
   }
 }
 
@@ -402,6 +443,20 @@ async function openQuestPicker() {
   } finally {
     isQuestPickerLoading.value = false;
   }
+}
+
+async function focusQuestMapNode(node: QuestMapNode) {
+  await openQuestPicker();
+  if (!isQuestPickerOpen.value) {
+    return;
+  }
+  if (node.category && questCategories.value.includes(node.category)) {
+    questPickerCategory.value = node.category;
+  } else {
+    questPickerCategory.value = "all";
+  }
+  questPickerSort.value = "category";
+  questPickerSearch.value = "";
 }
 
 function closeQuestPicker() {
@@ -918,7 +973,13 @@ watch(
               <div class="flex min-w-[440px] items-start gap-2 pr-1">
                 <template v-for="(node, index) in questMapNodes" :key="node.id">
                   <div class="flex items-start gap-2">
-                    <div class="flex w-[76px] flex-col items-center text-center" :style="{ marginTop: `${node.offsetPx}px` }">
+                    <button
+                      class="app-focus-ring flex w-[76px] flex-col items-center text-center transition"
+                      :style="{ marginTop: `${node.offsetPx}px` }"
+                      type="button"
+                      :aria-label="questMapNodeAriaLabel(node)"
+                      @click="focusQuestMapNode(node)"
+                    >
                       <div
                         class="flex h-9 w-9 items-center justify-center rounded-full border text-sm font-semibold transition"
                         :class="questMapNodeClass(node)"
@@ -931,7 +992,10 @@ watch(
                       <div class="app-muted app-text-meta mt-1">
                         +{{ node.reward }} {{ t("training.progress_credits") }}
                       </div>
-                    </div>
+                      <div class="app-badge-neutral app-text-caption mt-1 rounded-full px-2 py-0.5 font-semibold">
+                        {{ node.category ?? t("training.quest_map_any_category") }}
+                      </div>
+                    </button>
                     <div
                       v-if="index < questMapNodes.length - 1"
                       class="mt-4 h-[2px] w-8 rounded-full transition"
