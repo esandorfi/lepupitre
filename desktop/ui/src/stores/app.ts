@@ -17,6 +17,14 @@ import {
   submitQuestText as submitQuestTextFromApi,
 } from "../domains/quest/api";
 import {
+  analyzeAttempt as analyzeAttemptFromApi,
+  getFeedback as getFeedbackFromApi,
+  getFeedbackContext as getFeedbackContextFromApi,
+  getFeedbackNote as getFeedbackNoteFromApi,
+  getFeedbackTimeline as getFeedbackTimelineFromApi,
+  setFeedbackNote as setFeedbackNoteFromApi,
+} from "../domains/feedback/api";
+import {
   IdSchema,
   ProfileIdPayloadSchema,
   ProfileSummary,
@@ -63,26 +71,16 @@ import {
   Quest,
   QuestAttemptSummary,
   QuestReportItem,
-  AnalyzeAttemptPayloadSchema,
   AnalyzeResponseSchema,
-  FeedbackGetPayloadSchema,
   FeedbackV1,
-  FeedbackV1Schema,
-  FeedbackContextPayloadSchema,
-  FeedbackContextSchema,
   FeedbackContext,
   FeedbackTimelineItem,
-  FeedbackTimelinePayloadSchema,
-  FeedbackTimelineResponseSchema,
   MascotMessage,
   MascotMessagePayloadSchema,
   MascotMessageSchema,
   TalksBlueprint,
   TalksBlueprintPayloadSchema,
   TalksBlueprintSchema,
-  FeedbackNoteGetPayloadSchema,
-  FeedbackNoteResponseSchema,
-  FeedbackNoteSetPayloadSchema,
   VoidResponseSchema,
 } from "../schemas/ipc";
 import { hydratePreferences, setActivePreferenceProfile } from "../lib/preferencesStorage";
@@ -491,12 +489,7 @@ async function analyzeAttempt(attemptId: string) {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
   }
-  const response = await invokeChecked(
-    "analyze_attempt",
-    AnalyzeAttemptPayloadSchema,
-    AnalyzeResponseSchema,
-    { profileId: state.activeProfileId, attemptId }
-  );
+  const response = await analyzeAttemptFromApi(state.activeProfileId, attemptId);
   state.lastFeedbackId = response.feedbackId;
   return response.feedbackId;
 }
@@ -678,24 +671,14 @@ async function getFeedback(feedbackId: string): Promise<FeedbackV1> {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
   }
-  return invokeChecked(
-    "feedback_get",
-    FeedbackGetPayloadSchema,
-    FeedbackV1Schema,
-    { profileId: state.activeProfileId, feedbackId }
-  );
+  return getFeedbackFromApi(state.activeProfileId, feedbackId);
 }
 
 async function getFeedbackContext(feedbackId: string): Promise<FeedbackContext> {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
   }
-  const context = await invokeChecked(
-    "feedback_context_get",
-    FeedbackContextPayloadSchema,
-    FeedbackContextSchema,
-    { profileId: state.activeProfileId, feedbackId }
-  );
+  const context = await getFeedbackContextFromApi(state.activeProfileId, feedbackId);
   state.lastFeedbackContext = context;
   return context;
 }
@@ -707,40 +690,21 @@ async function getFeedbackTimeline(
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
   }
-  return invokeChecked(
-    "feedback_timeline_list",
-    FeedbackTimelinePayloadSchema,
-    FeedbackTimelineResponseSchema,
-    {
-      profileId: state.activeProfileId,
-      projectId: projectId ?? null,
-      limit: limit ?? null,
-    }
-  );
+  return getFeedbackTimelineFromApi(state.activeProfileId, projectId, limit);
 }
 
 async function getFeedbackNote(feedbackId: string): Promise<string | null> {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
   }
-  return invokeChecked(
-    "feedback_note_get",
-    FeedbackNoteGetPayloadSchema,
-    FeedbackNoteResponseSchema,
-    { profileId: state.activeProfileId, feedbackId }
-  );
+  return getFeedbackNoteFromApi(state.activeProfileId, feedbackId);
 }
 
 async function setFeedbackNote(feedbackId: string, note: string) {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
   }
-  await invokeChecked(
-    "feedback_note_set",
-    FeedbackNoteSetPayloadSchema,
-    VoidResponseSchema,
-    { profileId: state.activeProfileId, feedbackId, note }
-  );
+  await setFeedbackNoteFromApi(state.activeProfileId, feedbackId, note);
 }
 
 async function bootstrap() {
