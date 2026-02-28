@@ -1,15 +1,24 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import { RouterLink, useRouter } from "vue-router";
+/* eslint-disable vue/no-v-html */
+import { computed, nextTick, ref, watch } from "vue";
+import { RouterLink, useRoute, useRouter } from "vue-router";
+import {
+  getHelpContentById,
+  listHelpContentByAudience,
+  parseHelpAudience,
+  parseHelpTopic,
+  toHelpTopicElementId,
+  type HelpAudience,
+} from "../lib/helpContent";
 import { useI18n } from "../lib/i18n";
 import { useUiPreferences } from "../lib/uiPreferences";
 
-type Audience = "first" | "manager" | "conference";
-
 const { t } = useI18n();
+const route = useRoute();
 const router = useRouter();
 const { setOnboardingSeen } = useUiPreferences();
-const selectedAudience = ref<Audience>("first");
+const selectedAudience = ref<HelpAudience>(parseHelpAudience(route.query.audience) ?? "first");
+const highlightedTopicId = ref<string | null>(null);
 
 const faqs = computed(() => [
   { q: t("help.faq_1_q"), a: t("help.faq_1_a") },
@@ -19,34 +28,93 @@ const faqs = computed(() => [
 ]);
 
 const audienceOptions = computed(() => [
-  { id: "first" as const, label: t("onboarding.audience_first_label") },
-  { id: "manager" as const, label: t("onboarding.audience_manager_label") },
-  { id: "conference" as const, label: t("onboarding.audience_conference_label") },
+  { id: "first" as HelpAudience, label: t("onboarding.audience_first_label") },
+  { id: "manager" as HelpAudience, label: t("onboarding.audience_manager_label") },
+  { id: "conference" as HelpAudience, label: t("onboarding.audience_conference_label") },
 ]);
 
-const audiencePlaybook = computed(() => {
-  switch (selectedAudience.value) {
-    case "manager":
-      return {
-        focus: t("help.playbook_manager_focus"),
-        routine: t("help.playbook_manager_routine"),
-        trap: t("help.playbook_manager_trap"),
-      };
-    case "conference":
-      return {
-        focus: t("help.playbook_conference_focus"),
-        routine: t("help.playbook_conference_routine"),
-        trap: t("help.playbook_conference_trap"),
-      };
-    case "first":
-    default:
-      return {
-        focus: t("help.playbook_first_focus"),
-        routine: t("help.playbook_first_routine"),
-        trap: t("help.playbook_first_trap"),
-      };
+const visibleEntries = computed(() => listHelpContentByAudience(selectedAudience.value));
+
+const onboardingEntries = computed(() =>
+  visibleEntries.value.filter((entry) => entry.id.startsWith("onboarding."))
+);
+
+const contextualEntries = computed(() =>
+  visibleEntries.value.filter((entry) => entry.id.startsWith("help."))
+);
+
+const selectedTopicParam = computed(() => parseHelpTopic(route.query.topic));
+const selectedTopic = computed(() => getHelpContentById(selectedTopicParam.value));
+const unknownTopic = computed(
+  () => Boolean(selectedTopicParam.value) && !Boolean(selectedTopic.value)
+);
+
+watch(
+  () => route.query.audience,
+  (value) => {
+    const parsed = parseHelpAudience(value);
+    if (parsed) {
+      selectedAudience.value = parsed;
+    }
   }
-});
+);
+
+watch(
+  () => selectedTopic.value,
+  async (topic) => {
+    highlightedTopicId.value = topic?.id ?? null;
+    if (!topic) {
+      return;
+    }
+    await nextTick();
+    const element = document.getElementById(toHelpTopicElementId(topic.id));
+    if (!element) {
+      return;
+    }
+    element.scrollIntoView({ behavior: "smooth", block: "start" });
+  },
+  { immediate: true }
+);
+
+function setAudience(audience: HelpAudience) {
+  selectedAudience.value = audience;
+  void router
+    .replace({
+      path: "/help",
+      query: {
+        ...route.query,
+        audience,
+      },
+    })
+    .catch(() => {
+      // ignore redundant navigation
+    });
+}
+
+function topicDomId(topicId: string) {
+  return toHelpTopicElementId(topicId);
+}
+
+function topicCardStyle(topicId: string) {
+  if (highlightedTopicId.value !== topicId) {
+    return undefined;
+  }
+  return {
+    borderColor: "#c2410c",
+    boxShadow: "0 0 0 2px rgba(194, 65, 12, 0.18)",
+  };
+}
+
+function topicDeepLink(topicId: string) {
+  return {
+    path: "/help",
+    query: {
+      ...route.query,
+      topic: topicId,
+      audience: selectedAudience.value,
+    },
+  };
+}
 
 async function restartOnboarding() {
   setOnboardingSeen(false);
@@ -97,23 +165,62 @@ async function restartOnboarding() {
           class="app-focus-ring cursor-pointer rounded-full px-3 py-2 text-sm"
           :class="selectedAudience === option.id ? 'app-pill-active' : 'app-pill'"
           type="button"
-          @click="selectedAudience = option.id"
+          @click="setAudience(option.id)"
         >
           {{ option.label }}
         </button>
       </div>
+    </div>
+
+    <div class="app-panel space-y-4">
+      <div>
+        <h2 class="app-text text-base font-semibold">{{ t("help.onboarding_tracks_title") }}</h2>
+        <p class="app-muted mt-1 text-sm">{{ t("help.onboarding_tracks_subtitle") }}</p>
+      </div>
       <div class="grid gap-3 lg:grid-cols-3">
-        <article class="app-card app-radius-panel-lg border p-4">
-          <h3 class="app-text text-sm font-semibold">{{ t("help.playbook_focus") }}</h3>
-          <p class="app-muted mt-2 text-sm leading-6">{{ audiencePlaybook.focus }}</p>
+        <article
+          v-for="entry in onboardingEntries"
+          :id="topicDomId(entry.id)"
+          :key="entry.id"
+          class="app-card app-radius-panel-lg border p-4 transition-colors"
+          :style="topicCardStyle(entry.id)"
+        >
+          <h3 class="app-text text-sm font-semibold">{{ entry.title }}</h3>
+          <!-- eslint-disable-next-line vue/no-v-html -->
+          <div class="app-markdown app-muted mt-2 text-sm leading-6" v-html="entry.html" />
+          <RouterLink
+            class="app-link app-text-meta mt-3 inline-block underline"
+            :to="topicDeepLink(entry.id)"
+          >
+            {{ t("help.open_deep_link") }}
+          </RouterLink>
         </article>
-        <article class="app-card app-radius-panel-lg border p-4">
-          <h3 class="app-text text-sm font-semibold">{{ t("help.playbook_routine") }}</h3>
-          <p class="app-muted mt-2 text-sm leading-6">{{ audiencePlaybook.routine }}</p>
-        </article>
-        <article class="app-card app-radius-panel-lg border p-4">
-          <h3 class="app-text text-sm font-semibold">{{ t("help.playbook_trap") }}</h3>
-          <p class="app-muted mt-2 text-sm leading-6">{{ audiencePlaybook.trap }}</p>
+      </div>
+    </div>
+
+    <div class="app-panel space-y-4">
+      <div>
+        <h2 class="app-text text-base font-semibold">{{ t("help.contextual_title") }}</h2>
+        <p class="app-muted mt-1 text-sm">{{ t("help.contextual_subtitle") }}</p>
+      </div>
+      <p v-if="unknownTopic" class="app-muted text-sm">{{ t("help.contextual_unknown_topic") }}</p>
+      <div class="grid gap-3">
+        <article
+          v-for="entry in contextualEntries"
+          :id="topicDomId(entry.id)"
+          :key="entry.id"
+          class="app-card app-radius-panel-lg border p-4 transition-colors"
+          :style="topicCardStyle(entry.id)"
+        >
+          <h3 class="app-text text-sm font-semibold">{{ entry.title }}</h3>
+          <!-- eslint-disable-next-line vue/no-v-html -->
+          <div class="app-markdown app-muted mt-2 text-sm leading-6" v-html="entry.html" />
+          <RouterLink
+            class="app-link app-text-meta mt-3 inline-block underline"
+            :to="topicDeepLink(entry.id)"
+          >
+            {{ t("help.open_deep_link") }}
+          </RouterLink>
         </article>
       </div>
     </div>

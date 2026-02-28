@@ -7,9 +7,11 @@ import RouteContextBar from "../components/shell/RouteContextBar.vue";
 import SidebarIconNav from "../components/shell/SidebarIconNav.vue";
 import TopPrimaryNav from "../components/shell/TopPrimaryNav.vue";
 import WindowChrome from "../components/shell/WindowChrome.vue";
+import { parseHelpAudience } from "../lib/helpContent";
 import { buildContextBreadcrumbs, resolvePrimaryNavItems } from "../lib/navigation";
 import { resolveEffectiveNavMode } from "../lib/navigationMode";
 import { flushNavIntent, markSidebarSession, recordNavIntent } from "../lib/navMetrics";
+import { resolveHelpTopicForRoute } from "../lib/helpTopics";
 import { useI18n } from "../lib/i18n";
 import { useUiPreferences } from "../lib/uiPreferences";
 import { appStore } from "../stores/app";
@@ -34,6 +36,21 @@ const shellContext = computed(() => ({
 
 const primaryNavItems = computed(() => resolvePrimaryNavItems(shellContext.value, t));
 const breadcrumbItems = computed(() => buildContextBreadcrumbs(shellContext.value, t));
+const contextualHelpLink = computed(() => {
+  const topic = resolveHelpTopicForRoute(shellContext.value.routeName);
+  if (!topic) {
+    return null;
+  }
+  const audience = parseHelpAudience(route.query.audience);
+  const query: Record<string, string> = { topic };
+  if (audience) {
+    query.audience = audience;
+  }
+  return {
+    path: "/help",
+    query,
+  };
+});
 
 const effectiveNavMode = computed(() =>
   resolveEffectiveNavMode(uiSettings.value.primaryNavMode, viewportWidth.value)
@@ -124,6 +141,11 @@ onBeforeUnmount(() => {
         <main class="min-h-0 flex-1 overflow-y-auto">
           <div class="app-container px-4 py-4 sm:px-6 sm:py-6">
             <RouteContextBar :items="breadcrumbItems" />
+            <div v-if="contextualHelpLink" class="mb-4 flex justify-end">
+              <RouterLink class="app-link app-text-meta underline" :to="contextualHelpLink">
+                {{ t("help.contextual_cta") }}
+              </RouterLink>
+            </div>
             <slot />
           </div>
         </main>

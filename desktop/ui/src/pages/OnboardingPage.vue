@@ -1,16 +1,20 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+/* eslint-disable vue/no-v-html */
+import { computed, ref, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
+import {
+  getOnboardingTrackByAudience,
+  parseHelpAudience,
+  type HelpAudience,
+} from "../lib/helpContent";
 import { useI18n } from "../lib/i18n";
 import { useUiPreferences } from "../lib/uiPreferences";
-
-type Audience = "first" | "manager" | "conference";
 
 const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 const { setOnboardingSeen } = useUiPreferences();
-const selectedAudience = ref<Audience>("first");
+const selectedAudience = ref<HelpAudience>(parseHelpAudience(route.query.audience) ?? "first");
 
 const quickstartSteps = computed(() => [
   {
@@ -46,57 +50,46 @@ const nextPath = computed(() => {
 
 const audienceOptions = computed(() => [
   {
-    id: "first" as const,
+    id: "first" as HelpAudience,
     label: t("onboarding.audience_first_label"),
     description: t("onboarding.audience_first_desc"),
   },
   {
-    id: "manager" as const,
+    id: "manager" as HelpAudience,
     label: t("onboarding.audience_manager_label"),
     description: t("onboarding.audience_manager_desc"),
   },
   {
-    id: "conference" as const,
+    id: "conference" as HelpAudience,
     label: t("onboarding.audience_conference_label"),
     description: t("onboarding.audience_conference_desc"),
   },
 ]);
 
-const audiencePlan = computed(() => {
-  switch (selectedAudience.value) {
-    case "manager":
-      return {
-        title: t("onboarding.audience_manager_label"),
-        goal: t("onboarding.audience_manager_goal"),
-        steps: [
-          t("onboarding.audience_manager_step_1"),
-          t("onboarding.audience_manager_step_2"),
-          t("onboarding.audience_manager_step_3"),
-        ],
-      };
-    case "conference":
-      return {
-        title: t("onboarding.audience_conference_label"),
-        goal: t("onboarding.audience_conference_goal"),
-        steps: [
-          t("onboarding.audience_conference_step_1"),
-          t("onboarding.audience_conference_step_2"),
-          t("onboarding.audience_conference_step_3"),
-        ],
-      };
-    case "first":
-    default:
-      return {
-        title: t("onboarding.audience_first_label"),
-        goal: t("onboarding.audience_first_goal"),
-        steps: [
-          t("onboarding.audience_first_step_1"),
-          t("onboarding.audience_first_step_2"),
-          t("onboarding.audience_first_step_3"),
-        ],
-      };
+const audiencePlan = computed(() => getOnboardingTrackByAudience(selectedAudience.value));
+
+watch(
+  () => route.query.audience,
+  (value) => {
+    const parsed = parseHelpAudience(value);
+    if (parsed) {
+      selectedAudience.value = parsed;
+    }
   }
-});
+);
+
+function selectAudience(audience: HelpAudience) {
+  selectedAudience.value = audience;
+}
+
+function helpRouteForAudience(audience: HelpAudience) {
+  return {
+    path: "/help",
+    query: {
+      audience,
+    },
+  };
+}
 
 async function finishOnboarding(target = nextPath.value) {
   setOnboardingSeen(true);
@@ -152,21 +145,19 @@ async function finishOnboarding(target = nextPath.value) {
           class="app-focus-ring cursor-pointer rounded-xl border px-3 py-3 text-left"
           :class="selectedAudience === option.id ? 'app-pill-active' : 'app-pill'"
           type="button"
-          @click="selectedAudience = option.id"
+          @click="selectAudience(option.id)"
         >
           <div class="app-text text-sm font-semibold">{{ option.label }}</div>
           <div class="app-text-meta mt-1">{{ option.description }}</div>
         </button>
       </div>
 
-      <article class="app-card app-radius-panel-lg border p-4">
+      <article v-if="audiencePlan" class="app-card app-radius-panel-lg border p-4">
         <h3 class="app-text text-sm font-semibold">
           {{ t("onboarding.audience_plan_title") }}: {{ audiencePlan.title }}
         </h3>
-        <p class="app-muted mt-2 text-sm leading-6">{{ audiencePlan.goal }}</p>
-        <ol class="app-text mt-3 list-decimal space-y-1.5 pl-5 text-sm leading-6">
-          <li v-for="step in audiencePlan.steps" :key="step">{{ step }}</li>
-        </ol>
+        <!-- eslint-disable-next-line vue/no-v-html -->
+        <div class="app-markdown app-muted mt-2 text-sm leading-6" v-html="audiencePlan.html" />
       </article>
     </div>
 
@@ -174,7 +165,7 @@ async function finishOnboarding(target = nextPath.value) {
       <h2 class="app-text text-base font-semibold">{{ t("onboarding.help_title") }}</h2>
       <p class="app-muted text-sm leading-6">{{ t("onboarding.help_body") }}</p>
       <div class="flex flex-wrap items-center gap-3">
-        <RouterLink class="app-link app-text-meta underline" to="/help">
+        <RouterLink class="app-link app-text-meta underline" :to="helpRouteForAudience(selectedAudience)">
           {{ t("onboarding.action_help") }}
         </RouterLink>
         <RouterLink class="app-link app-text-meta underline" to="/about">
