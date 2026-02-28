@@ -217,6 +217,10 @@ Acceptance:
   - extracted preferences-domain SQL/validation logic from `commands/preferences.rs` into `core/preferences.rs`,
   - reduced `commands/preferences.rs` to orchestration-only Tauri wrappers,
   - moved preference unit coverage (`set/get/remove/validation/isolation`) into `core/preferences.rs`.
+- Workstream 4 slice delivered:
+  - extracted coach-domain read-model/data-access logic from `commands/coach.rs` into `core/coach.rs`,
+  - reduced `commands/coach.rs` to orchestration-only Tauri wrappers,
+  - preserved deterministic coach coverage (streak/milestone/framework/message behavior) in `core/coach.rs`.
 
 ## Dependencies
 

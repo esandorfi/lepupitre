@@ -13,7 +13,9 @@ Last updated: 2026-02-28
   - command layer now wrapper-only for run commands
   - extracted preferences-domain data access from `commands/preferences.rs` to `core/preferences.rs`
   - command layer now wrapper-only for preferences commands
-- Last known checkpoint commit: `d43ac62` (updated in-progress after this checkpoint)
+  - extracted coach-domain data access/read-model logic from `commands/coach.rs` to `core/coach.rs`
+  - command layer now wrapper-only for coach commands
+- Last known checkpoint commit: `eebdfca` (updated in-progress after this checkpoint)
 
 ## Resume goal
 
@@ -26,13 +28,6 @@ Continue Workstream 4 by removing direct SQL from command wrappers and consolida
 - [ ] Run baseline checks:
   - `cargo test --manifest-path desktop/src-tauri/Cargo.toml`
   - `pnpm -C desktop docs:lint`
-
-1. Slice B: coach command read-model extraction
-- Target: `desktop/src-tauri/src/commands/coach.rs`
-- [ ] Extract read queries into `core/coach.rs` (or `core/coach/repo.rs` + `queries.rs`).
-- [ ] Keep command file focused on IPC payload mapping.
-- [ ] Preserve behavior of streak/milestone/context outputs.
-- [ ] Add/keep deterministic tests for extracted logic.
 
 1. Slice C: structure standardization
 - [ ] Normalize module shape for migrated domains:
