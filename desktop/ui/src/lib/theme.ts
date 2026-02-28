@@ -1,5 +1,5 @@
 import { ref } from "vue";
-import { readPreference, writePreference } from "./preferencesStorage";
+import { hydratePreference, readPreference, writePreference } from "./preferencesStorage";
 
 const STORAGE_KEY = "lepupitre_theme";
 const LEGACY_STORAGE_KEYS = ["lepupitre_theme_v1"] as const;
@@ -20,6 +20,12 @@ function loadTheme(): Theme {
 }
 
 const theme = ref<Theme>(loadTheme());
+void hydratePreference(STORAGE_KEY, { legacyKeys: LEGACY_STORAGE_KEYS }).then((stored) => {
+  if (stored && themes.includes(stored as Theme)) {
+    theme.value = stored as Theme;
+    applyTheme(theme.value);
+  }
+});
 
 function applyTheme(next: Theme) {
   if (typeof document !== "undefined") {

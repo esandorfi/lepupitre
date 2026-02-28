@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   AsrFinalProgressEventSchema,
   FeedbackContextSchema,
+  PreferenceProfileGetPayloadSchema,
   TranscriptV1Schema,
   TranscribeAudioPayloadSchema,
 } from "./ipc";
@@ -66,5 +67,21 @@ describe("ipc schemas", () => {
       run_id: null,
     });
     expect(parsed.success).toBe(true);
+  });
+
+  it("accepts preference profile payload in camelCase", () => {
+    const parsed = PreferenceProfileGetPayloadSchema.safeParse({
+      profileId: "prof-1",
+      key: "lepupitre.locale",
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  it("rejects preference profile payload in snake_case", () => {
+    const parsed = PreferenceProfileGetPayloadSchema.safeParse({
+      profile_id: "prof-1",
+      key: "lepupitre.locale",
+    });
+    expect(parsed.success).toBe(false);
   });
 });

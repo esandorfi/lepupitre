@@ -83,6 +83,7 @@ pub fn open_profile(app: &tauri::AppHandle, profile_id: &str) -> Result<Connecti
     }
 
     ensure_outline_table(&mut conn)?;
+    ensure_profile_settings_table(&mut conn)?;
     ensure_talk_training_flag(&mut conn)?;
     ensure_talk_numbers(&mut conn)?;
     ensure_runs_nullable(&mut conn)?;
@@ -271,6 +272,18 @@ fn ensure_outline_table(conn: &mut Connection) -> Result<(), String> {
         [],
     )
     .map_err(|e| format!("outline_table: {e}"))?;
+    Ok(())
+}
+
+fn ensure_profile_settings_table(conn: &mut Connection) -> Result<(), String> {
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS profile_settings (
+           key TEXT PRIMARY KEY,
+           value_json TEXT NOT NULL
+         )",
+        [],
+    )
+    .map_err(|e| format!("profile_settings_table: {e}"))?;
     Ok(())
 }
 

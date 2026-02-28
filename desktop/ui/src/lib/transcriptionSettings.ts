@@ -1,5 +1,5 @@
 import { ref } from "vue";
-import { readPreference, writePreference } from "./preferencesStorage";
+import { hydratePreference, readPreference, writePreference } from "./preferencesStorage";
 
 type TranscriptionModel = "tiny" | "base";
 type TranscriptionMode = "auto" | "live+final" | "final-only";
@@ -40,6 +40,22 @@ function loadSettings(): TranscriptionSettings {
     if (!stored) {
       return defaultSettings;
     }
+    return parseSettings(stored);
+  } catch {
+    return defaultSettings;
+  }
+}
+
+const settings = ref<TranscriptionSettings>(loadSettings());
+void hydratePreference(STORAGE_KEY, { legacyKeys: LEGACY_STORAGE_KEYS }).then((stored) => {
+  if (!stored) {
+    return;
+  }
+  settings.value = parseSettings(stored);
+});
+
+function parseSettings(stored: string): TranscriptionSettings {
+  try {
     const parsed = JSON.parse(stored) as Partial<TranscriptionSettings>;
     return {
       model: isTranscriptionModel(parsed.model) ? parsed.model : defaultSettings.model,
@@ -56,8 +72,6 @@ function loadSettings(): TranscriptionSettings {
     return defaultSettings;
   }
 }
-
-const settings = ref<TranscriptionSettings>(loadSettings());
 
 function persist(next: TranscriptionSettings) {
   settings.value = next;

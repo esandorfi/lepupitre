@@ -20,6 +20,17 @@ If one layer changes, all layers must be updated in the same PR.
 - Keep naming deterministic between Rust and TypeScript.
 - Avoid implicit payload fallbacks that hide mismatches.
 
+## Preferences IPC
+- Preference commands are first-class IPC contracts and must keep schema alignment:
+  - `preference_global_get` / `preference_global_set`
+  - `preference_profile_get` / `preference_profile_set`
+- Payload rules:
+  - `profileId` stays camelCase in UI payload schemas.
+  - `key` must match the canonical key format (`[A-Za-z0-9._:-]+`).
+  - `value` is nullable; `null` means delete.
+- Fallback rule:
+  - UI may fall back to local browser storage when Tauri runtime/IPC is unavailable, but command payload shapes still remain the source contract.
+
 ## UI redesign guardrails
 When UI visual structure changes, keep these logic contracts tested:
 - navigation routing contract

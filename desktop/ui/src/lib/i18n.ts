@@ -1,5 +1,5 @@
 import { ref } from "vue";
-import { readPreference, writePreference } from "./preferencesStorage";
+import { hydratePreference, readPreference, writePreference } from "./preferencesStorage";
 
 type Locale = "en" | "fr";
 
@@ -1378,6 +1378,11 @@ function loadLocale(): Locale {
 }
 
 const locale = ref<Locale>(loadLocale());
+void hydratePreference(STORAGE_KEY, { legacyKeys: LEGACY_STORAGE_KEYS }).then((stored) => {
+  if (stored === "en" || stored === "fr") {
+    locale.value = stored;
+  }
+});
 
 function setLocale(next: Locale) {
   locale.value = next;

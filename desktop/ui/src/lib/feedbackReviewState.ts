@@ -34,7 +34,10 @@ export function readReviewedFeedbackIds(profileId: string): Set<string> {
     return new Set();
   }
   try {
-    const raw = readPreference(storageKey(profileId));
+    const raw = readPreference(storageKey(profileId), {
+      scope: "profile",
+      profileId,
+    });
     if (!raw) {
       return new Set();
     }
@@ -55,7 +58,10 @@ export function markFeedbackReviewed(profileId: string, feedbackId: string) {
   const reviewed = readReviewedFeedbackIds(profileId);
   reviewed.add(normalizedFeedbackId);
   const next = sanitizeReviewedIds(Array.from(reviewed));
-  writePreference(storageKey(profileId), JSON.stringify(next));
+  writePreference(storageKey(profileId), JSON.stringify(next), {
+    scope: "profile",
+    profileId,
+  });
 }
 
 export function isFeedbackReviewed(profileId: string, feedbackId: string): boolean {

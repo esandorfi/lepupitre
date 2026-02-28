@@ -4,6 +4,7 @@ pub mod feedback;
 pub mod outline;
 pub mod pack;
 pub mod peer_review;
+pub mod preferences;
 pub mod profile;
 pub mod project;
 pub mod quest;

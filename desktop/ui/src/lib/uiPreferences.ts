@@ -1,5 +1,5 @@
 import { ref } from "vue";
-import { readPreference, writePreference } from "./preferencesStorage";
+import { hydratePreference, readPreference, writePreference } from "./preferencesStorage";
 
 export type PrimaryNavMode = "top" | "sidebar-icon";
 export type GamificationMode = "minimal" | "balanced" | "quest-world";
@@ -44,6 +44,22 @@ function loadSettings(): UiSettings {
     if (!raw) {
       return defaultSettings;
     }
+    return parseSettings(raw);
+  } catch {
+    return defaultSettings;
+  }
+}
+
+const settings = ref<UiSettings>(loadSettings());
+void hydratePreference(STORAGE_KEY, { legacyKeys: LEGACY_STORAGE_KEYS }).then((raw) => {
+  if (!raw) {
+    return;
+  }
+  settings.value = parseSettings(raw);
+});
+
+function parseSettings(raw: string): UiSettings {
+  try {
     const parsed = JSON.parse(raw) as Partial<UiSettings>;
     const hasLegacySettings =
       Object.prototype.hasOwnProperty.call(parsed, "primaryNavMode") ||
@@ -75,8 +91,6 @@ function loadSettings(): UiSettings {
     return defaultSettings;
   }
 }
-
-const settings = ref<UiSettings>(loadSettings());
 
 function persist(next: UiSettings) {
   settings.value = next;

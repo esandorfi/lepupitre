@@ -85,6 +85,7 @@ import {
   FeedbackNoteSetPayloadSchema,
   VoidResponseSchema,
 } from "../schemas/ipc";
+import { hydratePreferences, setActivePreferenceProfile } from "../lib/preferencesStorage";
 
 const state = reactive({
   profiles: [] as ProfileSummary[],
@@ -101,6 +102,39 @@ const state = reactive({
   lastFeedbackContext: null as FeedbackContext | null,
 });
 
+const GLOBAL_PREFERENCE_KEYS = [
+  "lepupitre_ui_settings_v1",
+  "lepupitre_theme",
+  "lepupitre_transcription_settings",
+  "lepupitre_locale",
+  "lepupitre_nav_metrics_v1",
+  "lepupitre_workspace_toolbar_colors_v1",
+] as const;
+
+function profilePreferenceKeys(profileId: string) {
+  return [
+    `lepupitre.training.heroQuest.${profileId}`,
+    `lepupitre.training.achievements.${profileId}`,
+    `lepupitre.feedback.reviewed.${profileId}`,
+  ] as const;
+}
+
+async function hydratePreferenceContext(profileId: string | null) {
+  const entries: Array<{
+    key: string;
+    options?: { scope: "profile"; profileId: string };
+  }> = GLOBAL_PREFERENCE_KEYS.map((key) => ({ key }));
+  if (profileId) {
+    entries.push(
+      ...profilePreferenceKeys(profileId).map((key) => ({
+        key,
+        options: { scope: "profile" as const, profileId },
+      }))
+    );
+  }
+  await hydratePreferences(entries);
+}
+
 let bootstrapPromise: Promise<void> | null = null;
 
 async function loadProfiles() {
@@ -114,6 +148,8 @@ async function loadProfiles() {
   const active = profiles.find((profile) => profile.is_active);
   state.activeProfileId = active?.id ?? null;
   state.trainingProjectId = null;
+  setActivePreferenceProfile(state.activeProfileId);
+  await hydratePreferenceContext(state.activeProfileId);
 }
 
 async function loadProjects() {

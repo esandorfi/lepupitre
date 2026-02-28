@@ -103,6 +103,11 @@ CREATE TABLE IF NOT EXISTS sync_state (
   last_full_sync_at TEXT
 );
 
+CREATE TABLE IF NOT EXISTS profile_settings (
+  key TEXT PRIMARY KEY,
+  value_json TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS oplog (
   id TEXT PRIMARY KEY,
   ts TEXT NOT NULL,

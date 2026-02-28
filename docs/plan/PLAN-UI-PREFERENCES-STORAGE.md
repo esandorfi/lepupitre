@@ -14,6 +14,9 @@ Converge UI preference persistence to a single typed storage boundary that can e
   - direct `localStorage` access removed from UI feature modules,
   - shared `preferencesStorage` gateway added under `desktop/ui/src/lib/`,
   - legacy key migration hooks added for versioned preference keys.
+- Phase 2 in progress:
+  - Tauri IPC-backed preference commands added for global and profile scope.
+  - gateway writes/reads now hydrate through IPC with browser-storage fallback.
 
 ## Target architecture
 

@@ -28,6 +28,16 @@
 - Secrets are not stored in SQLite (use keyring/stronghold).
 - Least-privilege capabilities and strict CSP.
 
+## Preference persistence baseline
+- UI preference access is centralized in `desktop/ui/src/lib/preferencesStorage.ts`.
+- Primary backend is Tauri IPC commands:
+  - `preference_global_get` / `preference_global_set`
+  - `preference_profile_get` / `preference_profile_set`
+- Browser `localStorage` remains a compatibility fallback for UI-only development and runtime fallback.
+- Ownership:
+  - global scope: theme, locale, nav mode/metrics, ASR settings, workspace toolbar colors.
+  - profile scope: hero quest selection, training achievement memory, feedback reviewed state.
+
 ## Observability baseline
 - Structured logs in development.
 - Correlation by `job_id` across transcription/analysis flows.

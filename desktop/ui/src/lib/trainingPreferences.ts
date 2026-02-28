@@ -22,7 +22,10 @@ export function readStoredHeroQuestCode(profileId: string): string | null {
     return null;
   }
   try {
-    const value = readPreference(heroQuestStorageKey(profileId));
+    const value = readPreference(heroQuestStorageKey(profileId), {
+      scope: "profile",
+      profileId,
+    });
     if (!value) {
       return null;
     }
@@ -43,13 +46,13 @@ export function writeStoredHeroQuestCode(profileId: string, questCode: string | 
   const key = heroQuestStorageKey(profileId);
   const normalized = questCode?.trim() ?? "";
   if (!normalized) {
-    removePreference(key);
+    removePreference(key, { scope: "profile", profileId });
     return;
   }
   if (normalized.length > MAX_QUEST_CODE_LENGTH) {
     return;
   }
-  writePreference(key, normalized);
+  writePreference(key, normalized, { scope: "profile", profileId });
 }
 
 export function readAchievementMemory(profileId: string): AchievementMemory | null {
@@ -57,7 +60,10 @@ export function readAchievementMemory(profileId: string): AchievementMemory | nu
     return null;
   }
   try {
-    const raw = readPreference(achievementStorageKey(profileId));
+    const raw = readPreference(achievementStorageKey(profileId), {
+      scope: "profile",
+      profileId,
+    });
     if (!raw) {
       return null;
     }
@@ -83,5 +89,8 @@ export function writeAchievementMemory(profileId: string, memory: AchievementMem
   if (!profileId) {
     return;
   }
-  writePreference(achievementStorageKey(profileId), JSON.stringify(memory));
+  writePreference(achievementStorageKey(profileId), JSON.stringify(memory), {
+    scope: "profile",
+    profileId,
+  });
 }

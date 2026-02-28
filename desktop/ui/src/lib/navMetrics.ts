@@ -1,6 +1,6 @@
 import { ref } from "vue";
 import type { PrimaryNavMode } from "./uiPreferences";
-import { readPreference, writePreference } from "./preferencesStorage";
+import { hydratePreference, readPreference, writePreference } from "./preferencesStorage";
 
 type NavMetricsSnapshot = {
   switchCount: number;
@@ -44,6 +44,25 @@ function loadMetrics(): NavMetricsSnapshot {
     if (!raw) {
       return { ...defaultMetrics };
     }
+    return parseMetrics(raw);
+  } catch {
+    return { ...defaultMetrics };
+  }
+}
+
+const metrics = ref<NavMetricsSnapshot>(loadMetrics());
+void hydratePreference(STORAGE_KEY, { legacyKeys: LEGACY_STORAGE_KEYS }).then((raw) => {
+  if (!raw) {
+    return;
+  }
+  metrics.value = parseMetrics(raw);
+});
+
+let pendingIntent: NavIntent | null = null;
+let sidebarSessionMarked = false;
+
+function parseMetrics(raw: string): NavMetricsSnapshot {
+  try {
     const parsed = JSON.parse(raw) as Partial<NavMetricsSnapshot>;
     const switchCount = sanitizeNumber(parsed.switchCount);
     const totalLatencyMs = sanitizeNumber(parsed.totalLatencyMs);
@@ -63,11 +82,6 @@ function loadMetrics(): NavMetricsSnapshot {
     return { ...defaultMetrics };
   }
 }
-
-const metrics = ref<NavMetricsSnapshot>(loadMetrics());
-
-let pendingIntent: NavIntent | null = null;
-let sidebarSessionMarked = false;
 
 function persist(next: NavMetricsSnapshot) {
   metrics.value = next;
