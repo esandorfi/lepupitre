@@ -1,8 +1,12 @@
-<h1 align="center">Le Pupitre - Mac & Win</h1>
+<p align="center">
+  <img src="docs/images/app_screen_26_02_1.png" alt="Le Pupitre icon"  />
+</p>
 
+<h1 align="center">Le Pupitre</h1>
 
 <p align="center"><strong>Practice your voice, keep your data local, improve every talk.</strong></p>
-<p align="center">Local-first Tauri coach for talks, pitches, and presentations.</p>
+<p align="center">Local-first Tauri coach for conference talks, product demos, pitches, and keynotes.</p>
+<p align="center">A desktop rehearsal workspace for speakers who need clear feedback, private voice data, and consistent progress.</p>
 <p align="center">
   <a href="https://github.com/esandorfi/lepupitre/releases">Download</a> |
   <a href="docs/README.md">Docs</a> |
@@ -25,17 +29,13 @@
 - Technical speakers
 - Conference and meetup speakers
 - Product and demo presenters
-- Trainers, teachers, and workshop facilitators
+- Team leads, founders, and customer-facing presenters
 - Anyone preparing spoken delivery with digital tools
 
 <hr>
 
 
 ## Install and run
-
-<p align="center">
-  <img src="desktop/src-tauri/icons/icon.png" alt="Le Pupitre icon" width="120" />
-</p>
 
 - Download installers from [GitHub Releases](https://github.com/esandorfi/lepupitre/releases).
 - **macOS** and **Windows** packages are built by CI.
