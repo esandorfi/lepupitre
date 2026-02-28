@@ -76,13 +76,16 @@ Done when:
 - Corruption handling, backup/restore, and DB health diagnostics are implemented and documented.
 - CI covers migration upgrade, corruption recovery, and hot-path query checks.
 
-### Future review: UI preferences storage policy
+## Track E: UI preferences storage policy
 Goal: converge from browser `localStorage` to a Tauri-oriented preferences layer.
 
 Scope:
 - Define a single typed preferences service used by UI modules.
 - Add migration from legacy `localStorage` keys.
 - Provide a documented fallback path and failure behavior.
+
+Execution detail:
+- [docs/plan/PLAN-UI-PREFERENCES-STORAGE.md](plan/PLAN-UI-PREFERENCES-STORAGE.md)
 
 Done when:
 - `localStorage` direct access is removed from feature code.

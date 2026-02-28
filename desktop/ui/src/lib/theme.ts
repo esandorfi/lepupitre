@@ -1,13 +1,15 @@
 import { ref } from "vue";
+import { readPreference, writePreference } from "./preferencesStorage";
 
 const STORAGE_KEY = "lepupitre_theme";
+const LEGACY_STORAGE_KEYS = ["lepupitre_theme_v1"] as const;
 
 const themes = ["orange", "terminal"] as const;
 type Theme = (typeof themes)[number];
 
 function loadTheme(): Theme {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = readPreference(STORAGE_KEY, { legacyKeys: LEGACY_STORAGE_KEYS });
     if (stored && themes.includes(stored as Theme)) {
       return stored as Theme;
     }
@@ -28,11 +30,7 @@ function applyTheme(next: Theme) {
 function setTheme(next: Theme) {
   theme.value = next;
   applyTheme(next);
-  try {
-    localStorage.setItem(STORAGE_KEY, next);
-  } catch {
-    // ignore storage errors
-  }
+  writePreference(STORAGE_KEY, next);
 }
 
 function initTheme() {

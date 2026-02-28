@@ -1,4 +1,5 @@
 import { ref } from "vue";
+import { readPreference, writePreference } from "./preferencesStorage";
 
 export type PrimaryNavMode = "top" | "sidebar-icon";
 export type GamificationMode = "minimal" | "balanced" | "quest-world";
@@ -14,6 +15,7 @@ export type UiSettings = {
 };
 
 const STORAGE_KEY = "lepupitre_ui_settings_v1";
+const LEGACY_STORAGE_KEYS = ["lepupitre_ui_settings"] as const;
 
 const defaultSettings: UiSettings = {
   primaryNavMode: "sidebar-icon",
@@ -38,7 +40,7 @@ function isMascotIntensity(value: unknown): value is MascotIntensity {
 
 function loadSettings(): UiSettings {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = readPreference(STORAGE_KEY, { legacyKeys: LEGACY_STORAGE_KEYS });
     if (!raw) {
       return defaultSettings;
     }
@@ -78,11 +80,7 @@ const settings = ref<UiSettings>(loadSettings());
 
 function persist(next: UiSettings) {
   settings.value = next;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  } catch {
-    // ignore storage errors
-  }
+  writePreference(STORAGE_KEY, JSON.stringify(next));
 }
 
 function updateSettings(patch: Partial<UiSettings>) {

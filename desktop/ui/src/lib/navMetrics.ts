@@ -1,5 +1,6 @@
 import { ref } from "vue";
 import type { PrimaryNavMode } from "./uiPreferences";
+import { readPreference, writePreference } from "./preferencesStorage";
 
 type NavMetricsSnapshot = {
   switchCount: number;
@@ -18,6 +19,7 @@ type NavIntent = {
 };
 
 const STORAGE_KEY = "lepupitre_nav_metrics_v1";
+const LEGACY_STORAGE_KEYS = ["lepupitre_nav_metrics"] as const;
 
 const defaultMetrics: NavMetricsSnapshot = {
   switchCount: 0,
@@ -38,7 +40,7 @@ function sanitizeNumber(value: unknown): number {
 
 function loadMetrics(): NavMetricsSnapshot {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = readPreference(STORAGE_KEY, { legacyKeys: LEGACY_STORAGE_KEYS });
     if (!raw) {
       return { ...defaultMetrics };
     }
@@ -69,11 +71,7 @@ let sidebarSessionMarked = false;
 
 function persist(next: NavMetricsSnapshot) {
   metrics.value = next;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  } catch {
-    // ignore storage errors
-  }
+  writePreference(STORAGE_KEY, JSON.stringify(next));
 }
 
 function updateMetrics(mutator: (current: NavMetricsSnapshot) => NavMetricsSnapshot) {

@@ -1,4 +1,5 @@
 import { ref } from "vue";
+import { readPreference, writePreference } from "./preferencesStorage";
 
 type TranscriptionModel = "tiny" | "base";
 type TranscriptionMode = "auto" | "live+final" | "final-only";
@@ -12,6 +13,7 @@ type TranscriptionSettings = {
 };
 
 const STORAGE_KEY = "lepupitre_transcription_settings";
+const LEGACY_STORAGE_KEYS = ["lepupitre_transcription_settings_v1"] as const;
 
 const defaultSettings: TranscriptionSettings = {
   model: "tiny",
@@ -34,7 +36,7 @@ function isTranscriptionLanguage(value: unknown): value is TranscriptionLanguage
 
 function loadSettings(): TranscriptionSettings {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = readPreference(STORAGE_KEY, { legacyKeys: LEGACY_STORAGE_KEYS });
     if (!stored) {
       return defaultSettings;
     }
@@ -59,11 +61,7 @@ const settings = ref<TranscriptionSettings>(loadSettings());
 
 function persist(next: TranscriptionSettings) {
   settings.value = next;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  } catch {
-    // ignore storage errors
-  }
+  writePreference(STORAGE_KEY, JSON.stringify(next));
 }
 
 function updateSettings(patch: Partial<TranscriptionSettings>) {

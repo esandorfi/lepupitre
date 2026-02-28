@@ -1,8 +1,10 @@
 import { ref } from "vue";
+import { readPreference, writePreference } from "./preferencesStorage";
 
 type Locale = "en" | "fr";
 
 const STORAGE_KEY = "lepupitre_locale";
+const LEGACY_STORAGE_KEYS = ["lepupitre_language"] as const;
 
 const messages: Record<Locale, Record<string, string>> = {
   en: {
@@ -1365,7 +1367,7 @@ const messages: Record<Locale, Record<string, string>> = {
 
 function loadLocale(): Locale {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = readPreference(STORAGE_KEY, { legacyKeys: LEGACY_STORAGE_KEYS });
     if (stored === "en" || stored === "fr") {
       return stored;
     }
@@ -1379,11 +1381,7 @@ const locale = ref<Locale>(loadLocale());
 
 function setLocale(next: Locale) {
   locale.value = next;
-  try {
-    localStorage.setItem(STORAGE_KEY, next);
-  } catch {
-    // ignore storage errors
-  }
+  writePreference(STORAGE_KEY, next);
 }
 
 function t(key: string) {

@@ -104,6 +104,27 @@ describe("uiPreferences", () => {
     expect(settings.value.mascotIntensity).toBe("contextual");
   });
 
+  it("migrates legacy storage key to the current key", async () => {
+    vi.resetModules();
+    Object.defineProperty(globalThis, "localStorage", {
+      value: createStorage({
+        lepupitre_ui_settings: JSON.stringify({
+          primaryNavMode: "top",
+          sidebarPinned: true,
+        }),
+      }),
+      configurable: true,
+      writable: true,
+    });
+    const { useUiPreferences } = await import("./uiPreferences");
+    const { settings } = useUiPreferences();
+    expect(settings.value.primaryNavMode).toBe("top");
+    expect(settings.value.sidebarPinned).toBe(true);
+    expect(globalThis.localStorage.getItem("lepupitre_ui_settings")).toBeNull();
+    const migrated = globalThis.localStorage.getItem("lepupitre_ui_settings_v1") ?? "";
+    expect(migrated).toContain("\"primaryNavMode\":\"top\"");
+  });
+
   it("falls back to defaults for malformed saved settings", async () => {
     vi.resetModules();
     Object.defineProperty(globalThis, "localStorage", {

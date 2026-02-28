@@ -1,12 +1,10 @@
+import { readPreference, writePreference } from "./preferencesStorage";
+
 const STORAGE_PREFIX = "lepupitre.feedback.reviewed";
 const MAX_REVIEWED_IDS = 400;
 
 function storageKey(profileId: string) {
   return `${STORAGE_PREFIX}.${profileId}`;
-}
-
-function canUseStorage() {
-  return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
 }
 
 function sanitizeReviewedIds(value: unknown): string[] {
@@ -32,11 +30,11 @@ function sanitizeReviewedIds(value: unknown): string[] {
 }
 
 export function readReviewedFeedbackIds(profileId: string): Set<string> {
-  if (!profileId || !canUseStorage()) {
+  if (!profileId) {
     return new Set();
   }
   try {
-    const raw = window.localStorage.getItem(storageKey(profileId));
+    const raw = readPreference(storageKey(profileId));
     if (!raw) {
       return new Set();
     }
@@ -47,7 +45,7 @@ export function readReviewedFeedbackIds(profileId: string): Set<string> {
 }
 
 export function markFeedbackReviewed(profileId: string, feedbackId: string) {
-  if (!profileId || !feedbackId || !canUseStorage()) {
+  if (!profileId || !feedbackId) {
     return;
   }
   const normalizedFeedbackId = feedbackId.trim();
@@ -56,12 +54,8 @@ export function markFeedbackReviewed(profileId: string, feedbackId: string) {
   }
   const reviewed = readReviewedFeedbackIds(profileId);
   reviewed.add(normalizedFeedbackId);
-  try {
-    const next = sanitizeReviewedIds(Array.from(reviewed));
-    window.localStorage.setItem(storageKey(profileId), JSON.stringify(next));
-  } catch {
-    // ignore storage write errors
-  }
+  const next = sanitizeReviewedIds(Array.from(reviewed));
+  writePreference(storageKey(profileId), JSON.stringify(next));
 }
 
 export function isFeedbackReviewed(profileId: string, feedbackId: string): boolean {

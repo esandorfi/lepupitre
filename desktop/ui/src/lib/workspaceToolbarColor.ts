@@ -1,4 +1,5 @@
 import type { Theme } from "./theme";
+import { readPreference, writePreference } from "./preferencesStorage";
 
 export type WorkspaceToolbarColorKey = "default" | "amber" | "sky" | "mint" | "rose";
 
@@ -20,6 +21,7 @@ type ToolbarPaletteEntry = {
 };
 
 const STORAGE_KEY = "lepupitre_workspace_toolbar_colors_v1";
+const LEGACY_STORAGE_KEYS = ["lepupitre_workspace_toolbar_colors"] as const;
 const ORDER: WorkspaceToolbarColorKey[] = ["default", "amber", "sky", "mint", "rose"];
 const CSS_VAR_NAMES = [
   "--workspace-toolbar-bg",
@@ -144,11 +146,8 @@ function isColorKey(value: string): value is WorkspaceToolbarColorKey {
 }
 
 function loadMap(): Record<string, WorkspaceToolbarColorKey> {
-  if (typeof localStorage === "undefined") {
-    return {};
-  }
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = readPreference(STORAGE_KEY, { legacyKeys: LEGACY_STORAGE_KEYS });
     if (!raw) {
       return {};
     }
@@ -166,14 +165,7 @@ function loadMap(): Record<string, WorkspaceToolbarColorKey> {
 }
 
 function saveMap(value: Record<string, WorkspaceToolbarColorKey>) {
-  if (typeof localStorage === "undefined") {
-    return;
-  }
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
-  } catch {
-    // ignore storage errors
-  }
+  writePreference(STORAGE_KEY, JSON.stringify(value));
 }
 
 function setToolbarVars(vars: ToolbarColorVars | null) {
