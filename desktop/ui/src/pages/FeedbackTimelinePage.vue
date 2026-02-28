@@ -5,6 +5,7 @@ import EntityRow from "../components/EntityRow.vue";
 import PageHeader from "../components/PageHeader.vue";
 import PageShell from "../components/PageShell.vue";
 import SectionPanel from "../components/SectionPanel.vue";
+import { readReviewedFeedbackIds } from "../lib/feedbackReviewState";
 import { useI18n } from "../lib/i18n";
 import { useUiPreferences } from "../lib/uiPreferences";
 import { appStore } from "../stores/app";
@@ -18,8 +19,10 @@ const entries = ref<FeedbackTimelineItem[]>([]);
 const isLoading = ref(false);
 const error = ref<string | null>(null);
 const filterType = ref<"all" | "quest_attempt" | "run">("all");
+const showUnreadOnly = ref(false);
 const scope = ref<"workspace" | "talk">("workspace");
 const mascotMessage = ref<MascotMessage | null>(null);
+const reviewedIds = ref<Set<string>>(new Set());
 const showMascotCard = computed(() => uiSettings.value.mascotEnabled);
 const mascotBody = computed(() =>
   uiSettings.value.mascotIntensity === "minimal" ? "" : mascotMessage.value?.body ?? ""
@@ -48,10 +51,13 @@ const sourceContext = computed(() => {
 });
 const visibleEntries = computed(() =>
   entries.value.filter((item) => {
-    if (filterType.value === "all") {
-      return true;
+    if (filterType.value !== "all" && item.subject_type !== filterType.value) {
+      return false;
     }
-    return item.subject_type === filterType.value;
+    if (showUnreadOnly.value && reviewedIds.value.has(item.id)) {
+      return false;
+    }
+    return true;
   })
 );
 const averageScore = computed(() => {
@@ -66,6 +72,9 @@ const notesCount = computed(
 );
 const focusedEntry = computed(
   () => entries.value.find((item) => item.id === focusedFeedbackId.value) ?? null
+);
+const unreadCount = computed(
+  () => entries.value.filter((item) => !reviewedIds.value.has(item.id)).length
 );
 const focusedEntryPrevious = computed(() => {
   if (!focusedEntry.value) {
@@ -168,6 +177,14 @@ function isFocused(item: FeedbackTimelineItem) {
   return Boolean(focusedFeedbackId.value) && item.id === focusedFeedbackId.value;
 }
 
+function isReviewed(item: FeedbackTimelineItem) {
+  return reviewedIds.value.has(item.id);
+}
+
+function reviewedBadgeClass(reviewed: boolean) {
+  return reviewed ? "app-badge-neutral" : "app-badge-success";
+}
+
 async function refreshMascotMessage() {
   if (!showMascotCard.value || !state.value.activeProfileId) {
     mascotMessage.value = null;
@@ -189,6 +206,7 @@ async function loadTimeline() {
     entries.value = [];
     error.value = null;
     mascotMessage.value = null;
+    reviewedIds.value = new Set();
     return;
   }
   isLoading.value = true;
@@ -198,6 +216,7 @@ async function loadTimeline() {
       scope.value === "talk" ? activeProjectId.value : null,
       48
     );
+    reviewedIds.value = readReviewedFeedbackIds(state.value.activeProfileId);
     await refreshMascotMessage();
   } catch (err) {
     entries.value = [];
@@ -398,6 +417,14 @@ watch(
             >
               {{ t("feedback.timeline_filter_run") }}
             </button>
+            <button
+              class="app-focus-ring app-button-sm inline-flex items-center transition"
+              :class="showUnreadOnly ? 'app-button-secondary' : 'app-button-ghost'"
+              type="button"
+              @click="showUnreadOnly = !showUnreadOnly"
+            >
+              {{ t("feedback.timeline_filter_unread") }} · {{ unreadCount }}
+            </button>
           </div>
         </div>
       </SectionPanel>
@@ -428,6 +455,12 @@ watch(
               <div class="app-text app-text-body-strong mt-1">{{ feedbackTitle(item) }}</div>
             </template>
             <template #actions>
+              <span
+                class="app-text-caption inline-flex items-center rounded-full px-2 py-1 font-semibold"
+                :class="reviewedBadgeClass(isReviewed(item))"
+              >
+                {{ isReviewed(item) ? t("feedback.reviewed_label") : t("feedback.unread_label") }}
+              </span>
               <span
                 class="app-text-caption inline-flex items-center rounded-full px-2 py-1 font-semibold"
                 :class="scoreToneClass(item.overall_score)"
