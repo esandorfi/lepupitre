@@ -56,6 +56,7 @@ These are repository process gates for contributors.
   - ensure latest tag/version is present in changelog before release
 - If release trust toggles are enabled:
   - `LEPUPITRE_REQUIRE_WINDOWS_SIGNING=true` enforces valid Authenticode signatures on Windows installers,
+  - `LEPUPITRE_WINDOWS_SIGNING_PROVIDER=signpath|self-managed` selects Windows signing preflight requirements,
   - `LEPUPITRE_REQUIRE_MACOS_NOTARIZATION=true` enforces macOS signing/notarization verification.
 
 ## 7) Docs lifecycle gate

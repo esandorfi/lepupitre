@@ -67,8 +67,9 @@ Use this file for new architecture, security, IPC, and release decisions.
 - Decision:
   - Introduce repository-level trust toggles:
     - `LEPUPITRE_REQUIRE_WINDOWS_SIGNING`
+    - `LEPUPITRE_WINDOWS_SIGNING_PROVIDER` (`signpath` or `self-managed`)
     - `LEPUPITRE_REQUIRE_MACOS_NOTARIZATION`
-  - Add release preflight validation (`scripts/check-release-signing.sh`) that fails if required secrets are missing for enabled toggles.
+  - Add release preflight validation (`scripts/check-release-signing.sh`) that fails if required secrets are missing for enabled toggles/provider.
   - Add release verification steps:
     - Windows: Authenticode validity checks on MSI/NSIS installers.
     - macOS: `codesign`, `spctl`, and `stapler` validation.

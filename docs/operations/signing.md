@@ -11,12 +11,15 @@
 - SignPath Foundation (`https://signpath.org/`) is an option when project eligibility matches their program terms.
 - Signing is performed remotely by SignPath/HSM.
 - Typical SignPath flow does not require storing a local `.pfx` in this repository.
-- CI gate toggle: repository variable `LEPUPITRE_REQUIRE_WINDOWS_SIGNING=true`.
-- Required secrets when enabled:
+- CI gate toggles:
+  - `LEPUPITRE_REQUIRE_WINDOWS_SIGNING=true`
+  - `LEPUPITRE_WINDOWS_SIGNING_PROVIDER=signpath|self-managed` (default: `signpath`)
+- Required secrets when enabled with `LEPUPITRE_WINDOWS_SIGNING_PROVIDER=signpath`:
   - `SIGNPATH_API_TOKEN`
   - `SIGNPATH_ORGANIZATION_ID`
   - `SIGNPATH_PROJECT_SLUG`
   - `SIGNPATH_SIGNING_POLICY_SLUG`
+- With `LEPUPITRE_WINDOWS_SIGNING_PROVIDER=self-managed`, preflight does not enforce provider-specific secrets (verification still enforces valid installer signatures).
 - Verification gate when enabled:
   - built `*.msi` and NSIS `*.exe` installers must have valid Authenticode signatures.
 

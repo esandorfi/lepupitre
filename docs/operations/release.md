@@ -6,6 +6,7 @@
 - CI is path-aware: docs, UI, and Rust jobs run only when relevant files change (full run on `v*` tags).
 - Release packaging uses explicit trust toggles:
   - `LEPUPITRE_REQUIRE_WINDOWS_SIGNING`
+  - `LEPUPITRE_WINDOWS_SIGNING_PROVIDER` (`signpath` or `self-managed`)
   - `LEPUPITRE_REQUIRE_MACOS_NOTARIZATION`
 
 ## Versioning and changelog

@@ -30,19 +30,32 @@ require_vars() {
 runner_os="${RUNNER_OS:-}"
 require_windows="${LEPUPITRE_REQUIRE_WINDOWS_SIGNING:-false}"
 require_macos="${LEPUPITRE_REQUIRE_MACOS_NOTARIZATION:-false}"
+windows_provider="${LEPUPITRE_WINDOWS_SIGNING_PROVIDER:-signpath}"
 
 echo "Release signing preflight"
 echo "RUNNER_OS=${runner_os:-unknown}"
 echo "LEPUPITRE_REQUIRE_WINDOWS_SIGNING=${require_windows}"
+echo "LEPUPITRE_WINDOWS_SIGNING_PROVIDER=${windows_provider}"
 echo "LEPUPITRE_REQUIRE_MACOS_NOTARIZATION=${require_macos}"
 
 if [[ "${runner_os}" == "Windows" ]] && to_bool "${require_windows}"; then
-  require_vars \
-    "Windows signing" \
-    SIGNPATH_API_TOKEN \
-    SIGNPATH_ORGANIZATION_ID \
-    SIGNPATH_PROJECT_SLUG \
-    SIGNPATH_SIGNING_POLICY_SLUG
+  case "${windows_provider}" in
+    signpath)
+      require_vars \
+        "Windows signing (SignPath)" \
+        SIGNPATH_API_TOKEN \
+        SIGNPATH_ORGANIZATION_ID \
+        SIGNPATH_PROJECT_SLUG \
+        SIGNPATH_SIGNING_POLICY_SLUG
+      ;;
+    self-managed|project-cert)
+      echo "Windows signing provider is ${windows_provider}; preflight does not enforce provider-specific secrets."
+      ;;
+    *)
+      echo "::error title=Windows signing provider invalid::Unsupported LEPUPITRE_WINDOWS_SIGNING_PROVIDER='${windows_provider}'. Use signpath or self-managed."
+      exit 1
+      ;;
+  esac
 fi
 
 if [[ "${runner_os}" == "macOS" ]] && to_bool "${require_macos}"; then
