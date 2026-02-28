@@ -77,6 +77,9 @@ import {
   MascotMessage,
   MascotMessagePayloadSchema,
   MascotMessageSchema,
+  TalksBlueprint,
+  TalksBlueprintPayloadSchema,
+  TalksBlueprintSchema,
   FeedbackNoteGetPayloadSchema,
   FeedbackNoteResponseSchema,
   FeedbackNoteSetPayloadSchema,
@@ -355,6 +358,25 @@ async function getMascotContextMessage(payload: {
       routeName: payload.routeName,
       projectId: payload.projectId ?? null,
       locale: payload.locale ?? null,
+    }
+  );
+}
+
+async function getTalksBlueprint(
+  projectId: string,
+  locale?: string | null
+): Promise<TalksBlueprint> {
+  if (!state.activeProfileId) {
+    throw new Error("no_active_profile");
+  }
+  return invokeChecked(
+    "talks_get_blueprint",
+    TalksBlueprintPayloadSchema,
+    TalksBlueprintSchema,
+    {
+      profileId: state.activeProfileId,
+      projectId,
+      locale: locale ?? null,
     }
   );
 }
@@ -806,6 +828,7 @@ export const appStore = {
   getDailyQuestForProject,
   getProgressSnapshot,
   getMascotContextMessage,
+  getTalksBlueprint,
   getQuestAttempts,
   submitQuestText,
   submitQuestTextForProject,

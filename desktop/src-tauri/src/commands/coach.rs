@@ -29,6 +29,27 @@ pub struct MascotMessage {
     pub cta_route: Option<String>,
 }
 
+#[derive(Debug, Serialize)]
+pub struct TalksBlueprintStep {
+    pub id: String,
+    pub title: String,
+    pub done: bool,
+    pub reward_credits: i64,
+    pub cta_route: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct TalksBlueprint {
+    pub project_id: String,
+    pub project_title: String,
+    pub framework_id: String,
+    pub framework_label: String,
+    pub framework_summary: String,
+    pub completion_percent: i64,
+    pub steps: Vec<TalksBlueprintStep>,
+    pub next_step_id: Option<String>,
+}
+
 #[tauri::command]
 pub fn progress_get_snapshot(
     app: tauri::AppHandle,
@@ -58,6 +79,124 @@ pub fn mascot_get_context_message(
         locale.unwrap_or_else(|| "en".to_string()),
         &snapshot,
     ))
+}
+
+#[tauri::command]
+pub fn talks_get_blueprint(
+    app: tauri::AppHandle,
+    profile_id: String,
+    project_id: String,
+    locale: Option<String>,
+) -> Result<TalksBlueprint, String> {
+    db::ensure_profile_exists(&app, &profile_id)?;
+    let conn = db::open_profile(&app, &profile_id)?;
+
+    let project = conn
+        .query_row(
+            "SELECT id, title, audience, goal, duration_target_sec, stage
+             FROM talk_projects
+             WHERE id = ?1",
+            params![project_id],
+            |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, Option<String>>(2)?,
+                    row.get::<_, Option<String>>(3)?,
+                    row.get::<_, Option<i64>>(4)?,
+                    row.get::<_, String>(5)?,
+                ))
+            },
+        )
+        .map_err(|e| format!("talks_blueprint_project_lookup: {e}"))?;
+
+    let outline_len: i64 = conn
+        .query_row(
+            "SELECT LENGTH(TRIM(COALESCE(outline_md, '')))
+             FROM talk_outlines
+             WHERE project_id = ?1",
+            params![project.0.as_str()],
+            |row| row.get::<_, Option<i64>>(0),
+        )
+        .optional()
+        .map_err(|e| format!("talks_blueprint_outline_lookup: {e}"))?
+        .flatten()
+        .unwrap_or(0);
+
+    let quest_attempts: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM quest_attempts WHERE project_id = ?1",
+            params![project.0.as_str()],
+            |row| row.get(0),
+        )
+        .map_err(|e| format!("talks_blueprint_attempts_lookup: {e}"))?;
+    let runs_total: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM runs WHERE project_id = ?1",
+            params![project.0.as_str()],
+            |row| row.get(0),
+        )
+        .map_err(|e| format!("talks_blueprint_runs_lookup: {e}"))?;
+    let quest_feedback: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM quest_attempts
+             WHERE project_id = ?1 AND feedback_id IS NOT NULL",
+            params![project.0.as_str()],
+            |row| row.get(0),
+        )
+        .map_err(|e| format!("talks_blueprint_quest_feedback_lookup: {e}"))?;
+    let run_feedback: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM runs
+             WHERE project_id = ?1 AND feedback_id IS NOT NULL",
+            params![project.0.as_str()],
+            |row| row.get(0),
+        )
+        .map_err(|e| format!("talks_blueprint_run_feedback_lookup: {e}"))?;
+
+    let fr = locale
+        .unwrap_or_else(|| "en".to_string())
+        .trim()
+        .to_ascii_lowercase()
+        .starts_with("fr");
+    let framework = select_framework(project.3.as_deref(), project.2.as_deref(), fr);
+    let define_done = is_define_done(
+        project.1.trim(),
+        project.2.as_deref(),
+        project.3.as_deref(),
+        project.4,
+    );
+    let structure_done = outline_len > 20;
+    let rehearse_done = (quest_attempts + runs_total) > 0;
+    let feedback_done = (quest_feedback + run_feedback) > 0;
+    let ship_done = project.5 == "export";
+
+    let steps = build_talks_steps(
+        fr,
+        project.0.as_str(),
+        define_done,
+        structure_done,
+        rehearse_done,
+        feedback_done,
+        ship_done,
+    );
+    let done_count = steps.iter().filter(|step| step.done).count() as i64;
+    let completion_percent = ((done_count * 100) / steps.len() as i64).clamp(0, 100);
+    let next_step_id = steps
+        .iter()
+        .find(|step| !step.done)
+        .map(|step| step.id.clone());
+
+    Ok(TalksBlueprint {
+        project_id: project.0,
+        project_title: project.1,
+        framework_id: framework.0,
+        framework_label: framework.1,
+        framework_summary: framework.2,
+        completion_percent,
+        steps,
+        next_step_id,
+    })
 }
 
 fn build_progress_snapshot(
@@ -224,6 +363,171 @@ fn calculate_credits(attempts_total: i64, feedback_ready_total: i64, streak_days
 fn next_milestone(credits: i64) -> i64 {
     let clamped = credits.max(0);
     ((clamped / CREDIT_STEP) + 1) * CREDIT_STEP
+}
+
+fn is_define_done(
+    title: &str,
+    audience: Option<&str>,
+    goal: Option<&str>,
+    duration_target_sec: Option<i64>,
+) -> bool {
+    let has_title = !title.trim().is_empty();
+    let has_audience = audience.is_some_and(|value| !value.trim().is_empty());
+    let has_goal = goal.is_some_and(|value| !value.trim().is_empty());
+    let has_duration = duration_target_sec.unwrap_or(0) > 0;
+    has_title && has_audience && has_goal && has_duration
+}
+
+fn select_framework(
+    goal: Option<&str>,
+    audience: Option<&str>,
+    fr: bool,
+) -> (String, String, String) {
+    let goal_lc = goal.unwrap_or_default().to_ascii_lowercase();
+    let audience_lc = audience.unwrap_or_default().to_ascii_lowercase();
+    if goal_lc.contains("convince")
+        || goal_lc.contains("persuade")
+        || goal_lc.contains("buy-in")
+        || goal_lc.contains("align")
+    {
+        return if fr {
+            (
+                "problem-solution-impact".to_string(),
+                "Probleme -> Solution -> Impact".to_string(),
+                "Cadre ideal pour obtenir une decision et clarifier le benefice attendu."
+                    .to_string(),
+            )
+        } else {
+            (
+                "problem-solution-impact".to_string(),
+                "Problem -> Solution -> Impact".to_string(),
+                "Best when you need buy-in and a clear decision path for your audience."
+                    .to_string(),
+            )
+        };
+    }
+    if goal_lc.contains("update")
+        || goal_lc.contains("status")
+        || audience_lc.contains("leadership")
+        || audience_lc.contains("manager")
+        || audience_lc.contains("exec")
+    {
+        return if fr {
+            (
+                "context-change-decision".to_string(),
+                "Contexte -> Changement -> Decision".to_string(),
+                "Utile pour les updates: ce qui change, pourquoi, et la decision attendue."
+                    .to_string(),
+            )
+        } else {
+            (
+                "context-change-decision".to_string(),
+                "Context -> Change -> Decision".to_string(),
+                "Great for status talks: what changed, why it matters, and what decision is needed."
+                    .to_string(),
+            )
+        };
+    }
+    if fr {
+        (
+            "hook-story-proof".to_string(),
+            "Hook -> Story -> Proof".to_string(),
+            "Cadre polyvalent pour une prise de parole claire, concrete et memorable.".to_string(),
+        )
+    } else {
+        (
+            "hook-story-proof".to_string(),
+            "Hook -> Story -> Proof".to_string(),
+            "Versatile baseline for talks that need clarity, narrative flow, and evidence."
+                .to_string(),
+        )
+    }
+}
+
+fn build_talks_steps(
+    fr: bool,
+    project_id: &str,
+    define_done: bool,
+    structure_done: bool,
+    rehearse_done: bool,
+    feedback_done: bool,
+    ship_done: bool,
+) -> Vec<TalksBlueprintStep> {
+    let mut steps = Vec::with_capacity(5);
+    if fr {
+        steps.push(TalksBlueprintStep {
+            id: "define".to_string(),
+            title: "Definir le talk (titre, audience, objectif, duree)".to_string(),
+            done: define_done,
+            reward_credits: 20,
+            cta_route: Some(format!("/talks/{project_id}/define")),
+        });
+        steps.push(TalksBlueprintStep {
+            id: "structure".to_string(),
+            title: "Structurer l'outline avec le cadre recommande".to_string(),
+            done: structure_done,
+            reward_credits: 30,
+            cta_route: Some(format!("/talks/{project_id}/builder")),
+        });
+        steps.push(TalksBlueprintStep {
+            id: "rehearse".to_string(),
+            title: "Faire une repetition en audio".to_string(),
+            done: rehearse_done,
+            reward_credits: 25,
+            cta_route: Some(format!("/talks/{project_id}/train")),
+        });
+        steps.push(TalksBlueprintStep {
+            id: "feedback".to_string(),
+            title: "Generer au moins un feedback".to_string(),
+            done: feedback_done,
+            reward_credits: 25,
+            cta_route: Some(format!("/talks/{project_id}/train")),
+        });
+        steps.push(TalksBlueprintStep {
+            id: "ship".to_string(),
+            title: "Passer le talk au stade export".to_string(),
+            done: ship_done,
+            reward_credits: 40,
+            cta_route: Some(format!("/talks/{project_id}/export")),
+        });
+    } else {
+        steps.push(TalksBlueprintStep {
+            id: "define".to_string(),
+            title: "Define talk scope (title, audience, goal, duration)".to_string(),
+            done: define_done,
+            reward_credits: 20,
+            cta_route: Some(format!("/talks/{project_id}/define")),
+        });
+        steps.push(TalksBlueprintStep {
+            id: "structure".to_string(),
+            title: "Build an outline with the recommended framework".to_string(),
+            done: structure_done,
+            reward_credits: 30,
+            cta_route: Some(format!("/talks/{project_id}/builder")),
+        });
+        steps.push(TalksBlueprintStep {
+            id: "rehearse".to_string(),
+            title: "Record at least one rehearsal take".to_string(),
+            done: rehearse_done,
+            reward_credits: 25,
+            cta_route: Some(format!("/talks/{project_id}/train")),
+        });
+        steps.push(TalksBlueprintStep {
+            id: "feedback".to_string(),
+            title: "Generate at least one feedback pass".to_string(),
+            done: feedback_done,
+            reward_credits: 25,
+            cta_route: Some(format!("/talks/{project_id}/train")),
+        });
+        steps.push(TalksBlueprintStep {
+            id: "ship".to_string(),
+            title: "Move this talk to export stage".to_string(),
+            done: ship_done,
+            reward_credits: 40,
+            cta_route: Some(format!("/talks/{project_id}/export")),
+        });
+    }
+    steps
 }
 
 fn build_mascot_message(
@@ -454,6 +758,35 @@ mod tests {
         assert_eq!(next_milestone(0), 50);
         assert_eq!(next_milestone(49), 50);
         assert_eq!(next_milestone(50), 100);
+    }
+
+    #[test]
+    fn define_step_requires_complete_scope() {
+        assert!(is_define_done(
+            "Demo",
+            Some("CTO"),
+            Some("Convince"),
+            Some(600)
+        ));
+        assert!(!is_define_done("Demo", Some("CTO"), Some("Convince"), None));
+        assert!(!is_define_done(
+            "",
+            Some("CTO"),
+            Some("Convince"),
+            Some(600)
+        ));
+    }
+
+    #[test]
+    fn framework_defaults_to_hook_story_proof() {
+        let result = select_framework(None, None, false);
+        assert_eq!(result.0, "hook-story-proof");
+    }
+
+    #[test]
+    fn framework_detects_decision_talk() {
+        let result = select_framework(Some("Need buy-in from leadership"), Some("managers"), false);
+        assert_eq!(result.0, "problem-solution-impact");
     }
 
     #[test]
