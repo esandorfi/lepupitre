@@ -69,6 +69,7 @@ import {
   Quest,
   QuestAttemptSummary,
   QuestReportItem,
+  AnalyzeResponseSchema,
   FeedbackV1,
   AnalyzeResponseSchema,
   FeedbackContext,
