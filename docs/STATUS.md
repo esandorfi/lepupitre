@@ -24,7 +24,7 @@ This file tracks what is canonical, proposal-only, and archived.
 | [docs/plan/PLAN-WHISPER-LOCAL-TRANSCRIPTION.md](plan/PLAN-WHISPER-LOCAL-TRANSCRIPTION.md) | ASR deep plan | implemented | ASR maintainers | Keep synchronized with implementation |
 | [docs/plan/PLAN-TAURI-SQL-HARDENING.md](plan/PLAN-TAURI-SQL-HARDENING.md) | SQLite hardening execution plan | proposed | Maintainers | Execute by vertical slices and promote implemented rules to canonical docs |
 | [docs/plan/PLAN-UI-PREFERENCES-STORAGE.md](plan/PLAN-UI-PREFERENCES-STORAGE.md) | UI preference persistence migration | in_progress | Maintainers | Complete Tauri-native backend migration after boundary enforcement |
-| [docs/plan/PLAN-DOMAIN-CODE-ALIGNMENT.md](plan/PLAN-DOMAIN-CODE-ALIGNMENT.md) | Bounded-context code organization migration | in_progress | Maintainers | Continue vertical slices (`pack`) and add structural guard rails |
+| [docs/plan/PLAN-DOMAIN-CODE-ALIGNMENT.md](plan/PLAN-DOMAIN-CODE-ALIGNMENT.md) | Bounded-context code organization migration | in_progress | Maintainers | Keep new code in domain modules by default and implement structural guard rails (dependency direction + file-size budgets) |
 
 ## Active spec docs (`spec/active/`)
 

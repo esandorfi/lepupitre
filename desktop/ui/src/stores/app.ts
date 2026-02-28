@@ -36,25 +36,22 @@ import {
   updateProject as updateTalkProjectFromApi,
 } from "../domains/talk/api";
 import {
+  exportPack as exportPackFromApi,
+  getPeerReview as getPeerReviewFromApi,
+  getPeerReviews as getPeerReviewsFromApi,
+  importPeerReview as importPeerReviewFromApi,
+  inspectPack as inspectPackFromApi,
+} from "../domains/pack/api";
+import {
   IdSchema,
   ProfileSummary,
   ProjectUpdatePayload,
   ProjectListItem,
   ProjectSummary,
-  ExportResultSchema,
   OutlineDoc,
   ExportResult,
-  PackExportPayloadSchema,
-  PackInspectPayloadSchema,
-  PackInspectResponseSchema,
-  PeerReviewListPayloadSchema,
   PeerReviewSummary,
-  PeerReviewSummarySchema,
   PeerReviewDetail,
-  PeerReviewDetailSchema,
-  PeerReviewGetPayloadSchema,
-  PeerReviewImportPayloadSchema,
-  PeerReviewImportResponseSchema,
   RunAnalyzePayloadSchema,
   RunCreatePayloadSchema,
   RunFinishPayloadSchema,
@@ -568,36 +565,21 @@ async function exportPack(runId: string): Promise<ExportResult> {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
   }
-  return invokeChecked("pack_export", PackExportPayloadSchema, ExportResultSchema, {
-    profileId: state.activeProfileId,
-    runId,
-  });
+  return exportPackFromApi(state.activeProfileId, runId);
 }
 
 async function inspectPack(path: string) {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
   }
-  return invokeChecked("pack_inspect", PackInspectPayloadSchema, PackInspectResponseSchema, {
-    profileId: state.activeProfileId,
-    path,
-  });
+  return inspectPackFromApi(state.activeProfileId, path);
 }
 
 async function importPeerReview(path: string) {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
   }
-  const response = await invokeChecked(
-    "peer_review_import",
-    PeerReviewImportPayloadSchema,
-    PeerReviewImportResponseSchema,
-    {
-      profileId: state.activeProfileId,
-      path,
-    }
-  );
-  return response;
+  return importPeerReviewFromApi(state.activeProfileId, path);
 }
 
 async function getPeerReviews(
@@ -607,24 +589,14 @@ async function getPeerReviews(
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
   }
-  return invokeChecked(
-    "peer_review_list",
-    PeerReviewListPayloadSchema,
-    PeerReviewSummarySchema.array(),
-    { profileId: state.activeProfileId, projectId, limit }
-  );
+  return getPeerReviewsFromApi(state.activeProfileId, projectId, limit);
 }
 
 async function getPeerReview(peerReviewId: string): Promise<PeerReviewDetail> {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
   }
-  return invokeChecked(
-    "peer_review_get",
-    PeerReviewGetPayloadSchema,
-    PeerReviewDetailSchema,
-    { profileId: state.activeProfileId, peerReviewId }
-  );
+  return getPeerReviewFromApi(state.activeProfileId, peerReviewId);
 }
 
 async function getFeedback(feedbackId: string): Promise<FeedbackV1> {
