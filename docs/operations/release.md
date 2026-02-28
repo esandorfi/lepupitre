@@ -40,3 +40,27 @@
 - winget first-time bootstrap note: automated `wingetcreate update` works only after an initial manifest exists in `microsoft/winget-pkgs`.
 
 These channels are best-effort and should not block the core release unless explicitly configured as required.
+
+## Winget initial bootstrap (one-time)
+Use this once before relying on automated `wingetcreate update` in CI.
+
+Target install UX:
+- `winget install lepupitre`
+- Fallback canonical command: `winget install --id esandorfi.LePupitre -e`
+
+1. Create a GitHub PAT (classic) with `public_repo`.
+2. Install WingetCreate:
+   - `winget install --id Microsoft.WingetCreate -e`
+3. Set token via environment variable (recommended):
+   - PowerShell: `$env:WINGET_CREATE_GITHUB_TOKEN="YOUR_PAT"`
+4. Use a release installer URL (prefer `.msi` for first submission).
+5. Generate and submit initial manifests:
+   - `wingetcreate new "<MSI_URL>" --out .\winget`
+   - Use package identifier: `esandorfi.LePupitre`
+   - Set the package moniker to `lepupitre` in the generated manifest.
+   - Follow prompts to submit PR to `microsoft/winget-pkgs`
+6. After the initial PR is merged, CI can run:
+   - `wingetcreate update esandorfi.LePupitre --version <version> --urls <installer-url> --submit`
+7. Verify install commands:
+   - `winget search lepupitre`
+   - `winget install lepupitre`
