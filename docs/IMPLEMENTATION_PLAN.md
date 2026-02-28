@@ -51,6 +51,19 @@ Done when:
 - Release and smoke-test CI runs are stable.
 - ASR failure modes are deterministic in UI and logs.
 
+### Future review: UI preferences storage policy
+Goal: converge from browser `localStorage` to a Tauri-oriented preferences layer.
+
+Scope:
+- Define a single typed preferences service used by UI modules.
+- Add migration from legacy `localStorage` keys.
+- Provide a documented fallback path and failure behavior.
+
+Done when:
+- `localStorage` direct access is removed from feature code.
+- Preferences persistence follows the agreed Tauri architecture.
+- ADR and runbook updates describe the policy and migration.
+
 ## Working rules for this plan
 - Keep this file short and current.
 - Move deep technical plans to `docs/plan/PLAN-*.md`.

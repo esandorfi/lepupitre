@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useI18n } from "../lib/i18n";
-import { renderMarkdown } from "../lib/markdown";
 import packageJson from "../../package.json";
 import readmeRaw from "../../../../README.md?raw";
 
@@ -14,7 +13,6 @@ const readmeIntro = computed(() => {
   const excerpt = endIndex >= 0 ? readmeRaw.slice(0, endIndex) : readmeRaw;
   return excerpt.trim();
 });
-const readmeIntroHtml = computed(() => renderMarkdown(readmeIntro.value));
 </script>
 
 <template>
@@ -36,7 +34,7 @@ const readmeIntroHtml = computed(() => renderMarkdown(readmeIntro.value));
       <div class="app-subtle text-xs font-semibold uppercase tracking-[0.2em]">
         {{ t("about.readme_intro") }}
       </div>
-      <div class="app-markdown app-text mt-3 text-sm leading-6" v-html="readmeIntroHtml"></div>
+      <pre class="app-text mt-3 whitespace-pre-wrap text-sm leading-6">{{ readmeIntro }}</pre>
     </div>
   </section>
 </template>
