@@ -1,6 +1,6 @@
 # PLAN-TAURI-SQL-HARDENING
 
-Status: proposed  
+Status: in_progress  
 Owner: maintainers  
 Last updated: 2026-02-28
 
@@ -166,6 +166,9 @@ Acceptance:
   - `0005_runs_audio_nullable`
   - `0006_seed_quests`
 - Added migration tests for ordering and gap rejection.
+- Added upgrade-path fixture tests:
+  - legacy schema upgrade with data preservation,
+  - continuation from recorded migration prefix.
 
 ## Dependencies
 

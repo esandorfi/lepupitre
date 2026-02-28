@@ -580,6 +580,128 @@ mod tests {
         assert!(err.contains("expected 0002_outline_and_settings"));
     }
 
+    #[test]
+    fn legacy_profile_schema_upgrades_with_data_preserved() {
+        let mut conn = Connection::open_in_memory().expect("open");
+        conn.execute_batch(
+            "CREATE TABLE talk_projects (
+               id TEXT PRIMARY KEY,
+               title TEXT NOT NULL,
+               audience TEXT,
+               goal TEXT,
+               duration_target_sec INTEGER,
+               stage TEXT NOT NULL,
+               created_at TEXT NOT NULL,
+               updated_at TEXT NOT NULL
+             );
+             CREATE TABLE runs (
+               id TEXT PRIMARY KEY,
+               project_id TEXT NOT NULL,
+               created_at TEXT NOT NULL,
+               audio_artifact_id TEXT NOT NULL,
+               transcript_id TEXT,
+               feedback_id TEXT
+             );",
+        )
+        .expect("legacy schema");
+        conn.execute(
+            "INSERT INTO talk_projects (id, title, stage, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5)",
+            params![
+                "proj_legacy",
+                "Legacy Talk",
+                "draft",
+                "2025-01-01T00:00:00Z",
+                "2025-01-01T00:00:00Z"
+            ],
+        )
+        .expect("insert legacy project");
+        conn.execute(
+            "INSERT INTO runs (id, project_id, created_at, audio_artifact_id, transcript_id, feedback_id)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![
+                "run_legacy",
+                "proj_legacy",
+                "2025-01-01T00:01:00Z",
+                "audio_legacy",
+                Option::<String>::None,
+                Option::<String>::None
+            ],
+        )
+        .expect("insert legacy run");
+
+        apply_migrations(&mut conn, "profile", PROFILE_MIGRATIONS).expect("migrate");
+
+        let has_talk_number =
+            crate::core::db_helpers::column_exists(&conn, "talk_projects", "talk_number")
+                .expect("talk_number exists");
+        assert!(has_talk_number);
+        let has_training_flag =
+            crate::core::db_helpers::column_exists(&conn, "talk_projects", "is_training")
+                .expect("is_training exists");
+        assert!(has_training_flag);
+        let runs_audio_notnull =
+            crate::core::db_helpers::column_notnull(&conn, "runs", "audio_artifact_id")
+                .expect("runs audio nullable");
+        assert_eq!(runs_audio_notnull, Some(false));
+
+        let talk_number: Option<i64> = conn
+            .query_row(
+                "SELECT talk_number FROM talk_projects WHERE id = ?1",
+                params!["proj_legacy"],
+                |row| row.get(0),
+            )
+            .expect("talk number");
+        assert_eq!(talk_number, Some(1));
+
+        let preserved_audio: String = conn
+            .query_row(
+                "SELECT audio_artifact_id FROM runs WHERE id = ?1",
+                params!["run_legacy"],
+                |row| row.get(0),
+            )
+            .expect("run audio");
+        assert_eq!(preserved_audio, "audio_legacy");
+
+        let applied = load_applied_migrations(&conn).expect("applied");
+        assert_eq!(applied.len(), PROFILE_MIGRATIONS.len());
+    }
+
+    #[test]
+    fn profile_migration_continues_from_recorded_prefix() {
+        let mut conn = Connection::open_in_memory().expect("open");
+        migration_profile_0001_init(&mut conn).expect("0001");
+        migration_profile_0002_outline_and_settings(&mut conn).expect("0002");
+        ensure_schema_migrations_table(&conn).expect("schema_migrations");
+        record_migration(&conn, "0001_init").expect("record 0001");
+        record_migration(&conn, "0002_outline_and_settings").expect("record 0002");
+
+        conn.execute(
+            "INSERT INTO talk_projects (id, title, stage, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5)",
+            params![
+                "proj_prefix",
+                "Prefix Talk",
+                "draft",
+                "2025-02-01T00:00:00Z",
+                "2025-02-01T00:00:00Z"
+            ],
+        )
+        .expect("insert project");
+
+        apply_migrations(&mut conn, "profile", PROFILE_MIGRATIONS).expect("migrate remaining");
+
+        let has_training_flag =
+            crate::core::db_helpers::column_exists(&conn, "talk_projects", "is_training")
+                .expect("is_training exists");
+        assert!(has_training_flag);
+        let applied = load_applied_migrations(&conn).expect("applied");
+        assert_eq!(applied.len(), PROFILE_MIGRATIONS.len());
+        assert_eq!(applied[0], "0001_init");
+        assert_eq!(applied[1], "0002_outline_and_settings");
+        assert_eq!(applied.last().map(String::as_str), Some("0006_seed_quests"));
+    }
+
     fn temp_db_path(prefix: &str) -> PathBuf {
         let nanos = SystemTime::now()
             .duration_since(UNIX_EPOCH)
