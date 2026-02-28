@@ -1,6 +1,6 @@
 use rusqlite::{params, Connection, OptionalExtension};
 
-const GLOBAL_MIGRATION: &str = include_str!("../../../migrations/global/0001_init.sql");
+mod support;
 
 fn create_profile(conn: &Connection, id: &str, name: &str, now: &str) -> Result<(), String> {
     let existing: i64 = conn
@@ -113,8 +113,7 @@ fn delete_profile(conn: &Connection, profile_id: &str, now: &str) -> Result<(), 
 
 #[test]
 fn workspace_create_switch_rename_delete_flow_is_consistent() {
-    let conn = Connection::open_in_memory().expect("open");
-    conn.execute_batch(GLOBAL_MIGRATION).expect("migrate");
+    let conn = support::new_global_conn();
 
     create_profile(&conn, "prof_a", "Alice", "2026-02-28T10:00:00Z").expect("create_a");
     create_profile(&conn, "prof_b", "Bob", "2026-02-28T10:01:00Z").expect("create_b");
@@ -156,8 +155,7 @@ fn workspace_create_switch_rename_delete_flow_is_consistent() {
 
 #[test]
 fn workspace_switch_unknown_profile_is_rejected() {
-    let conn = Connection::open_in_memory().expect("open");
-    conn.execute_batch(GLOBAL_MIGRATION).expect("migrate");
+    let conn = support::new_global_conn();
     let err =
         switch_profile(&conn, "missing", "2026-02-28T11:00:00Z").expect_err("switch should fail");
     assert_eq!(err, "profile_not_found");

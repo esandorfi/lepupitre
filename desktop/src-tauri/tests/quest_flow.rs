@@ -1,15 +1,6 @@
 use rusqlite::{params, Connection};
 
-const PROFILE_MIGRATION: &str = include_str!("../../../migrations/profile/0001_init.sql");
-
-fn seed_quest(conn: &Connection, code: &str, output_type: &str) {
-    conn.execute(
-        "INSERT INTO quests (code, title, category, estimated_sec, prompt, output_type, targets_issues_json)
-         VALUES (?1, ?2, 'clarity', 90, 'prompt', ?3, '[]')",
-        params![code, format!("Quest {code}"), output_type],
-    )
-    .expect("seed quest");
-}
+mod support;
 
 fn submit_text(
     conn: &Connection,
@@ -74,10 +65,9 @@ fn submit_audio_upsert(
 
 #[test]
 fn quest_text_submission_and_report_latest_attempt_behavior() {
-    let conn = Connection::open_in_memory().expect("open");
-    conn.execute_batch(PROFILE_MIGRATION).expect("migrate");
-    seed_quest(&conn, "Q-1", "text");
-    seed_quest(&conn, "Q-2", "audio");
+    let conn = support::new_profile_conn();
+    support::seed_quest(&conn, "Q-1", "Quest Q-1", "text");
+    support::seed_quest(&conn, "Q-2", "Quest Q-2", "audio");
 
     submit_text(
         &conn,
@@ -108,9 +98,8 @@ fn quest_text_submission_and_report_latest_attempt_behavior() {
 
 #[test]
 fn quest_audio_submission_reuses_attempt_and_updates_transcript() {
-    let conn = Connection::open_in_memory().expect("open");
-    conn.execute_batch(PROFILE_MIGRATION).expect("migrate");
-    seed_quest(&conn, "Q-2", "audio");
+    let conn = support::new_profile_conn();
+    support::seed_quest(&conn, "Q-2", "Quest Q-2", "audio");
 
     let first_id = submit_audio_upsert(
         &conn,

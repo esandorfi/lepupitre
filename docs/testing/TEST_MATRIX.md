@@ -4,29 +4,49 @@ Status: active
 Owner: maintainers  
 Last updated: 2026-02-28
 
-This matrix defines minimum test obligations for core product use cases.
-When a source area changes, matching contract tests must be updated in the same PR.
+This is the single testing source of truth for product behavior contracts.
+It is intentionally domain-first and implementation-light.
 
-## Levels
+## Rule #1
 
-- `logic-spec`: pure logic contract tests (fast, deterministic).
-- `command-flow`: backend use-case flow tests with SQLite boundaries.
-- `release-smoke`: packaging/runtime smoke checks.
+Simplicity and maintainability come first.
+If a test becomes hard to read or requires heavy ad hoc setup, treat it as a code design smell and simplify production boundaries first.
 
-## Core use-case contracts
+## Test intent levels
 
-| Use case | Level | Source areas | Required tests |
-|---|---|---|---|
-| Workspace lifecycle (create/switch/rename/delete active profile) | command-flow | `desktop/src-tauri/src/commands/profile.rs` | `desktop/src-tauri/tests/workspace_flow.rs` |
-| Quest training lifecycle (submit text/audio, latest report behavior) | command-flow | `desktop/src-tauri/src/commands/quest.rs` | `desktop/src-tauri/tests/quest_flow.rs` |
-| Navigation and route behavior contracts | logic-spec | `desktop/ui/src/router/**`, `desktop/ui/src/lib/navigation*.ts` | `desktop/ui/src/router/routes.test.ts`, `desktop/ui/src/lib/navigation.test.ts`, `desktop/ui/src/lib/navigationMode.test.ts` |
-| Quest guardrail UX logic | logic-spec | `desktop/ui/src/lib/questFlow.ts` | `desktop/ui/src/lib/questFlow.test.ts` |
-| Feedback context retention | logic-spec | `desktop/ui/src/lib/feedbackContext.ts`, `desktop/ui/src/lib/feedbackReviewState.ts` | `desktop/ui/src/lib/feedbackContext.test.ts`, `desktop/ui/src/lib/feedbackReviewState.test.ts` |
-| ASR error mapping | logic-spec | `desktop/ui/src/lib/asrErrors.ts` | `desktop/ui/src/lib/asrErrors.test.ts` |
-| IPC schema alignment | logic-spec | `desktop/ui/src/schemas/ipc.ts`, `desktop/src-tauri/src/commands/**` | `desktop/ui/src/schemas/ipc.test.ts` |
-| ASR sidecar decode runtime health | release-smoke | `desktop/src-tauri/src/core/asr_sidecar.rs`, `desktop/src-tauri/src/commands/transcription.rs` | `desktop/src-tauri/tests/asr_smoke.rs`, `.github/workflows/release-packaging.yml` |
+- `logic-spec`: deterministic business rules and mapping logic.
+- `flow-spec`: end-to-end domain behavior through backend use-case boundaries.
+- `release-smoke`: packaging/runtime confidence checks.
 
-## Rule
+## Product contracts
 
-If a PR touches a listed source area, it must also touch the mapped required test file(s).
-CI enforces this rule for selected high-risk backend domains first and will expand incrementally.
+1. Workspace lifecycle (`flow-spec`)
+- Creating, switching, renaming, and deleting workspaces keeps one valid active workspace state.
+- Invalid workspace transitions fail deterministically.
+
+1. Talk lifecycle (`flow-spec`)
+- Talk creation, activation, and stage progression remain coherent and reversible.
+
+1. Quest and training lifecycle (`logic-spec` + `flow-spec`)
+- Quest guardrails are enforced (cannot analyze before required inputs).
+- Text/audio submission rules are consistent; latest-attempt behavior is deterministic.
+
+1. Run and feedback lifecycle (`flow-spec`)
+- Run analysis requires valid prerequisites.
+- Feedback linking is deterministic and idempotent where expected.
+- Notes and timeline context stay consistent.
+
+1. Navigation and context retention (`logic-spec`)
+- Route contracts, breadcrumbs, and context propagation remain stable across UI changes.
+
+1. ASR and transcription reliability (`logic-spec` + `release-smoke`)
+- Known ASR error states map deterministically.
+- Sidecar and transcription smoke checks remain stable in release workflows.
+
+1. IPC contract alignment (`logic-spec`)
+- UI schemas and backend payload/event shapes remain synchronized.
+
+## Enforcement
+
+CI enforces selected high-risk backend obligations.
+Enforcement mechanics live in repository scripts/workflows and may evolve without changing this domain contract document.

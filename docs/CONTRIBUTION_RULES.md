@@ -2,6 +2,12 @@
 
 These are repository process gates for contributors.
 
+## Rule #1: Simplicity and maintainability first
+- Priority is to keep the code simple and maintainable.
+- If a test is not simple enough to read and maintain, treat it as a code design smell first.
+- In that case, refactor production code boundaries (services, adapters, orchestration) before adding more complex tests.
+- Use-case tests should prefer domain/service APIs and test harness helpers over ad hoc SQL setup.
+
 ## 1) Documentation updates
 - Update canonical docs when behavior, architecture, or release flow changes.
 - Keep docs in English (`README`, `docs/`, changelog, active specs).
@@ -34,8 +40,8 @@ These are repository process gates for contributors.
 
 ## 5) Test matrix and obligations
 - Treat [docs/testing/TEST_MATRIX.md](testing/TEST_MATRIX.md) as the source of truth for core use-case test obligations.
-- If a PR changes a mapped source area, update the mapped tests in the same PR.
-- CI enforces selected backend obligations (workspace and quest domains first).
+- If a PR changes core domain behavior, update matching domain contract tests in the same PR.
+- CI enforces selected backend obligations; enforcement details live in repository scripts/workflows.
 
 ## 6) Release and changelog gate
 - For every release/version bump:

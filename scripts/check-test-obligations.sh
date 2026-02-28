@@ -55,6 +55,22 @@ if changed_has "desktop/src-tauri/src/commands/quest.rs"; then
   fi
 fi
 
+# Run backend obligation
+if changed_has "desktop/src-tauri/src/commands/run.rs"; then
+  is_triggered=true
+  if ! changed_has "desktop/src-tauri/tests/run_feedback_flow.rs"; then
+    missing+=("run lifecycle: touch desktop/src-tauri/tests/run_feedback_flow.rs when run command changes")
+  fi
+fi
+
+# Feedback backend obligation
+if changed_has "desktop/src-tauri/src/commands/feedback.rs"; then
+  is_triggered=true
+  if ! changed_has "desktop/src-tauri/tests/run_feedback_flow.rs"; then
+    missing+=("feedback lifecycle: touch desktop/src-tauri/tests/run_feedback_flow.rs when feedback command changes")
+  fi
+fi
+
 if [[ "$is_triggered" == "false" ]]; then
   echo "No guarded backend domains changed; test-obligation check passed."
   exit 0
