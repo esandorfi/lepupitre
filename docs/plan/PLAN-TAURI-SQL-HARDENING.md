@@ -182,6 +182,10 @@ Acceptance:
   - create rollback on insert failure,
   - switch rollback on activation failure,
   - delete rollback on fallback activation failure.
+- Hardened feedback linking transactions for both run and quest flows:
+  - `run_analyze`: feedback insert + run link now fails fast when run update affects zero rows,
+  - `analyze_attempt`: feedback insert + attempt link now fails fast when attempt update affects zero rows.
+- Added rollback tests proving no partial `auto_feedback` rows remain when link updates fail.
 - Remaining Workstream 3 scope: extend transaction boundaries and rollback tests to other critical multi-step write paths beyond workspace flows.
 
 ## Dependencies

@@ -1,5 +1,5 @@
 use crate::core::{analysis, artifacts, db, ids, models, time, transcript};
-use rusqlite::{params, OptionalExtension};
+use rusqlite::{params, Connection, OptionalExtension};
 use serde::Serialize;
 
 #[derive(Debug, Serialize)]
@@ -142,26 +142,14 @@ pub fn analyze_attempt(
 
     let feedback_id = ids::new_id("fb");
     let now = time::now_rfc3339();
-    let tx = conn.transaction().map_err(|e| format!("tx: {e}"))?;
-    tx.execute(
-        "INSERT INTO auto_feedback (id, subject_type, subject_id, created_at, feedback_json_artifact_id, overall_score)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-        params![
-            feedback_id,
-            "quest_attempt",
-            attempt_id,
-            now,
-            record.id,
-            feedback.overall_score
-        ],
-    )
-    .map_err(|e| format!("feedback_insert: {e}"))?;
-    tx.execute(
-        "UPDATE quest_attempts SET feedback_id = ?1 WHERE id = ?2",
-        params![feedback_id, attempt_id],
-    )
-    .map_err(|e| format!("attempt_update: {e}"))?;
-    tx.commit().map_err(|e| format!("commit: {e}"))?;
+    persist_attempt_feedback_link(
+        &mut conn,
+        &feedback_id,
+        attempt_id,
+        &record.id,
+        feedback.overall_score,
+        &now,
+    )?;
 
     Ok(AnalyzeResponse { feedback_id })
 }
@@ -331,9 +319,45 @@ fn normalize_timeline_limit(limit: Option<u32>) -> i64 {
     raw.min(100) as i64
 }
 
+fn persist_attempt_feedback_link(
+    conn: &mut Connection,
+    feedback_id: &str,
+    attempt_id: &str,
+    feedback_artifact_id: &str,
+    overall_score: i64,
+    now: &str,
+) -> Result<(), String> {
+    let tx = conn.transaction().map_err(|e| format!("tx: {e}"))?;
+    tx.execute(
+        "INSERT INTO auto_feedback (id, subject_type, subject_id, created_at, feedback_json_artifact_id, overall_score)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        params![
+            feedback_id,
+            "quest_attempt",
+            attempt_id,
+            now,
+            feedback_artifact_id,
+            overall_score
+        ],
+    )
+    .map_err(|e| format!("feedback_insert: {e}"))?;
+    let updated = tx
+        .execute(
+            "UPDATE quest_attempts SET feedback_id = ?1 WHERE id = ?2",
+            params![feedback_id, attempt_id],
+        )
+        .map_err(|e| format!("attempt_update: {e}"))?;
+    if updated == 0 {
+        return Err("attempt_update_missing".to_string());
+    }
+    tx.commit().map_err(|e| format!("commit: {e}"))?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
-    use super::normalize_timeline_limit;
+    use super::{normalize_timeline_limit, persist_attempt_feedback_link};
+    use rusqlite::Connection;
 
     #[test]
     fn timeline_limit_defaults_to_thirty() {
@@ -345,5 +369,47 @@ mod tests {
         assert_eq!(normalize_timeline_limit(Some(0)), 1);
         assert_eq!(normalize_timeline_limit(Some(5)), 5);
         assert_eq!(normalize_timeline_limit(Some(300)), 100);
+    }
+
+    #[test]
+    fn persist_attempt_feedback_link_rolls_back_when_attempt_missing() {
+        let mut conn = Connection::open_in_memory().expect("open");
+        conn.execute_batch(
+            "CREATE TABLE quest_attempts (
+               id TEXT PRIMARY KEY,
+               project_id TEXT NOT NULL,
+               quest_code TEXT NOT NULL,
+               created_at TEXT NOT NULL,
+               output_text TEXT,
+               audio_artifact_id TEXT,
+               transcript_id TEXT,
+               feedback_id TEXT
+             );
+             CREATE TABLE auto_feedback (
+               id TEXT PRIMARY KEY,
+               subject_type TEXT NOT NULL,
+               subject_id TEXT NOT NULL,
+               created_at TEXT NOT NULL,
+               feedback_json_artifact_id TEXT NOT NULL,
+               overall_score INTEGER NOT NULL
+             );",
+        )
+        .expect("schema");
+
+        let err = persist_attempt_feedback_link(
+            &mut conn,
+            "fb_missing",
+            "att_missing",
+            "artifact_fb",
+            73,
+            "2026-02-28T00:00:00Z",
+        )
+        .expect_err("missing attempt");
+        assert_eq!(err, "attempt_update_missing");
+
+        let feedback_count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM auto_feedback", [], |row| row.get(0))
+            .expect("count");
+        assert_eq!(feedback_count, 0);
     }
 }

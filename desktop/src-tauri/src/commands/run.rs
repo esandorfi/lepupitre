@@ -1,5 +1,5 @@
 use crate::core::{analysis, artifacts, db, ids, time, transcript};
-use rusqlite::{params, ErrorCode, OptionalExtension};
+use rusqlite::{params, Connection, ErrorCode, OptionalExtension};
 use serde::Serialize;
 
 #[derive(Debug, Serialize)]
@@ -257,6 +257,26 @@ pub fn run_analyze(
 
     let feedback_id = ids::new_id("fb");
     let now = time::now_rfc3339();
+    persist_run_feedback_link(
+        &mut conn,
+        &feedback_id,
+        &run_id,
+        &record.id,
+        feedback.overall_score,
+        &now,
+    )?;
+
+    Ok(RunAnalyzeResponse { feedback_id })
+}
+
+fn persist_run_feedback_link(
+    conn: &mut Connection,
+    feedback_id: &str,
+    run_id: &str,
+    feedback_artifact_id: &str,
+    overall_score: i64,
+    now: &str,
+) -> Result<(), String> {
     let tx = conn.transaction().map_err(|e| format!("tx: {e}"))?;
     tx.execute(
         "INSERT INTO auto_feedback (id, subject_type, subject_id, created_at, feedback_json_artifact_id, overall_score)
@@ -266,19 +286,22 @@ pub fn run_analyze(
             "run",
             run_id,
             now,
-            record.id,
-            feedback.overall_score
+            feedback_artifact_id,
+            overall_score
         ],
     )
     .map_err(|e| format!("feedback_insert: {e}"))?;
-    tx.execute(
-        "UPDATE runs SET feedback_id = ?1 WHERE id = ?2",
-        params![feedback_id, run_id],
-    )
-    .map_err(|e| format!("run_update: {e}"))?;
+    let updated = tx
+        .execute(
+            "UPDATE runs SET feedback_id = ?1 WHERE id = ?2",
+            params![feedback_id, run_id],
+        )
+        .map_err(|e| format!("run_update: {e}"))?;
+    if updated == 0 {
+        return Err("run_update_missing".to_string());
+    }
     tx.commit().map_err(|e| format!("commit: {e}"))?;
-
-    Ok(RunAnalyzeResponse { feedback_id })
+    Ok(())
 }
 
 fn ensure_project_exists(conn: &rusqlite::Connection, project_id: &str) -> Result<(), String> {
@@ -329,5 +352,50 @@ fn is_audio_notnull_error(err: &rusqlite::Error) -> bool {
                     .contains("runs.audio_artifact_id")
         }
         _ => false,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn persist_run_feedback_link_rolls_back_when_run_missing() {
+        let mut conn = Connection::open_in_memory().expect("open");
+        conn.execute_batch(
+            "CREATE TABLE runs (
+               id TEXT PRIMARY KEY,
+               project_id TEXT NOT NULL,
+               created_at TEXT NOT NULL,
+               audio_artifact_id TEXT,
+               transcript_id TEXT,
+               feedback_id TEXT
+             );
+             CREATE TABLE auto_feedback (
+               id TEXT PRIMARY KEY,
+               subject_type TEXT NOT NULL,
+               subject_id TEXT NOT NULL,
+               created_at TEXT NOT NULL,
+               feedback_json_artifact_id TEXT NOT NULL,
+               overall_score INTEGER NOT NULL
+             );",
+        )
+        .expect("schema");
+
+        let err = persist_run_feedback_link(
+            &mut conn,
+            "fb_missing",
+            "run_missing",
+            "artifact_fb",
+            55,
+            "2026-02-28T00:00:00Z",
+        )
+        .expect_err("missing run");
+        assert_eq!(err, "run_update_missing");
+
+        let feedback_count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM auto_feedback", [], |row| row.get(0))
+            .expect("count");
+        assert_eq!(feedback_count, 0);
     }
 }
