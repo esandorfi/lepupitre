@@ -234,6 +234,15 @@ Acceptance:
   - moved coach read SQL and mapping into coach repo/query modules,
   - kept `coach/mod.rs` orchestration + pure domain logic with unchanged behavior and passing tests.
 - 2026-02-28: Workstream 4 completed.
+- 2026-02-28: Workstream 5 started.
+- Workstream 5 slice delivered:
+  - added pre-migration DB snapshot creation in `core/db.rs` for global/profile DBs when pending migrations exist,
+  - snapshot files are deterministic (`<db>-<scope>-pre-<next-migration>-<timestamp>.db`) and retained with bounded pruning,
+  - added tests for snapshot creation and retention policy.
+- Workstream 5 slice delivered:
+  - added structured DB diagnostics in `core/db.rs` (`DbDiagnostics`, `global_diagnostics`, `profile_diagnostics`),
+  - diagnostics include migration continuity state, latest migration, integrity check, and foreign-key violation count,
+  - added tests for clean diagnostics and continuity-gap detection.
 
 ## Dependencies
 

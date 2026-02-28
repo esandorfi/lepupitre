@@ -1,14 +1,16 @@
 use crate::core::db_helpers;
 use crate::core::seed::QuestSeedFile;
 use crate::core::time;
+use chrono::Utc;
 use rusqlite::{params, Connection, ErrorCode};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
 use std::thread;
 use std::time::Duration;
 use tauri::Manager;
 
 const SQLITE_BUSY_TIMEOUT_MS: u64 = 2000;
+const DB_SNAPSHOT_RETENTION_COUNT: usize = 5;
 const GLOBAL_MIGRATION: &str = include_str!("../../../../migrations/global/0001_init.sql");
 const PROFILE_MIGRATION: &str = include_str!("../../../../migrations/profile/0001_init.sql");
 const QUESTS_SEED: &str = include_str!("../../../../seed/quests.v1.json");
@@ -225,6 +227,19 @@ struct Migration {
     apply: MigrationFn,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DbDiagnostics {
+    pub scope: String,
+    pub latest_migration: Option<String>,
+    pub applied_migration_count: usize,
+    pub expected_migration_count: usize,
+    pub continuity_ok: bool,
+    pub continuity_error: Option<String>,
+    pub integrity_check: String,
+    pub foreign_key_violations: usize,
+}
+
 const GLOBAL_MIGRATIONS: &[Migration] = &[Migration {
     version: "0001_init",
     apply: migration_global_0001_init,
@@ -276,7 +291,7 @@ pub fn open_global(app: &tauri::AppHandle) -> Result<Connection, String> {
     let _guard = lock
         .lock()
         .map_err(|_| "global_migration_lock".to_string())?;
-    apply_migrations(&mut conn, "global", GLOBAL_MIGRATIONS)?;
+    apply_migrations(&mut conn, &db_path, "global", GLOBAL_MIGRATIONS)?;
     Ok(conn)
 }
 
@@ -307,7 +322,7 @@ pub fn open_profile(app: &tauri::AppHandle, profile_id: &str) -> Result<Connecti
     let _guard = lock
         .lock()
         .map_err(|_| "profile_migration_lock".to_string())?;
-    apply_migrations(&mut conn, "profile", PROFILE_MIGRATIONS)?;
+    apply_migrations(&mut conn, &db_path, "profile", PROFILE_MIGRATIONS)?;
 
     Ok(conn)
 }
@@ -318,6 +333,20 @@ pub fn profile_dir(app: &tauri::AppHandle, profile_id: &str) -> Result<PathBuf, 
         .app_data_dir()
         .map_err(|e| format!("app_data_dir: {e}"))?;
     Ok(app_data_dir.join("profiles").join(profile_id))
+}
+
+pub fn global_diagnostics(app: &tauri::AppHandle) -> Result<DbDiagnostics, String> {
+    let conn = open_global(app)?;
+    collect_diagnostics(&conn, "global", GLOBAL_MIGRATIONS)
+}
+
+pub fn profile_diagnostics(
+    app: &tauri::AppHandle,
+    profile_id: &str,
+) -> Result<DbDiagnostics, String> {
+    ensure_profile_exists(app, profile_id)?;
+    let conn = open_profile(app, profile_id)?;
+    collect_diagnostics(&conn, "profile", PROFILE_MIGRATIONS)
 }
 
 fn migration_global_0001_init(conn: &mut Connection) -> Result<(), String> {
@@ -360,18 +389,111 @@ fn migration_profile_0007_fk_constraints(conn: &mut Connection) -> Result<(), St
 
 fn apply_migrations(
     conn: &mut Connection,
+    db_path: &Path,
     scope: &str,
     migrations: &[Migration],
 ) -> Result<(), String> {
     ensure_schema_migrations_table(conn)?;
     let applied = load_applied_migrations(conn)?;
     validate_migration_continuity(scope, &applied, migrations)?;
+    maybe_snapshot_before_migration(conn, db_path, scope, migrations, applied.len())?;
 
     for migration in migrations.iter().skip(applied.len()) {
         (migration.apply)(conn)?;
         record_migration(conn, migration.version)?;
     }
 
+    Ok(())
+}
+
+fn maybe_snapshot_before_migration(
+    conn: &Connection,
+    db_path: &Path,
+    scope: &str,
+    migrations: &[Migration],
+    applied_count: usize,
+) -> Result<(), String> {
+    if applied_count >= migrations.len() {
+        return Ok(());
+    }
+    if !db_path.exists() {
+        return Ok(());
+    }
+    let metadata = std::fs::metadata(db_path).map_err(|e| format!("snapshot_metadata: {e}"))?;
+    if metadata.len() == 0 {
+        return Ok(());
+    }
+
+    let next_migration = migrations
+        .get(applied_count)
+        .map(|migration| migration.version)
+        .unwrap_or("unknown");
+    create_db_snapshot(conn, db_path, scope, next_migration)?;
+    Ok(())
+}
+
+fn create_db_snapshot(
+    conn: &Connection,
+    db_path: &Path,
+    scope: &str,
+    next_migration: &str,
+) -> Result<PathBuf, String> {
+    let parent = db_path
+        .parent()
+        .ok_or_else(|| "snapshot_parent_missing".to_string())?;
+    let backups_dir = parent.join("backups");
+    std::fs::create_dir_all(&backups_dir).map_err(|e| format!("snapshot_dir: {e}"))?;
+
+    let db_stem = db_path
+        .file_stem()
+        .and_then(|value| value.to_str())
+        .unwrap_or("db");
+    let timestamp = Utc::now().format("%Y%m%dT%H%M%SZ").to_string();
+    let mut snapshot_path = backups_dir.join(format!(
+        "{db_stem}-{scope}-pre-{next_migration}-{timestamp}.db"
+    ));
+    let mut sequence = 1_u32;
+    while snapshot_path.exists() {
+        snapshot_path = backups_dir.join(format!(
+            "{db_stem}-{scope}-pre-{next_migration}-{timestamp}-{sequence}.db"
+        ));
+        sequence += 1;
+    }
+
+    let escaped_path = snapshot_path.to_string_lossy().replace('\'', "''");
+    conn.execute_batch(&format!("VACUUM INTO '{escaped_path}';"))
+        .map_err(|e| format!("snapshot_vacuum_into: {e}"))?;
+
+    prune_old_snapshots(&backups_dir, db_stem, scope)?;
+    Ok(snapshot_path)
+}
+
+fn prune_old_snapshots(backups_dir: &Path, db_stem: &str, scope: &str) -> Result<(), String> {
+    let prefix = format!("{db_stem}-{scope}-pre-");
+    let mut candidates = Vec::new();
+    let entries = std::fs::read_dir(backups_dir).map_err(|e| format!("snapshot_read_dir: {e}"))?;
+    for entry in entries {
+        let entry = entry.map_err(|e| format!("snapshot_entry: {e}"))?;
+        let path = entry.path();
+        if !path.is_file() {
+            continue;
+        }
+        let Some(name) = path.file_name().and_then(|value| value.to_str()) else {
+            continue;
+        };
+        if name.starts_with(&prefix) && name.ends_with(".db") {
+            candidates.push(path);
+        }
+    }
+
+    if candidates.len() <= DB_SNAPSHOT_RETENTION_COUNT {
+        return Ok(());
+    }
+
+    candidates.sort_by(|a, b| b.file_name().cmp(&a.file_name()));
+    for path in candidates.iter().skip(DB_SNAPSHOT_RETENTION_COUNT) {
+        std::fs::remove_file(path).map_err(|e| format!("snapshot_prune_remove: {e}"))?;
+    }
     Ok(())
 }
 
@@ -458,6 +580,51 @@ fn verify_foreign_key_integrity(conn: &Connection) -> Result<(), String> {
         ));
     }
     Ok(())
+}
+
+fn collect_diagnostics(
+    conn: &Connection,
+    scope: &str,
+    migrations: &[Migration],
+) -> Result<DbDiagnostics, String> {
+    ensure_schema_migrations_table(conn)?;
+    let applied = load_applied_migrations(conn)?;
+    let continuity_error = validate_migration_continuity(scope, &applied, migrations).err();
+    let continuity_ok = continuity_error.is_none();
+    let latest_migration = applied.last().cloned();
+    let integrity_check = conn
+        .query_row("PRAGMA integrity_check", [], |row| row.get::<_, String>(0))
+        .map_err(|e| format!("integrity_check: {e}"))?;
+    let foreign_key_violations = foreign_key_violation_count(conn)?;
+
+    Ok(DbDiagnostics {
+        scope: scope.to_string(),
+        latest_migration,
+        applied_migration_count: applied.len(),
+        expected_migration_count: migrations.len(),
+        continuity_ok,
+        continuity_error,
+        integrity_check,
+        foreign_key_violations,
+    })
+}
+
+fn foreign_key_violation_count(conn: &Connection) -> Result<usize, String> {
+    let mut stmt = conn
+        .prepare("PRAGMA foreign_key_check")
+        .map_err(|e| format!("foreign_key_check_prepare: {e}"))?;
+    let mut rows = stmt
+        .query([])
+        .map_err(|e| format!("foreign_key_check_query: {e}"))?;
+    let mut count = 0_usize;
+    while rows
+        .next()
+        .map_err(|e| format!("foreign_key_check_row: {e}"))?
+        .is_some()
+    {
+        count += 1;
+    }
+    Ok(count)
 }
 
 fn seed_quests(conn: &mut Connection) -> Result<(), String> {
@@ -790,7 +957,13 @@ mod tests {
     #[test]
     fn profile_migrations_are_recorded_in_order() {
         let mut conn = Connection::open_in_memory().expect("open");
-        apply_migrations(&mut conn, "profile", PROFILE_MIGRATIONS).expect("migrate");
+        apply_migrations(
+            &mut conn,
+            Path::new(":memory:"),
+            "profile",
+            PROFILE_MIGRATIONS,
+        )
+        .expect("migrate");
 
         let applied = load_applied_migrations(&conn).expect("applied");
         assert_eq!(applied.len(), PROFILE_MIGRATIONS.len());
@@ -872,7 +1045,13 @@ mod tests {
         )
         .expect("insert legacy run");
 
-        apply_migrations(&mut conn, "profile", PROFILE_MIGRATIONS).expect("migrate");
+        apply_migrations(
+            &mut conn,
+            Path::new(":memory:"),
+            "profile",
+            PROFILE_MIGRATIONS,
+        )
+        .expect("migrate");
 
         let has_talk_number =
             crate::core::db_helpers::column_exists(&conn, "talk_projects", "talk_number")
@@ -912,7 +1091,13 @@ mod tests {
     #[test]
     fn profile_fk_constraints_are_enforced_after_migration() {
         let mut conn = Connection::open_in_memory().expect("open");
-        apply_migrations(&mut conn, "profile", PROFILE_MIGRATIONS).expect("migrate");
+        apply_migrations(
+            &mut conn,
+            Path::new(":memory:"),
+            "profile",
+            PROFILE_MIGRATIONS,
+        )
+        .expect("migrate");
 
         let insert_err = conn
             .execute(
@@ -956,7 +1141,13 @@ mod tests {
         )
         .expect("insert project");
 
-        apply_migrations(&mut conn, "profile", PROFILE_MIGRATIONS).expect("migrate remaining");
+        apply_migrations(
+            &mut conn,
+            Path::new(":memory:"),
+            "profile",
+            PROFILE_MIGRATIONS,
+        )
+        .expect("migrate remaining");
 
         let has_training_flag =
             crate::core::db_helpers::column_exists(&conn, "talk_projects", "is_training")
@@ -970,6 +1161,112 @@ mod tests {
             applied.last().map(String::as_str),
             Some("0007_fk_constraints")
         );
+    }
+
+    #[test]
+    fn pre_migration_snapshot_created_for_pending_profile_migrations() {
+        let db_path = temp_db_path("snapshot");
+        let mut conn = Connection::open(&db_path).expect("open");
+
+        migration_profile_0001_init(&mut conn).expect("0001");
+        ensure_schema_migrations_table(&conn).expect("schema");
+        record_migration(&conn, "0001_init").expect("record");
+
+        apply_migrations(&mut conn, &db_path, "profile", PROFILE_MIGRATIONS).expect("migrate");
+
+        let backups_dir = db_path.parent().expect("parent").join("backups");
+        let backup_count = std::fs::read_dir(&backups_dir)
+            .expect("read backups")
+            .flatten()
+            .filter(|entry| entry.path().extension().and_then(|v| v.to_str()) == Some("db"))
+            .count();
+        assert!(backup_count >= 1);
+
+        let _ = std::fs::remove_file(&db_path);
+        let _ = std::fs::remove_file(db_path.with_extension("db-wal"));
+        let _ = std::fs::remove_file(db_path.with_extension("db-shm"));
+        let _ = std::fs::remove_dir_all(&backups_dir);
+    }
+
+    #[test]
+    fn snapshot_retention_prunes_old_backups() {
+        let root = std::env::temp_dir().join(format!(
+            "lepupitre-snapshot-prune-{}",
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("now")
+                .as_nanos()
+        ));
+        let backups_dir = root.join("backups");
+        std::fs::create_dir_all(&backups_dir).expect("mkdir");
+
+        for idx in 0..7 {
+            let file = backups_dir.join(format!(
+                "profile-profile-pre-0002-outline-20260228T00000{idx}Z.db"
+            ));
+            std::fs::write(&file, b"snapshot").expect("write");
+        }
+
+        prune_old_snapshots(&backups_dir, "profile", "profile").expect("prune");
+
+        let remaining = std::fs::read_dir(&backups_dir)
+            .expect("read")
+            .flatten()
+            .filter(|entry| entry.path().extension().and_then(|v| v.to_str()) == Some("db"))
+            .count();
+        assert_eq!(remaining, DB_SNAPSHOT_RETENTION_COUNT);
+
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn diagnostics_reports_continuity_gap() {
+        let conn = Connection::open_in_memory().expect("open");
+        ensure_schema_migrations_table(&conn).expect("schema");
+        conn.execute(
+            "INSERT INTO schema_migrations (version, applied_at) VALUES (?1, ?2)",
+            params!["0001_init", "2026-02-28T00:00:00Z"],
+        )
+        .expect("insert 0001");
+        conn.execute(
+            "INSERT INTO schema_migrations (version, applied_at) VALUES (?1, ?2)",
+            params!["0003_talk_training_flag", "2026-02-28T00:00:01Z"],
+        )
+        .expect("insert 0003");
+
+        let diagnostics = collect_diagnostics(&conn, "profile", PROFILE_MIGRATIONS).expect("diag");
+        assert!(!diagnostics.continuity_ok);
+        assert!(diagnostics
+            .continuity_error
+            .as_deref()
+            .unwrap_or_default()
+            .contains("expected 0002_outline_and_settings"));
+        assert_eq!(diagnostics.integrity_check, "ok");
+    }
+
+    #[test]
+    fn diagnostics_reports_clean_profile_db() {
+        let mut conn = Connection::open_in_memory().expect("open");
+        apply_migrations(
+            &mut conn,
+            Path::new(":memory:"),
+            "profile",
+            PROFILE_MIGRATIONS,
+        )
+        .expect("migrate");
+
+        let diagnostics = collect_diagnostics(&conn, "profile", PROFILE_MIGRATIONS).expect("diag");
+        assert!(diagnostics.continuity_ok);
+        assert_eq!(
+            diagnostics.applied_migration_count,
+            PROFILE_MIGRATIONS.len()
+        );
+        assert_eq!(
+            diagnostics.expected_migration_count,
+            PROFILE_MIGRATIONS.len()
+        );
+        assert_eq!(diagnostics.integrity_check, "ok");
+        assert_eq!(diagnostics.foreign_key_violations, 0);
     }
 
     fn temp_db_path(prefix: &str) -> PathBuf {

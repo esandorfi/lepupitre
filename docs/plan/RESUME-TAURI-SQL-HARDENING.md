@@ -18,7 +18,9 @@ Last updated: 2026-02-28
   - extracted coach-domain data access/read-model logic from `commands/coach.rs` to `core/coach.rs`
   - command layer now wrapper-only for coach commands
   - standardized coach-domain module shape to `core/coach/{mod.rs,queries.rs,repo.rs,types.rs}`
-- Last known checkpoint commit: `a5837a9` (updated in-progress after this checkpoint)
+  - added pre-migration snapshot creation + retention in `core/db.rs`
+  - added DB diagnostics helpers (`DbDiagnostics`, `global_diagnostics`, `profile_diagnostics`) in `core/db.rs`
+- Last known checkpoint commit: `bb0a507` (updated in-progress after this checkpoint)
 
 ## Resume goal
 
@@ -33,14 +35,15 @@ Start Workstream 5 by implementing safe local backup/recovery flow around migrat
   - `pnpm -C desktop docs:lint`
 
 1. Workstream 5 kickoff
-- [ ] Define backup trigger points (before migration and before risky schema writes).
-- [ ] Implement profile/global DB snapshot helper with deterministic naming and retention rules.
+- [x] Define backup trigger points (before migration on pending versions).
+- [x] Implement profile/global DB snapshot helper with deterministic naming and retention rules.
 - [ ] Add restore path and failure handling for corrupted DB startup scenario.
-- [ ] Add diagnostics command/report:
+- [ ] Add diagnostics IPC command/report:
   - schema version
   - migration continuity status
   - `PRAGMA integrity_check`
   - `PRAGMA foreign_key_check`
+  - Note: core diagnostics helpers are implemented; IPC exposure remains to do.
 
 1. Guard rails + docs per slice
 - [ ] Update [PLAN-TAURI-SQL-HARDENING.md](PLAN-TAURI-SQL-HARDENING.md) progress bullets.

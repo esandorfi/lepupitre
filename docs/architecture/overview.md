@@ -87,6 +87,10 @@
   - app updates keep existing local DB files,
   - pending migrations run automatically on first open,
   - profile DB upgrades are lazy per profile (when that profile is opened).
+- Safety/operability:
+  - before applying pending migrations on an existing DB, a pre-migration snapshot is created under a local `backups/` directory,
+  - snapshot retention is bounded to keep disk usage predictable,
+  - DB diagnostics can report continuity status, integrity-check result, and FK-check violations.
 - Contributor rules:
   - add new migrations as append-only ordered steps,
   - do not mutate historical migration versions in place,
