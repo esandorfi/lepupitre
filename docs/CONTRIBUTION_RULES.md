@@ -54,6 +54,9 @@ These are repository process gates for contributors.
   - update [CHANGELOG.md](../CHANGELOG.md) in English
   - generate/update entries from Git history (`pnpm -C desktop changelog`)
   - ensure latest tag/version is present in changelog before release
+- If release trust toggles are enabled:
+  - `LEPUPITRE_REQUIRE_WINDOWS_SIGNING=true` enforces valid Authenticode signatures on Windows installers,
+  - `LEPUPITRE_REQUIRE_MACOS_NOTARIZATION=true` enforces macOS signing/notarization verification.
 
 ## 7) Docs lifecycle gate
 - If a PR touches `docs/` or `spec/`:

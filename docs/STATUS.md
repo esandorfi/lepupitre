@@ -14,7 +14,7 @@ This file tracks what is canonical, proposal-only, and archived.
 | [docs/architecture/ipc-contracts.md](architecture/ipc-contracts.md) | IPC contract rules | implemented | Maintainers | Keep Rust/Zod alignment requirements explicit |
 | [docs/architecture/asr.md](architecture/asr.md) | ASR architecture and troubleshooting | implemented | ASR maintainers | Keep sidecar invariants current |
 | [docs/operations/release.md](operations/release.md) | Release operations runbook | implemented | Maintainers | Keep CI path filters and channel steps current |
-| [docs/operations/signing.md](operations/signing.md) | Signing/notarization policy | accepted | Maintainers | Move to implemented when release gate is active |
+| [docs/operations/signing.md](operations/signing.md) | Signing/notarization policy | implemented | Maintainers | Enable trust toggles with production secrets and monitor first signed release |
 | [docs/README.md](README.md) | Documentation map and writing rules | implemented | Maintainers | Keep map aligned with real files |
 | [docs/IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) | Current execution priorities | implemented | Maintainers | Update tracks when scope changes |
 | [docs/CONTRIBUTION_RULES.md](CONTRIBUTION_RULES.md) | Repository process gates | accepted | Maintainers | Keep contributor requirements explicit |

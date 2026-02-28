@@ -4,6 +4,9 @@
 - CI checks: `.github/workflows/ci.yml`
 - Release packaging: `.github/workflows/release-packaging.yml`
 - CI is path-aware: docs, UI, and Rust jobs run only when relevant files change (full run on `v*` tags).
+- Release packaging uses explicit trust toggles:
+  - `LEPUPITRE_REQUIRE_WINDOWS_SIGNING`
+  - `LEPUPITRE_REQUIRE_MACOS_NOTARIZATION`
 
 ## Versioning and changelog
 - Version bump + tag:
@@ -20,6 +23,11 @@
 - Local packaging: `pnpm -C desktop build`
 - On `v*` tags, GitHub Actions builds macOS and Windows artifacts and attaches them to the release.
 - ASR packaging invariant: both `lepupitre-asr` and `lepupitre-asr.exe` must be present before Rust/ASR smoke steps.
+- Release signing preflight:
+  - `scripts/check-release-signing.sh` validates required secrets when trust toggles are enabled.
+- Release trust verification:
+  - Windows (when required): Authenticode signature must be valid on MSI/NSIS installers.
+  - macOS (when required): codesign, Gatekeeper assessment, and stapler validation must pass.
 
 ## Database upgrade behavior
 - Installer/package updates do not run SQL migrations directly.

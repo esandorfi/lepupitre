@@ -13,6 +13,8 @@ env:
   HOMEBREW_TAP: esandorfi/homebrew-lepupitre
   HOMEBREW_CASK: lepupitre
   WINGET_ID: esandorfi.LePupitre
+  LEPUPITRE_REQUIRE_WINDOWS_SIGNING: ${{ vars.LEPUPITRE_REQUIRE_WINDOWS_SIGNING }}
+  LEPUPITRE_REQUIRE_MACOS_NOTARIZATION: ${{ vars.LEPUPITRE_REQUIRE_MACOS_NOTARIZATION }}
 
 jobs:
   build:
@@ -38,6 +40,23 @@ jobs:
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Validate signing/notarization prerequisites
+        shell: bash
+        env:
+          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+          SIGNPATH_ORGANIZATION_ID: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+          SIGNPATH_PROJECT_SLUG: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
+          SIGNPATH_SIGNING_POLICY_SLUG: ${{ secrets.SIGNPATH_SIGNING_POLICY_SLUG }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          chmod +x scripts/check-release-signing.sh
+          ./scripts/check-release-signing.sh
 
       - name: Install CMake (macOS)
         if: matrix.os == 'macos-latest'
@@ -172,12 +191,80 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
           projectPath: desktop
           releaseName: "LePupitre ${{ github.ref_name }}"
           tagName: ${{ github.ref_name }}
           releaseDraft: false
           prerelease: false
+
+      - name: Verify Windows installer signatures when required
+        if: matrix.os == 'windows-latest' && (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/'))
+        shell: pwsh
+        run: |
+          $required = "$env:LEPUPITRE_REQUIRE_WINDOWS_SIGNING".ToLower()
+          if ($required -notin @("1", "true", "yes", "on")) {
+            Write-Host "Windows signing verification disabled."
+            exit 0
+          }
+
+          $targets = @()
+          $targets += Get-ChildItem -Path "desktop/src-tauri/target/release/bundle/msi" -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -eq ".msi" }
+          $targets += Get-ChildItem -Path "desktop/src-tauri/target/release/bundle/nsis" -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -eq ".exe" }
+          if ($targets.Count -eq 0) {
+            throw "Windows signing required but no MSI/NSIS installers were found."
+          }
+
+          $invalid = @()
+          foreach ($file in $targets) {
+            $sig = Get-AuthenticodeSignature -FilePath $file.FullName
+            if ($sig.Status -ne "Valid") {
+              $invalid += "$($file.FullName) -> $($sig.Status)"
+            }
+          }
+
+          if ($invalid.Count -gt 0) {
+            $invalid | ForEach-Object { Write-Host "::error::$_" }
+            throw "Windows signing required but one or more installers are unsigned or invalid."
+          }
+
+          Write-Host "Windows installer signature verification passed."
+
+      - name: Verify macOS signatures/notarization when required
+        if: matrix.os == 'macos-latest' && (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/'))
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "${LEPUPITRE_REQUIRE_MACOS_NOTARIZATION:-}" in
+            1|true|TRUE|yes|YES|on|ON) ;;
+            *)
+              echo "macOS notarization verification disabled."
+              exit 0
+              ;;
+          esac
+
+          APP_PATH="$(find desktop/src-tauri/target/release/bundle -type d -name '*.app' | head -n 1)"
+          DMG_PATH="$(find desktop/src-tauri/target/release/bundle -type f -name '*.dmg' | head -n 1)"
+
+          if [ -z "${APP_PATH}" ]; then
+            echo "::error::macOS notarization required but no .app bundle found."
+            exit 1
+          fi
+
+          codesign --verify --deep --strict --verbose=2 "${APP_PATH}"
+          spctl --assess --type execute --verbose=4 "${APP_PATH}"
+
+          if [ -n "${DMG_PATH}" ]; then
+            xcrun stapler validate "${DMG_PATH}"
+          fi
+
+          echo "macOS signature/notarization verification passed."
 
   update-homebrew:
     if: startsWith(github.ref, 'refs/tags/')

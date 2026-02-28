@@ -58,3 +58,25 @@ Use this file for new architecture, security, IPC, and release decisions.
   - `docs/operations/release.md`
   - `docs/CONTRIBUTION_RULES.md`
   - `docs/plan/PLAN-TAURI-SQL-HARDENING.md`
+
+### DEC-20260228-release-trust-gates
+- Status: accepted
+- Context:
+  - Release packaging previously produced artifacts without enforceable trust gates.
+  - We need deterministic CI behavior where signing/notarization requirements are explicit and fail-closed when enabled.
+- Decision:
+  - Introduce repository-level trust toggles:
+    - `LEPUPITRE_REQUIRE_WINDOWS_SIGNING`
+    - `LEPUPITRE_REQUIRE_MACOS_NOTARIZATION`
+  - Add release preflight validation (`scripts/check-release-signing.sh`) that fails if required secrets are missing for enabled toggles.
+  - Add release verification steps:
+    - Windows: Authenticode validity checks on MSI/NSIS installers.
+    - macOS: `codesign`, `spctl`, and `stapler` validation.
+- Consequences:
+  - Default behavior remains compatible for unsigned community builds (toggles disabled).
+  - Once toggles are enabled, CI blocks unsigned/untrusted release artifacts.
+  - Release operators must provision and rotate signing secrets through repository settings.
+- Related specs/docs:
+  - `docs/operations/signing.md`
+  - `docs/operations/release.md`
+  - `docs/IMPLEMENTATION_PLAN.md`
