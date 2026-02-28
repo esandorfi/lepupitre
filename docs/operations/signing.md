@@ -4,8 +4,8 @@
 - `v0.2.x` release artifacts are built by CI.
 - Signing/notarization hardening is an active track in `docs/IMPLEMENTATION_PLAN.md`.
 
-## Windows signing (OSS path)
-- Recommended OSS option: SignPath Foundation (`https://signpath.org/`).
+## Windows signing
+- SignPath Foundation (`https://signpath.org/`) is an option when project eligibility matches their program terms.
 - Signing is performed remotely by SignPath/HSM.
 - Typical SignPath flow does not require storing a local `.pfx` in this repository.
 

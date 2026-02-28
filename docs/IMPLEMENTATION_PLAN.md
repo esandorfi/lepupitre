@@ -18,7 +18,7 @@ This file is not documentation governance; governance rules live in `docs/DOCS_G
 Goal: signed and trusted installers.
 
 Scope:
-- Windows signing workflow (OSS path: SignPath Foundation or project-owned cert).
+- Windows signing workflow (SignPath if eligible, or project-owned certificate).
 - macOS signing + notarization workflow with Apple credentials.
 - CI gate: release jobs fail if signing/notarization requirements are configured but not met.
 

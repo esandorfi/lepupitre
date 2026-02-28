@@ -2,7 +2,7 @@
   "name": "lepupitre-desktop",
   "private": true,
   "version": "0.2.7",
-  "description": "Local-first coach for preparing technical talks with daily quests, Boss Run audio sessions, actionable feedback, and peer review packs.",
+  "description": "Local-first Tauri coach for technical talks: daily quests, Boss Runs, and actionable feedback.",
   "type": "module",
   "scripts": {
     "dev": "pnpm tauri dev",

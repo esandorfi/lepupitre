@@ -1,7 +1,6 @@
 # Le Pupitre
 
-Le Pupitre is a local-first desktop coach for preparing technical talks.  
-It helps you train daily, record longer speaking sessions, and turn each run into actionable feedback.
+Local-first Tauri coach for technical talks: daily quests, Boss Runs, and actionable feedback.
 
 ## Why it exists
 - Speaking quality improves with consistent practice loops.
@@ -38,4 +37,4 @@ It helps you train daily, record longer speaking sessions, and turn each run int
 - `spec/archive/`: historical spec material.
 
 ## License
-MIT
+FSL-1.1-MIT (Fair Source License 1.1 with MIT future license)

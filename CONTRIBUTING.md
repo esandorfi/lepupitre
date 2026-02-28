@@ -42,7 +42,7 @@ Thanks for contributing.
   - which tests/checks were run.
 
 ## Documentation policy
-- OSS-facing source of truth: `README*` and `docs/`.
+- Public-facing source of truth: `README.md` and `docs/`.
 - `spec/active/` is design-flow material and may evolve.
 - `spec/archive/` is historical context only.
 - If a contract changes (IPC payload, schema, migration), update all affected layers and docs.
