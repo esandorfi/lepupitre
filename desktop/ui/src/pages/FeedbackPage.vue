@@ -4,6 +4,7 @@ import { useRoute, RouterLink } from "vue-router";
 import { resolveFeedbackBackLink, resolveFeedbackContextLabel } from "../lib/feedbackContext";
 import { useI18n } from "../lib/i18n";
 import { useUiPreferences } from "../lib/uiPreferences";
+import { isFeedbackReviewed, markFeedbackReviewed } from "../lib/feedbackReviewState";
 import { appStore } from "../stores/app";
 import type { FeedbackContext, FeedbackV1, MascotMessage } from "../schemas/ipc";
 
@@ -19,12 +20,20 @@ const isLoading = ref(false);
 const note = ref("");
 const lastSavedNote = ref("");
 const noteStatus = ref<"idle" | "saving" | "saved" | "error">("idle");
+const reviewMarked = ref(false);
 const showMascotCard = computed(() => uiSettings.value.mascotEnabled);
 const isQuestWorldMode = computed(() => uiSettings.value.gamificationMode === "quest-world");
 const mascotBody = computed(() =>
   uiSettings.value.mascotIntensity === "minimal" ? "" : mascotMessage.value?.body ?? ""
 );
 const isRunFeedback = computed(() => context.value?.subject_type === "run");
+const isReviewed = computed(() => {
+  const profileId = appStore.state.activeProfileId;
+  if (!profileId || !feedbackId.value) {
+    return false;
+  }
+  return isFeedbackReviewed(profileId, feedbackId.value);
+});
 const recommendedQuestCodes = computed(() => {
   const list = feedback.value?.top_actions.flatMap((action) => action.target_quest_codes) ?? [];
   return Array.from(new Set(list.filter((code) => typeof code === "string" && code.trim().length > 0)));
@@ -120,6 +129,15 @@ onMounted(async () => {
     await appStore.bootstrap();
     feedback.value = await appStore.getFeedback(feedbackId.value);
     context.value = await appStore.getFeedbackContext(feedbackId.value);
+    if (appStore.state.activeProfileId && feedbackId.value) {
+      const alreadyReviewed = isFeedbackReviewed(appStore.state.activeProfileId, feedbackId.value);
+      if (!alreadyReviewed) {
+        markFeedbackReviewed(appStore.state.activeProfileId, feedbackId.value);
+        reviewMarked.value = true;
+      } else {
+        reviewMarked.value = false;
+      }
+    }
     await loadNote();
     await refreshMascotMessage();
   } catch (err) {
@@ -143,6 +161,13 @@ watch(
 <template>
   <section class="space-y-6">
     <p class="app-muted text-sm font-semibold">{{ t("feedback.subtitle") }}</p>
+    <p v-if="isReviewed || reviewMarked" class="app-subtle text-xs font-semibold">
+      {{
+        reviewMarked
+          ? t("feedback.review_marked")
+          : t("feedback.review_already")
+      }}
+    </p>
 
     <div
       v-if="showMascotCard && mascotMessage"
