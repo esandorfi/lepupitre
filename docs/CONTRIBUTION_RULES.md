@@ -8,7 +8,7 @@ These are repository process gates for contributors.
 
 ## 2) Decision records (no new ADRs)
 - Do not create new ADR files.
-- Record new significant decisions in `spec/active/DECISIONS.md`.
+- Record new significant decisions in [spec/active/DECISIONS.md](../spec/active/DECISIONS.md).
 - Use clear status per entry (`proposed`, `accepted`, `superseded`).
 
 ## 3) IPC schema alignment
@@ -34,15 +34,15 @@ These are repository process gates for contributors.
 
 ## 5) Release and changelog gate
 - For every release/version bump:
-  - update `CHANGELOG.md` in English
+  - update [CHANGELOG.md](../CHANGELOG.md) in English
   - generate/update entries from Git history (`pnpm -C desktop changelog`)
   - ensure latest tag/version is present in changelog before release
 
 ## 6) Docs lifecycle gate
 - If a PR touches `docs/` or `spec/`:
-  - complete the docs checklist in `.github/PULL_REQUEST_TEMPLATE.md`
-  - update `docs/STATUS.md`
-  - follow `docs/DOCS_GOVERNANCE.md`
+  - complete the docs checklist in [.github/PULL_REQUEST_TEMPLATE.md](../.github/PULL_REQUEST_TEMPLATE.md)
+  - update [docs/STATUS.md](STATUS.md)
+  - follow [docs/DOCS_GOVERNANCE.md](DOCS_GOVERNANCE.md)
   - mark superseded docs/specs explicitly before archive moves
 
 ## 7) Commit style

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/images/app_icon_26_02_1.png" alt="Le Pupitre icon"  />
+  <img src="docs/images/app_icon_26_02_3.png" alt="Le Pupitre icon"  />
 </p>
 
 <h1 align="center">Le Pupitre</h1>
@@ -65,10 +65,10 @@
 
 ## Documentation model
 
-- `README.md`: product and user onboarding.
-- `docs/`: canonical technical and governance documentation.
-- `spec/active/`: active design proposals.
-- `spec/archive/`: historical spec material.
+- [README.md](README.md): product and user onboarding.
+- [docs/](docs/README.md): canonical technical and governance documentation.
+- [spec/active/](spec/active/README.md): active design proposals.
+- [spec/archive/](spec/archive/README.md): historical spec material.
 
 ## License
 FSL-1.1-MIT (Fair Source License 1.1 with MIT future license)

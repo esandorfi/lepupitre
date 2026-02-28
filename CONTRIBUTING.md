@@ -3,10 +3,10 @@
 Thanks for contributing.
 
 ## Before you start
-- Read `README.md` and `docs/README.md`.
-- Read `docs/architecture/overview.md` and `docs/operations/release.md`.
-- Check `docs/IMPLEMENTATION_PLAN.md` for current priorities.
-- Follow `docs/CONTRIBUTION_RULES.md` for decision/changelog/test requirements.
+- Read [README.md](README.md) and [docs/README.md](docs/README.md).
+- Read [docs/architecture/overview.md](docs/architecture/overview.md) and [docs/operations/release.md](docs/operations/release.md).
+- Check [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) for current priorities.
+- Follow [docs/CONTRIBUTION_RULES.md](docs/CONTRIBUTION_RULES.md) for decision/changelog/test requirements.
 
 ## Development setup
 1. Install Tauri prerequisites for your OS:
@@ -44,7 +44,7 @@ Thanks for contributing.
   - which tests/checks were run.
 
 ## Documentation policy
-- Public-facing source of truth: `README.md` and `docs/`.
-- `spec/active/` is design-flow material and may evolve.
-- `spec/archive/` is historical context only.
+- Public-facing source of truth: [README.md](README.md) and [docs/](docs/README.md).
+- [spec/active/](spec/active/README.md) is design-flow material and may evolve.
+- [spec/archive/](spec/archive/README.md) is historical context only.
 - If a contract changes (IPC payload, schema, migration), update all affected layers and docs.
