@@ -243,6 +243,14 @@ Acceptance:
   - added structured DB diagnostics in `core/db.rs` (`DbDiagnostics`, `global_diagnostics`, `profile_diagnostics`),
   - diagnostics include migration continuity state, latest migration, integrity check, and foreign-key violation count,
   - added tests for clean diagnostics and continuity-gap detection.
+- Workstream 5 slice delivered:
+  - added startup corruption recovery in `core/db.rs`:
+    - detect corruption via open/quick-check failures,
+    - quarantine broken DB(+wal/shm) under `corrupted/`,
+    - restore latest matching snapshot from `backups/` when available,
+    - fail with explicit `db_recovery_no_snapshot` when no safe snapshot exists.
+  - added diagnostics IPC exposure via `profile_db_diagnostics` command (global + optional profile report),
+  - added regression tests for snapshot-based recovery and no-snapshot failure behavior.
 
 ## Dependencies
 

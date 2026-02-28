@@ -20,7 +20,9 @@ Last updated: 2026-02-28
   - standardized coach-domain module shape to `core/coach/{mod.rs,queries.rs,repo.rs,types.rs}`
   - added pre-migration snapshot creation + retention in `core/db.rs`
   - added DB diagnostics helpers (`DbDiagnostics`, `global_diagnostics`, `profile_diagnostics`) in `core/db.rs`
-- Last known checkpoint commit: `bb0a507` (updated in-progress after this checkpoint)
+  - added startup corruption recovery (quarantine + restore from latest snapshot) in `core/db.rs`
+  - added diagnostics IPC command `profile_db_diagnostics` (global + optional profile)
+- Last known checkpoint commit: `6377bfc` (updated in-progress after this checkpoint)
 
 ## Resume goal
 
@@ -37,13 +39,13 @@ Start Workstream 5 by implementing safe local backup/recovery flow around migrat
 1. Workstream 5 kickoff
 - [x] Define backup trigger points (before migration on pending versions).
 - [x] Implement profile/global DB snapshot helper with deterministic naming and retention rules.
-- [ ] Add restore path and failure handling for corrupted DB startup scenario.
-- [ ] Add diagnostics IPC command/report:
+- [x] Add restore path and failure handling for corrupted DB startup scenario.
+- [x] Add diagnostics IPC command/report:
   - schema version
   - migration continuity status
   - `PRAGMA integrity_check`
   - `PRAGMA foreign_key_check`
-  - Note: core diagnostics helpers are implemented; IPC exposure remains to do.
+- [ ] Document operator restore workflow and user-visible error handling (`db_recovery_no_snapshot`) in operations docs.
 
 1. Guard rails + docs per slice
 - [ ] Update [PLAN-TAURI-SQL-HARDENING.md](PLAN-TAURI-SQL-HARDENING.md) progress bullets.
@@ -53,9 +55,9 @@ Start Workstream 5 by implementing safe local backup/recovery flow around migrat
 - [ ] Keep [docs/STATUS.md](../STATUS.md) next-action aligned.
 
 1. Done criteria for Workstream 5
-- [ ] Backup/restore flow is implemented and testable.
+- [x] Backup/restore flow is implemented and testable.
 - [ ] Corruption handling path is deterministic and documented.
-- [ ] Diagnostics are available for local support and CI assertions.
+- [x] Diagnostics are available for local support and CI assertions.
 
 ## Quick commands
 

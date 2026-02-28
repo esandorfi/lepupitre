@@ -90,7 +90,12 @@
 - Safety/operability:
   - before applying pending migrations on an existing DB, a pre-migration snapshot is created under a local `backups/` directory,
   - snapshot retention is bounded to keep disk usage predictable,
-  - DB diagnostics can report continuity status, integrity-check result, and FK-check violations.
+  - startup integrity/open failures trigger a deterministic recovery path:
+    - quarantine current DB files under `corrupted/`,
+    - restore the latest matching snapshot from `backups/` when available,
+    - fail with explicit `db_recovery_no_snapshot` when no safe snapshot exists.
+  - DB diagnostics can report schema/migration continuity, integrity-check result, and FK-check violations.
+  - diagnostics are exposed via IPC command `profile_db_diagnostics` (global + optional profile report).
 - Contributor rules:
   - add new migrations as append-only ordered steps,
   - do not mutate historical migration versions in place,

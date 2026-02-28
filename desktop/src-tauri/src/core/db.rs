@@ -231,6 +231,7 @@ struct Migration {
 #[serde(rename_all = "camelCase")]
 pub struct DbDiagnostics {
     pub scope: String,
+    pub schema_version: Option<String>,
     pub latest_migration: Option<String>,
     pub applied_migration_count: usize,
     pub expected_migration_count: usize,
@@ -284,8 +285,7 @@ pub fn open_global(app: &tauri::AppHandle) -> Result<Connection, String> {
     std::fs::create_dir_all(&app_data_dir).map_err(|e| format!("create_dir: {e}"))?;
 
     let db_path = app_data_dir.join("global.db");
-    let mut conn = Connection::open(&db_path).map_err(|e| format!("open: {e}"))?;
-    configure_connection_pragmas(&conn)?;
+    let mut conn = open_connection_with_recovery(&db_path, "global")?;
 
     let lock = GLOBAL_MIGRATION_LOCK.get_or_init(|| Mutex::new(()));
     let _guard = lock
@@ -315,8 +315,7 @@ pub fn open_profile(app: &tauri::AppHandle, profile_id: &str) -> Result<Connecti
     std::fs::create_dir_all(&profile_dir).map_err(|e| format!("create_dir: {e}"))?;
 
     let db_path = profile_dir.join("profile.db");
-    let mut conn = Connection::open(&db_path).map_err(|e| format!("open: {e}"))?;
-    configure_connection_pragmas(&conn)?;
+    let mut conn = open_connection_with_recovery(&db_path, "profile")?;
 
     let lock = PROFILE_MIGRATION_LOCK.get_or_init(|| Mutex::new(()));
     let _guard = lock
@@ -333,6 +332,139 @@ pub fn profile_dir(app: &tauri::AppHandle, profile_id: &str) -> Result<PathBuf, 
         .app_data_dir()
         .map_err(|e| format!("app_data_dir: {e}"))?;
     Ok(app_data_dir.join("profiles").join(profile_id))
+}
+
+fn open_connection_with_recovery(db_path: &Path, scope: &str) -> Result<Connection, String> {
+    let mut conn = match Connection::open(db_path) {
+        Ok(conn) => conn,
+        Err(err) => {
+            if !is_recoverable_open_error(&err) {
+                return Err(format!("open: {err}"));
+            }
+            recover_corrupt_database(db_path, scope, &format!("open: {err}"))?;
+            Connection::open(db_path).map_err(|e| format!("open_after_recovery: {e}"))?
+        }
+    };
+
+    if let Err(err) = prepare_connection_for_open(&conn) {
+        if !is_recoverable_runtime_error(&err) {
+            return Err(err);
+        }
+        drop(conn);
+        recover_corrupt_database(db_path, scope, &err)?;
+        conn = Connection::open(db_path).map_err(|e| format!("open_after_recovery: {e}"))?;
+        prepare_connection_for_open(&conn).map_err(|e| format!("post_recovery_prepare: {e}"))?;
+    }
+
+    Ok(conn)
+}
+
+fn prepare_connection_for_open(conn: &Connection) -> Result<(), String> {
+    configure_connection_pragmas(conn)?;
+    verify_database_integrity_for_open(conn)
+}
+
+fn verify_database_integrity_for_open(conn: &Connection) -> Result<(), String> {
+    let quick_check: String = conn
+        .query_row("PRAGMA quick_check", [], |row| row.get(0))
+        .map_err(|e| format!("quick_check: {e}"))?;
+    if quick_check.to_ascii_lowercase() != "ok" {
+        return Err(format!("database_integrity_failed: {quick_check}"));
+    }
+    Ok(())
+}
+
+fn is_recoverable_open_error(err: &rusqlite::Error) -> bool {
+    let message = err.to_string().to_ascii_lowercase();
+    message.contains("not a database")
+        || message.contains("malformed")
+        || message.contains("is encrypted")
+}
+
+fn is_recoverable_runtime_error(err: &str) -> bool {
+    let message = err.to_ascii_lowercase();
+    message.contains("database_integrity_failed")
+        || message.contains("quick_check")
+        || message.contains("not a database")
+        || message.contains("malformed")
+}
+
+fn recover_corrupt_database(db_path: &Path, scope: &str, reason: &str) -> Result<(), String> {
+    let parent = db_path
+        .parent()
+        .ok_or_else(|| "recovery_parent_missing".to_string())?;
+    let db_stem = db_path
+        .file_stem()
+        .and_then(|value| value.to_str())
+        .unwrap_or("db");
+    let timestamp = Utc::now().format("%Y%m%dT%H%M%SZ").to_string();
+
+    let corrupted_dir = parent.join("corrupted");
+    std::fs::create_dir_all(&corrupted_dir).map_err(|e| format!("recovery_corrupted_dir: {e}"))?;
+    let quarantined_db = corrupted_dir.join(format!("{db_stem}-{scope}-corrupt-{timestamp}.db"));
+
+    if db_path.exists() {
+        std::fs::rename(db_path, &quarantined_db)
+            .map_err(|e| format!("recovery_quarantine_db: {e}"))?;
+    }
+
+    move_if_exists(
+        &db_path.with_extension("db-wal"),
+        &corrupted_dir.join(format!("{db_stem}-{scope}-corrupt-{timestamp}.db-wal")),
+    )?;
+    move_if_exists(
+        &db_path.with_extension("db-shm"),
+        &corrupted_dir.join(format!("{db_stem}-{scope}-corrupt-{timestamp}.db-shm")),
+    )?;
+
+    let backups_dir = parent.join("backups");
+    let latest_snapshot = find_latest_snapshot(&backups_dir, db_stem, scope)?;
+    let Some(snapshot_path) = latest_snapshot else {
+        return Err(format!(
+            "db_recovery_no_snapshot: scope={scope}; reason={reason}; quarantined={}",
+            quarantined_db.display()
+        ));
+    };
+
+    std::fs::copy(&snapshot_path, db_path).map_err(|e| format!("recovery_restore_copy: {e}"))?;
+    Ok(())
+}
+
+fn find_latest_snapshot(
+    backups_dir: &Path,
+    db_stem: &str,
+    scope: &str,
+) -> Result<Option<PathBuf>, String> {
+    if !backups_dir.exists() {
+        return Ok(None);
+    }
+    let prefix = format!("{db_stem}-{scope}-pre-");
+    let mut candidates = Vec::new();
+    let entries = std::fs::read_dir(backups_dir).map_err(|e| format!("snapshot_read_dir: {e}"))?;
+    for entry in entries {
+        let entry = entry.map_err(|e| format!("snapshot_entry: {e}"))?;
+        let path = entry.path();
+        if !path.is_file() {
+            continue;
+        }
+        let Some(name) = path.file_name().and_then(|value| value.to_str()) else {
+            continue;
+        };
+        if name.starts_with(&prefix) && name.ends_with(".db") {
+            candidates.push(path);
+        }
+    }
+
+    candidates.sort_by(|a, b| b.file_name().cmp(&a.file_name()));
+    Ok(candidates.into_iter().next())
+}
+
+fn move_if_exists(from: &Path, to: &Path) -> Result<(), String> {
+    if !from.exists() {
+        return Ok(());
+    }
+    std::fs::rename(from, to).map_err(|e| format!("recovery_quarantine_sidecar: {e}"))?;
+    Ok(())
 }
 
 pub fn global_diagnostics(app: &tauri::AppHandle) -> Result<DbDiagnostics, String> {
@@ -592,6 +724,7 @@ fn collect_diagnostics(
     let continuity_error = validate_migration_continuity(scope, &applied, migrations).err();
     let continuity_ok = continuity_error.is_none();
     let latest_migration = applied.last().cloned();
+    let schema_version = latest_migration.clone();
     let integrity_check = conn
         .query_row("PRAGMA integrity_check", [], |row| row.get::<_, String>(0))
         .map_err(|e| format!("integrity_check: {e}"))?;
@@ -599,6 +732,7 @@ fn collect_diagnostics(
 
     Ok(DbDiagnostics {
         scope: scope.to_string(),
+        schema_version,
         latest_migration,
         applied_migration_count: applied.len(),
         expected_migration_count: migrations.len(),
@@ -1269,11 +1403,79 @@ mod tests {
         assert_eq!(diagnostics.foreign_key_violations, 0);
     }
 
+    #[test]
+    fn recovery_restores_latest_snapshot() {
+        let root = std::env::temp_dir().join(format!(
+            "lepupitre-recovery-{}",
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("now")
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).expect("root");
+        let db_path = root.join("global.db");
+        std::fs::write(&db_path, b"not-a-sqlite-db").expect("corrupt");
+
+        let backups_dir = root.join("backups");
+        std::fs::create_dir_all(&backups_dir).expect("backups");
+        let old_snapshot = backups_dir.join("global-global-pre-0002-test-20260228T010000Z.db");
+        let new_snapshot = backups_dir.join("global-global-pre-0003-test-20260228T020000Z.db");
+        create_snapshot_fixture(&old_snapshot, "old").expect("old snapshot");
+        create_snapshot_fixture(&new_snapshot, "new").expect("new snapshot");
+
+        recover_corrupt_database(&db_path, "global", "test").expect("recover");
+        let restored_conn = Connection::open(&db_path).expect("open restored");
+        let marker: String = restored_conn
+            .query_row("SELECT marker FROM snapshot_marker LIMIT 1", [], |row| {
+                row.get(0)
+            })
+            .expect("marker");
+        assert_eq!(marker, "new");
+
+        let corrupted_dir = root.join("corrupted");
+        let quarantined_count = std::fs::read_dir(&corrupted_dir)
+            .expect("corrupted entries")
+            .flatten()
+            .filter(|entry| entry.path().extension().and_then(|v| v.to_str()) == Some("db"))
+            .count();
+        assert!(quarantined_count >= 1);
+
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn recovery_fails_without_snapshot() {
+        let root = std::env::temp_dir().join(format!(
+            "lepupitre-recovery-nosnapshot-{}",
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("now")
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).expect("root");
+        let db_path = root.join("profile.db");
+        std::fs::write(&db_path, b"not-a-sqlite-db").expect("corrupt");
+
+        let err = recover_corrupt_database(&db_path, "profile", "test").expect_err("no snapshot");
+        assert!(err.contains("db_recovery_no_snapshot"));
+
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
     fn temp_db_path(prefix: &str) -> PathBuf {
         let nanos = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .expect("now")
             .as_nanos();
         std::env::temp_dir().join(format!("lepupitre-{prefix}-{nanos}.db"))
+    }
+
+    fn create_snapshot_fixture(path: &Path, marker: &str) -> Result<(), String> {
+        let conn = Connection::open(path).map_err(|e| format!("snapshot_open: {e}"))?;
+        conn.execute("CREATE TABLE snapshot_marker (marker TEXT NOT NULL)", [])
+            .map_err(|e| format!("snapshot_create: {e}"))?;
+        conn.execute("INSERT INTO snapshot_marker (marker) VALUES (?1)", [marker])
+            .map_err(|e| format!("snapshot_insert: {e}"))?;
+        Ok(())
     }
 }
