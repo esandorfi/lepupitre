@@ -1,52 +1,10 @@
-use crate::core::db;
+use crate::core::preferences::queries;
 use rusqlite::{params, Connection, OptionalExtension};
-use tauri::AppHandle;
 
 const MAX_KEY_LEN: usize = 160;
 const MAX_VALUE_LEN: usize = 32_768;
 
-pub fn preference_global_get(app: &AppHandle, key: &str) -> Result<Option<String>, String> {
-    let validated_key = validate_key(key)?;
-    let conn = db::open_global(app)?;
-    get_setting(&conn, "global_settings", validated_key)
-}
-
-pub fn preference_global_set(
-    app: &AppHandle,
-    key: &str,
-    value: Option<&str>,
-) -> Result<(), String> {
-    let validated_key = validate_key(key)?;
-    validate_value(value)?;
-    let conn = db::open_global(app)?;
-    set_setting(&conn, "global_settings", validated_key, value)
-}
-
-pub fn preference_profile_get(
-    app: &AppHandle,
-    profile_id: &str,
-    key: &str,
-) -> Result<Option<String>, String> {
-    let validated_key = validate_key(key)?;
-    db::ensure_profile_exists(app, profile_id)?;
-    let conn = db::open_profile(app, profile_id)?;
-    get_setting(&conn, "profile_settings", validated_key)
-}
-
-pub fn preference_profile_set(
-    app: &AppHandle,
-    profile_id: &str,
-    key: &str,
-    value: Option<&str>,
-) -> Result<(), String> {
-    let validated_key = validate_key(key)?;
-    validate_value(value)?;
-    db::ensure_profile_exists(app, profile_id)?;
-    let conn = db::open_profile(app, profile_id)?;
-    set_setting(&conn, "profile_settings", validated_key, value)
-}
-
-fn validate_key(key: &str) -> Result<&str, String> {
+pub(super) fn validate_key(key: &str) -> Result<&str, String> {
     let trimmed = key.trim();
     if trimmed.is_empty() || trimmed.len() > MAX_KEY_LEN {
         return Err("preference_key_invalid".to_string());
@@ -60,7 +18,7 @@ fn validate_key(key: &str) -> Result<&str, String> {
     Ok(trimmed)
 }
 
-fn validate_value(value: Option<&str>) -> Result<(), String> {
+pub(super) fn validate_value(value: Option<&str>) -> Result<(), String> {
     if let Some(v) = value {
         if v.len() > MAX_VALUE_LEN {
             return Err("preference_value_too_large".to_string());
@@ -69,14 +27,18 @@ fn validate_value(value: Option<&str>) -> Result<(), String> {
     Ok(())
 }
 
-fn get_setting(conn: &Connection, table: &str, key: &str) -> Result<Option<String>, String> {
-    let query = format!("SELECT value_json FROM {table} WHERE key = ?1");
+pub(super) fn get_setting(
+    conn: &Connection,
+    table: &str,
+    key: &str,
+) -> Result<Option<String>, String> {
+    let query = queries::select_setting(table);
     conn.query_row(&query, params![key], |row| row.get::<_, String>(0))
         .optional()
         .map_err(|e| format!("preference_get: {e}"))
 }
 
-fn set_setting(
+pub(super) fn set_setting(
     conn: &Connection,
     table: &str,
     key: &str,
@@ -84,14 +46,12 @@ fn set_setting(
 ) -> Result<(), String> {
     match value {
         Some(v) => {
-            let query = format!(
-                "INSERT INTO {table} (key, value_json) VALUES (?1, ?2) ON CONFLICT(key) DO UPDATE SET value_json = excluded.value_json"
-            );
+            let query = queries::upsert_setting(table);
             conn.execute(&query, params![key, v])
                 .map_err(|e| format!("preference_set: {e}"))?;
         }
         None => {
-            let query = format!("DELETE FROM {table} WHERE key = ?1");
+            let query = queries::delete_setting(table);
             conn.execute(&query, params![key])
                 .map_err(|e| format!("preference_remove: {e}"))?;
         }

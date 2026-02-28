@@ -11,11 +11,13 @@ Last updated: 2026-02-28
 - Last completed slice:
   - extracted run-domain data access from `commands/run.rs` to `core/run.rs`
   - command layer now wrapper-only for run commands
+  - standardized run-domain module shape to `core/run/{mod.rs,queries.rs,repo.rs,types.rs}`
   - extracted preferences-domain data access from `commands/preferences.rs` to `core/preferences.rs`
   - command layer now wrapper-only for preferences commands
+  - standardized preferences-domain module shape to `core/preferences/{mod.rs,queries.rs,repo.rs}`
   - extracted coach-domain data access/read-model logic from `commands/coach.rs` to `core/coach.rs`
   - command layer now wrapper-only for coach commands
-- Last known checkpoint commit: `eebdfca` (updated in-progress after this checkpoint)
+- Last known checkpoint commit: `c5a85f8` (updated in-progress after this checkpoint)
 
 ## Resume goal
 
@@ -30,10 +32,17 @@ Continue Workstream 4 by removing direct SQL from command wrappers and consolida
   - `pnpm -C desktop docs:lint`
 
 1. Slice C: structure standardization
-- [ ] Normalize module shape for migrated domains:
+- [x] Normalize run-domain module shape:
   - `queries.rs` for SQL text/builders
   - `repo.rs` for typed DB operations
-  - typed structs in `types.rs` (or existing domain models)
+  - `types.rs` for run DTOs
+- [x] Normalize preferences-domain module shape:
+  - `queries.rs` for SQL builders
+  - `repo.rs` for validation + typed DB operations
+- [ ] Normalize coach-domain module shape:
+  - `queries.rs` for read SQL text
+  - `repo.rs` for typed read-model mapping
+  - `types.rs` for coach DTOs (or explicit reuse of domain types)
 - [ ] Ensure command wrappers contain no direct SQL after each slice.
 
 1. Guard rails + docs per slice

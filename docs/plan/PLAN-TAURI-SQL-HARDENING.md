@@ -221,6 +221,14 @@ Acceptance:
   - extracted coach-domain read-model/data-access logic from `commands/coach.rs` into `core/coach.rs`,
   - reduced `commands/coach.rs` to orchestration-only Tauri wrappers,
   - preserved deterministic coach coverage (streak/milestone/framework/message behavior) in `core/coach.rs`.
+- Workstream 4 slice delivered:
+  - standardized run-domain module shape to `core/run/{mod.rs,queries.rs,repo.rs,types.rs}`,
+  - moved run SQL statements and row mapping into `run/queries.rs` + `run/repo.rs`,
+  - kept `run/mod.rs` orchestration-only with unchanged behavior and passing tests.
+- Workstream 4 slice delivered:
+  - standardized preferences-domain module shape to `core/preferences/{mod.rs,queries.rs,repo.rs}`,
+  - moved settings SQL builders/validation/data-access into preferences repo/query modules,
+  - kept `preferences/mod.rs` orchestration-only with unchanged behavior and passing tests.
 
 ## Dependencies
 
