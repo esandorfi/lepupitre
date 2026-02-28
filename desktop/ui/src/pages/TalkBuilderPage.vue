@@ -5,6 +5,7 @@ import { invoke } from "@tauri-apps/api/core";
 import TalkStepPageShell from "../components/TalkStepPageShell.vue";
 import { useI18n } from "../lib/i18n";
 import { appStore } from "../stores/app";
+import type { TalksBlueprint } from "../schemas/ipc";
 
 const { t } = useI18n();
 const route = useRoute();
@@ -17,6 +18,8 @@ const outline = ref("");
 const exportPath = ref<string | null>(null);
 const isExporting = ref(false);
 const isRevealing = ref(false);
+const blueprint = ref<TalksBlueprint | null>(null);
+const isApplyingTemplate = ref(false);
 
 const activeProfileId = computed(() => appStore.state.activeProfileId);
 const selectedProjectId = computed(() => {
@@ -69,6 +72,7 @@ async function loadOutline() {
   error.value = null;
   exportPath.value = null;
   outline.value = "";
+  blueprint.value = null;
   isLoading.value = true;
   try {
     await appStore.bootstrap();
@@ -79,12 +83,85 @@ async function loadOutline() {
     }
     const doc = await appStore.getOutline(projectId);
     outline.value = doc.markdown;
+    blueprint.value = await appStore.getTalksBlueprint(projectId);
     saveStatus.value = "idle";
   } catch (err) {
     error.value = toError(err);
   } finally {
     isLoading.value = false;
   }
+}
+
+function frameworkPrompts(frameworkId: string) {
+  if (frameworkId === "problem-solution-impact") {
+    return [
+      t("builder.prompt_problem_solution_impact_1"),
+      t("builder.prompt_problem_solution_impact_2"),
+      t("builder.prompt_problem_solution_impact_3"),
+    ];
+  }
+  if (frameworkId === "context-change-decision") {
+    return [
+      t("builder.prompt_context_change_decision_1"),
+      t("builder.prompt_context_change_decision_2"),
+      t("builder.prompt_context_change_decision_3"),
+    ];
+  }
+  return [
+    t("builder.prompt_hook_story_proof_1"),
+    t("builder.prompt_hook_story_proof_2"),
+    t("builder.prompt_hook_story_proof_3"),
+  ];
+}
+
+function templateSections(frameworkId: string) {
+  if (frameworkId === "problem-solution-impact") {
+    return [
+      `## ${t("builder.template_problem")}`,
+      `## ${t("builder.template_solution")}`,
+      `## ${t("builder.template_impact")}`,
+      `## ${t("builder.template_decision")}`,
+    ];
+  }
+  if (frameworkId === "context-change-decision") {
+    return [
+      `## ${t("builder.template_context")}`,
+      `## ${t("builder.template_change")}`,
+      `## ${t("builder.template_options")}`,
+      `## ${t("builder.template_decision")}`,
+    ];
+  }
+  return [
+    `## ${t("builder.template_hook")}`,
+    `## ${t("builder.template_story")}`,
+    `## ${t("builder.template_proof")}`,
+    `## ${t("builder.template_close")}`,
+  ];
+}
+
+const activeFrameworkPrompts = computed(() =>
+  frameworkPrompts(blueprint.value?.framework_id ?? "hook-story-proof")
+);
+
+async function applyFrameworkTemplate() {
+  if (!blueprint.value) {
+    return;
+  }
+  const sections = templateSections(blueprint.value.framework_id);
+  const template = sections.map((section) => `${section}\n`).join("\n");
+
+  const hasOutline = outline.value.trim().length > 0;
+  if (hasOutline) {
+    const confirmed = window.confirm(t("builder.template_confirm_overwrite"));
+    if (!confirmed) {
+      return;
+    }
+  }
+
+  isApplyingTemplate.value = true;
+  outline.value = template;
+  await saveOutline();
+  isApplyingTemplate.value = false;
 }
 
 async function saveOutline() {
@@ -179,6 +256,33 @@ watch(
     </div>
 
     <div v-else class="space-y-4">
+      <div v-if="blueprint" class="app-panel app-panel-compact border border-[var(--color-accent)] bg-[var(--color-surface-selected)]">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div class="min-w-0 flex-1">
+            <div class="app-text-eyebrow">{{ t("builder.framework_title") }}</div>
+            <div class="app-text app-text-section-title mt-1">{{ blueprint.framework_label }}</div>
+            <div class="app-muted app-text-body mt-1">{{ blueprint.framework_summary }}</div>
+          </div>
+          <button
+            class="app-button-secondary app-focus-ring app-button-md inline-flex items-center disabled:cursor-not-allowed disabled:opacity-60"
+            type="button"
+            :disabled="isApplyingTemplate || isSaving"
+            @click="applyFrameworkTemplate"
+          >
+            {{ t("builder.framework_apply_template") }}
+          </button>
+        </div>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <span
+            v-for="(prompt, index) in activeFrameworkPrompts"
+            :key="`framework-prompt-${index}`"
+            class="app-badge-neutral app-text-caption inline-flex items-center rounded-full px-2 py-1 font-semibold"
+          >
+            {{ prompt }}
+          </span>
+        </div>
+      </div>
+
       <div class="app-panel">
         <div class="app-text-eyebrow">
           {{ t("builder.outline_label") }}
