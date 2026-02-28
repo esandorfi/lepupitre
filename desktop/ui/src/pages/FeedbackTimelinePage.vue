@@ -23,6 +23,7 @@ const showUnreadOnly = ref(false);
 const scope = ref<"workspace" | "talk">("workspace");
 const mascotMessage = ref<MascotMessage | null>(null);
 const reviewedIds = ref<Set<string>>(new Set());
+let timelineLoadSeq = 0;
 const showMascotCard = computed(() => uiSettings.value.mascotEnabled);
 const mascotBody = computed(() =>
   uiSettings.value.mascotIntensity === "minimal" ? "" : mascotMessage.value?.body ?? ""
@@ -185,23 +186,46 @@ function reviewedBadgeClass(reviewed: boolean) {
   return reviewed ? "app-badge-neutral" : "app-badge-success";
 }
 
-async function refreshMascotMessage() {
+function applyFocusedContextFilters() {
+  if (!focusedFeedbackId.value) {
+    return;
+  }
+  if (sourceContext.value === "quest") {
+    filterType.value = "quest_attempt";
+  } else if (sourceContext.value === "boss-run") {
+    filterType.value = "run";
+  } else {
+    filterType.value = "all";
+  }
+}
+
+async function refreshMascotMessage(expectedSeq?: number) {
   if (!showMascotCard.value || !state.value.activeProfileId) {
-    mascotMessage.value = null;
+    if (expectedSeq == null || expectedSeq === timelineLoadSeq) {
+      mascotMessage.value = null;
+    }
     return;
   }
   try {
-    mascotMessage.value = await appStore.getMascotContextMessage({
+    const message = await appStore.getMascotContextMessage({
       routeName: "feedback",
       projectId: scope.value === "talk" ? activeProjectId.value : null,
       locale: locale.value,
     });
+    if (expectedSeq != null && expectedSeq !== timelineLoadSeq) {
+      return;
+    }
+    mascotMessage.value = message;
   } catch {
+    if (expectedSeq != null && expectedSeq !== timelineLoadSeq) {
+      return;
+    }
     mascotMessage.value = null;
   }
 }
 
 async function loadTimeline() {
+  const requestSeq = ++timelineLoadSeq;
   if (!state.value.activeProfileId) {
     entries.value = [];
     error.value = null;
@@ -212,18 +236,28 @@ async function loadTimeline() {
   isLoading.value = true;
   error.value = null;
   try {
-    entries.value = await appStore.getFeedbackTimeline(
+    const timeline = await appStore.getFeedbackTimeline(
       scope.value === "talk" ? activeProjectId.value : null,
       48
     );
-    reviewedIds.value = readReviewedFeedbackIds(state.value.activeProfileId);
-    await refreshMascotMessage();
+    const reviewed = readReviewedFeedbackIds(state.value.activeProfileId);
+    if (requestSeq !== timelineLoadSeq) {
+      return;
+    }
+    entries.value = timeline;
+    reviewedIds.value = reviewed;
+    await refreshMascotMessage(requestSeq);
   } catch (err) {
+    if (requestSeq !== timelineLoadSeq) {
+      return;
+    }
     entries.value = [];
     error.value = toError(err);
     mascotMessage.value = null;
   } finally {
-    isLoading.value = false;
+    if (requestSeq === timelineLoadSeq) {
+      isLoading.value = false;
+    }
   }
 }
 
@@ -231,13 +265,7 @@ onMounted(async () => {
   await appStore.bootstrap();
   await appStore.loadProjects();
   if (focusedFeedbackId.value) {
-    if (sourceContext.value === "quest") {
-      filterType.value = "quest_attempt";
-    } else if (sourceContext.value === "boss-run") {
-      filterType.value = "run";
-    } else {
-      filterType.value = "all";
-    }
+    applyFocusedContextFilters();
     scope.value = "workspace";
   }
   await loadTimeline();
@@ -248,6 +276,7 @@ watch(
   async () => {
     if (!canUseTalkScope.value && scope.value === "talk") {
       scope.value = "workspace";
+      return;
     }
     await loadTimeline();
   }
@@ -266,14 +295,11 @@ watch(
     if (!next) {
       return;
     }
-    if (sourceContext.value === "quest") {
-      filterType.value = "quest_attempt";
-    } else if (sourceContext.value === "boss-run") {
-      filterType.value = "run";
-    } else {
-      filterType.value = "all";
+    applyFocusedContextFilters();
+    if (scope.value !== "workspace") {
+      scope.value = "workspace";
+      return;
     }
-    scope.value = "workspace";
     await loadTimeline();
   }
 );

@@ -26,7 +26,6 @@ const isQuestWorldMode = computed(() => uiSettings.value.gamificationMode === "q
 const mascotBody = computed(() =>
   uiSettings.value.mascotIntensity === "minimal" ? "" : mascotMessage.value?.body ?? ""
 );
-const isRunFeedback = computed(() => context.value?.subject_type === "run");
 const isReviewed = computed(() => {
   const profileId = appStore.state.activeProfileId;
   if (!profileId || !feedbackId.value) {
