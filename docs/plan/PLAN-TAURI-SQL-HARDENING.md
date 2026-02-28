@@ -195,6 +195,9 @@ Acceptance:
   - `run_analyze` now deletes just-created feedback artifact row/file when DB link persistence fails,
   - `analyze_attempt` applies the same compensation pattern.
 - Added reusable artifact deletion helper (`delete_artifact`) with coverage for row+file removal and idempotent missing-row behavior.
+- Hardened artifact persistence boundary itself:
+  - `store_bytes` and `finalize_draft` now auto-clean the just-written file when artifact row insert fails,
+  - coverage added for cleanup-on-insert-failure and cleanup-error surfacing.
 - Remaining Workstream 3 scope: standardize this compensation/finalization contract for remaining multi-resource write paths.
 
 ## Dependencies

@@ -70,20 +70,19 @@ pub fn store_bytes(
     let metadata_json =
         serde_json::to_string(metadata).map_err(|e| format!("artifact_metadata: {e}"))?;
     let conn = db::open_profile(app, profile_id)?;
-    conn.execute(
-        "INSERT INTO artifacts (id, type, local_relpath, sha256, bytes, created_at, metadata_json)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-        params![
-            artifact_id,
+    insert_artifact_row_with_cleanup(
+        &conn,
+        ArtifactInsertRow {
+            artifact_id: &artifact_id,
             artifact_type,
-            relpath,
-            sha256,
-            byte_len as i64,
-            created_at,
-            metadata_json
-        ],
-    )
-    .map_err(|e| format!("artifact_insert: {e}"))?;
+            relpath: &relpath,
+            sha256: &sha256,
+            byte_len: byte_len as i64,
+            created_at: &created_at,
+            metadata_json: &metadata_json,
+        },
+        &abspath,
+    )?;
 
     Ok(ArtifactRecord {
         id: artifact_id,
@@ -127,20 +126,19 @@ pub fn finalize_draft(
     let metadata_json =
         serde_json::to_string(metadata).map_err(|e| format!("artifact_metadata: {e}"))?;
     let conn = db::open_profile(app, profile_id)?;
-    conn.execute(
-        "INSERT INTO artifacts (id, type, local_relpath, sha256, bytes, created_at, metadata_json)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-        params![
-            draft.id,
-            draft.artifact_type,
-            draft.relpath,
-            sha256,
-            byte_len as i64,
-            created_at,
-            metadata_json
-        ],
-    )
-    .map_err(|e| format!("artifact_insert: {e}"))?;
+    insert_artifact_row_with_cleanup(
+        &conn,
+        ArtifactInsertRow {
+            artifact_id: &draft.id,
+            artifact_type: &draft.artifact_type,
+            relpath: &draft.relpath,
+            sha256: &sha256,
+            byte_len: byte_len as i64,
+            created_at: &created_at,
+            metadata_json: &metadata_json,
+        },
+        &draft.abspath,
+    )?;
 
     Ok(ArtifactRecord {
         id: draft.id,
@@ -188,6 +186,52 @@ fn delete_artifact_with_conn(
     Ok(())
 }
 
+struct ArtifactInsertRow<'a> {
+    artifact_id: &'a str,
+    artifact_type: &'a str,
+    relpath: &'a str,
+    sha256: &'a str,
+    byte_len: i64,
+    created_at: &'a str,
+    metadata_json: &'a str,
+}
+
+fn insert_artifact_row_with_cleanup(
+    conn: &Connection,
+    row: ArtifactInsertRow<'_>,
+    cleanup_path: &Path,
+) -> Result<(), String> {
+    let insert_result = conn.execute(
+        "INSERT INTO artifacts (id, type, local_relpath, sha256, bytes, created_at, metadata_json)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        params![
+            row.artifact_id,
+            row.artifact_type,
+            row.relpath,
+            row.sha256,
+            row.byte_len,
+            row.created_at,
+            row.metadata_json
+        ],
+    );
+    if let Err(err) = insert_result {
+        let persist_err = format!("artifact_insert: {err}");
+        match remove_file_if_exists(cleanup_path) {
+            Ok(()) => Err(persist_err),
+            Err(cleanup_err) => Err(format!("{persist_err}; {cleanup_err}")),
+        }
+    } else {
+        Ok(())
+    }
+}
+
+fn remove_file_if_exists(path: &Path) -> Result<(), String> {
+    if path.exists() {
+        std::fs::remove_file(path).map_err(|e| format!("artifact_cleanup_file: {e}"))?;
+    }
+    Ok(())
+}
+
 fn sha256_file(path: &PathBuf) -> Result<(String, u64), String> {
     let mut file = std::fs::File::open(path).map_err(|e| format!("artifact_open: {e}"))?;
     let mut hasher = Sha256::new();
@@ -218,7 +262,7 @@ fn to_hex(bytes: &[u8]) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::delete_artifact_with_conn;
+    use super::{delete_artifact_with_conn, insert_artifact_row_with_cleanup, ArtifactInsertRow};
     use rusqlite::{params, Connection};
     use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -300,5 +344,66 @@ mod tests {
 
         delete_artifact_with_conn(&conn, &profile_dir, "missing").expect("idempotent");
         let _ = std::fs::remove_dir_all(profile_dir);
+    }
+
+    #[test]
+    fn insert_artifact_row_with_cleanup_removes_file_on_insert_failure() {
+        let conn = Connection::open_in_memory().expect("open");
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("time")
+            .as_nanos();
+        let file_path =
+            std::env::temp_dir().join(format!("lepupitre-artifact-insert-fail-{nonce}.json"));
+        std::fs::write(&file_path, b"{}").expect("write");
+        assert!(file_path.exists());
+
+        let err = insert_artifact_row_with_cleanup(
+            &conn,
+            ArtifactInsertRow {
+                artifact_id: "art_1",
+                artifact_type: "feedback",
+                relpath: "artifacts/feedback/art_1.json",
+                sha256: "abc",
+                byte_len: 2,
+                created_at: "2026-02-28T00:00:00Z",
+                metadata_json: "{}",
+            },
+            &file_path,
+        )
+        .expect_err("insert should fail because artifacts table is missing");
+        assert!(err.contains("artifact_insert:"));
+        assert!(!file_path.exists());
+    }
+
+    #[test]
+    fn insert_artifact_row_with_cleanup_reports_cleanup_error() {
+        let conn = Connection::open_in_memory().expect("open");
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("time")
+            .as_nanos();
+        let dir_path = std::env::temp_dir().join(format!("lepupitre-artifact-cleanup-dir-{nonce}"));
+        std::fs::create_dir_all(&dir_path).expect("mkdir");
+        assert!(dir_path.is_dir());
+
+        let err = insert_artifact_row_with_cleanup(
+            &conn,
+            ArtifactInsertRow {
+                artifact_id: "art_2",
+                artifact_type: "feedback",
+                relpath: "artifacts/feedback/art_2.json",
+                sha256: "def",
+                byte_len: 2,
+                created_at: "2026-02-28T00:00:00Z",
+                metadata_json: "{}",
+            },
+            &dir_path,
+        )
+        .expect_err("insert should fail and cleanup should fail on directory path");
+        assert!(err.contains("artifact_insert:"));
+        assert!(err.contains("artifact_cleanup_file:"));
+
+        let _ = std::fs::remove_dir_all(dir_path);
     }
 }
