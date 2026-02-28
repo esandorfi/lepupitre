@@ -191,7 +191,11 @@ Acceptance:
 - Added compensation cleanup for peer-review import cross-resource failures:
   - on DB aggregate persist failure, created artifact rows/files are deleted,
   - cleanup behavior is test-covered for artifact row/file removal.
-- Remaining Workstream 3 scope: generalize cross-resource compensation/finalization patterns beyond peer-review import.
+- Generalized cross-resource compensation for feedback analysis flows:
+  - `run_analyze` now deletes just-created feedback artifact row/file when DB link persistence fails,
+  - `analyze_attempt` applies the same compensation pattern.
+- Added reusable artifact deletion helper (`delete_artifact`) with coverage for row+file removal and idempotent missing-row behavior.
+- Remaining Workstream 3 scope: standardize this compensation/finalization contract for remaining multi-resource write paths.
 
 ## Dependencies
 

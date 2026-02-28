@@ -257,14 +257,21 @@ pub fn run_analyze(
 
     let feedback_id = ids::new_id("fb");
     let now = time::now_rfc3339();
-    persist_run_feedback_link(
+    let persist_result = persist_run_feedback_link(
         &mut conn,
         &feedback_id,
         &run_id,
         &record.id,
         feedback.overall_score,
         &now,
-    )?;
+    );
+    if let Err(persist_err) = persist_result {
+        let cleanup_result = artifacts::delete_artifact(&app, &profile_id, &record.id);
+        return match cleanup_result {
+            Ok(()) => Err(persist_err),
+            Err(cleanup_err) => Err(format!("{persist_err}; {cleanup_err}")),
+        };
+    }
 
     Ok(RunAnalyzeResponse { feedback_id })
 }

@@ -1,9 +1,9 @@
 use crate::core::{db, ids, time};
-use rusqlite::params;
+use rusqlite::{params, Connection, OptionalExtension};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::io::Read;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub struct ArtifactRecord {
     pub id: String,
@@ -150,6 +150,44 @@ pub fn finalize_draft(
     })
 }
 
+pub fn delete_artifact(
+    app: &tauri::AppHandle,
+    profile_id: &str,
+    artifact_id: &str,
+) -> Result<(), String> {
+    let conn = db::open_profile(app, profile_id)?;
+    let profile_dir = db::profile_dir(app, profile_id)?;
+    delete_artifact_with_conn(&conn, &profile_dir, artifact_id)
+}
+
+fn delete_artifact_with_conn(
+    conn: &Connection,
+    profile_dir: &Path,
+    artifact_id: &str,
+) -> Result<(), String> {
+    let relpath: Option<String> = conn
+        .query_row(
+            "SELECT local_relpath FROM artifacts WHERE id = ?1",
+            [artifact_id],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(|e| format!("artifact_delete_lookup: {e}"))?;
+    let Some(relpath) = relpath else {
+        return Ok(());
+    };
+
+    conn.execute("DELETE FROM artifacts WHERE id = ?1", [artifact_id])
+        .map_err(|e| format!("artifact_delete_row: {e}"))?;
+
+    let abspath = profile_dir.join(relpath);
+    if abspath.exists() {
+        std::fs::remove_file(&abspath).map_err(|e| format!("artifact_delete_file: {e}"))?;
+    }
+
+    Ok(())
+}
+
 fn sha256_file(path: &PathBuf) -> Result<(String, u64), String> {
     let mut file = std::fs::File::open(path).map_err(|e| format!("artifact_open: {e}"))?;
     let mut hasher = Sha256::new();
@@ -176,4 +214,91 @@ fn to_hex(bytes: &[u8]) -> String {
         out.push_str(&format!("{:02x}", byte));
     }
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::delete_artifact_with_conn;
+    use rusqlite::{params, Connection};
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[test]
+    fn delete_artifact_with_conn_removes_row_and_file() {
+        let conn = Connection::open_in_memory().expect("open");
+        conn.execute_batch(
+            "CREATE TABLE artifacts (
+               id TEXT PRIMARY KEY,
+               type TEXT NOT NULL,
+               local_relpath TEXT NOT NULL,
+               sha256 TEXT NOT NULL,
+               bytes INTEGER NOT NULL,
+               created_at TEXT NOT NULL,
+               metadata_json TEXT NOT NULL
+             );",
+        )
+        .expect("schema");
+
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("time")
+            .as_nanos();
+        let profile_dir = std::env::temp_dir().join(format!("lepupitre-artifacts-delete-{nonce}"));
+        let artifact_path = profile_dir
+            .join("artifacts")
+            .join("feedback")
+            .join("art_1.json");
+        std::fs::create_dir_all(artifact_path.parent().expect("parent")).expect("mkdir");
+        std::fs::write(&artifact_path, b"{}").expect("write");
+
+        conn.execute(
+            "INSERT INTO artifacts (id, type, local_relpath, sha256, bytes, created_at, metadata_json)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+            params![
+                "art_1",
+                "feedback",
+                "artifacts/feedback/art_1.json",
+                "abc",
+                2i64,
+                "2026-02-28T00:00:00Z",
+                "{}"
+            ],
+        )
+        .expect("insert");
+
+        delete_artifact_with_conn(&conn, &profile_dir, "art_1").expect("delete");
+
+        let count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM artifacts WHERE id = 'art_1'",
+                [],
+                |row| row.get(0),
+            )
+            .expect("count");
+        assert_eq!(count, 0);
+        assert!(!artifact_path.exists());
+
+        let _ = std::fs::remove_dir_all(profile_dir);
+    }
+
+    #[test]
+    fn delete_artifact_with_conn_is_idempotent_for_missing_row() {
+        let conn = Connection::open_in_memory().expect("open");
+        conn.execute_batch(
+            "CREATE TABLE artifacts (
+               id TEXT PRIMARY KEY,
+               type TEXT NOT NULL,
+               local_relpath TEXT NOT NULL,
+               sha256 TEXT NOT NULL,
+               bytes INTEGER NOT NULL,
+               created_at TEXT NOT NULL,
+               metadata_json TEXT NOT NULL
+             );",
+        )
+        .expect("schema");
+        let profile_dir = std::env::temp_dir().join("lepupitre-artifacts-delete-missing");
+        std::fs::create_dir_all(&profile_dir).expect("mkdir");
+
+        delete_artifact_with_conn(&conn, &profile_dir, "missing").expect("idempotent");
+        let _ = std::fs::remove_dir_all(profile_dir);
+    }
 }
