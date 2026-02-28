@@ -229,6 +229,11 @@ Acceptance:
   - standardized preferences-domain module shape to `core/preferences/{mod.rs,queries.rs,repo.rs}`,
   - moved settings SQL builders/validation/data-access into preferences repo/query modules,
   - kept `preferences/mod.rs` orchestration-only with unchanged behavior and passing tests.
+- Workstream 4 slice delivered:
+  - standardized coach-domain module shape to `core/coach/{mod.rs,queries.rs,repo.rs,types.rs}`,
+  - moved coach read SQL and mapping into coach repo/query modules,
+  - kept `coach/mod.rs` orchestration + pure domain logic with unchanged behavior and passing tests.
+- 2026-02-28: Workstream 4 completed.
 
 ## Dependencies
 

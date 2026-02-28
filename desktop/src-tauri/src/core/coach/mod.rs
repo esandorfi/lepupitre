@@ -1,55 +1,15 @@
+mod queries;
+mod repo;
+mod types;
+
 use crate::core::db;
 use chrono::{Days, NaiveDate, Utc};
-use rusqlite::{params, OptionalExtension};
-use serde::Serialize;
 use tauri::AppHandle;
+
+pub use types::{MascotMessage, ProgressSnapshot, TalksBlueprint, TalksBlueprintStep};
 
 const WEEKLY_TARGET_DEFAULT: i64 = 5;
 const CREDIT_STEP: i64 = 50;
-
-#[derive(Debug, Serialize)]
-pub struct ProgressSnapshot {
-    pub project_id: String,
-    pub attempts_total: i64,
-    pub feedback_ready_total: i64,
-    pub streak_days: i64,
-    pub weekly_target: i64,
-    pub weekly_completed: i64,
-    pub credits: i64,
-    pub next_milestone: i64,
-    pub last_attempt_at: Option<String>,
-}
-
-#[derive(Debug, Serialize)]
-pub struct MascotMessage {
-    pub id: String,
-    pub kind: String,
-    pub title: String,
-    pub body: String,
-    pub cta_label: Option<String>,
-    pub cta_route: Option<String>,
-}
-
-#[derive(Debug, Serialize)]
-pub struct TalksBlueprintStep {
-    pub id: String,
-    pub title: String,
-    pub done: bool,
-    pub reward_credits: i64,
-    pub cta_route: Option<String>,
-}
-
-#[derive(Debug, Serialize)]
-pub struct TalksBlueprint {
-    pub project_id: String,
-    pub project_title: String,
-    pub framework_id: String,
-    pub framework_label: String,
-    pub framework_summary: String,
-    pub completion_percent: i64,
-    pub steps: Vec<TalksBlueprintStep>,
-    pub next_step_id: Option<String>,
-}
 
 pub fn progress_get_snapshot(
     app: &AppHandle,
@@ -58,7 +18,7 @@ pub fn progress_get_snapshot(
 ) -> Result<ProgressSnapshot, String> {
     db::ensure_profile_exists(app, profile_id)?;
     let conn = db::open_profile(app, profile_id)?;
-    let resolved_project_id = resolve_project_id(&conn, project_id)?;
+    let resolved_project_id = repo::resolve_project_id(&conn, project_id)?;
     build_progress_snapshot(&conn, &resolved_project_id)
 }
 
@@ -71,7 +31,7 @@ pub fn mascot_get_context_message(
 ) -> Result<MascotMessage, String> {
     db::ensure_profile_exists(app, profile_id)?;
     let conn = db::open_profile(app, profile_id)?;
-    let resolved_project_id = resolve_project_id(&conn, project_id)?;
+    let resolved_project_id = repo::resolve_project_id(&conn, project_id)?;
     let snapshot = build_progress_snapshot(&conn, &resolved_project_id)?;
     Ok(build_mascot_message(
         route_name.trim().to_ascii_lowercase(),
@@ -88,90 +48,28 @@ pub fn talks_get_blueprint(
 ) -> Result<TalksBlueprint, String> {
     db::ensure_profile_exists(app, profile_id)?;
     let conn = db::open_profile(app, profile_id)?;
-
-    let project = conn
-        .query_row(
-            "SELECT id, title, audience, goal, duration_target_sec, stage
-             FROM talk_projects
-             WHERE id = ?1",
-            params![project_id],
-            |row| {
-                Ok((
-                    row.get::<_, String>(0)?,
-                    row.get::<_, String>(1)?,
-                    row.get::<_, Option<String>>(2)?,
-                    row.get::<_, Option<String>>(3)?,
-                    row.get::<_, Option<i64>>(4)?,
-                    row.get::<_, String>(5)?,
-                ))
-            },
-        )
-        .map_err(|e| format!("talks_blueprint_project_lookup: {e}"))?;
-
-    let outline_len: i64 = conn
-        .query_row(
-            "SELECT LENGTH(TRIM(COALESCE(outline_md, '')))
-             FROM talk_outlines
-             WHERE project_id = ?1",
-            params![project.0.as_str()],
-            |row| row.get::<_, Option<i64>>(0),
-        )
-        .optional()
-        .map_err(|e| format!("talks_blueprint_outline_lookup: {e}"))?
-        .flatten()
-        .unwrap_or(0);
-
-    let quest_attempts: i64 = conn
-        .query_row(
-            "SELECT COUNT(*) FROM quest_attempts WHERE project_id = ?1",
-            params![project.0.as_str()],
-            |row| row.get(0),
-        )
-        .map_err(|e| format!("talks_blueprint_attempts_lookup: {e}"))?;
-    let runs_total: i64 = conn
-        .query_row(
-            "SELECT COUNT(*) FROM runs WHERE project_id = ?1",
-            params![project.0.as_str()],
-            |row| row.get(0),
-        )
-        .map_err(|e| format!("talks_blueprint_runs_lookup: {e}"))?;
-    let quest_feedback: i64 = conn
-        .query_row(
-            "SELECT COUNT(*) FROM quest_attempts
-             WHERE project_id = ?1 AND feedback_id IS NOT NULL",
-            params![project.0.as_str()],
-            |row| row.get(0),
-        )
-        .map_err(|e| format!("talks_blueprint_quest_feedback_lookup: {e}"))?;
-    let run_feedback: i64 = conn
-        .query_row(
-            "SELECT COUNT(*) FROM runs
-             WHERE project_id = ?1 AND feedback_id IS NOT NULL",
-            params![project.0.as_str()],
-            |row| row.get(0),
-        )
-        .map_err(|e| format!("talks_blueprint_run_feedback_lookup: {e}"))?;
+    let source = repo::load_talks_blueprint_source(&conn, project_id)?;
 
     let fr = locale
         .unwrap_or("en")
         .trim()
         .to_ascii_lowercase()
         .starts_with("fr");
-    let framework = select_framework(project.3.as_deref(), project.2.as_deref(), fr);
+    let framework = select_framework(source.goal.as_deref(), source.audience.as_deref(), fr);
     let define_done = is_define_done(
-        project.1.trim(),
-        project.2.as_deref(),
-        project.3.as_deref(),
-        project.4,
+        source.project_title.trim(),
+        source.audience.as_deref(),
+        source.goal.as_deref(),
+        source.duration_target_sec,
     );
-    let structure_done = outline_len > 20;
-    let rehearse_done = (quest_attempts + runs_total) > 0;
-    let feedback_done = (quest_feedback + run_feedback) > 0;
-    let ship_done = project.5 == "export";
+    let structure_done = source.outline_len > 20;
+    let rehearse_done = (source.quest_attempts + source.runs_total) > 0;
+    let feedback_done = (source.quest_feedback + source.run_feedback) > 0;
+    let ship_done = source.stage == "export";
 
     let steps = build_talks_steps(
         fr,
-        project.0.as_str(),
+        source.project_id.as_str(),
         define_done,
         structure_done,
         rehearse_done,
@@ -186,8 +84,8 @@ pub fn talks_get_blueprint(
         .map(|step| step.id.clone());
 
     Ok(TalksBlueprint {
-        project_id: project.0,
-        project_title: project.1,
+        project_id: source.project_id,
+        project_title: source.project_title,
         framework_id: framework.0,
         framework_label: framework.1,
         framework_summary: framework.2,
@@ -201,128 +99,29 @@ fn build_progress_snapshot(
     conn: &rusqlite::Connection,
     project_id: &str,
 ) -> Result<ProgressSnapshot, String> {
-    let attempts_total: i64 = conn
-        .query_row(
-            "SELECT COUNT(*) FROM quest_attempts WHERE project_id = ?1",
-            params![project_id],
-            |row| row.get(0),
-        )
-        .map_err(|e| format!("progress_attempts_total: {e}"))?;
-
-    let feedback_ready_total: i64 = conn
-        .query_row(
-            "SELECT COUNT(*) FROM quest_attempts
-             WHERE project_id = ?1 AND feedback_id IS NOT NULL",
-            params![project_id],
-            |row| row.get(0),
-        )
-        .map_err(|e| format!("progress_feedback_total: {e}"))?;
-
-    let last_attempt_at: Option<String> = conn
-        .query_row(
-            "SELECT MAX(created_at) FROM quest_attempts WHERE project_id = ?1",
-            params![project_id],
-            |row| row.get(0),
-        )
-        .optional()
-        .map_err(|e| format!("progress_last_attempt: {e}"))?
-        .flatten();
-
     let cutoff = (Utc::now() - chrono::Duration::days(6)).to_rfc3339();
-    let weekly_completed: i64 = conn
-        .query_row(
-            "SELECT COUNT(*) FROM quest_attempts
-             WHERE project_id = ?1 AND created_at >= ?2",
-            params![project_id, cutoff],
-            |row| row.get(0),
-        )
-        .map_err(|e| format!("progress_weekly_completed: {e}"))?;
+    let stats = repo::load_progress_stats(conn, project_id, &cutoff)?;
+    let days = repo::load_streak_days(conn, project_id)?;
 
-    let streak_days = calculate_streak_days(conn, project_id)?;
-    let credits = calculate_credits(attempts_total, feedback_ready_total, streak_days);
+    let streak_days = streak_from_days(&days, Utc::now().date_naive());
+    let credits = calculate_credits(
+        stats.attempts_total,
+        stats.feedback_ready_total,
+        streak_days,
+    );
     let next_milestone = next_milestone(credits);
 
     Ok(ProgressSnapshot {
         project_id: project_id.to_string(),
-        attempts_total,
-        feedback_ready_total,
+        attempts_total: stats.attempts_total,
+        feedback_ready_total: stats.feedback_ready_total,
         streak_days,
         weekly_target: WEEKLY_TARGET_DEFAULT,
-        weekly_completed,
+        weekly_completed: stats.weekly_completed,
         credits,
         next_milestone,
-        last_attempt_at,
+        last_attempt_at: stats.last_attempt_at,
     })
-}
-
-fn resolve_project_id(
-    conn: &rusqlite::Connection,
-    requested_project_id: Option<&str>,
-) -> Result<String, String> {
-    if let Some(project_id) = requested_project_id {
-        let exists: i64 = conn
-            .query_row(
-                "SELECT COUNT(*) FROM talk_projects WHERE id = ?1",
-                params![project_id],
-                |row| row.get(0),
-            )
-            .map_err(|e| format!("progress_project_exists: {e}"))?;
-        if exists == 0 {
-            return Err("project_not_found".to_string());
-        }
-        return Ok(project_id.to_string());
-    }
-
-    let training_project_id = conn
-        .query_row(
-            "SELECT id FROM talk_projects WHERE COALESCE(is_training, 0) = 1 LIMIT 1",
-            [],
-            |row| row.get::<_, String>(0),
-        )
-        .optional()
-        .map_err(|e| format!("progress_training_project: {e}"))?;
-    if let Some(project_id) = training_project_id {
-        return Ok(project_id);
-    }
-
-    let active_project_id = conn
-        .query_row(
-            "SELECT active_project_id FROM active_state WHERE id = 1",
-            [],
-            |row| row.get::<_, Option<String>>(0),
-        )
-        .optional()
-        .map_err(|e| format!("progress_active_project: {e}"))?
-        .flatten();
-    if let Some(project_id) = active_project_id {
-        return Ok(project_id);
-    }
-
-    Err("project_not_found".to_string())
-}
-
-fn calculate_streak_days(conn: &rusqlite::Connection, project_id: &str) -> Result<i64, String> {
-    let mut stmt = conn
-        .prepare(
-            "SELECT DISTINCT substr(created_at, 1, 10) AS day
-             FROM quest_attempts
-             WHERE project_id = ?1
-             ORDER BY day DESC
-             LIMIT 90",
-        )
-        .map_err(|e| format!("progress_streak_prepare: {e}"))?;
-    let rows = stmt
-        .query_map(params![project_id], |row| row.get::<_, String>(0))
-        .map_err(|e| format!("progress_streak_query: {e}"))?;
-
-    let mut days = Vec::new();
-    for row in rows {
-        let day = row.map_err(|e| format!("progress_streak_row: {e}"))?;
-        if let Ok(parsed) = NaiveDate::parse_from_str(&day, "%Y-%m-%d") {
-            days.push(parsed);
-        }
-    }
-    Ok(streak_from_days(&days, Utc::now().date_naive()))
 }
 
 fn streak_from_days(days_desc: &[NaiveDate], today: NaiveDate) -> i64 {

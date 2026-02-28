@@ -7,7 +7,7 @@ Last updated: 2026-02-28
 ## Checkpoint snapshot
 
 - Plan source: [PLAN-TAURI-SQL-HARDENING.md](PLAN-TAURI-SQL-HARDENING.md)
-- Current phase: Workstream 4 (data-access module boundaries)
+- Current phase: Workstream 5 (recovery, backup, operability)
 - Last completed slice:
   - extracted run-domain data access from `commands/run.rs` to `core/run.rs`
   - command layer now wrapper-only for run commands
@@ -17,11 +17,12 @@ Last updated: 2026-02-28
   - standardized preferences-domain module shape to `core/preferences/{mod.rs,queries.rs,repo.rs}`
   - extracted coach-domain data access/read-model logic from `commands/coach.rs` to `core/coach.rs`
   - command layer now wrapper-only for coach commands
-- Last known checkpoint commit: `c5a85f8` (updated in-progress after this checkpoint)
+  - standardized coach-domain module shape to `core/coach/{mod.rs,queries.rs,repo.rs,types.rs}`
+- Last known checkpoint commit: `a5837a9` (updated in-progress after this checkpoint)
 
 ## Resume goal
 
-Continue Workstream 4 by removing direct SQL from command wrappers and consolidating data-access logic under `core/<domain>` modules with typed contracts and tests.
+Start Workstream 5 by implementing safe local backup/recovery flow around migrations and adding DB health diagnostics.
 
 ## Resume checklist (ordered)
 
@@ -31,19 +32,15 @@ Continue Workstream 4 by removing direct SQL from command wrappers and consolida
   - `cargo test --manifest-path desktop/src-tauri/Cargo.toml`
   - `pnpm -C desktop docs:lint`
 
-1. Slice C: structure standardization
-- [x] Normalize run-domain module shape:
-  - `queries.rs` for SQL text/builders
-  - `repo.rs` for typed DB operations
-  - `types.rs` for run DTOs
-- [x] Normalize preferences-domain module shape:
-  - `queries.rs` for SQL builders
-  - `repo.rs` for validation + typed DB operations
-- [ ] Normalize coach-domain module shape:
-  - `queries.rs` for read SQL text
-  - `repo.rs` for typed read-model mapping
-  - `types.rs` for coach DTOs (or explicit reuse of domain types)
-- [ ] Ensure command wrappers contain no direct SQL after each slice.
+1. Workstream 5 kickoff
+- [ ] Define backup trigger points (before migration and before risky schema writes).
+- [ ] Implement profile/global DB snapshot helper with deterministic naming and retention rules.
+- [ ] Add restore path and failure handling for corrupted DB startup scenario.
+- [ ] Add diagnostics command/report:
+  - schema version
+  - migration continuity status
+  - `PRAGMA integrity_check`
+  - `PRAGMA foreign_key_check`
 
 1. Guard rails + docs per slice
 - [ ] Update [PLAN-TAURI-SQL-HARDENING.md](PLAN-TAURI-SQL-HARDENING.md) progress bullets.
@@ -52,10 +49,10 @@ Continue Workstream 4 by removing direct SQL from command wrappers and consolida
   - [docs/CONTRIBUTION_RULES.md](../CONTRIBUTION_RULES.md)
 - [ ] Keep [docs/STATUS.md](../STATUS.md) next-action aligned.
 
-1. Done criteria for Workstream 4
-- [ ] Critical command modules no longer contain direct SQL mutation/query logic.
-- [ ] Domain DB modules own typed access contracts and tests.
-- [ ] CI/test/docs checks pass.
+1. Done criteria for Workstream 5
+- [ ] Backup/restore flow is implemented and testable.
+- [ ] Corruption handling path is deterministic and documented.
+- [ ] Diagnostics are available for local support and CI assertions.
 
 ## Quick commands
 
