@@ -37,6 +37,19 @@ type RewardBadge = {
   target: number;
 };
 
+type AchievementPulse = {
+  id: string;
+  title: string;
+  body: string;
+  ctaLabel: string;
+  ctaRoute: string;
+};
+
+type AchievementMemory = {
+  creditTier: number;
+  maxStreak: number;
+};
+
 const { t, locale } = useI18n();
 const { settings: uiSettings } = useUiPreferences();
 const state = computed(() => appStore.state);
@@ -59,6 +72,7 @@ const availableQuests = ref<Quest[]>([]);
 const questPickerSearchEl = ref<HTMLInputElement | null>(null);
 const questPickerListEl = ref<HTMLElement | null>(null);
 const questPickerActiveCode = ref<string | null>(null);
+const achievementPulse = ref<AchievementPulse | null>(null);
 
 const feedbackAttempts = computed(() =>
   recentAttempts.value.filter((attempt) => Boolean(attempt.feedback_id))
@@ -426,6 +440,93 @@ function writeStoredHeroQuestCode(profileId: string, questCode: string | null) {
   }
 }
 
+function trainingAchievementStorageKey(profileId: string) {
+  return `lepupitre.training.achievements.${profileId}`;
+}
+
+function readAchievementMemory(profileId: string): AchievementMemory | null {
+  try {
+    const raw = window.localStorage.getItem(trainingAchievementStorageKey(profileId));
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw) as Partial<AchievementMemory>;
+    if (
+      typeof parsed.creditTier === "number" &&
+      Number.isFinite(parsed.creditTier) &&
+      typeof parsed.maxStreak === "number" &&
+      Number.isFinite(parsed.maxStreak)
+    ) {
+      return {
+        creditTier: Math.max(0, Math.floor(parsed.creditTier)),
+        maxStreak: Math.max(0, Math.floor(parsed.maxStreak)),
+      };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function writeAchievementMemory(profileId: string, memory: AchievementMemory) {
+  try {
+    window.localStorage.setItem(
+      trainingAchievementStorageKey(profileId),
+      JSON.stringify(memory)
+    );
+  } catch {
+    // non-blocking local preference
+  }
+}
+
+function evaluateAchievementPulse(profileId: string, progress: ProgressSnapshot): AchievementPulse | null {
+  const currentTier = Math.max(0, Math.floor(progress.credits / 50));
+  const currentStreak = Math.max(0, progress.streak_days);
+  const previous = readAchievementMemory(profileId);
+  if (!previous) {
+    writeAchievementMemory(profileId, {
+      creditTier: currentTier,
+      maxStreak: currentStreak,
+    });
+    return null;
+  }
+
+  const nextMemory: AchievementMemory = {
+    creditTier: Math.max(previous.creditTier, currentTier),
+    maxStreak: Math.max(previous.maxStreak, currentStreak),
+  };
+
+  let pulse: AchievementPulse | null = null;
+  if (previous.maxStreak < 7 && currentStreak >= 7) {
+    pulse = {
+      id: "streak-7",
+      title: t("training.achievement_streak7_title"),
+      body: t("training.achievement_streak7_body"),
+      ctaLabel: t("training.achievement_cta_boss_run"),
+      ctaRoute: "/boss-run",
+    };
+  } else if (previous.maxStreak < 3 && currentStreak >= 3) {
+    pulse = {
+      id: "streak-3",
+      title: t("training.achievement_streak3_title"),
+      body: t("training.achievement_streak3_body"),
+      ctaLabel: t("training.achievement_cta_training"),
+      ctaRoute: "/training",
+    };
+  } else if (currentTier > previous.creditTier) {
+    pulse = {
+      id: "credits-tier",
+      title: t("training.achievement_levelup_title"),
+      body: t("training.achievement_levelup_body"),
+      ctaLabel: t("training.achievement_cta_feedback"),
+      ctaRoute: "/feedback",
+    };
+  }
+
+  writeAchievementMemory(profileId, nextMemory);
+  return pulse;
+}
+
 function questRoute(code: string) {
   if (!trainingProjectId.value) {
     return "/training";
@@ -508,6 +609,9 @@ async function loadTrainingData() {
     recentAttempts.value = attempts;
     trainingProgress.value = progress;
     mascotMessage.value = mascot;
+    if (activeProfileId) {
+      achievementPulse.value = evaluateAchievementPulse(activeProfileId, progress);
+    }
     void preloadQuestCatalog();
   } catch (err) {
     trainingError.value = toError(err);
@@ -515,6 +619,7 @@ async function loadTrainingData() {
     recentAttempts.value = [];
     trainingProgress.value = null;
     mascotMessage.value = null;
+    achievementPulse.value = null;
   } finally {
     isTrainingLoading.value = false;
   }
@@ -678,6 +783,7 @@ watch(
     questPickerSort.value = "recent";
     trainingActivityTab.value = "feedback";
     selectedHeroQuest.value = null;
+    achievementPulse.value = null;
     await loadTrainingData();
   }
 );
@@ -777,6 +883,34 @@ watch(
       </div>
       <div v-else class="app-muted app-text-body mt-2">
         {{ t("home.quest_empty") }}
+      </div>
+    </div>
+
+    <div
+      v-if="achievementPulse && !trainingError"
+      class="app-panel app-panel-compact border border-[var(--color-success)] bg-[color-mix(in_srgb,var(--color-success)_12%,var(--color-surface))]"
+    >
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div class="min-w-0 flex-1">
+          <div class="app-text-eyebrow">{{ t("training.achievement_title") }}</div>
+          <div class="app-text app-text-subheadline mt-1">{{ achievementPulse.title }}</div>
+          <div class="app-muted app-text-body mt-1">{{ achievementPulse.body }}</div>
+        </div>
+        <div class="flex items-center gap-2">
+          <RouterLink
+            class="app-button-secondary app-focus-ring app-button-sm inline-flex items-center"
+            :to="achievementPulse.ctaRoute"
+          >
+            {{ achievementPulse.ctaLabel }}
+          </RouterLink>
+          <button
+            class="app-button-ghost app-focus-ring app-button-sm inline-flex items-center"
+            type="button"
+            @click="achievementPulse = null"
+          >
+            {{ t("training.achievement_dismiss") }}
+          </button>
+        </div>
       </div>
     </div>
 
