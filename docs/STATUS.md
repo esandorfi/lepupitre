@@ -24,7 +24,6 @@ This file tracks what is canonical, proposal-only, and archived.
 | [docs/plan/PLAN-WHISPER-LOCAL-TRANSCRIPTION.md](plan/PLAN-WHISPER-LOCAL-TRANSCRIPTION.md) | ASR deep plan | implemented | ASR maintainers | Keep synchronized with implementation |
 | [docs/plan/PLAN-TAURI-SQL-HARDENING.md](plan/PLAN-TAURI-SQL-HARDENING.md) | SQLite hardening execution plan | proposed | Maintainers | Execute by vertical slices and promote implemented rules to canonical docs |
 | [docs/plan/PLAN-UI-PREFERENCES-STORAGE.md](plan/PLAN-UI-PREFERENCES-STORAGE.md) | UI preference persistence migration | in_progress | Maintainers | Complete Tauri-native backend migration after boundary enforcement |
-| [docs/plan/PLAN-TEST-GUARDRAILS.md](plan/PLAN-TEST-GUARDRAILS.md) | Living-spec test quality gates | proposed | Maintainers | Implement test matrix, obligation checks, and command integration expansion |
 | [docs/plan/PLAN-DOMAIN-CODE-ALIGNMENT.md](plan/PLAN-DOMAIN-CODE-ALIGNMENT.md) | Bounded-context code organization migration | proposed | Maintainers | Deliver context-first directory migration with structural guard rails |
 
 ## Active spec docs (`spec/active/`)
@@ -61,6 +60,7 @@ This file tracks what is canonical, proposal-only, and archived.
 | [docs/archive/SPEC_COHERENCE_REVIEW.md](archive/SPEC_COHERENCE_REVIEW.md) | Historical baseline review; no longer active implementation contract |
 | [docs/archive/UI_AUDIT_MACOS_DESKTOP_REPORT.md](archive/UI_AUDIT_MACOS_DESKTOP_REPORT.md) | Historical audit baseline replaced by active UI specs |
 | [docs/archive/DESIGN_SYSTEM.md](archive/DESIGN_SYSTEM.md) | Archived implementation contract while UI is redesigned |
+| [docs/archive/PLAN-TEST-GUARDRAILS.md](archive/PLAN-TEST-GUARDRAILS.md) | Superseded by `docs/testing/TEST_MATRIX.md` as single active testing source |
 | [docs/archive/adr/](archive/adr/) | Historical ADR baseline; no new ADRs maintained |
 
 ## Immediate cleanup queue

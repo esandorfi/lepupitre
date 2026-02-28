@@ -1,8 +1,10 @@
 # PLAN-TEST-GUARDRAILS
 
-Status: proposed  
+Status: superseded  
 Owner: maintainers  
 Last updated: 2026-02-28
+
+Superseded by [docs/testing/TEST_MATRIX.md](../testing/TEST_MATRIX.md), which is the single active testing source of truth.
 
 ## Objective
 

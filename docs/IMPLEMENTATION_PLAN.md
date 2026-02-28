@@ -103,7 +103,8 @@ Scope:
 - Keep tests readable as specification (Given/When/Then naming and domain contracts).
 
 Execution detail:
-- [docs/plan/PLAN-TEST-GUARDRAILS.md](plan/PLAN-TEST-GUARDRAILS.md)
+- [docs/testing/TEST_MATRIX.md](testing/TEST_MATRIX.md)
+- `scripts/check-test-obligations.sh`
 
 Done when:
 - Core use-cases have deterministic tests at logic and command integration levels.
