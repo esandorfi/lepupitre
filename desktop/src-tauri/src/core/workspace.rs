@@ -42,7 +42,12 @@ pub fn profile_list(app: &AppHandle) -> Result<Vec<ProfileSummary>, String> {
     Ok(profiles)
 }
 
-fn profile_create_row(conn: &mut Connection, name: &str, id: &str, now: &str) -> Result<(), String> {
+fn profile_create_row(
+    conn: &mut Connection,
+    name: &str,
+    id: &str,
+    now: &str,
+) -> Result<(), String> {
     let tx = conn.transaction().map_err(|e| format!("tx_create: {e}"))?;
     let existing: i64 = tx
         .query_row(
@@ -309,13 +314,23 @@ mod tests {
         conn.execute(
             "INSERT INTO profiles (id, name, created_at, last_opened_at, is_active)
              VALUES (?1, ?2, ?3, ?4, 1)",
-            params!["prof_a", "A", "2026-02-28T00:00:00Z", "2026-02-28T00:00:00Z"],
+            params![
+                "prof_a",
+                "A",
+                "2026-02-28T00:00:00Z",
+                "2026-02-28T00:00:00Z"
+            ],
         )
         .expect("seed a");
         conn.execute(
             "INSERT INTO profiles (id, name, created_at, last_opened_at, is_active)
              VALUES (?1, ?2, ?3, ?4, 0)",
-            params!["prof_b", "B", "2026-02-28T00:00:01Z", "2026-02-28T00:00:01Z"],
+            params![
+                "prof_b",
+                "B",
+                "2026-02-28T00:00:01Z",
+                "2026-02-28T00:00:01Z"
+            ],
         )
         .expect("seed b");
         conn.execute_batch(
@@ -338,5 +353,61 @@ mod tests {
             })
             .expect("active stays original");
         assert_eq!(active_id, "prof_a");
+    }
+
+    #[test]
+    fn delete_profile_rolls_back_on_fallback_activate_failure() {
+        let mut conn = test_conn();
+        conn.execute(
+            "INSERT INTO profiles (id, name, created_at, last_opened_at, is_active)
+             VALUES (?1, ?2, ?3, ?4, 1)",
+            params![
+                "prof_active",
+                "Active",
+                "2026-02-28T00:00:00Z",
+                "2026-02-28T00:00:00Z"
+            ],
+        )
+        .expect("seed active");
+        conn.execute(
+            "INSERT INTO profiles (id, name, created_at, last_opened_at, is_active)
+             VALUES (?1, ?2, ?3, ?4, 0)",
+            params![
+                "prof_fallback",
+                "Fallback",
+                "2026-02-28T00:00:01Z",
+                "2026-02-28T00:00:01Z"
+            ],
+        )
+        .expect("seed fallback");
+        conn.execute_batch(
+            "CREATE TRIGGER fail_activate_fallback
+             BEFORE UPDATE OF is_active ON profiles
+             WHEN NEW.id = 'prof_fallback' AND NEW.is_active = 1
+             BEGIN
+               SELECT RAISE(FAIL, 'fallback activate blocked');
+             END;",
+        )
+        .expect("trigger");
+
+        let err = profile_delete_row(&mut conn, "prof_active", "2026-02-28T00:00:02Z")
+            .expect_err("fallback activation should fail");
+        assert!(err.contains("activate:"));
+
+        let active_id: String = conn
+            .query_row("SELECT id FROM profiles WHERE is_active = 1", [], |row| {
+                row.get(0)
+            })
+            .expect("active restored");
+        assert_eq!(active_id, "prof_active");
+
+        let active_exists: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM profiles WHERE id = 'prof_active'",
+                [],
+                |row| row.get(0),
+            )
+            .expect("active row count");
+        assert_eq!(active_exists, 1);
     }
 }

@@ -177,7 +177,12 @@ Acceptance:
   - migration order now includes `0007_fk_constraints`,
   - legacy upgrade path verifies orphan normalization behavior,
   - FK enforcement test rejects invalid references after migration.
-- Remaining Workstream 3 scope: transaction boundaries for multi-step writes and rollback tests on injected failure paths.
+- Added explicit transaction boundaries for multi-step workspace profile writes (`create`, `switch`, `delete`) using `rusqlite` transactions.
+- Added rollback tests for injected failure paths in workspace writes:
+  - create rollback on insert failure,
+  - switch rollback on activation failure,
+  - delete rollback on fallback activation failure.
+- Remaining Workstream 3 scope: extend transaction boundaries and rollback tests to other critical multi-step write paths beyond workspace flows.
 
 ## Dependencies
 
