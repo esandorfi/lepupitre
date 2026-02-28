@@ -5,7 +5,7 @@ Thanks for contributing.
 ## Before you start
 - Read `README.md`, `docs/ARCHITECTURE.md`, and `docs/README.md`.
 - Check `docs/IMPLEMENTATION_PLAN.md` for current priorities.
-- Follow `docs/CONTRIBUTION_RULES.md` for ADR/changelog/test requirements.
+- Follow `docs/CONTRIBUTION_RULES.md` for decision/changelog/test requirements.
 
 ## Development setup
 1. Install prerequisites from `README.md`.
@@ -41,5 +41,6 @@ Thanks for contributing.
 
 ## Documentation policy
 - OSS-facing source of truth: `README*` and `docs/`.
-- `spec/` is design-flow material and may evolve or move later.
+- `spec/active/` is design-flow material and may evolve.
+- `spec/archive/` is historical context only.
 - If a contract changes (IPC payload, schema, migration), update all affected layers and docs.

@@ -30,14 +30,14 @@
 
 ## MR plan (incremental)
 
-### MR1 — Architecture + contracts (ADR, settings, events)
+### MR1 — Architecture + contracts (decision record, settings, events)
 **Goals**
-- Decide sidecar vs FFI in ADR (sidecar).
+- Decide sidecar vs FFI in decision record (sidecar).
 - Define event schema + settings contract.
 - Establish model management policy and UI settings layout.
 
 **Deliverables**
-- ADR: sidecar + model management + event versioning.
+- Decision record: sidecar + model management + event versioning.
 - IPC contracts for:
   - `recording.start`, `recording.stop`
   - `asr/partial/v1`, `asr/commit/v1`, `asr/final_progress/v1`, `asr/final_result/v1`

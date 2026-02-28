@@ -18,10 +18,10 @@ Features already in place:
   - `SECURITY.md` (vulnerability reporting)
 - Maintainer/engineering docs:
   - `docs/ARCHITECTURE.md` (architecture and release operations)
-  - `docs/` (plans, ADRs, implementation guidance)
+  - `docs/` (plans, archived ADR history, implementation guidance)
 - Design-flow docs:
-  - `spec/` stores architecture/product/UI design flows used during iteration.
-  - `spec/` is intentionally kept as design material and may be moved later to internal technical documentation.
+  - `spec/active/` stores current architecture/product/UI design flows used during iteration.
+  - `spec/archive/` stores superseded/historical design material.
 
 ## 3) Coherence review (summary)
 ### Aligned
@@ -78,11 +78,11 @@ Install repo deps and run:
 1. Read `README.md` (this document).
 2. Read `docs/ARCHITECTURE.md` (architecture details).
 3. Read `docs/IMPLEMENTATION_PLAN.md` (incremental, executable plan).
-4. Read `docs/CONTRIBUTION_RULES.md` (docs/tests/changelog/ADR rules).
-5. Read the mandatory ADRs (`docs/adr/ADR-AUDIO-0001-...` and `docs/adr/ADR-SEC-0002-...`).
+4. Read `docs/CONTRIBUTION_RULES.md` (docs/tests/changelog/decision rules).
+5. Read the active decision log (`spec/active/DECISIONS.md`) and archived ADR baseline (`docs/archive/adr/`).
 6. Open `docs/README.md` for the complete docs map.
 7. Open `docs/STATUS.md` for current docs/spec lifecycle state.
-8. Open `spec/` for current design-flow references.
+8. Open `spec/active/` for current design-flow references.
 
 ## 5) Quality rules (pragmatic SOTA)
 - Local-first by design (network off by default).
@@ -91,13 +91,13 @@ Install repo deps and run:
 - Secrets kept out of SQLite (keyring/stronghold).
 - Tests required per pass.
 - Blocking lint in CI for backend and frontend.
-- Decision traceability via ADRs.
+- Decision traceability via `spec/active/DECISIONS.md`.
 
 ## 6) Standard dev workflow
 1. Pick an item from the plan (`docs/IMPLEMENTATION_PLAN.md`).
 2. Implement a minimal vertical slice (back + front wired).
 3. Run lint + tests.
-4. Update docs/ADR/changelog per the rules.
+4. Update docs/decision log/changelog per the rules.
 5. Commit.
 
 ## 7) Expected validation commands
@@ -129,4 +129,4 @@ Install repo deps and run:
 - Community policy: `CODE_OF_CONDUCT.md`
 - Security reporting: `SECURITY.md`
 - Contributor process gates: `docs/CONTRIBUTION_RULES.md`
-- Agent behavior rules: `docs/CODEX_RULES.md`
+- Agent behavior rules: `AGENTS.md`

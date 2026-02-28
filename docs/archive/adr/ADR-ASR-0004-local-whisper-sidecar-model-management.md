@@ -53,6 +53,6 @@ We also need a model lifecycle that starts lightweight (tiny) and allows upgrade
 - Evaluate live latency defaults per device class.
 
 ## References
-- `spec/spec_whisper.md`
+- `spec/active/asr/SPEC-ASR-WHISPER.md`
 - `docs/plan/PLAN-WHISPER-LOCAL-TRANSCRIPTION.md`
 - `desktop/src-tauri/src/commands/transcription.rs`

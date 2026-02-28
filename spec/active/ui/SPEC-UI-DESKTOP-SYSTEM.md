@@ -10,10 +10,10 @@ Purpose:
 
 This spec complements:
 
-- `docs/DESIGN_SYSTEM.md` (canonical implemented rules)
 - `docs/archive/UI_AUDIT_MACOS_DESKTOP_REPORT.md` (historical audit + rationale)
 
-When this spec is implemented/approved, the relevant rules must be merged into `docs/DESIGN_SYSTEM.md`.
+This file is the active UI system reference during the redesign phase.
+If a canonical implemented UI contract is reintroduced in `docs/`, promote stabilized rules there.
 
 ## 1) Scope
 
@@ -420,7 +420,7 @@ Tasks:
 - add semantic typography classes (`app-text-caption`, `app-text-meta`, `app-text-body`, etc.)
 - add control size utility classes (`app-control-sm/md/lg`)
 - add panel/card radius utility classes or primitive wrappers
-- update `docs/DESIGN_SYSTEM.md` with exact ramps and tiers
+- if a canonical implemented UI contract is reintroduced, update it with exact ramps and tiers
 
 Acceptance:
 

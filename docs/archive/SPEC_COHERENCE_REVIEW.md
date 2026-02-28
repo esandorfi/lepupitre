@@ -1,9 +1,9 @@
 # Revue de cohérence — specs & starterkit
 
 ## Sources analysées
-- `spec/spec_lepupitre.md`
-- `spec/spec_ui.md`
-- `spec/starterkit.md`
+- `spec/archive/spec_lepupitre.md`
+- `spec/archive/spec_ui.md`
+- `spec/archive/starterkit.md`
 
 ## Conclusion
 Les documents sont globalement compatibles sur la vision produit, l’architecture hexagonale, et la contrainte local-first/offline. Les zones grises majeures ont été transformées en décisions actionnables (ADR + spikes courts + critères de sortie).

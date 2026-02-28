@@ -6,21 +6,20 @@
 
 ## Folder contract
 - `README.md`, `docs/ARCHITECTURE.md`, and `docs/`: canonical project docs.
-- `docs/adr/`: architecture/operations decisions.
 - `docs/plan/`: focused execution plans for active work.
-- `spec/`: proposals and exploration, not implementation truth.
+- `spec/active/`: proposals and exploration, not implementation truth.
+- `spec/archive/`: historical spec material only.
 - `docs/archive/`: historical material only.
 
 ## Naming rules
 - Root `docs/` files must be stable and explicit (example: `IMPLEMENTATION_PLAN.md`).
-- ADRs must use `ADR-<DOMAIN>-<ID>-<slug>.md` (or existing accepted ADR naming).
 - Execution plans must use `PLAN-<TOPIC>.md` under `docs/plan/`.
-- New root files should be rare and cross-cutting; otherwise use `docs/plan/` or `spec/`.
+- New root files should be rare and cross-cutting; otherwise use `docs/plan/` or `spec/active/`.
 
 ## Precedence
-1. Accepted ADRs + `docs/CONTRIBUTION_RULES.md`
+1. `docs/CONTRIBUTION_RULES.md`
 2. Canonical docs in `README*` + `docs/`
-3. Active proposals in `spec/`
+3. Active proposals in `spec/active/`
 4. `docs/archive/` for context only
 
 ## Lifecycle states
@@ -32,11 +31,11 @@
 - `archived`
 
 ## Required workflow
-1. Draft in `spec/` or `docs/plan/`.
-2. Approve decisions via ADR when needed.
+1. Draft in `spec/active/` or `docs/plan/`.
+2. Record significant decisions in `spec/active/DECISIONS.md`.
 3. Promote implemented rules to canonical docs.
 4. Update `docs/STATUS.md` in the same PR.
-5. Move obsolete files to `docs/archive/` and keep a pointer to replacement.
+5. Move obsolete docs to `docs/archive/` and obsolete specs to `spec/archive/`, with pointers to replacements.
 
 ## Drift prevention checklist (PR)
 - Canonical docs updated for behavior/architecture changes.

@@ -2,8 +2,8 @@
 
 ## Sources of truth
 - Follow `README.md`, `docs/ARCHITECTURE.md`, and `docs/IMPLEMENTATION_PLAN.md` first.
-- Use `spec/` only when docs are unclear or missing.
-- Apply `docs/CONTRIBUTION_RULES.md` for ADR/changelog/test obligations.
+- Use `spec/active/` only when docs are unclear or missing.
+- Apply `docs/CONTRIBUTION_RULES.md` for decision/changelog/test obligations.
 
 ## Quality and pragmatism
 - Ship vertical slices: each pass must run end-to-end (UI + backend).
@@ -20,8 +20,9 @@
 - CI runs on GitHub Actions.
 
 ## Documentation discipline
-- Update docs/ADR when required by `docs/CONTRIBUTION_RULES.md`.
-- Write README/docs and ADRs in English.
+- Update decision records in `spec/active/DECISIONS.md` when required by `docs/CONTRIBUTION_RULES.md`.
+- Write README/docs and decision records in English.
+- When explicitly asked to update top-level docs, update `README.md` and `docs/ARCHITECTURE.md` together.
 - Maintain `CHANGELOG.md` in English for every version bump/release.
 - Use `pnpm -C desktop changelog` to generate a brief entry from Git history when releasing.
 - Record unresolved decisions and mismatches; challenge assumptions early.

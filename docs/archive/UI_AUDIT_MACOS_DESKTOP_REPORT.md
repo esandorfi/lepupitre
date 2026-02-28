@@ -8,7 +8,7 @@ This report captures the current UI/UX audit for Lepupitre and evaluates the app
 
 It is a product/design audit (not an implementation spec). The concrete implementation spec lives in:
 
-- `spec/spec_ui_design_macos_desktop_system.md`
+- `spec/active/ui/SPEC-UI-DESKTOP-SYSTEM.md`
 
 ## Executive Summary
 
@@ -339,4 +339,4 @@ Create and enforce primitives such as:
 
 For exact sizes, component contracts, rollout steps, and enforcement rules, use:
 
-- `spec/spec_ui_design_macos_desktop_system.md`
+- `spec/active/ui/SPEC-UI-DESKTOP-SYSTEM.md`

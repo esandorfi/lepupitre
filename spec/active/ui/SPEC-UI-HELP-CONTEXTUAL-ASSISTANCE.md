@@ -87,7 +87,7 @@ Body should use consistent sections:
 
 Store seed content in repository:
 
-- `spec/help-content/*.md` for editorial drafting
+- `spec/active/help-content/*.md` for editorial drafting
 - later mirror to runtime location (for example `desktop/ui/src/content/help/*.md`)
 
 This lets product/design iterate text before wiring runtime loaders.
@@ -127,8 +127,7 @@ This prevents help link breakage during redesign.
 
 Initial seed content lives in:
 
-- `spec/help-content/onboarding-first-time-speaker.md`
-- `spec/help-content/onboarding-engineering-manager.md`
-- `spec/help-content/onboarding-conference-speaker.md`
-- `spec/help-content/help-training-daily-loop.md`
-
+- `spec/active/help-content/onboarding-first-time-speaker.md`
+- `spec/active/help-content/onboarding-engineering-manager.md`
+- `spec/active/help-content/onboarding-conference-speaker.md`
+- `spec/active/help-content/help-training-daily-loop.md`

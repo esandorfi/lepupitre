@@ -11,15 +11,18 @@
 1. **UI standardized on Vue** (React starterkit variant rejected for spec coherence).
 2. **Docs boundary**:
    - `README.md` + `docs/` are the OSS-facing source of truth for onboarding, operations, and implementation.
-   - `spec/` stores architecture/product/UI design-flow material during iteration and may be moved later to internal technical docs.
+   - `spec/active/` stores architecture/product/UI design-flow material during iteration.
+   - `spec/archive/` stores superseded/historical spec material.
    - Documentation lifecycle and ownership are tracked in `docs/DOCS_GOVERNANCE.md` and `docs/STATUS.md`.
 3. **Hexagonal architecture** preserved: domain/application/ports/adapters.
 4. **No network by default** from the MVP.
-5. **Open decisions moved into mandatory ADRs**: ADR-AUDIO-0001 and ADR-SEC-0002 with spikes and exit criteria.
+5. **Decision policy**:
+   - Historical ADRs are archived in `docs/archive/adr/`.
+   - New decisions are recorded in `spec/active/DECISIONS.md`.
 
-## 2.1 Mandatory ADRs before implementation
-- `docs/adr/ADR-AUDIO-0001-normalisation-audio-capture-wav16k.md`
-- `docs/adr/ADR-SEC-0002-tauri-capabilities-least-privilege.md`
+## 2.1 Historical decision baseline (archived ADRs)
+- `docs/archive/adr/ADR-AUDIO-0001-normalisation-audio-capture-wav16k.md`
+- `docs/archive/adr/ADR-SEC-0002-tauri-capabilities-least-privilege.md`
 
 Shared exit criteria: the “hello quest” app can record a 16k mono WAV into appdata, with no UI access outside the sandbox.
 
@@ -33,7 +36,7 @@ Shared exit criteria: the “hello quest” app can record a 16k mono WAV into a
 ## 4) Contracts and versioning
 - Versioned JSON schemas (`schemas/*.v1.json`).
 - Versioned SQL migrations (`migrations/*`).
-- Any contract change => ADR + changelog entry.
+- Any contract change => decision record in `spec/active/DECISIONS.md` + changelog entry.
 
 ## 5) Security baseline
 - No generic FS access from UI.
