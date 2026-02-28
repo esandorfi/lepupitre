@@ -368,7 +368,7 @@ fn verify_database_integrity_for_open(conn: &Connection) -> Result<(), String> {
     let quick_check: String = conn
         .query_row("PRAGMA quick_check", [], |row| row.get(0))
         .map_err(|e| format!("quick_check: {e}"))?;
-    if quick_check.to_ascii_lowercase() != "ok" {
+    if !quick_check.eq_ignore_ascii_case("ok") {
         return Err(format!("database_integrity_failed: {quick_check}"));
     }
     Ok(())
