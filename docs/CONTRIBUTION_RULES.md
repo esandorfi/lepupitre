@@ -19,6 +19,9 @@ These are repository process gates for contributors.
 - Field changes require updates in all layers and a quick validation check/test.
 
 ## 4) Quality gates
+- Documentation:
+  - markdown lint (`markdownlint-cli2`) on canonical docs
+  - markdown link check (`lychee --offline`) on canonical docs
 - Backend:
   - `cargo fmt --all -- --check`
   - `cargo clippy --all-targets --all-features -- -D warnings`
@@ -37,6 +40,7 @@ These are repository process gates for contributors.
 
 ## 6) Docs lifecycle gate
 - If a PR touches `docs/` or `spec/`:
+  - complete the docs checklist in `.github/PULL_REQUEST_TEMPLATE.md`
   - update `docs/STATUS.md`
   - follow `docs/DOCS_GOVERNANCE.md`
   - mark superseded docs/specs explicitly before archive moves

@@ -5,7 +5,11 @@
 - Enforce one source of truth per topic.
 
 ## Folder contract
-- `README.md`, `docs/ARCHITECTURE.md`, and `docs/`: canonical project docs.
+- `README.md`: product/user entrypoint.
+- `docs/ARCHITECTURE.md`: stable hub for architecture and operations.
+- `docs/architecture/`: canonical architecture references.
+- `docs/operations/`: canonical operational references.
+- `docs/`: canonical project docs and governance files.
 - `docs/plan/`: focused execution plans for active work.
 - `spec/active/`: proposals and exploration, not implementation truth.
 - `spec/archive/`: historical spec material only.
@@ -13,6 +17,7 @@
 
 ## Naming rules
 - Root `docs/` files must be stable and explicit (example: `IMPLEMENTATION_PLAN.md`).
+- Domain pages should be grouped under `docs/architecture/` or `docs/operations/` before adding new root files.
 - Execution plans must use `PLAN-<TOPIC>.md` under `docs/plan/`.
 - New root files should be rare and cross-cutting; otherwise use `docs/plan/` or `spec/active/`.
 

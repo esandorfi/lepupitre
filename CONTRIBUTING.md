@@ -3,12 +3,14 @@
 Thanks for contributing.
 
 ## Before you start
-- Read `README.md`, `docs/ARCHITECTURE.md`, and `docs/README.md`.
+- Read `README.md` and `docs/README.md`.
+- Read `docs/architecture/overview.md` and `docs/operations/release.md`.
 - Check `docs/IMPLEMENTATION_PLAN.md` for current priorities.
 - Follow `docs/CONTRIBUTION_RULES.md` for decision/changelog/test requirements.
 
 ## Development setup
-1. Install prerequisites from `README.md`.
+1. Install Tauri prerequisites for your OS:
+   - https://v2.tauri.app/start/prerequisites/
 2. Install dependencies:
    - `pnpm -C desktop install`
 3. Run locally:

@@ -3,15 +3,21 @@
 Use this map to avoid documentation drift.
 
 ## Canonical docs (source of truth)
-- `README.md`: OSS overview and onboarding.
-- `docs/ARCHITECTURE.md`: architecture and release operations.
+- `README.md`: product and user onboarding.
+- `docs/ARCHITECTURE.md`: stable hub to architecture and operations docs.
+- `docs/architecture/overview.md`: architecture baseline.
+- `docs/architecture/ipc-contracts.md`: IPC contract rules.
+- `docs/architecture/asr.md`: ASR architecture and troubleshooting.
+- `docs/operations/release.md`: release mechanics and CI flow.
+- `docs/operations/signing.md`: signing and notarization status.
 - `docs/IMPLEMENTATION_PLAN.md`: current delivery priorities.
 
 ## Governance docs (how docs are managed)
 - `docs/CONTRIBUTION_RULES.md`: required repository process gates (tests, decisions, changelog).
-- `AGENTS.md`: agent-specific behavior rules.
 - `docs/DOCS_GOVERNANCE.md`: lifecycle, ownership, naming, and archive policy.
 - `docs/STATUS.md`: status ledger for docs/specs and next actions.
+- `CONTRIBUTING.md`: contributor setup and workflow.
+- `AGENTS.md`: agent-specific behavior rules.
 
 ## Proposal docs (not implementation truth)
 - `spec/README.md`: how `spec/` is used.
@@ -32,6 +38,6 @@ Use this map to avoid documentation drift.
 
 ## Precedence
 1. `docs/CONTRIBUTION_RULES.md`
-2. Canonical docs (`README*` + `docs/`)
+2. Canonical docs (`README.md` + `docs/`)
 3. Active proposals in `spec/active/`
 4. Archived material (history only)

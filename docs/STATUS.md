@@ -1,6 +1,6 @@
 # Documentation Status Ledger
 
-Snapshot date: 2026-02-27
+Snapshot date: 2026-02-28
 
 This file tracks what is canonical, proposal-only, and archived.
 
@@ -8,8 +8,13 @@ This file tracks what is canonical, proposal-only, and archived.
 
 | Path | Role | State | Owner | Next action |
 |---|---|---|---|---|
-| `README.md` | OSS overview and onboarding | implemented | Maintainers | Keep release/security sections current |
-| `docs/ARCHITECTURE.md` | Architecture and release operations | implemented | Maintainers | Keep CI/signing instructions current |
+| `README.md` | Product and user onboarding | implemented | Maintainers | Keep install and trust-level notes current |
+| `docs/ARCHITECTURE.md` | Architecture/operations hub | implemented | Maintainers | Keep links aligned with subpages |
+| `docs/architecture/overview.md` | Architecture baseline | implemented | Maintainers | Keep module and security model current |
+| `docs/architecture/ipc-contracts.md` | IPC contract rules | implemented | Maintainers | Keep Rust/Zod alignment requirements explicit |
+| `docs/architecture/asr.md` | ASR architecture and troubleshooting | implemented | ASR maintainers | Keep sidecar invariants current |
+| `docs/operations/release.md` | Release operations runbook | implemented | Maintainers | Keep CI path filters and channel steps current |
+| `docs/operations/signing.md` | Signing/notarization policy | accepted | Maintainers | Move to implemented when release gate is active |
 | `docs/README.md` | Documentation map and writing rules | implemented | Maintainers | Keep map aligned with real files |
 | `docs/IMPLEMENTATION_PLAN.md` | Current execution priorities | implemented | Maintainers | Update tracks when scope changes |
 | `docs/CONTRIBUTION_RULES.md` | Repository process gates | accepted | Maintainers | Keep contributor requirements explicit |

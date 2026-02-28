@@ -1,7 +1,7 @@
 # Agent guide (Le Pupitre)
 
 ## Sources of truth
-- Follow `README.md`, `docs/ARCHITECTURE.md`, and `docs/IMPLEMENTATION_PLAN.md` first.
+- Follow `README.md`, `docs/README.md`, and `docs/IMPLEMENTATION_PLAN.md` first.
 - Use `spec/active/` only when docs are unclear or missing.
 - Apply `docs/CONTRIBUTION_RULES.md` for decision/changelog/test obligations.
 
@@ -22,7 +22,7 @@
 ## Documentation discipline
 - Update decision records in `spec/active/DECISIONS.md` when required by `docs/CONTRIBUTION_RULES.md`.
 - Write README/docs and decision records in English.
-- When explicitly asked to update top-level docs, update `README.md` and `docs/ARCHITECTURE.md` together.
+- When explicitly asked to update top-level docs, update `README.md` and `docs/README.md` together.
 - Maintain `CHANGELOG.md` in English for every version bump/release.
 - Use `pnpm -C desktop changelog` to generate a brief entry from Git history when releasing.
 - Record unresolved decisions and mismatches; challenge assumptions early.
