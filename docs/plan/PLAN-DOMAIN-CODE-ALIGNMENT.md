@@ -81,6 +81,9 @@ UI (`desktop/ui/src`)
 - 2026-02-28: Workspace slice started.
 - Rust: `commands/profile.rs` reduced to thin command entrypoints; workspace behavior moved to `core/workspace.rs`.
 - UI: workspace profile IPC calls extracted to `ui/src/domains/workspace/api.ts`; `stores/app.ts` consumes this boundary.
+- 2026-02-28: Quest slice completed.
+- Rust: `commands/quest.rs` reduced to thin command entrypoints; quest behavior moved to `core/quest.rs`.
+- UI: quest IPC calls extracted to `ui/src/domains/quest/api.ts`; `stores/app.ts` consumes this boundary.
 
 ## Acceptance criteria
 

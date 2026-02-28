@@ -8,6 +8,15 @@ import {
   switchProfile as switchWorkspaceProfile,
 } from "../domains/workspace/api";
 import {
+  getDailyQuest as getDailyQuestFromApi,
+  getQuestAttempts as getQuestAttemptsFromApi,
+  getQuestByCode as getQuestByCodeFromApi,
+  getQuestList as getQuestListFromApi,
+  getQuestReport as getQuestReportFromApi,
+  submitQuestAudio as submitQuestAudioFromApi,
+  submitQuestText as submitQuestTextFromApi,
+} from "../domains/quest/api";
+import {
   IdSchema,
   ProfileIdPayloadSchema,
   ProfileSummary,
@@ -48,23 +57,11 @@ import {
   RunSummaryListSchema,
   RunSummaryNullableSchema,
   QuestDaily,
-  QuestDailySchema,
   ProgressSnapshot,
   ProgressSnapshotPayloadSchema,
   ProgressSnapshotSchema,
-  QuestSchema,
-  QuestListPayloadSchema,
-  QuestListResponseSchema,
-  QuestGetByCodePayloadSchema,
-  QuestGetDailyPayloadSchema,
   Quest,
-  QuestSubmitTextPayloadSchema,
-  QuestSubmitAudioPayloadSchema,
-  QuestAttemptsListPayloadSchema,
   QuestAttemptSummary,
-  QuestAttemptListResponseSchema,
-  QuestReportPayloadSchema,
-  QuestReportResponseSchema,
   QuestReportItem,
   AnalyzeAttemptPayloadSchema,
   AnalyzeResponseSchema,
@@ -336,31 +333,14 @@ async function getQuestAttempts(projectId: string, limit = 10) {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
   }
-  return invokeChecked(
-    "quest_attempts_list",
-    QuestAttemptsListPayloadSchema,
-    QuestAttemptListResponseSchema,
-    {
-      profileId: state.activeProfileId,
-      projectId,
-      limit,
-    }
-  );
+  return getQuestAttemptsFromApi(state.activeProfileId, projectId, limit);
 }
 
 async function getDailyQuestForProject(projectId: string): Promise<QuestDaily> {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
   }
-  return invokeChecked(
-    "quest_get_daily",
-    QuestGetDailyPayloadSchema,
-    QuestDailySchema,
-    {
-      profileId: state.activeProfileId,
-      projectId,
-    }
-  );
+  return getDailyQuestFromApi(state.activeProfileId, projectId);
 }
 
 async function getProgressSnapshot(projectId?: string | null): Promise<ProgressSnapshot> {
@@ -422,12 +402,7 @@ async function getQuestReport(projectId: string): Promise<QuestReportItem[]> {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
   }
-  return invokeChecked(
-    "quest_report",
-    QuestReportPayloadSchema,
-    QuestReportResponseSchema,
-    { profileId: state.activeProfileId, projectId }
-  );
+  return getQuestReportFromApi(state.activeProfileId, projectId);
 }
 
 function getTalkNumber(projectId: string): number | null {
@@ -466,17 +441,7 @@ async function submitQuestTextForProject(projectId: string, questCode: string, t
   if (!state.activeProfileId) {
     throw new Error("quest_context_missing");
   }
-  const attemptId = await invokeChecked(
-    "quest_submit_text",
-    QuestSubmitTextPayloadSchema,
-    IdSchema,
-    {
-      profileId: state.activeProfileId,
-      projectId,
-      questCode,
-      text,
-    }
-  );
+  const attemptId = await submitQuestTextFromApi(state.activeProfileId, projectId, questCode, text);
   state.lastAttemptId = attemptId;
   return attemptId;
 }
@@ -503,18 +468,7 @@ async function submitQuestAudioForProject(
   if (!state.activeProfileId) {
     throw new Error("quest_context_missing");
   }
-  const attemptId = await invokeChecked(
-    "quest_submit_audio",
-    QuestSubmitAudioPayloadSchema,
-    IdSchema,
-    {
-      profileId: state.activeProfileId,
-      projectId,
-      questCode: payload.questCode,
-      audioArtifactId: payload.audioArtifactId,
-      transcriptId: payload.transcriptId ?? null,
-    }
-  );
+  const attemptId = await submitQuestAudioFromApi(state.activeProfileId, projectId, payload);
   state.lastAttemptId = attemptId;
   return attemptId;
 }
@@ -523,24 +477,14 @@ async function getQuestByCode(questCode: string): Promise<Quest> {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
   }
-  return invokeChecked(
-    "quest_get_by_code",
-    QuestGetByCodePayloadSchema,
-    QuestSchema,
-    { profileId: state.activeProfileId, questCode }
-  );
+  return getQuestByCodeFromApi(state.activeProfileId, questCode);
 }
 
 async function getQuestList(): Promise<Quest[]> {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
   }
-  return invokeChecked(
-    "quest_list",
-    QuestListPayloadSchema,
-    QuestListResponseSchema,
-    { profileId: state.activeProfileId }
-  );
+  return getQuestListFromApi(state.activeProfileId);
 }
 
 async function analyzeAttempt(attemptId: string) {

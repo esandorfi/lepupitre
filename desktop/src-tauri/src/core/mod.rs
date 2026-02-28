@@ -9,6 +9,7 @@ pub mod dsp;
 pub mod ids;
 pub mod models;
 pub mod recording;
+pub mod quest;
 pub mod seed;
 pub mod time;
 pub mod transcript;
