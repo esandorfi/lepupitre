@@ -219,6 +219,7 @@ Acceptance:
 - [docs/architecture/ipc-contracts.md](../architecture/ipc-contracts.md)
 - [docs/operations/release.md](../operations/release.md)
 - [docs/CONTRIBUTION_RULES.md](../CONTRIBUTION_RULES.md)
+- Resume playbook: [RESUME-TAURI-SQL-HARDENING.md](RESUME-TAURI-SQL-HARDENING.md)
 
 ## Exit criteria
 
