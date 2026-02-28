@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  AudioTrimPayloadSchema,
   AsrFinalProgressEventSchema,
   FeedbackContextSchema,
   PreferenceKeySchema,
@@ -24,6 +25,26 @@ describe("ipc schemas", () => {
       },
     });
     expect(parsed.success).toBe(true);
+  });
+
+  it("accepts trim payload with camelCase fields", () => {
+    const parsed = AudioTrimPayloadSchema.safeParse({
+      profileId: "p-1",
+      audioArtifactId: "a-1",
+      startMs: 1000,
+      endMs: 2000,
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  it("rejects trim payload when endMs <= startMs", () => {
+    const parsed = AudioTrimPayloadSchema.safeParse({
+      profileId: "p-1",
+      audioArtifactId: "a-1",
+      startMs: 2000,
+      endMs: 2000,
+    });
+    expect(parsed.success).toBe(false);
   });
 
   it("rejects transcribe payload with snake_case fields", () => {

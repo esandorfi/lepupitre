@@ -15,6 +15,7 @@ const props = defineProps<{
   isSavingEdited: boolean;
   canOpenOriginal: boolean;
   isRevealing: boolean;
+  isApplyingTrim: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -24,6 +25,7 @@ const emit = defineEmits<{
   (event: "autoCleanFillers"): void;
   (event: "fixPunctuation"): void;
   (event: "openOriginal"): void;
+  (event: "applyTrim", value: { startMs: number; endMs: number }): void;
   (event: "continue"): void;
 }>();
 
@@ -35,6 +37,23 @@ const hasTrimSourceDuration = computed(
   () => typeof props.sourceDurationSec === "number" && props.sourceDurationSec > 0
 );
 const trimMaxSec = computed(() => (hasTrimSourceDuration.value ? props.sourceDurationSec ?? 0 : 0));
+const trimDirty = computed(
+  () =>
+    hasTrimSourceDuration.value &&
+    (trimStartSec.value > 0.001 || Math.abs(trimEndSec.value - trimMaxSec.value) > 0.001)
+);
+
+function applyTrim() {
+  if (!trimDirty.value || props.isApplyingTrim) {
+    return;
+  }
+  const startMs = Math.round(trimStartSec.value * 1000);
+  const endMs = Math.round(trimEndSec.value * 1000);
+  if (endMs <= startMs) {
+    return;
+  }
+  emit("applyTrim", { startMs, endMs });
+}
 
 function applyTrimWindow(startSec: number, endSec: number) {
   const normalized = normalizeTrimWindow(trimMaxSec.value, startSec, endSec);
@@ -87,6 +106,67 @@ watch(
       <span v-if="props.transcribeStageLabel">({{ props.transcribeStageLabel }})</span>
     </div>
 
+    <section class="app-panel app-panel-compact space-y-3">
+      <div class="flex items-center justify-between gap-2">
+        <h3 class="app-text font-semibold">{{ t("audio.quick_clean_trim_title") }}</h3>
+        <button
+          class="app-button-secondary app-focus-ring inline-flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+          type="button"
+          :disabled="!hasTrimSourceDuration || props.isApplyingTrim"
+          @click="resetTrimWindow"
+        >
+          {{ t("audio.quick_clean_trim_reset") }}
+        </button>
+      </div>
+      <p class="app-muted app-text-meta">{{ t("audio.quick_clean_trim_hint") }}</p>
+      <p v-if="!hasTrimSourceDuration" class="app-muted app-text-meta">
+        {{ t("audio.quick_clean_trim_unavailable") }}
+      </p>
+      <div v-else class="space-y-3">
+        <div class="space-y-1">
+          <div class="flex items-center justify-between text-xs">
+            <span class="app-subtle">{{ t("audio.quick_clean_trim_start") }}</span>
+            <span class="app-text">{{ formatTrimClock(trimStartSec) }}</span>
+          </div>
+          <input
+            class="w-full"
+            type="range"
+            min="0"
+            :max="trimMaxSec"
+            step="0.1"
+            :value="trimStartSec"
+            @input="onTrimStartInput"
+          />
+        </div>
+        <div class="space-y-1">
+          <div class="flex items-center justify-between text-xs">
+            <span class="app-subtle">{{ t("audio.quick_clean_trim_end") }}</span>
+            <span class="app-text">{{ formatTrimClock(trimEndSec) }}</span>
+          </div>
+          <input
+            class="w-full"
+            type="range"
+            min="0"
+            :max="trimMaxSec"
+            step="0.1"
+            :value="trimEndSec"
+            @input="onTrimEndInput"
+          />
+        </div>
+        <div class="app-muted app-text-meta">
+          {{ t("audio.quick_clean_trim_duration") }}: {{ formatTrimClock(trimDurationSec) }}
+        </div>
+        <button
+          class="app-button-secondary app-focus-ring app-button-lg inline-flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+          type="button"
+          :disabled="!trimDirty || props.isApplyingTrim"
+          @click="applyTrim"
+        >
+          {{ props.isApplyingTrim ? t("audio.quick_clean_trim_applying") : t("audio.quick_clean_trim_apply") }}
+        </button>
+      </div>
+    </section>
+
     <div v-if="!props.hasTranscript" class="space-y-3">
       <p class="app-muted app-text-body">{{ t("audio.quick_clean_not_ready") }}</p>
       <p v-if="props.transcribeBlockedMessage" class="app-danger-text app-text-meta">
@@ -103,59 +183,6 @@ watch(
     </div>
 
     <div v-else class="space-y-3">
-      <section class="app-panel app-panel-compact space-y-3">
-        <div class="flex items-center justify-between gap-2">
-          <h3 class="app-text font-semibold">{{ t("audio.quick_clean_trim_title") }}</h3>
-          <button
-            class="app-button-secondary app-focus-ring inline-flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-            type="button"
-            :disabled="!hasTrimSourceDuration"
-            @click="resetTrimWindow"
-          >
-            {{ t("audio.quick_clean_trim_reset") }}
-          </button>
-        </div>
-        <p class="app-muted app-text-meta">{{ t("audio.quick_clean_trim_hint") }}</p>
-        <p v-if="!hasTrimSourceDuration" class="app-muted app-text-meta">
-          {{ t("audio.quick_clean_trim_unavailable") }}
-        </p>
-        <div v-else class="space-y-3">
-          <div class="space-y-1">
-            <div class="flex items-center justify-between text-xs">
-              <span class="app-subtle">{{ t("audio.quick_clean_trim_start") }}</span>
-              <span class="app-text">{{ formatTrimClock(trimStartSec) }}</span>
-            </div>
-            <input
-              class="w-full"
-              type="range"
-              min="0"
-              :max="trimMaxSec"
-              step="0.1"
-              :value="trimStartSec"
-              @input="onTrimStartInput"
-            />
-          </div>
-          <div class="space-y-1">
-            <div class="flex items-center justify-between text-xs">
-              <span class="app-subtle">{{ t("audio.quick_clean_trim_end") }}</span>
-              <span class="app-text">{{ formatTrimClock(trimEndSec) }}</span>
-            </div>
-            <input
-              class="w-full"
-              type="range"
-              min="0"
-              :max="trimMaxSec"
-              step="0.1"
-              :value="trimEndSec"
-              @input="onTrimEndInput"
-            />
-          </div>
-          <div class="app-muted app-text-meta">
-            {{ t("audio.quick_clean_trim_duration") }}: {{ formatTrimClock(trimDurationSec) }}
-          </div>
-        </div>
-      </section>
-
       <textarea
         :value="props.transcriptText"
         rows="10"
@@ -167,7 +194,7 @@ watch(
         <button
           class="app-button-primary app-focus-ring app-button-lg inline-flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
           type="button"
-          :disabled="props.isSavingEdited || !props.transcriptText.trim()"
+          :disabled="props.isSavingEdited || props.isApplyingTrim || !props.transcriptText.trim()"
           @click="emit('saveEdited')"
         >
           {{ t("audio.quick_clean_save_edited") }}
@@ -175,7 +202,7 @@ watch(
         <button
           class="app-button-secondary app-focus-ring app-button-lg inline-flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
           type="button"
-          :disabled="props.isSavingEdited || !props.transcriptText.trim()"
+          :disabled="props.isSavingEdited || props.isApplyingTrim || !props.transcriptText.trim()"
           @click="emit('autoCleanFillers')"
         >
           {{ t("audio.quick_clean_auto_clean") }}
@@ -183,7 +210,7 @@ watch(
         <button
           class="app-button-secondary app-focus-ring app-button-lg inline-flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
           type="button"
-          :disabled="props.isSavingEdited || !props.transcriptText.trim()"
+          :disabled="props.isSavingEdited || props.isApplyingTrim || !props.transcriptText.trim()"
           @click="emit('fixPunctuation')"
         >
           {{ t("audio.quick_clean_fix_punctuation") }}
@@ -195,7 +222,7 @@ watch(
       <button
         class="app-button-secondary app-focus-ring app-button-lg inline-flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
         type="button"
-        :disabled="!props.canOpenOriginal || props.isRevealing"
+        :disabled="!props.canOpenOriginal || props.isRevealing || props.isApplyingTrim"
         @click="emit('openOriginal')"
       >
         {{ t("audio.quick_clean_open_original") }}
@@ -203,7 +230,7 @@ watch(
       <button
         class="app-button-info app-focus-ring app-button-lg inline-flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
         type="button"
-        :disabled="!props.hasTranscript"
+        :disabled="!props.hasTranscript || props.isApplyingTrim"
         @click="emit('continue')"
       >
         {{ t("audio.quick_clean_continue") }}
