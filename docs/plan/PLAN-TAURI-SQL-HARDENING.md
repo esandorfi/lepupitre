@@ -11,6 +11,20 @@ Align LePupitre's Tauri + SQLite backend with a SOTA desktop data architecture:
 - deterministic across migration history,
 - easy to evolve and test.
 
+## Chosen data-access strategy
+
+- Keep `rusqlite` as the DB driver for this plan.
+- Do not introduce a `sqlx` migration during hardening.
+- Reduce SQL spread with per-domain DB modules:
+  - `core/<domain>/repo.rs`: typed DB access functions,
+  - `core/<domain>/queries.rs`: SQL text + query builders,
+  - typed DB row/result structs in `types.rs` (or existing typed modules).
+- Keep raw SQL where it is strongest:
+  - reporting queries,
+  - complex joins,
+  - performance hotspots.
+- Keep command files orchestration-only and SQL-free.
+
 ## Non-goals (current phase)
 
 - Full DB watcher architecture refactor across all UI flows.
@@ -57,13 +71,15 @@ Acceptance:
 ## Workstream 4: data-access module boundaries
 
 Scope:
-- Extract SQL from command handlers into table-oriented DB modules.
+- Extract SQL from command handlers into domain DB modules.
+- Move SQL out of mixed domain files into `queries.rs` per domain.
+- Move row mapping and typed return contracts into `repo.rs`/typed structs.
 - Keep command layer focused on orchestration and error mapping.
 - Add table-level tests for read/write semantics.
 
 Acceptance:
 - Critical command modules no longer contain direct mutation SQL.
-- DB modules carry their own tests and contracts.
+- Domain repo/query modules carry their own tests and typed contracts.
 
 ## Workstream 5: recovery, backup, and operability
 

@@ -62,3 +62,8 @@ These are repository process gates for contributors.
 
 ## 8) Commit style
 - Use conventional commits (`feat:`, `fix:`, `docs:`, `test:`, `chore:`).
+
+## 9) SQL placement rule
+- Do not add direct SQL in migrated command wrappers.
+- New SQL should be centralized under domain DB modules (`core/<domain>/repo.rs` + `core/<domain>/queries.rs`).
+- Keep raw SQL for reporting/complex/performance-critical queries, but keep it out of orchestration code.

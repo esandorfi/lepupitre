@@ -10,7 +10,7 @@ This file tracks what is canonical, proposal-only, and archived.
 |---|---|---|---|---|
 | [README.md](../README.md) | Product and user onboarding | implemented | Maintainers | Keep install and trust-level notes current |
 | [docs/ARCHITECTURE.md](ARCHITECTURE.md) | Architecture/operations hub | implemented | Maintainers | Keep links aligned with subpages |
-| [docs/architecture/overview.md](architecture/overview.md) | Architecture baseline | implemented | Maintainers | Keep module and security model current |
+| [docs/architecture/overview.md](architecture/overview.md) | Architecture baseline | implemented | Maintainers | Keep module/security model current and align SQLite data-access baseline with implementation |
 | [docs/architecture/ipc-contracts.md](architecture/ipc-contracts.md) | IPC contract rules | implemented | Maintainers | Keep Rust/Zod alignment requirements explicit |
 | [docs/architecture/asr.md](architecture/asr.md) | ASR architecture and troubleshooting | implemented | ASR maintainers | Keep sidecar invariants current |
 | [docs/operations/release.md](operations/release.md) | Release operations runbook | implemented | Maintainers | Keep CI path filters and channel steps current |

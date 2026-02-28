@@ -36,7 +36,15 @@
 - Browser `localStorage` remains a compatibility fallback for UI-only development and runtime fallback.
 - Ownership:
   - global scope: theme, locale, nav mode/metrics, ASR settings, workspace toolbar colors.
-  - profile scope: hero quest selection, training achievement memory, feedback reviewed state.
+- profile scope: hero quest selection, training achievement memory, feedback reviewed state.
+
+## SQLite data-access baseline
+- Keep `rusqlite` as the backend driver.
+- Centralize SQL by domain in DB modules:
+  - `core/<domain>/repo.rs` for typed DB access functions.
+  - `core/<domain>/queries.rs` for SQL statements/query builders.
+- Keep Tauri command files orchestration-only (no direct SQL).
+- Keep raw SQL for reporting, complex joins, and performance-critical paths, with tests and query-plan checks.
 
 ## Observability baseline
 - Structured logs in development.
