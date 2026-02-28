@@ -94,6 +94,12 @@ jobs:
             docs/**/*.md
             .github/PULL_REQUEST_TEMPLATE.md
 
+      - name: SignPath OSS compliance check
+        shell: bash
+        run: |
+          chmod +x scripts/check-signpath-oss-compliance.sh
+          ./scripts/check-signpath-oss-compliance.sh
+
       - name: Markdown link check (offline)
         uses: lycheeverse/lychee-action@v2
         with:

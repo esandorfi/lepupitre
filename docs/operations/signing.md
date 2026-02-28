@@ -6,6 +6,8 @@
 - Release CI now includes a signing/notarization gate script:
   - `scripts/check-release-signing.sh`
   - gate runs in `.github/workflows/release-packaging.yml`
+- Docs CI includes SignPath OSS policy drift checks:
+  - `scripts/check-signpath-oss-compliance.sh`
 - Public policy/governance pages:
   - [Code signing policy](CODE_SIGNING_POLICY.md)
   - [Project governance](../PROJECT_GOVERNANCE.md)

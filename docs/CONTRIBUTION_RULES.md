@@ -28,6 +28,7 @@ These are repository process gates for contributors.
 - Documentation:
   - `pnpm -C desktop docs:lint`
   - markdown link check (`lychee --offline`) on canonical docs
+  - SignPath OSS compliance check (`./scripts/check-signpath-oss-compliance.sh`)
 - Domain structure:
   - `scripts/check-domain-structure.sh`
   - Guards dependency direction (`core` not depending on `commands`, UI domain APIs not depending on view/store layers)
