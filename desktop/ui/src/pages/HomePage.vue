@@ -22,6 +22,14 @@ type QuestMapNode = {
   offsetPx: number;
 };
 
+type RewardBadge = {
+  id: string;
+  title: string;
+  unlocked: boolean;
+  current: number;
+  target: number;
+};
+
 const { t, locale } = useI18n();
 const { settings: uiSettings } = useUiPreferences();
 const state = computed(() => appStore.state);
@@ -217,6 +225,49 @@ const questMapHint = computed(() => {
   }
   return t("training.quest_map_hint_continue");
 });
+const rewardBadges = computed<RewardBadge[]>(() => {
+  const progress = trainingProgress.value;
+  if (!progress) {
+    return [];
+  }
+  const weeklyTarget = Math.max(1, progress.weekly_target);
+  return [
+    {
+      id: "streak-3",
+      title: t("training.reward_streak_3"),
+      unlocked: progress.streak_days >= 3,
+      current: progress.streak_days,
+      target: 3,
+    },
+    {
+      id: "credits-100",
+      title: t("training.reward_credits_100"),
+      unlocked: progress.credits >= 100,
+      current: progress.credits,
+      target: 100,
+    },
+    {
+      id: "weekly-target",
+      title: `${t("training.reward_weekly_habit")} ${weeklyTarget}`,
+      unlocked: progress.weekly_completed >= weeklyTarget,
+      current: progress.weekly_completed,
+      target: weeklyTarget,
+    },
+    {
+      id: "streak-7",
+      title: t("training.reward_streak_7"),
+      unlocked: progress.streak_days >= 7,
+      current: progress.streak_days,
+      target: 7,
+    },
+  ];
+});
+const unlockedRewardCount = computed(
+  () => rewardBadges.value.filter((badge) => badge.unlocked).length
+);
+const nextRewardBadge = computed(
+  () => rewardBadges.value.find((badge) => !badge.unlocked) ?? null
+);
 const pickerVisibleQuests = computed(() => [
   ...recentPickerQuests.value,
   ...pickerMainQuests.value,
@@ -286,6 +337,16 @@ function questMapConnectorClass(done: boolean) {
   return done
     ? "bg-[var(--color-success)]"
     : "bg-[color-mix(in_srgb,var(--app-border)_70%,transparent)]";
+}
+
+function rewardBadgeClass(unlocked: boolean, isNext: boolean) {
+  if (unlocked) {
+    return "border-[var(--color-success)] bg-[color-mix(in_srgb,var(--color-success)_14%,var(--color-surface))]";
+  }
+  if (isNext) {
+    return "border-[var(--color-accent)] bg-[color-mix(in_srgb,var(--color-accent-soft)_35%,var(--color-surface))]";
+  }
+  return "border-[var(--app-border)] bg-[var(--color-surface-elevated)]";
 }
 
 function questMapNodeAriaLabel(node: QuestMapNode) {
@@ -1007,6 +1068,42 @@ watch(
             </div>
             <div class="app-muted app-text-meta mt-2">
               {{ questMapHint }}
+            </div>
+          </div>
+
+          <div
+            v-if="showCredits && rewardBadges.length > 0"
+            class="rounded-xl border border-[var(--app-border)] bg-[var(--color-surface-elevated)] p-3"
+          >
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="app-text-eyebrow">{{ t("training.rewards_title") }}</div>
+              <span class="app-badge-neutral app-text-caption rounded-full px-2 py-1 font-semibold">
+                {{ unlockedRewardCount }} / {{ rewardBadges.length }} {{ t("training.rewards_unlocked") }}
+              </span>
+            </div>
+            <div class="mt-3 grid gap-2 sm:grid-cols-2">
+              <div
+                v-for="badge in rewardBadges"
+                :key="badge.id"
+                class="rounded-lg border px-3 py-2"
+                :class="rewardBadgeClass(badge.unlocked, nextRewardBadge?.id === badge.id)"
+              >
+                <div class="flex items-center justify-between gap-2">
+                  <div class="app-text app-text-body-strong text-sm">{{ badge.title }}</div>
+                  <span
+                    class="app-text-caption rounded-full px-2 py-0.5 font-semibold"
+                    :class="badge.unlocked ? 'app-badge-success' : 'app-badge-neutral'"
+                  >
+                    {{ badge.unlocked ? t("training.rewards_status_unlocked") : t("training.rewards_status_locked") }}
+                  </span>
+                </div>
+                <div class="app-muted app-text-meta mt-1">
+                  {{ Math.min(badge.current, badge.target) }} / {{ badge.target }}
+                </div>
+              </div>
+            </div>
+            <div v-if="nextRewardBadge" class="app-muted app-text-meta mt-2">
+              {{ t("training.rewards_next") }}: {{ nextRewardBadge.title }}
             </div>
           </div>
         </div>
