@@ -11,6 +11,7 @@ Use this map to avoid documentation drift.
 - [docs/operations/release.md](operations/release.md): release mechanics and CI flow.
 - [docs/operations/signing.md](operations/signing.md): signing and notarization status.
 - [docs/IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md): current delivery priorities.
+- [docs/testing/TEST_MATRIX.md](testing/TEST_MATRIX.md): living use-case test obligations.
 
 ## Governance docs (how docs are managed)
 - [docs/CONTRIBUTION_RULES.md](CONTRIBUTION_RULES.md): required repository process gates (tests, decisions, changelog).

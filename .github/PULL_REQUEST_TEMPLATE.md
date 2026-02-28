@@ -15,6 +15,7 @@
 - [ ] `cargo clippy --all-targets --all-features -- -D warnings` (from `desktop/src-tauri`)
 - [ ] `cargo test --manifest-path desktop/src-tauri/Cargo.toml`
 - [ ] Not run (explain why)
+- [ ] Updated required contract tests per `docs/testing/TEST_MATRIX.md` (or N/A)
 
 ## Docs and governance checklist
 

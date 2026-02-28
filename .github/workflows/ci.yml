@@ -59,6 +59,13 @@ jobs:
             echo "full_run=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Enforce backend test obligations (PR)
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          chmod +x scripts/check-test-obligations.sh
+          ./scripts/check-test-obligations.sh "${{ github.event.pull_request.base.sha }}" "${{ github.sha }}"
+
   docs:
     name: Docs checks
     runs-on: ubuntu-latest

@@ -32,18 +32,23 @@ These are repository process gates for contributors.
   - `pnpm -C desktop ui:test`
 - If a gate cannot run, document why in PR notes.
 
-## 5) Release and changelog gate
+## 5) Test matrix and obligations
+- Treat [docs/testing/TEST_MATRIX.md](testing/TEST_MATRIX.md) as the source of truth for core use-case test obligations.
+- If a PR changes a mapped source area, update the mapped tests in the same PR.
+- CI enforces selected backend obligations (workspace and quest domains first).
+
+## 6) Release and changelog gate
 - For every release/version bump:
   - update [CHANGELOG.md](../CHANGELOG.md) in English
   - generate/update entries from Git history (`pnpm -C desktop changelog`)
   - ensure latest tag/version is present in changelog before release
 
-## 6) Docs lifecycle gate
+## 7) Docs lifecycle gate
 - If a PR touches `docs/` or `spec/`:
   - complete the docs checklist in [.github/PULL_REQUEST_TEMPLATE.md](../.github/PULL_REQUEST_TEMPLATE.md)
   - update [docs/STATUS.md](STATUS.md)
   - follow [docs/DOCS_GOVERNANCE.md](DOCS_GOVERNANCE.md)
   - mark superseded docs/specs explicitly before archive moves
 
-## 7) Commit style
+## 8) Commit style
 - Use conventional commits (`feat:`, `fix:`, `docs:`, `test:`, `chore:`).

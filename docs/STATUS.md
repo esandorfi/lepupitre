@@ -18,11 +18,14 @@ This file tracks what is canonical, proposal-only, and archived.
 | [docs/README.md](README.md) | Documentation map and writing rules | implemented | Maintainers | Keep map aligned with real files |
 | [docs/IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) | Current execution priorities | implemented | Maintainers | Update tracks when scope changes |
 | [docs/CONTRIBUTION_RULES.md](CONTRIBUTION_RULES.md) | Repository process gates | accepted | Maintainers | Keep contributor requirements explicit |
+| [docs/testing/TEST_MATRIX.md](testing/TEST_MATRIX.md) | Core use-case test obligations | accepted | Maintainers | Keep source-to-test mappings current as domains evolve |
 | [docs/DOCS_GOVERNANCE.md](DOCS_GOVERNANCE.md) | Lifecycle and anti-drift policy | accepted | Maintainers | Enforce in doc PRs |
 | [AGENTS.md](../AGENTS.md) | Agent-only behavior rules | accepted | Maintainers | Keep aligned with governance docs |
 | [docs/plan/PLAN-WHISPER-LOCAL-TRANSCRIPTION.md](plan/PLAN-WHISPER-LOCAL-TRANSCRIPTION.md) | ASR deep plan | implemented | ASR maintainers | Keep synchronized with implementation |
 | [docs/plan/PLAN-TAURI-SQL-HARDENING.md](plan/PLAN-TAURI-SQL-HARDENING.md) | SQLite hardening execution plan | proposed | Maintainers | Execute by vertical slices and promote implemented rules to canonical docs |
 | [docs/plan/PLAN-UI-PREFERENCES-STORAGE.md](plan/PLAN-UI-PREFERENCES-STORAGE.md) | UI preference persistence migration | in_progress | Maintainers | Complete Tauri-native backend migration after boundary enforcement |
+| [docs/plan/PLAN-TEST-GUARDRAILS.md](plan/PLAN-TEST-GUARDRAILS.md) | Living-spec test quality gates | proposed | Maintainers | Implement test matrix, obligation checks, and command integration expansion |
+| [docs/plan/PLAN-DOMAIN-CODE-ALIGNMENT.md](plan/PLAN-DOMAIN-CODE-ALIGNMENT.md) | Bounded-context code organization migration | proposed | Maintainers | Deliver context-first directory migration with structural guard rails |
 
 ## Active spec docs (`spec/active/`)
 

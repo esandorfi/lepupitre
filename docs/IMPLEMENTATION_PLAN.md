@@ -92,6 +92,41 @@ Done when:
 - Preferences persistence follows the agreed Tauri architecture.
 - ADR and runbook updates describe the policy and migration.
 
+## Track F: Living-spec test guard rails
+Goal: keep core product behavior stable while UI changes rapidly.
+
+Scope:
+- Define a product use-case test matrix as canonical source of test obligations.
+- Add command-level integration tests for critical backend flows (workspace/talk/quest/run/feedback/pack).
+- Add CI guard rails that require matching tests when core domain files change.
+- Add coverage thresholds on stable logic layers (UI `lib/*`, Rust `core/*`) only.
+- Keep tests readable as specification (Given/When/Then naming and domain contracts).
+
+Execution detail:
+- [docs/plan/PLAN-TEST-GUARDRAILS.md](plan/PLAN-TEST-GUARDRAILS.md)
+
+Done when:
+- Core use-cases have deterministic tests at logic and command integration levels.
+- CI blocks domain changes that bypass required test obligations.
+- Test files are navigable as product specifications.
+
+## Track G: Domain-aligned code organization
+Goal: align Rust and UI code layout with product bounded contexts for readability and maintainability.
+
+Scope:
+- Define bounded contexts and ownership map (workspace, talks, training/quest, runs/feedback, packs/reviews, ASR, preferences).
+- Introduce domain-oriented directory layout in Rust and UI incrementally.
+- Reduce monolithic orchestration files by extracting domain services/modules.
+- Add structural guard rails (path conventions, file-size budgets, dependency direction rules).
+
+Execution detail:
+- [docs/plan/PLAN-DOMAIN-CODE-ALIGNMENT.md](plan/PLAN-DOMAIN-CODE-ALIGNMENT.md)
+
+Done when:
+- New code lands in domain-aligned modules by default.
+- Legacy monolith files are reduced to orchestration boundaries.
+- Architecture docs and CI guard rails enforce the agreed structure.
+
 ## Working rules for this plan
 - Keep this file short and current.
 - Move deep technical plans to `docs/plan/PLAN-*.md`.

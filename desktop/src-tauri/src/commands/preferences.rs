@@ -114,8 +114,7 @@ mod tests {
         )
         .expect("create");
 
-        set_setting(&conn, "global_settings", "lepupitre.locale", Some("\"fr\""))
-            .expect("set");
+        set_setting(&conn, "global_settings", "lepupitre.locale", Some("\"fr\"")).expect("set");
         let read = get_setting(&conn, "global_settings", "lepupitre.locale").expect("get");
         assert_eq!(read.as_deref(), Some("\"fr\""));
     }
@@ -129,8 +128,13 @@ mod tests {
         )
         .expect("create");
 
-        set_setting(&conn, "global_settings", "lepupitre.theme", Some("terminal"))
-            .expect("set");
+        set_setting(
+            &conn,
+            "global_settings",
+            "lepupitre.theme",
+            Some("terminal"),
+        )
+        .expect("set");
         set_setting(&conn, "global_settings", "lepupitre.theme", None).expect("remove");
         let read = get_setting(&conn, "global_settings", "lepupitre.theme").expect("get");
         assert!(read.is_none());
