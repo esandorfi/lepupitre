@@ -3,11 +3,13 @@
 ## CI workflows
 - CI checks: `.github/workflows/ci.yml`
 - Release packaging: `.github/workflows/release-packaging.yml`
+- Website deploy: `.github/workflows/pages.yml`
 - CI is path-aware: docs, UI, and Rust jobs run only when relevant files change (full run on `v*` tags).
 - Release packaging uses explicit trust toggles:
   - `LEPUPITRE_REQUIRE_WINDOWS_SIGNING`
   - `LEPUPITRE_WINDOWS_SIGNING_PROVIDER` (`signpath` or `self-managed`)
   - `LEPUPITRE_REQUIRE_MACOS_NOTARIZATION`
+- CI also runs a website build gate when `website/**` changes.
 
 ## Versioning and changelog
 - Version bump + tag:
@@ -31,6 +33,10 @@
   - macOS (when required): codesign, Gatekeeper assessment, and stapler validation must pass.
 - Release notes should include a `Code signing policy` link:
   - [docs/operations/CODE_SIGNING_POLICY.md](CODE_SIGNING_POLICY.md)
+- Website publishing:
+  - push `website/**` changes to `main`
+  - Pages workflow builds Astro and deploys `website/dist` to GitHub Pages
+  - repository Pages source must be set to `GitHub Actions`
 
 ## Database upgrade behavior
 - Installer/package updates do not run SQL migrations directly.
@@ -130,6 +136,9 @@ const report = await invoke('profile_db_diagnostics', { profileId: 'prof_xxx' })
   - `pnpm -C desktop ui:lint:design`
   - `pnpm -C desktop ui:typecheck`
   - `pnpm -C desktop ui:test`
+- Website:
+  - `pnpm -C website install`
+  - `pnpm -C website build`
 
 ## Optional distribution automation
 - Homebrew cask update (requires `HOMEBREW_TAP_TOKEN`)

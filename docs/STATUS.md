@@ -39,7 +39,8 @@ This file tracks what is canonical, proposal-only, and archived.
 | [spec/active/DECISIONS.md](../spec/active/DECISIONS.md) | Current decision log | accepted | Maintainers | Use for all new major decisions |
 | [spec/active/product/SPEC-VOICEUP.md](../spec/active/product/SPEC-VOICEUP.md) | Product direction | proposed | Product | Convert approved parts into executable plan items |
 | [spec/active/ui/SPEC-UI-HELP-CONTEXTUAL-ASSISTANCE.md](../spec/active/ui/SPEC-UI-HELP-CONTEXTUAL-ASSISTANCE.md) | Help/onboarding architecture proposal | proposed | UI/Product | Keep as proposal for now |
-| [spec/active/help-content/](../spec/active/help-content/) | Help/onboarding editorial drafts | proposed | Product | Keep format unchanged for now |
+| [spec/active/help-content/](../spec/active/help-content/) | Help/onboarding editorial drafts | in_progress | Product | Keep `desktop/ui/src/content/help/` synchronized with active markdown drafts |
+| [spec/active/site/github-pages.md](../spec/active/site/github-pages.md) | Project website + GitHub Pages proposal | in_progress | Product/Engineering | Keep Astro website and Pages workflow aligned with release asset contract |
 | [spec/active/ui/SPEC-UI-DESKTOP-SYSTEM.md](../spec/active/ui/SPEC-UI-DESKTOP-SYSTEM.md) | Next-phase UI system | proposed | UI | Keep as active UI reference during redesign |
 | [spec/active/ui/SPEC-UI-TALK-FLOW.md](../spec/active/ui/SPEC-UI-TALK-FLOW.md) | Training/Talk IA proposal | proposed | UI/Product | Extract remaining implementation decisions |
 | [spec/active/asr/SPEC-ASR-WHISPER.md](../spec/active/asr/SPEC-ASR-WHISPER.md) | Long-form ASR spec | proposed | ASR | Consolidate or supersede with [docs/plan/](plan/) content |
