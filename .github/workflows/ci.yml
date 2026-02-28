@@ -44,6 +44,7 @@ jobs:
               - 'desktop/asr-sidecar/**'
               - 'scripts/asr-smoke.sh'
               - 'scripts/build-asr-sidecar.sh'
+              - 'scripts/check-db-reliability.sh'
               - 'scripts/dev-asr-env.sh'
               - 'scripts/verify-asr-sidecar.mjs'
             ci:
@@ -190,3 +191,8 @@ jobs:
       - name: Rust tests
         run: cargo test --all
         working-directory: desktop/src-tauri
+
+      - name: DB reliability gates
+        run: |
+          chmod +x scripts/check-db-reliability.sh
+          ./scripts/check-db-reliability.sh

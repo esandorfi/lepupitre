@@ -1109,6 +1109,21 @@ mod tests {
     }
 
     #[test]
+    fn global_migrations_are_recorded_in_order() {
+        let mut conn = Connection::open_in_memory().expect("open");
+        apply_migrations(
+            &mut conn,
+            Path::new(":memory:"),
+            "global",
+            GLOBAL_MIGRATIONS,
+        )
+        .expect("migrate");
+
+        let applied = load_applied_migrations(&conn).expect("applied");
+        assert_eq!(applied, vec!["0001_init".to_string()]);
+    }
+
+    #[test]
     fn migration_continuity_rejects_gaps() {
         let conn = Connection::open_in_memory().expect("open");
         ensure_schema_migrations_table(&conn).expect("schema_migrations");
@@ -1404,6 +1419,122 @@ mod tests {
     }
 
     #[test]
+    fn required_profile_indexes_exist_after_migration() {
+        let mut conn = Connection::open_in_memory().expect("open");
+        apply_migrations(
+            &mut conn,
+            Path::new(":memory:"),
+            "profile",
+            PROFILE_MIGRATIONS,
+        )
+        .expect("migrate");
+
+        assert!(index_exists(&conn, "idx_talk_projects_one_training"));
+        assert!(index_exists(&conn, "idx_attempts_project_time"));
+        assert!(index_exists(&conn, "idx_runs_project_time"));
+        assert!(index_exists(&conn, "idx_artifacts_sha"));
+    }
+
+    #[test]
+    fn run_hot_query_plan_uses_project_time_index() {
+        let mut conn = Connection::open_in_memory().expect("open");
+        apply_migrations(
+            &mut conn,
+            Path::new(":memory:"),
+            "profile",
+            PROFILE_MIGRATIONS,
+        )
+        .expect("migrate");
+
+        conn.execute(
+            "INSERT INTO talk_projects (id, title, stage, created_at, updated_at, is_training)
+             VALUES (?1, ?2, ?3, ?4, ?5, 0)",
+            params![
+                "proj_plan",
+                "Plan Talk",
+                "draft",
+                "2026-02-28T00:00:00Z",
+                "2026-02-28T00:00:00Z"
+            ],
+        )
+        .expect("insert project");
+        conn.execute(
+            "INSERT INTO runs (id, project_id, created_at, audio_artifact_id, transcript_id, feedback_id)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![
+                "run_plan",
+                "proj_plan",
+                "2026-02-28T00:05:00Z",
+                Option::<String>::None,
+                Option::<String>::None,
+                Option::<String>::None
+            ],
+        )
+        .expect("insert run");
+
+        let detail = explain_query_plan(
+            &conn,
+            "SELECT id FROM runs WHERE project_id = 'proj_plan' ORDER BY created_at DESC LIMIT 1",
+        );
+        assert!(
+            detail.contains("idx_runs_project_time"),
+            "query plan did not use idx_runs_project_time: {detail}"
+        );
+    }
+
+    #[test]
+    fn attempts_hot_query_plan_uses_project_time_index() {
+        let mut conn = Connection::open_in_memory().expect("open");
+        apply_migrations(
+            &mut conn,
+            Path::new(":memory:"),
+            "profile",
+            PROFILE_MIGRATIONS,
+        )
+        .expect("migrate");
+
+        conn.execute(
+            "INSERT INTO talk_projects (id, title, stage, created_at, updated_at, is_training)
+             VALUES (?1, ?2, ?3, ?4, ?5, 0)",
+            params![
+                "proj_attempts_plan",
+                "Plan Talk",
+                "draft",
+                "2026-02-28T00:00:00Z",
+                "2026-02-28T00:00:00Z"
+            ],
+        )
+        .expect("insert project");
+        let quest_code: String = conn
+            .query_row("SELECT code FROM quests LIMIT 1", [], |row| row.get(0))
+            .expect("quest code");
+        conn.execute(
+            "INSERT INTO quest_attempts (id, project_id, quest_code, created_at, output_text, audio_artifact_id, transcript_id, feedback_id)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+            params![
+                "attempt_plan",
+                "proj_attempts_plan",
+                quest_code,
+                "2026-02-28T00:06:00Z",
+                Some("hello"),
+                Option::<String>::None,
+                Option::<String>::None,
+                Option::<String>::None
+            ],
+        )
+        .expect("insert attempt");
+
+        let detail = explain_query_plan(
+            &conn,
+            "SELECT id FROM quest_attempts WHERE project_id = 'proj_attempts_plan' ORDER BY created_at DESC LIMIT 1",
+        );
+        assert!(
+            detail.contains("idx_attempts_project_time"),
+            "query plan did not use idx_attempts_project_time: {detail}"
+        );
+    }
+
+    #[test]
     fn recovery_restores_latest_snapshot() {
         let root = std::env::temp_dir().join(format!(
             "lepupitre-recovery-{}",
@@ -1468,6 +1599,27 @@ mod tests {
             .expect("now")
             .as_nanos();
         std::env::temp_dir().join(format!("lepupitre-{prefix}-{nanos}.db"))
+    }
+
+    fn index_exists(conn: &Connection, name: &str) -> bool {
+        let count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' AND name = ?1",
+                params![name],
+                |row| row.get(0),
+            )
+            .expect("index exists query");
+        count > 0
+    }
+
+    fn explain_query_plan(conn: &Connection, sql: &str) -> String {
+        let statement = format!("EXPLAIN QUERY PLAN {sql}");
+        let mut stmt = conn.prepare(&statement).expect("plan prepare");
+        let rows = stmt
+            .query_map([], |row| row.get::<_, String>(3))
+            .expect("plan query");
+        let details: Vec<String> = rows.map(|row| row.expect("plan row")).collect();
+        details.join(" | ").to_ascii_lowercase()
     }
 
     fn create_snapshot_fixture(path: &Path, marker: &str) -> Result<(), String> {

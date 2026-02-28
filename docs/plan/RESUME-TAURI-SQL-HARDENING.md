@@ -23,11 +23,13 @@ Last updated: 2026-02-28
   - added startup corruption recovery (quarantine + restore from latest snapshot) in `core/db.rs`
   - added diagnostics IPC command `profile_db_diagnostics` (global + optional profile)
   - documented operator restore workflow and `db_recovery_no_snapshot` handling in operations docs
-- Last known checkpoint commit: `b97e45e` (updated in-progress after this checkpoint)
+  - added DB reliability CI gate script (`scripts/check-db-reliability.sh`) and workflow wiring
+  - added migration/corruption/query-plan/index reliability assertions in `core/db.rs` tests
+- Last known checkpoint commit: `6329245` (updated in-progress after this checkpoint)
 
 ## Resume goal
 
-Start Workstream 6 by adding CI reliability gates for migrations, corruption drills, and query-plan/index checks.
+Continue Workstream 6 by finalizing CI failure thresholds and explicit runbook linking for DB reliability failures.
 
 ## Resume checklist (ordered)
 
@@ -38,14 +40,14 @@ Start Workstream 6 by adding CI reliability gates for migrations, corruption dri
   - `pnpm -C desktop docs:lint`
 
 1. Workstream 6 kickoff
-- [ ] Add migration matrix CI checks:
+- [x] Add migration matrix CI checks:
   - fresh install schema path
   - upgrade path from older fixture DBs
-- [ ] Add corruption drill CI checks:
+- [x] Add corruption drill CI checks:
   - corrupted DB fixture
   - snapshot restore assertion
   - deterministic `db_recovery_no_snapshot` failure assertion
-- [ ] Add hot query guard rails:
+- [x] Add hot query guard rails:
   - query-plan assertions for key reads/writes
   - index presence checks for expected paths
 - [ ] Define CI failure thresholds and runbook links for DB reliability failures.
@@ -58,8 +60,8 @@ Start Workstream 6 by adding CI reliability gates for migrations, corruption dri
 - [ ] Keep [docs/STATUS.md](../STATUS.md) next-action aligned.
 
 1. Done criteria for Workstream 6
-- [ ] CI blocks migration continuity and corruption-recovery regressions.
-- [ ] Hot-path query plans and index expectations are enforced.
+- [x] CI blocks migration continuity and corruption-recovery regressions.
+- [x] Hot-path query plans and index expectations are enforced.
 - [ ] Reliability failures are diagnosable from CI logs + runbook references.
 
 ## Quick commands

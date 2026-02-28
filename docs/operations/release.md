@@ -79,6 +79,7 @@ const report = await invoke('profile_db_diagnostics', { profileId: 'prof_xxx' })
   - `cargo fmt --all -- --check`
   - `cargo clippy --all-targets --all-features -- -D warnings`
   - `cargo test --manifest-path desktop/src-tauri/Cargo.toml`
+  - `./scripts/check-db-reliability.sh`
 - Frontend:
   - `pnpm -C desktop ui:lint`
   - `pnpm -C desktop ui:lint:design`

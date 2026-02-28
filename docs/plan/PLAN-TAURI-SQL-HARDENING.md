@@ -255,6 +255,16 @@ Acceptance:
   - documented operator recovery workflow and `db_recovery_no_snapshot` handling in `docs/operations/release.md`,
   - documented diagnostics IPC contract in `docs/architecture/ipc-contracts.md`.
 - 2026-02-28: Workstream 5 completed.
+- 2026-02-28: Workstream 6 started.
+- Workstream 6 slice delivered:
+  - added explicit DB reliability CI gate script `scripts/check-db-reliability.sh`,
+  - wired CI rust job to execute DB reliability gate after standard rust tests.
+- Workstream 6 slice delivered:
+  - added migration matrix assertions for global/profile DBs in `core/db.rs` tests,
+  - added corruption drill assertions (restore and no-snapshot failure) in `core/db.rs` tests,
+  - added hot-query/index guard rails:
+    - required index presence assertions after profile migration,
+    - `EXPLAIN QUERY PLAN` assertions for `runs` and `quest_attempts` project-time read paths.
 
 ## Dependencies
 
