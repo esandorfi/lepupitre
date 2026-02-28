@@ -58,6 +58,23 @@
   - commit DB first and finalize files with explicit cleanup on failure.
 - Example: `peer_review_import` is treated as one aggregate write (`talk_projects` + `talk_outlines` + `runs` + `peer_reviews`) and persisted in one DB transaction.
 
+### Multi-resource contract matrix
+- `peer_review_import` (`core/pack.rs`):
+  - Resources: artifact files + `artifacts` rows + aggregate rows (`talk_projects`, `talk_outlines`, `runs`, `peer_reviews`).
+  - Contract: aggregate rows are transactional; on aggregate persist failure, created artifacts are compensated via `artifacts::delete_artifacts`.
+- `run_analyze` (`commands/run.rs`):
+  - Resources: feedback artifact file + `artifacts` row + `auto_feedback`/`runs` link rows.
+  - Contract: link rows are transactional; if link persistence fails, feedback artifact is compensated via `artifacts::delete_artifact`.
+- `analyze_attempt` (`core/feedback.rs`):
+  - Resources: feedback artifact file + `artifacts` row + `auto_feedback`/`quest_attempts` link rows.
+  - Contract: link rows are transactional; if link persistence fails, feedback artifact is compensated via `artifacts::delete_artifact`.
+- `pack_export` (`core/pack.rs`):
+  - Resources: generated ZIP file + `artifacts` row.
+  - Contract: artifact registration is centralized in `artifacts::register_existing_file` and cleans up the ZIP on row insert failure.
+- `store_bytes` / `finalize_draft` (`core/artifacts.rs`):
+  - Resources: written file + `artifacts` row.
+  - Contract: on row insert failure, file cleanup is automatic in the artifact layer.
+
 ## SQLite migration flow
 - Migrations are executed at runtime when a DB is opened:
   - global DB on `open_global`,

@@ -22,7 +22,7 @@ This file tracks what is canonical, proposal-only, and archived.
 | [docs/DOCS_GOVERNANCE.md](DOCS_GOVERNANCE.md) | Lifecycle and anti-drift policy | accepted | Maintainers | Enforce in doc PRs |
 | [AGENTS.md](../AGENTS.md) | Agent-only behavior rules | accepted | Maintainers | Keep aligned with governance docs |
 | [docs/plan/PLAN-WHISPER-LOCAL-TRANSCRIPTION.md](plan/PLAN-WHISPER-LOCAL-TRANSCRIPTION.md) | ASR deep plan | implemented | ASR maintainers | Keep synchronized with implementation |
-| [docs/plan/PLAN-TAURI-SQL-HARDENING.md](plan/PLAN-TAURI-SQL-HARDENING.md) | SQLite hardening execution plan | in_progress | Maintainers | Continue Workstream 3 (transaction boundaries + rollback tests) after FK constraints rollout |
+| [docs/plan/PLAN-TAURI-SQL-HARDENING.md](plan/PLAN-TAURI-SQL-HARDENING.md) | SQLite hardening execution plan | in_progress | Maintainers | Continue Workstream 4 (extract query/repo module boundaries and remove direct SQL from command wrappers) |
 | [docs/plan/PLAN-UI-PREFERENCES-STORAGE.md](plan/PLAN-UI-PREFERENCES-STORAGE.md) | UI preference persistence migration | in_progress | Maintainers | Complete Tauri-native backend migration after boundary enforcement |
 | [docs/plan/PLAN-DOMAIN-CODE-ALIGNMENT.md](plan/PLAN-DOMAIN-CODE-ALIGNMENT.md) | Bounded-context code organization migration | in_progress | Maintainers | Keep new code in domain modules by default and tune guard-rail thresholds as code evolves |
 

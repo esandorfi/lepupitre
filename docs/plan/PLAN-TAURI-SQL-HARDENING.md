@@ -206,7 +206,9 @@ Acceptance:
 - Centralized external-file artifact registration in `core/artifacts`:
   - `register_existing_file` now owns hash + row insert + cleanup semantics for prebuilt files,
   - `pack_export` uses this shared path (no pack-local artifact insert SQL).
-- Remaining Workstream 3 scope: document final compensation/finalization contract examples for each multi-resource write path in architecture docs.
+- Documented final compensation/finalization contract examples per multi-resource write path in architecture docs.
+- 2026-02-28: Workstream 3 completed.
+- 2026-02-28: Workstream 4 started (data-access module boundary extraction and command SQL removal).
 
 ## Dependencies
 
