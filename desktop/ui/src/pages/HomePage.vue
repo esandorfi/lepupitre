@@ -2,6 +2,13 @@
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "../lib/i18n";
+import {
+  readAchievementMemory,
+  readStoredHeroQuestCode,
+  writeAchievementMemory,
+  writeStoredHeroQuestCode,
+  type AchievementMemory,
+} from "../lib/trainingPreferences";
 import { useUiPreferences } from "../lib/uiPreferences";
 import { appStore } from "../stores/app";
 import type {
@@ -43,11 +50,6 @@ type AchievementPulse = {
   body: string;
   ctaLabel: string;
   ctaRoute: string;
-};
-
-type AchievementMemory = {
-  creditTier: number;
-  maxStreak: number;
 };
 
 const { t, locale } = useI18n();
@@ -412,71 +414,6 @@ function rewardBadgeClass(unlocked: boolean, isNext: boolean) {
 function questMapNodeAriaLabel(node: QuestMapNode) {
   const category = node.category ?? t("training.quest_map_any_category");
   return `${node.label} (${category})`;
-}
-
-function trainingHeroQuestStorageKey(profileId: string) {
-  return `lepupitre.training.heroQuest.${profileId}`;
-}
-
-function readStoredHeroQuestCode(profileId: string): string | null {
-  try {
-    const value = window.localStorage.getItem(trainingHeroQuestStorageKey(profileId));
-    return value && value.trim() ? value : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeStoredHeroQuestCode(profileId: string, questCode: string | null) {
-  try {
-    const key = trainingHeroQuestStorageKey(profileId);
-    if (!questCode) {
-      window.localStorage.removeItem(key);
-      return;
-    }
-    window.localStorage.setItem(key, questCode);
-  } catch {
-    // local-only preference; ignore storage failures
-  }
-}
-
-function trainingAchievementStorageKey(profileId: string) {
-  return `lepupitre.training.achievements.${profileId}`;
-}
-
-function readAchievementMemory(profileId: string): AchievementMemory | null {
-  try {
-    const raw = window.localStorage.getItem(trainingAchievementStorageKey(profileId));
-    if (!raw) {
-      return null;
-    }
-    const parsed = JSON.parse(raw) as Partial<AchievementMemory>;
-    if (
-      typeof parsed.creditTier === "number" &&
-      Number.isFinite(parsed.creditTier) &&
-      typeof parsed.maxStreak === "number" &&
-      Number.isFinite(parsed.maxStreak)
-    ) {
-      return {
-        creditTier: Math.max(0, Math.floor(parsed.creditTier)),
-        maxStreak: Math.max(0, Math.floor(parsed.maxStreak)),
-      };
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-function writeAchievementMemory(profileId: string, memory: AchievementMemory) {
-  try {
-    window.localStorage.setItem(
-      trainingAchievementStorageKey(profileId),
-      JSON.stringify(memory)
-    );
-  } catch {
-    // non-blocking local preference
-  }
 }
 
 function evaluateAchievementPulse(profileId: string, progress: ProgressSnapshot): AchievementPulse | null {

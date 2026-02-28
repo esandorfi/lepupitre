@@ -1,11 +1,38 @@
 const STORAGE_PREFIX = "lepupitre.feedback.reviewed";
+const MAX_REVIEWED_IDS = 400;
 
 function storageKey(profileId: string) {
   return `${STORAGE_PREFIX}.${profileId}`;
 }
 
+function canUseStorage() {
+  return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+}
+
+function sanitizeReviewedIds(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  const deduped = new Set<string>();
+  for (const item of value) {
+    if (typeof item !== "string") {
+      continue;
+    }
+    const normalized = item.trim();
+    if (!normalized) {
+      continue;
+    }
+    deduped.add(normalized);
+  }
+  const all = Array.from(deduped);
+  if (all.length <= MAX_REVIEWED_IDS) {
+    return all;
+  }
+  return all.slice(all.length - MAX_REVIEWED_IDS);
+}
+
 export function readReviewedFeedbackIds(profileId: string): Set<string> {
-  if (!profileId) {
+  if (!profileId || !canUseStorage()) {
     return new Set();
   }
   try {
@@ -13,26 +40,25 @@ export function readReviewedFeedbackIds(profileId: string): Set<string> {
     if (!raw) {
       return new Set();
     }
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) {
-      return new Set();
-    }
-    return new Set(
-      parsed.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
-    );
+    return new Set(sanitizeReviewedIds(JSON.parse(raw)));
   } catch {
     return new Set();
   }
 }
 
 export function markFeedbackReviewed(profileId: string, feedbackId: string) {
-  if (!profileId || !feedbackId) {
+  if (!profileId || !feedbackId || !canUseStorage()) {
+    return;
+  }
+  const normalizedFeedbackId = feedbackId.trim();
+  if (!normalizedFeedbackId) {
     return;
   }
   const reviewed = readReviewedFeedbackIds(profileId);
-  reviewed.add(feedbackId);
+  reviewed.add(normalizedFeedbackId);
   try {
-    window.localStorage.setItem(storageKey(profileId), JSON.stringify(Array.from(reviewed)));
+    const next = sanitizeReviewedIds(Array.from(reviewed));
+    window.localStorage.setItem(storageKey(profileId), JSON.stringify(next));
   } catch {
     // ignore storage write errors
   }
