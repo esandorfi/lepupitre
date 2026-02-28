@@ -115,6 +115,17 @@ Acceptance:
 5. PR 6: Workstream 5 (recovery + backup/restore + diagnostics).  
 6. PR 7: Workstream 6 + 7 (CI SOTA gates + security policy closure).
 
+## Progress updates
+
+- 2026-02-28: Workstream 1 started.
+- Implemented SQLite open-time baseline posture in `core/db.rs` for global and profile DBs:
+  - `journal_mode = WAL`
+  - `synchronous = NORMAL`
+  - `foreign_keys = ON`
+  - `busy_timeout >= 2000ms`
+- Added pragma verification checks at connection open.
+- Added regression test `sqlite_pragmas_are_applied_and_verified`.
+
 ## Dependencies
 
 - [docs/architecture/ipc-contracts.md](../architecture/ipc-contracts.md)

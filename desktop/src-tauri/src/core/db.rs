@@ -9,6 +9,7 @@ use std::thread;
 use std::time::Duration;
 use tauri::Manager;
 
+const SQLITE_BUSY_TIMEOUT_MS: u64 = 2000;
 const GLOBAL_MIGRATION: &str = include_str!("../../../../migrations/global/0001_init.sql");
 const PROFILE_MIGRATION: &str = include_str!("../../../../migrations/profile/0001_init.sql");
 const QUESTS_SEED: &str = include_str!("../../../../seed/quests.v1.json");
@@ -27,8 +28,7 @@ pub fn open_global(app: &tauri::AppHandle) -> Result<Connection, String> {
     let db_path = app_data_dir.join("global.db");
     let db_exists = db_path.exists();
     let conn = Connection::open(&db_path).map_err(|e| format!("open: {e}"))?;
-    conn.busy_timeout(Duration::from_millis(2000))
-        .map_err(|e| format!("busy_timeout: {e}"))?;
+    configure_connection_pragmas(&conn)?;
 
     if !db_exists || !GLOBAL_MIGRATED.load(Ordering::Acquire) {
         let lock = GLOBAL_MIGRATION_LOCK.get_or_init(|| Mutex::new(()));
@@ -66,8 +66,7 @@ pub fn open_profile(app: &tauri::AppHandle, profile_id: &str) -> Result<Connecti
     let db_path = profile_dir.join("profile.db");
     let db_exists = db_path.exists();
     let mut conn = Connection::open(&db_path).map_err(|e| format!("open: {e}"))?;
-    conn.busy_timeout(Duration::from_millis(2000))
-        .map_err(|e| format!("busy_timeout: {e}"))?;
+    configure_connection_pragmas(&conn)?;
     let state = PROFILE_MIGRATION_STATE.get_or_init(|| Mutex::new(HashSet::new()));
     let mut state_guard = state
         .lock()
@@ -136,6 +135,51 @@ fn seed_quests(conn: &mut Connection) -> Result<(), String> {
         .map_err(|e| format!("insert_quest: {e}"))?;
     }
     tx.commit().map_err(|e| format!("commit: {e}"))?;
+    Ok(())
+}
+
+fn configure_connection_pragmas(conn: &Connection) -> Result<(), String> {
+    conn.busy_timeout(Duration::from_millis(SQLITE_BUSY_TIMEOUT_MS))
+        .map_err(|e| format!("busy_timeout: {e}"))?;
+    conn.execute_batch(
+        "PRAGMA journal_mode = WAL;
+         PRAGMA synchronous = NORMAL;
+         PRAGMA foreign_keys = ON;",
+    )
+    .map_err(|e| format!("pragmas_set: {e}"))?;
+    verify_connection_pragmas(conn)
+}
+
+fn verify_connection_pragmas(conn: &Connection) -> Result<(), String> {
+    let journal_mode: String = conn
+        .query_row("PRAGMA journal_mode", [], |row| row.get(0))
+        .map_err(|e| format!("pragma_journal_mode: {e}"))?;
+    if !journal_mode.eq_ignore_ascii_case("wal") {
+        return Err(format!("pragma_journal_mode_unexpected: {journal_mode}"));
+    }
+
+    let synchronous: i64 = conn
+        .query_row("PRAGMA synchronous", [], |row| row.get(0))
+        .map_err(|e| format!("pragma_synchronous: {e}"))?;
+    // SQLite values: OFF=0, NORMAL=1, FULL=2, EXTRA=3
+    if synchronous != 1 {
+        return Err(format!("pragma_synchronous_unexpected: {synchronous}"));
+    }
+
+    let foreign_keys: i64 = conn
+        .query_row("PRAGMA foreign_keys", [], |row| row.get(0))
+        .map_err(|e| format!("pragma_foreign_keys: {e}"))?;
+    if foreign_keys != 1 {
+        return Err(format!("pragma_foreign_keys_unexpected: {foreign_keys}"));
+    }
+
+    let busy_timeout: i64 = conn
+        .query_row("PRAGMA busy_timeout", [], |row| row.get(0))
+        .map_err(|e| format!("pragma_busy_timeout: {e}"))?;
+    if busy_timeout < SQLITE_BUSY_TIMEOUT_MS as i64 {
+        return Err(format!("pragma_busy_timeout_unexpected: {busy_timeout}"));
+    }
+
     Ok(())
 }
 
@@ -291,6 +335,8 @@ fn ensure_profile_settings_table(conn: &mut Connection) -> Result<(), String> {
 mod tests {
     use super::*;
     use rusqlite::{params, Connection};
+    use std::path::PathBuf;
+    use std::time::{SystemTime, UNIX_EPOCH};
 
     #[test]
     fn runs_audio_column_becomes_nullable() {
@@ -365,5 +411,25 @@ mod tests {
             .map(|row| row.expect("row"))
             .collect::<Vec<i64>>();
         assert_eq!(numbers, vec![1, 2]);
+    }
+
+    #[test]
+    fn sqlite_pragmas_are_applied_and_verified() {
+        let db_path = temp_db_path("pragma-check");
+        let conn = Connection::open(&db_path).expect("open");
+        configure_connection_pragmas(&conn).expect("configure");
+        verify_connection_pragmas(&conn).expect("verify");
+        drop(conn);
+        let _ = std::fs::remove_file(&db_path);
+        let _ = std::fs::remove_file(db_path.with_extension("db-wal"));
+        let _ = std::fs::remove_file(db_path.with_extension("db-shm"));
+    }
+
+    fn temp_db_path(prefix: &str) -> PathBuf {
+        let nanos = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("now")
+            .as_nanos();
+        std::env::temp_dir().join(format!("lepupitre-{prefix}-{nanos}.db"))
     }
 }
