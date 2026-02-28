@@ -2,15 +2,65 @@
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "../lib/i18n";
+import {
+  readAchievementMemory,
+  readStoredHeroQuestCode,
+  writeAchievementMemory,
+  writeStoredHeroQuestCode,
+  type AchievementMemory,
+} from "../lib/trainingPreferences";
+import { useUiPreferences } from "../lib/uiPreferences";
 import { appStore } from "../stores/app";
-import type { Quest, QuestAttemptSummary, QuestDaily } from "../schemas/ipc";
+import type {
+  MascotMessage,
+  ProgressSnapshot,
+  Quest,
+  QuestAttemptSummary,
+  QuestDaily,
+} from "../schemas/ipc";
 
-const { t } = useI18n();
+type QuestMapNode = {
+  id: string;
+  label: string;
+  reward: number;
+  category: string | null;
+  done: boolean;
+  current: boolean;
+  offsetPx: number;
+};
+
+type DailyLoopStep = {
+  id: string;
+  title: string;
+  done: boolean;
+  ctaRoute: string;
+};
+
+type RewardBadge = {
+  id: string;
+  title: string;
+  unlocked: boolean;
+  current: number;
+  target: number;
+};
+
+type AchievementPulse = {
+  id: string;
+  title: string;
+  body: string;
+  ctaLabel: string;
+  ctaRoute: string;
+};
+
+const { t, locale } = useI18n();
+const { settings: uiSettings } = useUiPreferences();
 const state = computed(() => appStore.state);
 const trainingProjectId = ref<string | null>(null);
 const trainingDailyQuest = ref<QuestDaily | null>(null);
 const selectedHeroQuest = ref<Quest | null>(null);
 const recentAttempts = ref<QuestAttemptSummary[]>([]);
+const trainingProgress = ref<ProgressSnapshot | null>(null);
+const mascotMessage = ref<MascotMessage | null>(null);
 const trainingError = ref<string | null>(null);
 const isTrainingLoading = ref(false);
 const isQuestPickerOpen = ref(false);
@@ -24,9 +74,13 @@ const availableQuests = ref<Quest[]>([]);
 const questPickerSearchEl = ref<HTMLInputElement | null>(null);
 const questPickerListEl = ref<HTMLElement | null>(null);
 const questPickerActiveCode = ref<string | null>(null);
+const achievementPulse = ref<AchievementPulse | null>(null);
 
 const feedbackAttempts = computed(() =>
   recentAttempts.value.filter((attempt) => Boolean(attempt.feedback_id))
+);
+const hasFeedbackInRecent = computed(() =>
+  recentAttempts.value.some((attempt) => attempt.has_feedback)
 );
 const heroQuest = computed(() => selectedHeroQuest.value ?? trainingDailyQuest.value?.quest ?? null);
 const heroQuestIsOverride = computed(() => Boolean(selectedHeroQuest.value));
@@ -101,6 +155,174 @@ const pickerMainQuests = computed(() => {
 const showRecentQuestSection = computed(
   () => questPickerSort.value === "recent" && recentPickerQuests.value.length > 0
 );
+const showMascotCard = computed(() => uiSettings.value.mascotEnabled);
+const showCredits = computed(() => uiSettings.value.gamificationMode !== "minimal");
+const showQuestMap = computed(() => uiSettings.value.gamificationMode !== "minimal");
+const isQuestWorldMode = computed(() => uiSettings.value.gamificationMode === "quest-world");
+const mascotBody = computed(() => {
+  if (!mascotMessage.value) {
+    return "";
+  }
+  if (uiSettings.value.mascotIntensity === "minimal") {
+    return "";
+  }
+  return mascotMessage.value.body;
+});
+const weeklyProgressPercent = computed(() => {
+  const progress = trainingProgress.value;
+  if (!progress || progress.weekly_target <= 0) {
+    return 0;
+  }
+  return Math.min(100, Math.round((progress.weekly_completed / progress.weekly_target) * 100));
+});
+const creditsToMilestone = computed(() => {
+  const progress = trainingProgress.value;
+  if (!progress) {
+    return 0;
+  }
+  return Math.max(0, progress.next_milestone - progress.credits);
+});
+const questCategoryPool = computed(() => {
+  const categories = Array.from(
+    new Set(
+      availableQuests.value
+        .map((quest) => quest.category.trim())
+        .filter((category) => category.length > 0)
+    )
+  ).sort();
+  const dailyCategory = trainingDailyQuest.value?.quest.category?.trim();
+  if (!dailyCategory) {
+    return categories;
+  }
+  const withoutDaily = categories.filter((category) => category !== dailyCategory);
+  return [dailyCategory, ...withoutDaily];
+});
+const practicedToday = computed(() => {
+  const value = trainingProgress.value?.last_attempt_at;
+  if (!value) {
+    return false;
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return false;
+  }
+  const today = new Date();
+  return parsed.toDateString() === today.toDateString();
+});
+const questMapNodes = computed<QuestMapNode[]>(() => {
+  const progress = trainingProgress.value;
+  if (!progress) {
+    return [];
+  }
+  const checkpoints = Math.max(3, Math.min(7, progress.weekly_target));
+  const completed = Math.min(progress.weekly_completed, checkpoints);
+  return Array.from({ length: checkpoints }, (_, index) => {
+    const order = index + 1;
+    const isDone = order <= completed;
+    const isCurrent = !isDone && order === completed + 1;
+    const category =
+      questCategoryPool.value.length > 0
+        ? questCategoryPool.value[index % questCategoryPool.value.length]
+        : null;
+    return {
+      id: `weekly-${order}`,
+      label: `${t("training.quest_map_checkpoint")} ${order}`,
+      reward: order === checkpoints ? 20 : 10,
+      category,
+      done: isDone,
+      current: isCurrent,
+      offsetPx: order % 2 === 0 ? 14 : 0,
+    };
+  });
+});
+const questMapHint = computed(() => {
+  const progress = trainingProgress.value;
+  if (!progress) {
+    return t("training.quest_map_empty");
+  }
+  if (progress.weekly_completed >= progress.weekly_target) {
+    return t("training.quest_map_hint_complete");
+  }
+  if (practicedToday.value) {
+    return t("training.quest_map_hint_today");
+  }
+  if (progress.weekly_completed === 0) {
+    return t("training.quest_map_hint_start");
+  }
+  return t("training.quest_map_hint_continue");
+});
+const rewardBadges = computed<RewardBadge[]>(() => {
+  const progress = trainingProgress.value;
+  if (!progress) {
+    return [];
+  }
+  const weeklyTarget = Math.max(1, progress.weekly_target);
+  return [
+    {
+      id: "streak-3",
+      title: t("training.reward_streak_3"),
+      unlocked: progress.streak_days >= 3,
+      current: progress.streak_days,
+      target: 3,
+    },
+    {
+      id: "credits-100",
+      title: t("training.reward_credits_100"),
+      unlocked: progress.credits >= 100,
+      current: progress.credits,
+      target: 100,
+    },
+    {
+      id: "weekly-target",
+      title: `${t("training.reward_weekly_habit")} ${weeklyTarget}`,
+      unlocked: progress.weekly_completed >= weeklyTarget,
+      current: progress.weekly_completed,
+      target: weeklyTarget,
+    },
+    {
+      id: "streak-7",
+      title: t("training.reward_streak_7"),
+      unlocked: progress.streak_days >= 7,
+      current: progress.streak_days,
+      target: 7,
+    },
+  ];
+});
+const unlockedRewardCount = computed(
+  () => rewardBadges.value.filter((badge) => badge.unlocked).length
+);
+const nextRewardBadge = computed(
+  () => rewardBadges.value.find((badge) => !badge.unlocked) ?? null
+);
+const dailyLoopSteps = computed<DailyLoopStep[]>(() => {
+  const practiceRoute = heroQuest.value ? questRoute(heroQuest.value.code) : "/training";
+  return [
+    {
+      id: "practice",
+      title: t("training.daily_loop_step_practice"),
+      done: practicedToday.value,
+      ctaRoute: practiceRoute,
+    },
+    {
+      id: "feedback",
+      title: t("training.daily_loop_step_feedback"),
+      done: hasFeedbackInRecent.value,
+      ctaRoute: "/feedback",
+    },
+    {
+      id: "momentum",
+      title: t("training.daily_loop_step_momentum"),
+      done: (trainingProgress.value?.streak_days ?? 0) >= 3,
+      ctaRoute: "/training",
+    },
+  ];
+});
+const dailyLoopCompletedCount = computed(
+  () => dailyLoopSteps.value.filter((step) => step.done).length
+);
+const dailyLoopIsComplete = computed(
+  () => dailyLoopCompletedCount.value >= dailyLoopSteps.value.length
+);
 const pickerVisibleQuests = computed(() => [
   ...recentPickerQuests.value,
   ...pickerMainQuests.value,
@@ -146,30 +368,100 @@ function toError(err: unknown) {
   return err instanceof Error ? err.message : String(err);
 }
 
-function trainingHeroQuestStorageKey(profileId: string) {
-  return `lepupitre.training.heroQuest.${profileId}`;
+function mascotToneClass(kind: string | null | undefined) {
+  if (kind === "celebrate") {
+    return "border-[var(--color-success)] bg-[color-mix(in_srgb,var(--color-success)_15%,var(--color-surface))]";
+  }
+  if (kind === "nudge") {
+    return "border-[var(--color-accent)] bg-[color-mix(in_srgb,var(--color-accent-soft)_35%,var(--color-surface))]";
+  }
+  return "border-[var(--color-border)] bg-[var(--color-surface-elevated)]";
 }
 
-function readStoredHeroQuestCode(profileId: string): string | null {
-  try {
-    const value = window.localStorage.getItem(trainingHeroQuestStorageKey(profileId));
-    return value && value.trim() ? value : null;
-  } catch {
+function questMapNodeClass(node: QuestMapNode) {
+  if (node.done) {
+    return "border-[var(--color-success)] bg-[color-mix(in_srgb,var(--color-success)_22%,var(--color-surface))] text-[var(--color-success)]";
+  }
+  if (node.current) {
+    return "border-[var(--color-accent)] bg-[var(--color-surface-selected)] text-[var(--color-accent)]";
+  }
+  return "border-[var(--app-border)] bg-[var(--color-surface-elevated)] text-[var(--color-muted)]";
+}
+
+function questMapConnectorClass(done: boolean) {
+  return done
+    ? "bg-[var(--color-success)]"
+    : "bg-[color-mix(in_srgb,var(--app-border)_70%,transparent)]";
+}
+
+function dailyLoopStepClass(done: boolean) {
+  if (done) {
+    return "border-[var(--color-success)] bg-[color-mix(in_srgb,var(--color-success)_12%,var(--color-surface))]";
+  }
+  return "border-[var(--app-border)] bg-[var(--color-surface-elevated)]";
+}
+
+function rewardBadgeClass(unlocked: boolean, isNext: boolean) {
+  if (unlocked) {
+    return "border-[var(--color-success)] bg-[color-mix(in_srgb,var(--color-success)_14%,var(--color-surface))]";
+  }
+  if (isNext) {
+    return "border-[var(--color-accent)] bg-[color-mix(in_srgb,var(--color-accent-soft)_35%,var(--color-surface))]";
+  }
+  return "border-[var(--app-border)] bg-[var(--color-surface-elevated)]";
+}
+
+function questMapNodeAriaLabel(node: QuestMapNode) {
+  const category = node.category ?? t("training.quest_map_any_category");
+  return `${node.label} (${category})`;
+}
+
+function evaluateAchievementPulse(profileId: string, progress: ProgressSnapshot): AchievementPulse | null {
+  const currentTier = Math.max(0, Math.floor(progress.credits / 50));
+  const currentStreak = Math.max(0, progress.streak_days);
+  const previous = readAchievementMemory(profileId);
+  if (!previous) {
+    writeAchievementMemory(profileId, {
+      creditTier: currentTier,
+      maxStreak: currentStreak,
+    });
     return null;
   }
-}
 
-function writeStoredHeroQuestCode(profileId: string, questCode: string | null) {
-  try {
-    const key = trainingHeroQuestStorageKey(profileId);
-    if (!questCode) {
-      window.localStorage.removeItem(key);
-      return;
-    }
-    window.localStorage.setItem(key, questCode);
-  } catch {
-    // local-only preference; ignore storage failures
+  const nextMemory: AchievementMemory = {
+    creditTier: Math.max(previous.creditTier, currentTier),
+    maxStreak: Math.max(previous.maxStreak, currentStreak),
+  };
+
+  let pulse: AchievementPulse | null = null;
+  if (previous.maxStreak < 7 && currentStreak >= 7) {
+    pulse = {
+      id: "streak-7",
+      title: t("training.achievement_streak7_title"),
+      body: t("training.achievement_streak7_body"),
+      ctaLabel: t("training.achievement_cta_boss_run"),
+      ctaRoute: "/boss-run",
+    };
+  } else if (previous.maxStreak < 3 && currentStreak >= 3) {
+    pulse = {
+      id: "streak-3",
+      title: t("training.achievement_streak3_title"),
+      body: t("training.achievement_streak3_body"),
+      ctaLabel: t("training.achievement_cta_training"),
+      ctaRoute: "/training",
+    };
+  } else if (currentTier > previous.creditTier) {
+    pulse = {
+      id: "credits-tier",
+      title: t("training.achievement_levelup_title"),
+      body: t("training.achievement_levelup_body"),
+      ctaLabel: t("training.achievement_cta_feedback"),
+      ctaRoute: "/feedback",
+    };
   }
+
+  writeAchievementMemory(profileId, nextMemory);
+  return pulse;
 }
 
 function questRoute(code: string) {
@@ -208,6 +500,8 @@ async function loadTrainingData() {
     trainingDailyQuest.value = null;
     selectedHeroQuest.value = null;
     recentAttempts.value = [];
+    trainingProgress.value = null;
+    mascotMessage.value = null;
     return;
   }
   isTrainingLoading.value = true;
@@ -238,13 +532,47 @@ async function loadTrainingData() {
         writeStoredHeroQuestCode(activeProfileId, null);
       }
     }
-    recentAttempts.value = await appStore.getQuestAttempts(projectId, 6);
+    const [attempts, progress, mascot] = await Promise.all([
+      appStore.getQuestAttempts(projectId, 6),
+      appStore.getProgressSnapshot(projectId),
+      showMascotCard.value
+        ? appStore.getMascotContextMessage({
+            routeName: "training",
+            projectId,
+            locale: locale.value,
+          })
+        : Promise.resolve(null),
+    ]);
+    recentAttempts.value = attempts;
+    trainingProgress.value = progress;
+    mascotMessage.value = mascot;
+    if (activeProfileId) {
+      achievementPulse.value = evaluateAchievementPulse(activeProfileId, progress);
+    }
+    void preloadQuestCatalog();
   } catch (err) {
     trainingError.value = toError(err);
     trainingDailyQuest.value = null;
     recentAttempts.value = [];
+    trainingProgress.value = null;
+    mascotMessage.value = null;
+    achievementPulse.value = null;
   } finally {
     isTrainingLoading.value = false;
+  }
+}
+
+async function preloadQuestCatalog() {
+  if (!state.value.activeProfileId) {
+    return;
+  }
+  if (availableQuests.value.length > 0 || isQuestPickerLoading.value) {
+    return;
+  }
+  try {
+    availableQuests.value = await appStore.getQuestList();
+  } catch {
+    // non-blocking; quest picker still loads on demand
   }
 }
 
@@ -264,6 +592,20 @@ async function openQuestPicker() {
   } finally {
     isQuestPickerLoading.value = false;
   }
+}
+
+async function focusQuestMapNode(node: QuestMapNode) {
+  await openQuestPicker();
+  if (!isQuestPickerOpen.value) {
+    return;
+  }
+  if (node.category && questCategories.value.includes(node.category)) {
+    questPickerCategory.value = node.category;
+  } else {
+    questPickerCategory.value = "all";
+  }
+  questPickerSort.value = "category";
+  questPickerSearch.value = "";
 }
 
 function closeQuestPicker() {
@@ -378,6 +720,7 @@ watch(
     questPickerSort.value = "recent";
     trainingActivityTab.value = "feedback";
     selectedHeroQuest.value = null;
+    achievementPulse.value = null;
     await loadTrainingData();
   }
 );
@@ -388,6 +731,46 @@ watch(
     syncQuestPickerActive();
   },
   { deep: false }
+);
+
+watch(
+  () => locale.value,
+  async () => {
+    if (!showMascotCard.value || !trainingProjectId.value || !state.value.activeProfileId) {
+      return;
+    }
+    try {
+      mascotMessage.value = await appStore.getMascotContextMessage({
+        routeName: "training",
+        projectId: trainingProjectId.value,
+        locale: locale.value,
+      });
+    } catch {
+      // non-blocking assistant copy
+    }
+  }
+);
+
+watch(
+  () => [uiSettings.value.mascotEnabled, uiSettings.value.mascotIntensity, uiSettings.value.gamificationMode] as const,
+  async ([mascotEnabled]) => {
+    if (!mascotEnabled) {
+      mascotMessage.value = null;
+      return;
+    }
+    if (!trainingProjectId.value || !state.value.activeProfileId) {
+      return;
+    }
+    try {
+      mascotMessage.value = await appStore.getMascotContextMessage({
+        routeName: "training",
+        projectId: trainingProjectId.value,
+        locale: locale.value,
+      });
+    } catch {
+      // non-blocking assistant copy
+    }
+  }
 );
 </script>
 
@@ -437,6 +820,99 @@ watch(
       </div>
       <div v-else class="app-muted app-text-body mt-2">
         {{ t("home.quest_empty") }}
+      </div>
+    </div>
+
+    <div
+      v-if="achievementPulse && !trainingError"
+      class="app-panel app-panel-compact border border-[var(--color-success)] bg-[color-mix(in_srgb,var(--color-success)_12%,var(--color-surface))]"
+    >
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div class="min-w-0 flex-1">
+          <div class="app-text-eyebrow">{{ t("training.achievement_title") }}</div>
+          <div class="app-text app-text-subheadline mt-1">{{ achievementPulse.title }}</div>
+          <div class="app-muted app-text-body mt-1">{{ achievementPulse.body }}</div>
+        </div>
+        <div class="flex items-center gap-2">
+          <RouterLink
+            class="app-button-secondary app-focus-ring app-button-sm inline-flex items-center"
+            :to="achievementPulse.ctaRoute"
+          >
+            {{ achievementPulse.ctaLabel }}
+          </RouterLink>
+          <button
+            class="app-button-ghost app-focus-ring app-button-sm inline-flex items-center"
+            type="button"
+            @click="achievementPulse = null"
+          >
+            {{ t("training.achievement_dismiss") }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      v-if="showMascotCard && mascotMessage && !trainingError"
+      class="app-panel app-panel-compact border"
+      :class="mascotToneClass(mascotMessage.kind)"
+    >
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div class="min-w-0 flex-1">
+          <div class="app-text-eyebrow">{{ t("training.mascot_label") }}</div>
+          <div class="app-text app-text-subheadline mt-1">{{ mascotMessage.title }}</div>
+          <div v-if="mascotBody" class="app-muted app-text-body mt-1">{{ mascotBody }}</div>
+        </div>
+        <RouterLink
+          v-if="mascotMessage.cta_route && mascotMessage.cta_label"
+          class="app-button-secondary app-focus-ring app-button-md inline-flex items-center"
+          :to="mascotMessage.cta_route"
+        >
+          {{ mascotMessage.cta_label }}
+        </RouterLink>
+      </div>
+    </div>
+
+    <div
+      v-if="trainingProgress"
+      class="app-panel app-panel-compact border"
+      :class="dailyLoopIsComplete ? 'border-[var(--color-success)] bg-[color-mix(in_srgb,var(--color-success)_10%,var(--color-surface))]' : ''"
+    >
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <div class="app-text-eyebrow">{{ t("training.daily_loop_title") }}</div>
+          <div class="app-muted app-text-meta mt-1">{{ t("training.daily_loop_subtitle") }}</div>
+        </div>
+        <span class="app-badge-neutral app-text-caption rounded-full px-2 py-1 font-semibold">
+          {{ dailyLoopCompletedCount }} / {{ dailyLoopSteps.length }}
+        </span>
+      </div>
+      <div class="mt-3 space-y-2">
+        <div
+          v-for="step in dailyLoopSteps"
+          :key="step.id"
+          class="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2"
+          :class="dailyLoopStepClass(step.done)"
+        >
+          <div class="app-text app-text-body-strong text-sm">{{ step.title }}</div>
+          <div class="flex items-center gap-2">
+            <span
+              class="app-text-caption rounded-full px-2 py-0.5 font-semibold"
+              :class="step.done ? 'app-badge-success' : 'app-badge-neutral'"
+            >
+              {{ step.done ? t("training.daily_loop_done") : t("training.daily_loop_pending") }}
+            </span>
+            <RouterLink
+              v-if="!step.done"
+              class="app-link app-text-meta underline"
+              :to="step.ctaRoute"
+            >
+              {{ t("training.daily_loop_open") }}
+            </RouterLink>
+          </div>
+        </div>
+      </div>
+      <div class="app-muted app-text-meta mt-2">
+        {{ dailyLoopIsComplete ? t("training.daily_loop_hint_complete") : t("training.daily_loop_hint_pending") }}
       </div>
     </div>
 
@@ -661,6 +1137,139 @@ watch(
       </div>
 
     <div class="app-panel xl:sticky xl:top-4">
+      <div
+        class="rounded-xl border border-[var(--app-border)] p-3"
+        :class="isQuestWorldMode ? 'bg-[color-mix(in_srgb,var(--color-accent-soft)_30%,var(--color-surface))]' : ''"
+      >
+        <div class="app-text-eyebrow">{{ t("training.progress_title") }}</div>
+        <div v-if="isTrainingLoading" class="app-muted app-text-meta mt-2">{{ t("talks.loading") }}</div>
+        <div v-else-if="trainingProgress" class="mt-2 space-y-2">
+          <div class="grid gap-2" :class="showCredits ? 'sm:grid-cols-2' : 'sm:grid-cols-1'">
+            <div class="rounded-lg border border-[var(--app-border)] bg-[var(--color-surface-elevated)] px-3 py-2">
+              <div class="app-muted app-text-caption">{{ t("training.progress_streak") }}</div>
+              <div class="app-text app-text-section-title mt-1">
+                {{ trainingProgress.streak_days }}
+              </div>
+            </div>
+            <div
+              v-if="showCredits"
+              class="rounded-lg border border-[var(--app-border)] bg-[var(--color-surface-elevated)] px-3 py-2"
+            >
+              <div class="app-muted app-text-caption">{{ t("training.progress_credits") }}</div>
+              <div class="app-text app-text-section-title mt-1">
+                {{ trainingProgress.credits }}
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center justify-between gap-2 app-text-meta">
+              <span class="app-muted">{{ t("training.progress_weekly") }}</span>
+              <span class="app-text">
+                {{ trainingProgress.weekly_completed }} / {{ trainingProgress.weekly_target }}
+              </span>
+            </div>
+            <div class="mt-1 h-2 overflow-hidden rounded-full app-meter-bg">
+              <div
+                class="h-full rounded-full bg-[var(--color-accent)] transition-all"
+                :style="{ width: `${weeklyProgressPercent}%` }"
+              ></div>
+            </div>
+          </div>
+          <div v-if="showCredits" class="app-muted app-text-meta">
+            {{ t("training.progress_next") }}: {{ trainingProgress.next_milestone }}
+            ({{ creditsToMilestone }} {{ t("training.progress_to_next") }})
+          </div>
+
+          <div
+            v-if="showQuestMap && questMapNodes.length > 0"
+            class="rounded-xl border border-[var(--app-border)] p-3"
+            :class="isQuestWorldMode ? 'bg-[color-mix(in_srgb,var(--color-accent-soft)_20%,var(--color-surface))]' : 'bg-[var(--color-surface-elevated)]'"
+          >
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="app-text-eyebrow">{{ t("training.quest_map_title") }}</div>
+              <span class="app-badge-neutral app-text-caption rounded-full px-2 py-1 font-semibold">
+                {{ trainingProgress.weekly_completed }} / {{ trainingProgress.weekly_target }}
+              </span>
+            </div>
+            <div class="mt-3 overflow-x-auto pb-1">
+              <div class="flex min-w-[440px] items-start gap-2 pr-1">
+                <template v-for="(node, index) in questMapNodes" :key="node.id">
+                  <div class="flex items-start gap-2">
+                    <button
+                      class="app-focus-ring flex w-[76px] flex-col items-center text-center transition"
+                      :style="{ marginTop: `${node.offsetPx}px` }"
+                      type="button"
+                      :aria-label="questMapNodeAriaLabel(node)"
+                      @click="focusQuestMapNode(node)"
+                    >
+                      <div
+                        class="flex h-9 w-9 items-center justify-center rounded-full border text-sm font-semibold transition"
+                        :class="questMapNodeClass(node)"
+                      >
+                        {{ index + 1 }}
+                      </div>
+                      <div class="app-text app-text-caption mt-1 leading-tight">
+                        {{ node.label }}
+                      </div>
+                      <div class="app-muted app-text-meta mt-1">
+                        +{{ node.reward }} {{ t("training.progress_credits") }}
+                      </div>
+                      <div class="app-badge-neutral app-text-caption mt-1 rounded-full px-2 py-0.5 font-semibold">
+                        {{ node.category ?? t("training.quest_map_any_category") }}
+                      </div>
+                    </button>
+                    <div
+                      v-if="index < questMapNodes.length - 1"
+                      class="mt-4 h-[2px] w-8 rounded-full transition"
+                      :class="questMapConnectorClass(node.done)"
+                    ></div>
+                  </div>
+                </template>
+              </div>
+            </div>
+            <div class="app-muted app-text-meta mt-2">
+              {{ questMapHint }}
+            </div>
+          </div>
+
+          <div
+            v-if="showCredits && rewardBadges.length > 0"
+            class="rounded-xl border border-[var(--app-border)] bg-[var(--color-surface-elevated)] p-3"
+          >
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="app-text-eyebrow">{{ t("training.rewards_title") }}</div>
+              <span class="app-badge-neutral app-text-caption rounded-full px-2 py-1 font-semibold">
+                {{ unlockedRewardCount }} / {{ rewardBadges.length }} {{ t("training.rewards_unlocked") }}
+              </span>
+            </div>
+            <div class="mt-3 grid gap-2 sm:grid-cols-2">
+              <div
+                v-for="badge in rewardBadges"
+                :key="badge.id"
+                class="rounded-lg border px-3 py-2"
+                :class="rewardBadgeClass(badge.unlocked, nextRewardBadge?.id === badge.id)"
+              >
+                <div class="flex items-center justify-between gap-2">
+                  <div class="app-text app-text-body-strong text-sm">{{ badge.title }}</div>
+                  <span
+                    class="app-text-caption rounded-full px-2 py-0.5 font-semibold"
+                    :class="badge.unlocked ? 'app-badge-success' : 'app-badge-neutral'"
+                  >
+                    {{ badge.unlocked ? t("training.rewards_status_unlocked") : t("training.rewards_status_locked") }}
+                  </span>
+                </div>
+                <div class="app-muted app-text-meta mt-1">
+                  {{ Math.min(badge.current, badge.target) }} / {{ badge.target }}
+                </div>
+              </div>
+            </div>
+            <div v-if="nextRewardBadge" class="app-muted app-text-meta mt-2">
+              {{ t("training.rewards_next") }}: {{ nextRewardBadge.title }}
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div class="app-text-eyebrow">
           {{ t("training.history_title") }}

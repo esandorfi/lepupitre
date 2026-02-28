@@ -114,6 +114,21 @@ describe("resolvePrimaryNavItems", () => {
     expect(currentTalk?.to).toBe("/talks/p-7/train");
   });
 
+  it("marks feedback nav active on feedback timeline route", () => {
+    const context = baseContext({
+      routeName: "feedbacks",
+      projects: [PROJECT_P7],
+      activeProject: ACTIVE_PROJECT_P7,
+    });
+
+    const items = resolvePrimaryNavItems(context, (key) => key);
+    const feedback = items.find((item) => item.id === "feedback");
+    const currentTalk = items.find((item) => item.id === "current-talk");
+    expect(feedback?.active).toBe(true);
+    expect(feedback?.to).toBe("/feedback");
+    expect(currentTalk?.active).toBe(false);
+  });
+
   it("does not mark current talk active on non-talk routes", () => {
     const context = baseContext({
       routeName: "help",

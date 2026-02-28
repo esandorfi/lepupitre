@@ -240,6 +240,64 @@ export const QuestDailySchema = z.object({
   due_boss_run: z.boolean(),
 });
 
+export const ProgressSnapshotPayloadSchema = z.object({
+  profileId: IdSchema,
+  projectId: IdSchema.optional().nullable(),
+});
+
+export const ProgressSnapshotSchema = z.object({
+  project_id: IdSchema,
+  attempts_total: z.number().int().nonnegative(),
+  feedback_ready_total: z.number().int().nonnegative(),
+  streak_days: z.number().int().nonnegative(),
+  weekly_target: z.number().int().positive(),
+  weekly_completed: z.number().int().nonnegative(),
+  credits: z.number().int().nonnegative(),
+  next_milestone: z.number().int().positive(),
+  last_attempt_at: z.string().min(1).optional().nullable(),
+});
+
+export const MascotMessagePayloadSchema = z.object({
+  profileId: IdSchema,
+  routeName: z.string().min(1),
+  projectId: IdSchema.optional().nullable(),
+  locale: z.string().min(2).max(12).optional().nullable(),
+});
+
+export const MascotMessageSchema = z.object({
+  id: z.string().min(1),
+  kind: z.string().min(1),
+  title: z.string().min(1),
+  body: z.string().min(1),
+  cta_label: z.string().min(1).optional().nullable(),
+  cta_route: z.string().min(1).optional().nullable(),
+});
+
+export const TalksBlueprintPayloadSchema = z.object({
+  profileId: IdSchema,
+  projectId: IdSchema,
+  locale: z.string().min(2).max(12).optional().nullable(),
+});
+
+export const TalksBlueprintStepSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1),
+  done: z.boolean(),
+  reward_credits: z.number().int().nonnegative(),
+  cta_route: z.string().min(1).optional().nullable(),
+});
+
+export const TalksBlueprintSchema = z.object({
+  project_id: IdSchema,
+  project_title: z.string().min(1),
+  framework_id: z.string().min(1),
+  framework_label: z.string().min(1),
+  framework_summary: z.string().min(1),
+  completion_percent: z.number().int().min(0).max(100),
+  steps: z.array(TalksBlueprintStepSchema).min(1),
+  next_step_id: z.string().min(1).optional().nullable(),
+});
+
 export const ProfileIdPayloadSchema = z.object({
   profileId: IdSchema,
 });
@@ -502,6 +560,26 @@ export const FeedbackContextSchema = z.object({
   run_id: IdSchema.optional().nullable(),
 });
 
+export const FeedbackTimelinePayloadSchema = z.object({
+  profileId: IdSchema,
+  projectId: IdSchema.optional().nullable(),
+  limit: z.number().int().positive().optional().nullable(),
+});
+
+export const FeedbackTimelineItemSchema = z.object({
+  id: IdSchema,
+  created_at: z.string().min(1),
+  overall_score: z.number().int().min(0).max(100),
+  subject_type: z.enum(["quest_attempt", "run"]),
+  project_id: IdSchema,
+  quest_code: z.string().min(1).optional().nullable(),
+  quest_title: z.string().min(1).optional().nullable(),
+  run_id: IdSchema.optional().nullable(),
+  note_updated_at: z.string().min(1).optional().nullable(),
+});
+
+export const FeedbackTimelineResponseSchema = z.array(FeedbackTimelineItemSchema);
+
 export const FeedbackNoteGetPayloadSchema = FeedbackGetPayloadSchema;
 
 export const FeedbackNoteSetPayloadSchema = z.object({
@@ -568,6 +646,9 @@ export type PeerReviewDetail = z.infer<typeof PeerReviewDetailSchema>;
 export type RunSummary = z.infer<typeof RunSummarySchema>;
 export type Quest = z.infer<typeof QuestSchema>;
 export type QuestDaily = z.infer<typeof QuestDailySchema>;
+export type ProgressSnapshot = z.infer<typeof ProgressSnapshotSchema>;
+export type MascotMessage = z.infer<typeof MascotMessageSchema>;
+export type TalksBlueprint = z.infer<typeof TalksBlueprintSchema>;
 export type QuestAttemptSummary = z.infer<typeof QuestAttemptSummarySchema>;
 export type QuestReportItem = z.infer<typeof QuestReportItemSchema>;
 export type TranscriptSegment = z.infer<typeof TranscriptSegmentSchema>;
@@ -578,3 +659,4 @@ export type AsrModelDownloadResult = z.infer<typeof AsrModelDownloadResultSchema
 export type AsrModelDownloadProgressEvent = z.infer<typeof AsrModelDownloadProgressEventSchema>;
 export type FeedbackV1 = z.infer<typeof FeedbackV1Schema>;
 export type FeedbackContext = z.infer<typeof FeedbackContextSchema>;
+export type FeedbackTimelineItem = z.infer<typeof FeedbackTimelineItemSchema>;
