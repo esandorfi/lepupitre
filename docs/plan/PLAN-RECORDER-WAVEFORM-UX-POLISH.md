@@ -11,8 +11,16 @@ Delivered in this pass:
   - start/end range handles
   - selected duration preview
   - reset action
-  - non-destructive preview-only copy (no backend trim yet)
+  - non-destructive trim controls integrated into Quick Clean flow
 - UI trim normalization helper + focused unit tests.
+- A.2 backend trim operation implemented:
+  - new command `audio_trim_wav(profile_id, audio_artifact_id, start_ms, end_ms)`
+  - non-destructive trimmed WAV artifact persisted with metadata links to source artifact
+  - command returns new audio artifact info + trimmed duration
+- A.3 transcript consistency wiring implemented:
+  - applying trim invalidates in-memory transcript state
+  - UI requires re-transcription after trim before analyze/export continuation
+  - trimmed artifact propagates through existing `saved` flow for quest/boss-run linkage
 
 ## Goal
 

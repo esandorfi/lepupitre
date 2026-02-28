@@ -12,6 +12,7 @@ pub fn run() {
             .invoke_handler(tauri::generate_handler![
                 commands::audio::audio_reveal_wav,
                 commands::audio::audio_save_wav,
+                commands::audio::audio_trim_wav,
                 commands::audio::recording_start,
                 commands::audio::recording_status,
                 commands::audio::recording_pause,
@@ -89,6 +90,7 @@ pub fn run() {
             .invoke_handler(tauri::generate_handler![
                 commands::audio::audio_reveal_wav,
                 commands::audio::audio_save_wav,
+                commands::audio::audio_trim_wav,
                 commands::audio::recording_start,
                 commands::audio::recording_status,
                 commands::audio::recording_pause,

@@ -24,6 +24,8 @@ import {
 import { appStore } from "../stores/app";
 import { invokeChecked } from "../composables/useIpc";
 import {
+  AudioTrimPayloadSchema,
+  AudioTrimResponseSchema,
   AsrCommitEventSchema,
   AsrFinalProgressEventSchema,
   AsrFinalResultEventSchema,
@@ -110,6 +112,7 @@ const liveDurationSec = ref<number>(0);
 const liveLevel = ref<number>(0);
 const qualityHintKey = ref("good_level");
 const isRevealing = ref(false);
+const isApplyingTrim = ref(false);
 const isTranscribing = ref(false);
 const transcribeProgress = ref<number>(0);
 const transcribeStageLabel = ref<string | null>(null);
@@ -168,7 +171,11 @@ const canAnalyzeRecorder = computed(
 
 const canExport = computed(() => !!activeTranscriptIdForAnalysis.value);
 const canTranscribe = computed(
-  () => !!lastArtifactId.value && !isTranscribing.value && !transcribeBlockedCode.value
+  () =>
+    !!lastArtifactId.value &&
+    !isTranscribing.value &&
+    !isApplyingTrim.value &&
+    !transcribeBlockedCode.value
 );
 const canOpenOriginal = computed(() => !!lastSavedPath.value);
 const livePreview = computed(() => {
@@ -528,6 +535,42 @@ async function stopRecording() {
   } finally {
     recordingId.value = null;
     telemetryReceived.value = false;
+  }
+}
+
+async function applyTrim(payload: { startMs: number; endMs: number }) {
+  clearError();
+  if (!activeProfileId.value || !lastArtifactId.value) {
+    return;
+  }
+  if (isApplyingTrim.value) {
+    return;
+  }
+
+  isApplyingTrim.value = true;
+  try {
+    const result = await invokeChecked(
+      "audio_trim_wav",
+      AudioTrimPayloadSchema,
+      AudioTrimResponseSchema,
+      {
+        profileId: activeProfileId.value,
+        audioArtifactId: lastArtifactId.value,
+        startMs: payload.startMs,
+        endMs: payload.endMs,
+      }
+    );
+    lastSavedPath.value = result.path;
+    lastArtifactId.value = result.artifactId;
+    lastDurationSec.value = result.durationMs / 1000;
+    resetTranscriptionState();
+    emit("saved", { artifactId: result.artifactId, path: result.path });
+    announce(t("audio.quick_clean_trim_applied"));
+    await refreshTranscribeReadiness();
+  } catch (err) {
+    setError(err instanceof Error ? err.message : String(err));
+  } finally {
+    isApplyingTrim.value = false;
   }
 }
 
@@ -964,7 +1007,9 @@ watch(
       :is-saving-edited="isSavingEdited"
       :can-open-original="canOpenOriginal"
       :is-revealing="isRevealing"
+      :is-applying-trim="isApplyingTrim"
       @transcribe="transcribeRecording"
+      @apply-trim="applyTrim"
       @save-edited="saveEditedTranscript"
       @auto-clean-fillers="autoCleanFillers"
       @fix-punctuation="fixPunctuation"

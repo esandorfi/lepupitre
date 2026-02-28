@@ -433,6 +433,22 @@ export const AudioSaveResponseSchema = z.object({
   sha256: z.string().min(1),
 });
 
+export const AudioTrimPayloadSchema = z
+  .object({
+    profileId: IdSchema,
+    audioArtifactId: IdSchema,
+    startMs: z.number().int().nonnegative(),
+    endMs: z.number().int().nonnegative(),
+  })
+  .refine((value) => value.endMs > value.startMs, {
+    message: "endMs must be greater than startMs",
+    path: ["endMs"],
+  });
+
+export const AudioTrimResponseSchema = AudioSaveResponseSchema.extend({
+  durationMs: z.number().int().nonnegative(),
+});
+
 export const AsrSettingsSchema = z.object({
   model: z.enum(["tiny", "base"]).optional(),
   mode: z.enum(["auto", "live+final", "final-only"]).optional(),
