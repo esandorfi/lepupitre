@@ -78,3 +78,14 @@ These are repository process gates for contributors.
   - upgrade-path validation from older fixtures,
   - continuity checks (no skipped versions).
 - If migration normalizes legacy/orphan data, document the normalization behavior in plan/release notes.
+
+## 11) Aggregate transaction rule
+- Treat each aggregate write as an atomic unit: all related DB rows are committed together or not at all.
+- For multi-step writes:
+  - use explicit `rusqlite` transactions,
+  - verify critical `UPDATE`/`DELETE` affected-row counts,
+  - return deterministic domain errors on missing links/subjects.
+- For DB + filesystem flows (artifacts/import/export):
+  - implement explicit compensation/finalization behavior,
+  - document failure/cleanup semantics in architecture/plan docs.
+- PRs that change aggregate write logic must include rollback tests for at least one injected failure path.

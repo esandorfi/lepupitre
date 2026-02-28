@@ -186,7 +186,9 @@ Acceptance:
   - `run_analyze`: feedback insert + run link now fails fast when run update affects zero rows,
   - `analyze_attempt`: feedback insert + attempt link now fails fast when attempt update affects zero rows.
 - Added rollback tests proving no partial `auto_feedback` rows remain when link updates fail.
-- Remaining Workstream 3 scope: extend transaction boundaries and rollback tests to other critical multi-step write paths beyond workspace flows.
+- Hardened peer-review import DB graph persistence (project + outline + run + peer review) behind a single transaction.
+- Added pack rollback tests proving import graph rows are rolled back when peer-review insert fails.
+- Remaining Workstream 3 scope: align artifact file/row writes with DB transaction boundaries for full cross-resource atomicity.
 
 ## Dependencies
 

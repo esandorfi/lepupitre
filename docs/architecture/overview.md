@@ -46,6 +46,18 @@
 - Keep Tauri command files orchestration-only (no direct SQL).
 - Keep raw SQL for reporting, complex joins, and performance-critical paths, with tests and query-plan checks.
 
+## Aggregate consistency pattern
+- Domain aggregate boundaries define transaction boundaries.
+- Multi-step writes that build one domain aggregate must commit atomically or roll back as one unit.
+- Required guardrails:
+  - check affected-row counts on critical link updates,
+  - fail fast on missing subjects/references,
+  - add rollback tests for injected failure paths.
+- Cross-resource writes (SQLite + filesystem) require a compensation/finalization strategy:
+  - stage file writes first and commit DB links only when files are valid, or
+  - commit DB first and finalize files with explicit cleanup on failure.
+- Example: `peer_review_import` is treated as one aggregate write (`talk_projects` + `talk_outlines` + `runs` + `peer_reviews`) and persisted in one DB transaction.
+
 ## SQLite migration flow
 - Migrations are executed at runtime when a DB is opened:
   - global DB on `open_global`,
