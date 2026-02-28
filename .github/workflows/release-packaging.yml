@@ -300,6 +300,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           WINGETCREATE_TOKEN: ${{ secrets.WINGETCREATE_TOKEN }}
+          WINGET_ID: ${{ env.WINGET_ID }}
         shell: pwsh
         run: |
           if (-not $env:WINGETCREATE_TOKEN) {
@@ -354,4 +355,32 @@ jobs:
           Invoke-WebRequest -Uri $url -OutFile $installerPath
           $sha = (Get-FileHash -Algorithm SHA256 $installerPath).Hash.ToLower()
           winget install --id Microsoft.WingetCreate -e --accept-package-agreements --accept-source-agreements
-          wingetcreate update $env:WINGET_ID --version $version --urls $url --submit --token $env:WINGETCREATE_TOKEN
+
+          # Prefer env var token in CI to avoid exposing token via command-line args.
+          $env:WINGET_CREATE_GITHUB_TOKEN = $env:WINGETCREATE_TOKEN
+
+          # Check whether the package already exists in winget-pkgs.
+          $packagePath = ($env:WINGET_ID -replace '\.', '/')
+          $firstChar = $env:WINGET_ID.Substring(0,1).ToLower()
+          $manifestPath = "manifests/$firstChar/$packagePath"
+          $manifestApi = "https://api.github.com/repos/microsoft/winget-pkgs/contents/$manifestPath"
+          $exists = $false
+          try {
+            Invoke-RestMethod -Headers $headers -Uri $manifestApi | Out-Null
+            $exists = $true
+          } catch {
+            $statusCode = $null
+            if ($_.Exception.Response -and $_.Exception.Response.StatusCode) {
+              $statusCode = [int]$_.Exception.Response.StatusCode
+            }
+            if ($statusCode -ne 404) { throw }
+          }
+
+          if (-not $exists) {
+            Write-Host "winget package '$env:WINGET_ID' does not exist yet in microsoft/winget-pkgs."
+            Write-Host "Skipping automated update for this release."
+            Write-Host "Bootstrap once by submitting an initial manifest, then release automation can use 'wingetcreate update'."
+            exit 0
+          }
+
+          wingetcreate update $env:WINGET_ID --version $version --urls $url --submit --no-open

@@ -37,5 +37,6 @@
 ## Optional distribution automation
 - Homebrew cask update (requires `HOMEBREW_TAP_TOKEN`)
 - winget update flow (requires `WINGETCREATE_TOKEN`)
+- winget first-time bootstrap note: automated `wingetcreate update` works only after an initial manifest exists in `microsoft/winget-pkgs`.
 
 These channels are best-effort and should not block the core release unless explicitly configured as required.
