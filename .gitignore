@@ -19,6 +19,7 @@ target
 # Website (Astro)
 website/node_modules
 website/dist
+website/.astro
 
 # RustRover
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
