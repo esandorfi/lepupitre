@@ -34,7 +34,13 @@ fn contains_sensitive_fragment(key: &str) -> bool {
     let normalized = key
         .to_ascii_lowercase()
         .chars()
-        .map(|ch| if matches!(ch, '.' | '-' | ':') { '_' } else { ch })
+        .map(|ch| {
+            if matches!(ch, '.' | '-' | ':') {
+                '_'
+            } else {
+                ch
+            }
+        })
         .collect::<String>();
     SENSITIVE_KEY_FRAGMENTS
         .iter()
