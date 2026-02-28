@@ -37,6 +37,7 @@ These are repository process gates for contributors.
   - `cargo clippy --all-targets --all-features -- -D warnings`
   - `cargo test --manifest-path desktop/src-tauri/Cargo.toml`
   - `./scripts/check-db-reliability.sh` (CI reliability gate: migration/recovery/query-plan/index checks)
+    - threshold: all reliability groups must pass (single failure blocks CI)
 - Frontend:
   - `pnpm -C desktop ui:lint`
   - `pnpm -C desktop ui:typecheck`

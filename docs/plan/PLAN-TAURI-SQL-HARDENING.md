@@ -265,6 +265,10 @@ Acceptance:
   - added hot-query/index guard rails:
     - required index presence assertions after profile migration,
     - `EXPLAIN QUERY PLAN` assertions for `runs` and `quest_attempts` project-time read paths.
+- Workstream 6 slice delivered:
+  - defined DB reliability CI threshold policy (100% pass for each reliability group),
+  - enhanced `scripts/check-db-reliability.sh` with grouped checks and runbook-linked CI failure annotations.
+- 2026-02-28: Workstream 6 completed.
 
 ## Dependencies
 

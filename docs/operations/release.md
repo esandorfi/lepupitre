@@ -53,6 +53,17 @@
 - Snapshot naming: `<db>-<scope>-pre-<next-migration>-<timestamp>.db`.
 - Retention keeps the newest 5 snapshots per DB scope.
 
+### CI reliability threshold policy
+- Reliability gate command: `./scripts/check-db-reliability.sh`
+- Threshold rule: each DB reliability group must pass at 100% (any single failed check fails CI).
+- Enforced groups:
+  - migration matrix continuity/upgrade checks,
+  - corruption recovery drills,
+  - hot-query/index guard rails.
+- Failure logs include direct pointers to:
+  - `docs/operations/release.md#database-recovery-runbook`
+  - `docs/plan/PLAN-TAURI-SQL-HARDENING.md`
+
 ### Operator triage steps
 1. Capture the failing error string and timestamp (`db_recovery_no_snapshot` or recovery-related open error).
 1. Collect diagnostics (global + optional profile):
