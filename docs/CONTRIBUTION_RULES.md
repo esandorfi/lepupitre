@@ -67,3 +67,14 @@ These are repository process gates for contributors.
 - Do not add direct SQL in migrated command wrappers.
 - New SQL should be centralized under domain DB modules (`core/<domain>/repo.rs` + `core/<domain>/queries.rs`).
 - Keep raw SQL for reporting/complex/performance-critical queries, but keep it out of orchestration code.
+
+## 10) Migration flow rule
+- Schema changes must be delivered via ordered migrations (global/profile) and recorded in `schema_migrations`.
+- Migrations are append-only:
+  - add a new versioned step,
+  - do not rewrite already released migration versions.
+- Migration PRs must include:
+  - fresh DB path validation,
+  - upgrade-path validation from older fixtures,
+  - continuity checks (no skipped versions).
+- If migration normalizes legacy/orphan data, document the normalization behavior in plan/release notes.

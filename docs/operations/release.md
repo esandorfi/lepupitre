@@ -21,6 +21,15 @@
 - On `v*` tags, GitHub Actions builds macOS and Windows artifacts and attaches them to the release.
 - ASR packaging invariant: both `lepupitre-asr` and `lepupitre-asr.exe` must be present before Rust/ASR smoke steps.
 
+## Database upgrade behavior
+- Installer/package updates do not run SQL migrations directly.
+- Migrations run inside the app at runtime:
+  - `global.db` migrates when global storage is opened,
+  - `profile.db` migrates when a profile is opened.
+- Resulting user behavior:
+  - first app open after update applies pending global migrations,
+  - each profile is upgraded on first access after update.
+
 ## Quality gates
 - Documentation:
   - `pnpm -C desktop docs:lint`

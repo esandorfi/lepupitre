@@ -46,6 +46,23 @@
 - Keep Tauri command files orchestration-only (no direct SQL).
 - Keep raw SQL for reporting, complex joins, and performance-critical paths, with tests and query-plan checks.
 
+## SQLite migration flow
+- Migrations are executed at runtime when a DB is opened:
+  - global DB on `open_global`,
+  - profile DB on `open_profile`.
+- Applied versions are tracked in `schema_migrations`.
+- Migration continuity is strict:
+  - applied versions must match the ordered migration prefix,
+  - gaps/out-of-order histories fail fast.
+- Upgrade behavior for users:
+  - app updates keep existing local DB files,
+  - pending migrations run automatically on first open,
+  - profile DB upgrades are lazy per profile (when that profile is opened).
+- Contributor rules:
+  - add new migrations as append-only ordered steps,
+  - do not mutate historical migration versions in place,
+  - include fresh-install and upgrade-path tests when schema behavior changes.
+
 ## Observability baseline
 - Structured logs in development.
 - Correlation by `job_id` across transcription/analysis flows.
