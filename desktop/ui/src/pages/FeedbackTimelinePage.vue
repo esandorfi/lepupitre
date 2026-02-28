@@ -36,6 +36,16 @@ const focusedFeedbackId = computed(() => {
   }
   return "";
 });
+const sourceContext = computed(() => {
+  const value = route.query.source;
+  if (typeof value === "string") {
+    return value.trim().toLowerCase();
+  }
+  if (Array.isArray(value) && typeof value[0] === "string") {
+    return value[0].trim().toLowerCase();
+  }
+  return "";
+});
 const visibleEntries = computed(() =>
   entries.value.filter((item) => {
     if (filterType.value === "all") {
@@ -56,6 +66,53 @@ const notesCount = computed(
 );
 const focusedEntry = computed(
   () => entries.value.find((item) => item.id === focusedFeedbackId.value) ?? null
+);
+const focusedEntryPrevious = computed(() => {
+  if (!focusedEntry.value) {
+    return null;
+  }
+  const sameTrack = entries.value.filter(
+    (item) =>
+      item.project_id === focusedEntry.value?.project_id &&
+      item.subject_type === focusedEntry.value?.subject_type &&
+      item.id !== focusedEntry.value?.id
+  );
+  return sameTrack[0] ?? null;
+});
+const focusedDelta = computed(() => {
+  if (!focusedEntry.value || !focusedEntryPrevious.value) {
+    return null;
+  }
+  return focusedEntry.value.overall_score - focusedEntryPrevious.value.overall_score;
+});
+const focusedDeltaLabel = computed(() => {
+  if (focusedDelta.value == null) {
+    return null;
+  }
+  if (focusedDelta.value > 0) {
+    return `${t("feedback.timeline_focus_delta_up")} +${focusedDelta.value}`;
+  }
+  if (focusedDelta.value < 0) {
+    return `${t("feedback.timeline_focus_delta_down")} ${focusedDelta.value}`;
+  }
+  return t("feedback.timeline_focus_delta_flat");
+});
+const focusedActionRoute = computed(() => {
+  if (!focusedEntry.value) {
+    return "/feedback";
+  }
+  if (focusedEntry.value.subject_type === "run") {
+    return "/boss-run";
+  }
+  if (focusedEntry.value.quest_code) {
+    return `/quest/${focusedEntry.value.quest_code}?projectId=${focusedEntry.value.project_id}&from=training`;
+  }
+  return "/training";
+});
+const focusedActionLabel = computed(() =>
+  focusedEntry.value?.subject_type === "run"
+    ? t("feedback.timeline_focus_action_run")
+    : t("feedback.timeline_focus_action_quest")
 );
 
 function toError(err: unknown) {
@@ -155,7 +212,13 @@ onMounted(async () => {
   await appStore.bootstrap();
   await appStore.loadProjects();
   if (focusedFeedbackId.value) {
-    filterType.value = "all";
+    if (sourceContext.value === "quest") {
+      filterType.value = "quest_attempt";
+    } else if (sourceContext.value === "boss-run") {
+      filterType.value = "run";
+    } else {
+      filterType.value = "all";
+    }
     scope.value = "workspace";
   }
   await loadTimeline();
@@ -184,7 +247,13 @@ watch(
     if (!next) {
       return;
     }
-    filterType.value = "all";
+    if (sourceContext.value === "quest") {
+      filterType.value = "quest_attempt";
+    } else if (sourceContext.value === "boss-run") {
+      filterType.value = "run";
+    } else {
+      filterType.value = "all";
+    }
     scope.value = "workspace";
     await loadTimeline();
   }
@@ -250,11 +319,17 @@ watch(
             <div class="app-muted app-text-meta mt-1">
               {{ t("feedback.timeline_focus_hint") }} · {{ formatDateTime(focusedEntry.created_at) }}
             </div>
+            <div v-if="focusedDeltaLabel" class="app-text app-text-meta mt-1 font-semibold">
+              {{ focusedDeltaLabel }}
+            </div>
           </div>
           <div class="flex items-center gap-2">
             <span class="app-badge-neutral app-text-caption rounded-full px-2 py-1 font-semibold">
               {{ t("feedback.timeline_focus_badge") }}
             </span>
+            <RouterLink class="app-button-secondary app-focus-ring app-button-sm inline-flex items-center" :to="focusedActionRoute">
+              {{ focusedActionLabel }}
+            </RouterLink>
             <RouterLink class="app-button-primary app-focus-ring app-button-sm inline-flex items-center" :to="`/feedback/${focusedEntry.id}`">
               {{ t("feedback.timeline_open") }}
             </RouterLink>
