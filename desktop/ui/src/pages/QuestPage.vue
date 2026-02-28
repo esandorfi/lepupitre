@@ -213,7 +213,7 @@ async function requestFeedback() {
   error.value = null;
   try {
     const feedbackId = await appStore.analyzeAttempt(attemptId.value);
-    await router.push(`/feedback/${feedbackId}`);
+    await router.push(`/feedback?focus=${feedbackId}&source=quest`);
   } catch (err) {
     error.value = toError(err);
   } finally {

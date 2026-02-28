@@ -123,7 +123,7 @@ async function requestFeedback() {
   error.value = null;
   try {
     const feedbackId = await appStore.analyzeRun(run.value.id);
-    await router.push(`/feedback/${feedbackId}`);
+    await router.push(`/feedback?focus=${feedbackId}&source=boss-run`);
   } catch (err) {
     error.value = toError(err);
   } finally {
