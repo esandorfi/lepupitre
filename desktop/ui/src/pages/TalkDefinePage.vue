@@ -36,6 +36,30 @@ const projectStage = computed(() => {
   const stage = project.value?.stage || "draft";
   return ["draft", "builder", "train", "export"].includes(stage) ? stage : "draft";
 });
+const defineChecklist = computed(() => {
+  const titleDone = form.title.trim().length > 0;
+  const audienceDone = form.audience.trim().length > 0;
+  const goalDone = form.goal.trim().length > 0;
+  const durationDone = Number(form.durationMinutes.trim()) > 0;
+  return [
+    { id: "title", label: t("talk_define.check_title"), done: titleDone },
+    { id: "audience", label: t("talk_define.check_audience"), done: audienceDone },
+    { id: "goal", label: t("talk_define.check_goal"), done: goalDone },
+    { id: "duration", label: t("talk_define.check_duration"), done: durationDone },
+  ];
+});
+const defineCompletedCount = computed(
+  () => defineChecklist.value.filter((item) => item.done).length
+);
+const defineCompletionPercent = computed(() =>
+  Math.round((defineCompletedCount.value / defineChecklist.value.length) * 100)
+);
+const defineReady = computed(
+  () => defineCompletedCount.value >= defineChecklist.value.length
+);
+const nextMissingDefineItem = computed(
+  () => defineChecklist.value.find((item) => !item.done)?.label ?? null
+);
 const nextAction = computed(() => {
   const id = project.value?.id;
   if (!id) {
@@ -78,6 +102,12 @@ function minutesLabel(seconds: number | null | undefined) {
     return t("talk_define.duration_missing");
   }
   return `${Math.round(seconds / 60)} ${t("talks.minutes")}`;
+}
+
+function checklistRowClass(done: boolean) {
+  return done
+    ? "border-[var(--color-success)] bg-[color-mix(in_srgb,var(--color-success)_12%,var(--color-surface))]"
+    : "border-[var(--app-border)] bg-[var(--color-surface-elevated)]";
 }
 
 function syncForm() {
@@ -242,6 +272,49 @@ watch(project, () => {
     </div>
 
     <div v-else class="space-y-4">
+      <div class="app-panel app-panel-compact border border-[var(--color-accent)] bg-[var(--color-surface-selected)]">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <div class="app-text-eyebrow">{{ t("talk_define.readiness_title") }}</div>
+            <div class="app-muted app-text-meta mt-1">{{ t("talk_define.readiness_subtitle") }}</div>
+          </div>
+          <span class="app-badge-neutral app-text-caption rounded-full px-2 py-1 font-semibold">
+            {{ defineCompletedCount }} / {{ defineChecklist.length }}
+          </span>
+        </div>
+        <div class="mt-3 h-2 overflow-hidden rounded-full app-meter-bg">
+          <div
+            class="h-full rounded-full bg-[var(--color-accent)] transition-all"
+            :style="{ width: `${defineCompletionPercent}%` }"
+          ></div>
+        </div>
+        <div class="mt-3 grid gap-2 md:grid-cols-2">
+          <div
+            v-for="item in defineChecklist"
+            :key="item.id"
+            class="rounded-lg border px-3 py-2"
+            :class="checklistRowClass(item.done)"
+          >
+            <div class="flex items-center justify-between gap-2">
+              <span class="app-text app-text-body-strong text-sm">{{ item.label }}</span>
+              <span
+                class="app-text-caption rounded-full px-2 py-0.5 font-semibold"
+                :class="item.done ? 'app-badge-success' : 'app-badge-neutral'"
+              >
+                {{ item.done ? t("talk_define.check_done") : t("talk_define.check_missing") }}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="app-muted app-text-meta mt-2">
+          {{
+            defineReady
+              ? t("talk_define.readiness_ready")
+              : `${t("talk_define.readiness_missing")} ${nextMissingDefineItem ?? t("talk_define.empty_value")}`
+          }}
+        </div>
+      </div>
+
       <div class="app-panel">
         <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
           <p class="app-muted app-text-meta">{{ t("talk_define.autosave_hint") }}</p>
