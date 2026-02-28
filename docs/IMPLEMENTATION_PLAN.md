@@ -1,6 +1,6 @@
 # Implementation Plan
 
-Snapshot date: 2026-02-27
+Snapshot date: 2026-02-28
 
 This is the active execution plan. Historical planning material should be archived.
 This file is not documentation governance; governance rules live in `docs/DOCS_GOVERNANCE.md`.
@@ -50,6 +50,31 @@ Scope:
 Done when:
 - Release and smoke-test CI runs are stable.
 - ASR failure modes are deterministic in UI and logs.
+
+## Track D: SQLite architecture hardening (Tauri backend)
+
+Goal: SOTA-grade local database reliability with easy long-term maintenance.
+
+Scope:
+- Apply SQLite baseline posture at open (`WAL`, `synchronous=NORMAL`, `foreign_keys=ON`, `busy_timeout`).
+- Replace runtime schema drift patches with ordered, tracked migrations.
+- Add explicit foreign keys and transactional integrity for multi-step mutations.
+- Move SQL from Tauri commands into table-oriented DB modules/handles.
+- Add corruption recovery behavior and migration continuity checks.
+- Add backup and restore workflow around risky migration steps.
+- Add CI corruption drills with fixture databases and recovery assertions.
+- Add performance guardrails for hot queries and index coverage.
+- Add security hardening for local data handling (no secrets in SQLite; encryption policy decision).
+- Add structured local DB health diagnostics (version, integrity, migration status).
+
+Execution detail:
+- [docs/plan/PLAN-TAURI-SQL-HARDENING.md](plan/PLAN-TAURI-SQL-HARDENING.md)
+
+Done when:
+- Deterministic migration path is enforced and continuity is validated.
+- FK constraints and transaction boundaries protect all critical write flows.
+- Corruption handling, backup/restore, and DB health diagnostics are implemented and documented.
+- CI covers migration upgrade, corruption recovery, and hot-path query checks.
 
 ### Future review: UI preferences storage policy
 Goal: converge from browser `localStorage` to a Tauri-oriented preferences layer.

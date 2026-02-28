@@ -21,6 +21,7 @@ This file tracks what is canonical, proposal-only, and archived.
 | [docs/DOCS_GOVERNANCE.md](DOCS_GOVERNANCE.md) | Lifecycle and anti-drift policy | accepted | Maintainers | Enforce in doc PRs |
 | [AGENTS.md](../AGENTS.md) | Agent-only behavior rules | accepted | Maintainers | Keep aligned with governance docs |
 | [docs/plan/PLAN-WHISPER-LOCAL-TRANSCRIPTION.md](plan/PLAN-WHISPER-LOCAL-TRANSCRIPTION.md) | ASR deep plan | implemented | ASR maintainers | Keep synchronized with implementation |
+| [docs/plan/PLAN-TAURI-SQL-HARDENING.md](plan/PLAN-TAURI-SQL-HARDENING.md) | SQLite hardening execution plan | proposed | Maintainers | Execute by vertical slices and promote implemented rules to canonical docs |
 
 ## Active spec docs (`spec/active/`)
 

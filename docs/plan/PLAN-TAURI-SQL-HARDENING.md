@@ -1,0 +1,131 @@
+# PLAN-TAURI-SQL-HARDENING
+
+Status: proposed  
+Owner: maintainers  
+Last updated: 2026-02-28
+
+## Objective
+
+Align LePupitre's Tauri + SQLite backend with a SOTA desktop data architecture:
+- reliable under contention and corruption scenarios,
+- deterministic across migration history,
+- easy to evolve and test.
+
+## Non-goals (current phase)
+
+- Full DB watcher architecture refactor across all UI flows.
+- Optional cache DB split unless a concrete feature requires it.
+
+## Workstream 1: baseline connection posture
+
+Scope:
+- Apply and verify at open time:
+  - `PRAGMA journal_mode = WAL`
+  - `PRAGMA synchronous = NORMAL`
+  - `PRAGMA foreign_keys = ON`
+  - `busy_timeout`
+- Keep behavior consistent for global and profile DBs.
+
+Acceptance:
+- Startup checks confirm effective pragma state.
+- Existing runtime behavior is unchanged for users.
+
+## Workstream 2: migration engine and continuity
+
+Scope:
+- Introduce migration tracking table (`schema_migrations`).
+- Move runtime `ensure_*` schema patches to ordered SQL migrations.
+- Validate continuity (no skipped/out-of-order migrations).
+- Fail with explicit domain errors on incompatible history.
+
+Acceptance:
+- Fresh and upgraded databases converge to the same schema.
+- Upgrade path is deterministic and test-covered.
+
+## Workstream 3: relational integrity and transactions
+
+Scope:
+- Add explicit foreign key constraints for core relations.
+- Define `ON DELETE` and `ON UPDATE` behavior per relation.
+- Enforce explicit transaction boundaries for all multi-step writes.
+- Add rollback tests for partial-failure scenarios.
+
+Acceptance:
+- Invalid references are blocked by schema constraints.
+- No partial writes remain on injected failure paths.
+
+## Workstream 4: data-access module boundaries
+
+Scope:
+- Extract SQL from command handlers into table-oriented DB modules.
+- Keep command layer focused on orchestration and error mapping.
+- Add table-level tests for read/write semantics.
+
+Acceptance:
+- Critical command modules no longer contain direct mutation SQL.
+- DB modules carry their own tests and contracts.
+
+## Workstream 5: recovery, backup, and operability
+
+Scope:
+- Add corruption handling (quarantine broken DB and recover safely).
+- Add pre-migration backup/snapshot for risky changes.
+- Define restore workflow and operator guidance.
+- Add local structured diagnostics:
+  - schema version,
+  - migration state,
+  - integrity check result,
+  - FK check result.
+
+Acceptance:
+- Corrupted DB scenario follows documented recovery flow.
+- Backup/restore is testable and documented in operations docs.
+
+## Workstream 6: SOTA reliability gates in CI
+
+Scope:
+- Add migration matrix tests (fresh install + multiple upgrade paths).
+- Add corruption drills using prepared fixture DBs.
+- Add hot-query performance checks:
+  - query-plan assertions for key reads/writes,
+  - index presence checks for expected paths.
+- Enforce docs/runbook updates with implementation changes.
+
+Acceptance:
+- CI blocks regressions in migration safety and DB integrity.
+- Hot path query plans are stable and indexed.
+
+## Workstream 7: security posture for local SQL data
+
+Scope:
+- Keep secrets out of SQLite and validate secret-storage boundary.
+- Decide and document encryption policy (none/file-level/DB-level).
+- Threat-model local data at rest and recovery artifacts.
+
+Acceptance:
+- Security policy is explicit and implemented for current scope.
+- Diagnostics and backups do not leak sensitive secrets.
+
+## Delivery sequencing
+
+1. PR 1: Workstream 1 (connection posture) + tests.  
+2. PR 2: Workstream 2 (migration tracking + continuity).  
+3. PR 3: Workstream 3 (FK + transaction consistency).  
+4. PR 4-5: Workstream 4 (table modules extraction by domain).  
+5. PR 6: Workstream 5 (recovery + backup/restore + diagnostics).  
+6. PR 7: Workstream 6 + 7 (CI SOTA gates + security policy closure).
+
+## Dependencies
+
+- [docs/architecture/ipc-contracts.md](../architecture/ipc-contracts.md)
+- [docs/operations/release.md](../operations/release.md)
+- [docs/CONTRIBUTION_RULES.md](../CONTRIBUTION_RULES.md)
+
+## Exit criteria
+
+This plan is complete when:
+- deterministic migrations and continuity checks are active,
+- FK and transaction guarantees are enforced on critical flows,
+- corruption recovery and backup/restore are operational,
+- CI validates migration, integrity, and performance guardrails,
+- documentation reflects final architecture and operational workflow.
