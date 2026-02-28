@@ -66,6 +66,12 @@ jobs:
           chmod +x scripts/check-test-obligations.sh
           ./scripts/check-test-obligations.sh "${{ github.event.pull_request.base.sha }}" "${{ github.sha }}"
 
+      - name: Enforce domain structure guard rails
+        shell: bash
+        run: |
+          chmod +x scripts/check-domain-structure.sh
+          ./scripts/check-domain-structure.sh
+
   docs:
     name: Docs checks
     runs-on: ubuntu-latest

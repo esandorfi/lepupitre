@@ -93,6 +93,9 @@ UI (`desktop/ui/src`)
 - 2026-02-28: Pack/exchange slice completed.
 - Rust: `commands/pack.rs` and `commands/peer_review.rs` reduced to thin command entrypoints; exchange behavior moved to `core/pack.rs` and `core/peer_review.rs`.
 - UI: pack/review IPC calls extracted to `ui/src/domains/pack/api.ts`; `stores/app.ts` consumes this boundary.
+- 2026-02-28: Structural guard rails added.
+- Added `scripts/check-domain-structure.sh` with dependency-direction checks and explicit file-size budgets.
+- CI now enforces this guard rail on each run.
 
 ## Acceptance criteria
 

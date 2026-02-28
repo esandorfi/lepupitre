@@ -28,6 +28,10 @@ These are repository process gates for contributors.
 - Documentation:
   - `pnpm -C desktop docs:lint`
   - markdown link check (`lychee --offline`) on canonical docs
+- Domain structure:
+  - `scripts/check-domain-structure.sh`
+  - Guards dependency direction (`core` not depending on `commands`, UI domain APIs not depending on view/store layers)
+  - Enforces file-size budgets for known orchestration/wrapper hotspots
 - Backend:
   - `cargo fmt --all -- --check`
   - `cargo clippy --all-targets --all-features -- -D warnings`
