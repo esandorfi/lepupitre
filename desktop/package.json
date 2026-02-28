@@ -1,7 +1,7 @@
 {
   "name": "lepupitre-desktop",
   "private": true,
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "Local-first Tauri coach for talks, demos, and presentations. Practice your voice, keep your data local, improve every talk.",
   "type": "module",
   "scripts": {

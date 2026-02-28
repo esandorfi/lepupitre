@@ -1,5 +1,25 @@
 # Changelog
 
+## v0.2.8 - 2026-02-28
+Summary: 1 fixes, 8 docs, 1 chores.
+Comparing from v0.2.7 to HEAD.
+
+### Fixes
+- fix(ci): remove unsupported lychee --exclude-mail flag
+
+### Docs
+- docs: update images
+- docs(readme): refine branded header and adopt pinned markdownlint tooling
+- docs(readme): clarify product value and broaden speaking audience
+- docs(license): adopt FSL-1.1-MIT and refresh project tagline
+- docs(ci): make CI path-aware and add markdown quality gates
+- docs(policy): simplify docs/spec governance and archive legacy decision docs
+- docs(refactor): simplify docs ownership and split contributor vs agent rules
+- docs(oss): establish public docs model and spec boundary
+
+### Chores
+- chore: icon update
+
 ## v0.2.7 - 2026-02-27
 Summary: 1 features, 2 fixes, 1 docs, 3 tests, 1 ci.
 Comparing from v0.2.6 to HEAD.
