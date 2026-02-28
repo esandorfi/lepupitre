@@ -23,6 +23,14 @@ const TARGET_SAMPLE_RATE: u32 = 16000;
 const RING_SECONDS: u32 = 30;
 const START_TIMEOUT_MS: u64 = 3000;
 const STOP_TIMEOUT_MS: u64 = 5000;
+const NO_SIGNAL_THRESHOLD_MS: u32 = 2500;
+const SIGNAL_LEVEL_THRESHOLD: f32 = 0.015;
+const CLIPPING_LEVEL_THRESHOLD: f32 = 0.96;
+const CLIPPING_RELEASE_LEVEL: f32 = 0.7;
+const CLIPPING_REPEATED_FRAMES: u32 = 3;
+const CLIPPING_RELEASE_FRAMES: u32 = 8;
+const NOISY_ROOM_LEVEL_THRESHOLD: f32 = 0.03;
+const NOISY_ROOM_THRESHOLD_MS: u32 = 1800;
 
 const LIVE_WINDOW_MS: i64 = 12_000;
 const LIVE_STEP_MS: u64 = 800;
@@ -36,6 +44,8 @@ const ASR_SLOW_LOG_COOLDOWN_MS: u64 = 5000;
 
 const ASR_PARTIAL_EVENT: &str = "asr/partial/v1";
 const ASR_COMMIT_EVENT: &str = "asr/commit/v1";
+const RECORDING_TELEMETRY_EVENT: &str = "recording/telemetry/v1";
+const RECORDING_TELEMETRY_STEP_MS: u64 = 200;
 
 const DEFAULT_MODEL_ID: &str = "tiny";
 const SIDECAR_ENV_PATH: &str = "LEPUPITRE_ASR_SIDECAR";
@@ -144,6 +154,10 @@ pub struct RecordingStartResult {
 pub struct RecordingStatusResult {
     pub duration_ms: i64,
     pub level: f32,
+    pub is_paused: bool,
+    pub signal_present: bool,
+    pub is_clipping: bool,
+    pub quality_hint_key: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -166,6 +180,13 @@ struct RecordingState {
     last_vad: bool,
     total_samples: u64,
     last_level: f32,
+    is_paused: bool,
+    silence_ms: u32,
+    noisy_room_ms: u32,
+    clipping_frames: u32,
+    clipping_release_frames: u32,
+    clipping_latched: bool,
+    signal_present: bool,
     last_error: Option<String>,
     is_stopping: bool,
     scratch: Vec<f32>,
@@ -187,6 +208,17 @@ struct AsrCommitEvent {
     pub schema_version: String,
     pub segments: Vec<models::TranscriptSegment>,
     pub seq: u64,
+}
+
+#[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+struct RecordingTelemetryEvent {
+    pub schema_version: &'static str,
+    pub duration_ms: i64,
+    pub level: f32,
+    pub is_clipping: bool,
+    pub signal_present: bool,
+    pub quality_hint_key: &'static str,
 }
 
 struct RecordingStartInfo {
@@ -212,9 +244,15 @@ struct RecordingController {
     command_tx: mpsc::Sender<RecordingCommand>,
     thread: thread::JoinHandle<()>,
     live: LiveAsrHandle,
+    telemetry: RecordingTelemetryHandle,
 }
 
 struct LiveAsrHandle {
+    stop_tx: mpsc::Sender<()>,
+    thread: thread::JoinHandle<()>,
+}
+
+struct RecordingTelemetryHandle {
     stop_tx: mpsc::Sender<()>,
     thread: thread::JoinHandle<()>,
 }
@@ -262,6 +300,13 @@ pub fn recording_start(
         last_vad: false,
         total_samples: 0,
         last_level: 0.0,
+        is_paused: false,
+        silence_ms: 0,
+        noisy_room_ms: 0,
+        clipping_frames: 0,
+        clipping_release_frames: 0,
+        clipping_latched: false,
+        signal_present: false,
         last_error: None,
         is_stopping: false,
         scratch: Vec::with_capacity(4096),
@@ -288,6 +333,13 @@ pub fn recording_start(
         run_live_asr(live_app, live_state, live_rx, live_settings);
     });
 
+    let (telemetry_tx, telemetry_rx) = mpsc::channel::<()>();
+    let telemetry_state = state.clone();
+    let telemetry_app = app.clone();
+    let telemetry_thread = thread::spawn(move || {
+        run_recording_telemetry(telemetry_app, telemetry_state, telemetry_rx);
+    });
+
     *guard = Some(RecordingController {
         recording_id: recording_id.clone(),
         profile_id: profile_id.clone(),
@@ -298,6 +350,10 @@ pub fn recording_start(
         live: LiveAsrHandle {
             stop_tx: live_tx,
             thread: live_thread,
+        },
+        telemetry: RecordingTelemetryHandle {
+            stop_tx: telemetry_tx,
+            thread: telemetry_thread,
         },
     });
 
@@ -328,7 +384,54 @@ pub fn recording_status(
     Ok(RecordingStatusResult {
         duration_ms,
         level: state.last_level,
+        is_paused: state.is_paused,
+        signal_present: state.signal_present,
+        is_clipping: state.clipping_latched,
+        quality_hint_key: quality_hint_key(&state).to_string(),
     })
+}
+
+#[tauri::command]
+pub fn recording_pause(state: State<RecordingManager>, recording_id: String) -> Result<(), String> {
+    let guard = state.session.lock().map_err(|_| "recording_lock")?;
+    let session = guard
+        .as_ref()
+        .ok_or_else(|| "recording_missing".to_string())?;
+    if session.recording_id != recording_id {
+        return Err("recording_id_mismatch".to_string());
+    }
+
+    let mut recording_state = session.state.lock().map_err(|_| "recording_lock")?;
+    if recording_state.is_paused {
+        return Ok(());
+    }
+    recording_state.is_paused = true;
+    recording_state.last_level = 0.0;
+    recording_state.last_vad = false;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn recording_resume(
+    state: State<RecordingManager>,
+    recording_id: String,
+) -> Result<(), String> {
+    let guard = state.session.lock().map_err(|_| "recording_lock")?;
+    let session = guard
+        .as_ref()
+        .ok_or_else(|| "recording_missing".to_string())?;
+    if session.recording_id != recording_id {
+        return Err("recording_id_mismatch".to_string());
+    }
+
+    let mut recording_state = session.state.lock().map_err(|_| "recording_lock")?;
+    if !recording_state.is_paused {
+        return Ok(());
+    }
+    recording_state.is_paused = false;
+    recording_state.last_level = 0.0;
+    recording_state.last_vad = false;
+    Ok(())
 }
 
 #[tauri::command]
@@ -369,7 +472,9 @@ pub fn recording_stop(
         .map_err(|_| "recording_stop_timeout".to_string())??;
 
     let _ = session.live.stop_tx.send(());
+    let _ = session.telemetry.stop_tx.send(());
     let _ = session.live.thread.join();
+    let _ = session.telemetry.thread.join();
     let _ = session.thread.join();
 
     let metadata = serde_json::json!({
@@ -627,6 +732,36 @@ fn run_live_asr(
     }
 }
 
+fn run_recording_telemetry(
+    app: tauri::AppHandle,
+    state: Arc<Mutex<RecordingState>>,
+    stop_rx: mpsc::Receiver<()>,
+) {
+    crate::commands::assert_valid_event_name(RECORDING_TELEMETRY_EVENT);
+
+    loop {
+        if stop_rx.try_recv().is_ok() {
+            break;
+        }
+
+        let payload = match state.lock() {
+            Ok(guard) => RecordingTelemetryEvent {
+                schema_version: "1.0.0",
+                duration_ms: (guard.total_samples as f64 / TARGET_SAMPLE_RATE as f64 * 1000.0)
+                    .round() as i64,
+                level: guard.last_level,
+                is_clipping: guard.clipping_latched,
+                signal_present: guard.signal_present,
+                quality_hint_key: quality_hint_key(&guard),
+            },
+            Err(_) => break,
+        };
+
+        let _ = app.emit(RECORDING_TELEMETRY_EVENT, payload);
+        thread::sleep(Duration::from_millis(RECORDING_TELEMETRY_STEP_MS));
+    }
+}
+
 trait LiveDecoder {
     fn decode(
         &mut self,
@@ -821,6 +956,22 @@ fn emit_live_updates(
     }
 }
 
+fn quality_hint_key(state: &RecordingState) -> &'static str {
+    if state.silence_ms >= NO_SIGNAL_THRESHOLD_MS {
+        return "no_signal";
+    }
+    if state.clipping_latched {
+        return "too_loud";
+    }
+    if state.noisy_room_ms >= NOISY_ROOM_THRESHOLD_MS {
+        return "noisy_room";
+    }
+    if state.last_level < SIGNAL_LEVEL_THRESHOLD {
+        return "too_quiet";
+    }
+    "good_level"
+}
+
 fn handle_input<T>(state: &Arc<Mutex<RecordingState>>, data: &[T], channels: u16)
 where
     T: Sample,
@@ -832,6 +983,12 @@ where
     };
 
     if guard.is_stopping {
+        return;
+    }
+    if guard.is_paused {
+        guard.last_level = 0.0;
+        guard.last_vad = false;
+        guard.signal_present = false;
         return;
     }
 
@@ -872,6 +1029,42 @@ where
         };
         let decision = guard.vad.update_from_samples(&processed, frame_ms, &config);
         guard.last_vad = decision.in_speech;
+
+        let signal_present = decision.in_speech || guard.last_level >= SIGNAL_LEVEL_THRESHOLD;
+        guard.signal_present = signal_present;
+        if signal_present {
+            guard.silence_ms = 0;
+        } else {
+            guard.silence_ms = guard.silence_ms.saturating_add(frame_ms);
+        }
+
+        let noisy_room = !decision.in_speech && guard.last_level >= NOISY_ROOM_LEVEL_THRESHOLD;
+        if noisy_room {
+            guard.noisy_room_ms = guard.noisy_room_ms.saturating_add(frame_ms);
+        } else {
+            guard.noisy_room_ms = 0;
+        }
+
+        if guard.last_level >= CLIPPING_LEVEL_THRESHOLD {
+            guard.clipping_frames = guard.clipping_frames.saturating_add(1);
+            guard.clipping_release_frames = 0;
+            if guard.clipping_frames >= CLIPPING_REPEATED_FRAMES {
+                guard.clipping_latched = true;
+            }
+        } else if guard.clipping_latched {
+            if guard.last_level <= CLIPPING_RELEASE_LEVEL {
+                guard.clipping_release_frames = guard.clipping_release_frames.saturating_add(1);
+                if guard.clipping_release_frames >= CLIPPING_RELEASE_FRAMES {
+                    guard.clipping_latched = false;
+                    guard.clipping_frames = 0;
+                    guard.clipping_release_frames = 0;
+                }
+            } else {
+                guard.clipping_release_frames = 0;
+            }
+        } else {
+            guard.clipping_frames = 0;
+        }
     }
     guard.ring.push(&processed);
 
@@ -974,5 +1167,79 @@ fn reveal_in_file_manager(path: &Path) -> Result<(), String> {
         } else {
             Err("xdg_open_failed".to_string())
         }
+    }
+}
+
+#[cfg(test)]
+mod audio_tests {
+    use super::*;
+
+    fn base_state() -> RecordingState {
+        RecordingState {
+            writer: None,
+            resampler: LinearResampler::new(TARGET_SAMPLE_RATE, TARGET_SAMPLE_RATE),
+            ring: RingBuffer::new(256),
+            agc: dsp::Agc::new(0.1, 0.5, 8.0, 0.2),
+            vad: VadState::default(),
+            vad_config: VadConfig::balanced(),
+            last_vad: false,
+            total_samples: 0,
+            last_level: SIGNAL_LEVEL_THRESHOLD + 0.01,
+            is_paused: false,
+            silence_ms: 0,
+            noisy_room_ms: 0,
+            clipping_frames: 0,
+            clipping_release_frames: 0,
+            clipping_latched: false,
+            signal_present: true,
+            last_error: None,
+            is_stopping: false,
+            scratch: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn quality_hint_prioritizes_no_signal() {
+        let mut state = base_state();
+        state.silence_ms = NO_SIGNAL_THRESHOLD_MS;
+        state.clipping_latched = true;
+        state.noisy_room_ms = NOISY_ROOM_THRESHOLD_MS;
+        state.last_level = 0.0;
+
+        assert_eq!(quality_hint_key(&state), "no_signal");
+    }
+
+    #[test]
+    fn quality_hint_prioritizes_clipping_after_signal_presence() {
+        let mut state = base_state();
+        state.clipping_latched = true;
+        state.noisy_room_ms = NOISY_ROOM_THRESHOLD_MS;
+        state.last_level = 0.0;
+
+        assert_eq!(quality_hint_key(&state), "too_loud");
+    }
+
+    #[test]
+    fn quality_hint_marks_noisy_room_before_quiet() {
+        let mut state = base_state();
+        state.noisy_room_ms = NOISY_ROOM_THRESHOLD_MS;
+        state.last_level = 0.0;
+
+        assert_eq!(quality_hint_key(&state), "noisy_room");
+    }
+
+    #[test]
+    fn quality_hint_marks_too_quiet_when_below_threshold() {
+        let mut state = base_state();
+        state.last_level = SIGNAL_LEVEL_THRESHOLD - 0.001;
+
+        assert_eq!(quality_hint_key(&state), "too_quiet");
+    }
+
+    #[test]
+    fn quality_hint_marks_good_level_when_nominal() {
+        let state = base_state();
+
+        assert_eq!(quality_hint_key(&state), "good_level");
     }
 }

@@ -15,6 +15,7 @@ const isLoading = ref(false);
 const isSaving = ref(false);
 const isAnalyzing = ref(false);
 const run = ref<RunSummary | null>(null);
+const pendingTranscriptId = ref<string | null>(null);
 const requestedRunId = computed(() => String(route.query.runId || ""));
 
 const activeProfileId = computed(() => appStore.state.activeProfileId);
@@ -87,11 +88,16 @@ async function handleAudioSaved(payload: { artifactId: string }) {
     error.value = t("boss_run.need_talk");
     return;
   }
+  pendingTranscriptId.value = null;
   isSaving.value = true;
   error.value = null;
   try {
     const runId = await appStore.createRun(activeProject.value.id);
     await appStore.finishRun(runId, payload.artifactId);
+    if (pendingTranscriptId.value) {
+      await appStore.setRunTranscript(runId, pendingTranscriptId.value);
+      pendingTranscriptId.value = null;
+    }
     run.value = await appStore.getLatestRun(activeProject.value.id);
   } catch (err) {
     error.value = toError(err);
@@ -101,8 +107,12 @@ async function handleAudioSaved(payload: { artifactId: string }) {
 }
 
 async function handleTranscribed(payload: { transcriptId: string }) {
-  if (!activeProject.value || !run.value) {
-    error.value = t("boss_run.run_missing");
+  if (!activeProject.value) {
+    error.value = t("boss_run.need_talk");
+    return;
+  }
+  if (!run.value) {
+    pendingTranscriptId.value = payload.transcriptId;
     return;
   }
   error.value = null;
@@ -129,6 +139,10 @@ async function requestFeedback() {
   } finally {
     isAnalyzing.value = false;
   }
+}
+
+function handleRecorderAnalyze() {
+  void requestFeedback();
 }
 
 onMounted(async () => {
@@ -180,20 +194,15 @@ watch(
       <AudioRecorder
         title-key="boss_run.audio_title"
         subtitle-key="boss_run.audio_subtitle"
+        :can-analyze="!!run?.transcript_id"
+        :is-analyzing="isAnalyzing || isSaving"
         :show-pass-label="false"
         @saved="handleAudioSaved"
         @transcribed="handleTranscribed"
+        @analyze="handleRecorderAnalyze"
       />
 
       <div class="flex flex-wrap items-center gap-3">
-        <button
-          class="app-button-info cursor-pointer rounded-full px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
-          type="button"
-          :disabled="!run?.transcript_id || isAnalyzing || isSaving"
-          @click="requestFeedback"
-        >
-          {{ t("boss_run.request_feedback") }}
-        </button>
         <RouterLink
           v-if="run?.feedback_id"
           class="app-link text-xs underline"

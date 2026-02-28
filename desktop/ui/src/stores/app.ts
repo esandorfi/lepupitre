@@ -53,6 +53,7 @@ import {
   PeerReviewSummary,
   PeerReviewDetail,
   RunAnalyzePayloadSchema,
+  AnalyzeResponseSchema,
   RunCreatePayloadSchema,
   RunFinishPayloadSchema,
   RunGetPayloadSchema,

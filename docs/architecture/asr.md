@@ -15,19 +15,57 @@ This avoids OS-specific path failures during Rust checks and packaging.
 ## Local development
 1. Build sidecar: `./scripts/build-asr-sidecar.sh`
 2. Optionally copy into resources: `./scripts/build-asr-sidecar.sh --copy`
-3. Set env vars:
+3. Dev shared ASR home (recommended for worktrees):
+   - Create folders once: `just asr-dev-create`
+   - Build + copy sidecar there: `just asr-build-dev-home`
+   - Location:
+     - `../lepupitre-asr-dev/bin/lepupitre-asr(.exe)`
+     - `../lepupitre-asr-dev/models/`
+   - Windows notes:
+     - Run from "Developer PowerShell for VS 2022" (or call `VsDevCmd.bat`) so `INCLUDE`/`LIB` are present.
+     - If LLVM is installed in the default location, set:
+       - PowerShell: `$env:LIBCLANG_PATH = 'C:\Program Files\LLVM\bin'`
+     - `asr-build-dev-home` forces single-job Cargo build on Windows (`CARGO_BUILD_JOBS=1`) to avoid intermittent MSBuild install-target failures in `whisper-rs-sys`.
+4. Set env vars:
    - `LEPUPITRE_ASR_SIDECAR=/absolute/path/to/lepupitre-asr`
    - `LEPUPITRE_ASR_MODEL_PATH=/absolute/path/to/ggml-*.bin`
-4. Run app: `pnpm -C desktop dev`
+5. Run app: `pnpm -C desktop dev`
 
 Helper:
 - `./scripts/dev-asr-env.sh /path/to/ggml-tiny.bin`
+- `just dev-desktop-asr-dev /path/to/ggml-tiny.bin`
+
+## Model provisioning (dev home)
+- `just asr-build-dev-home` only builds/copies the sidecar binary. It does not download models.
+- For regular app usage, models can be downloaded from Settings.
+- For local sidecar/dev-home flow, place model files in `../lepupitre-asr-dev/models/`.
+- Recommended helper:
+  - `just asr-model-dev tiny`
+  - `just asr-model-dev base`
+  - This downloads and verifies checksum/size before making the model available.
+
+Windows PowerShell (tiny model):
+
+```powershell
+New-Item -ItemType Directory -Force C:\dev.sandorfi\lepupitre-asr-dev\models | Out-Null
+Invoke-WebRequest -Uri "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin" -OutFile "C:\dev.sandorfi\lepupitre-asr-dev\models\ggml-tiny.bin"
+(Get-FileHash "C:\dev.sandorfi\lepupitre-asr-dev\models\ggml-tiny.bin" -Algorithm SHA256).Hash
+```
+
+Expected SHA256:
+- `ggml-tiny.bin`: `be07e048e1e599ad46341c8d2a135645097a538221678b7acdd1b1919c6e1b21`
+- `ggml-base.bin`: `60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe`
+
+Then run:
+- `just asr-smoke-dev C:\dev.sandorfi\lepupitre-asr-dev\models\ggml-tiny.bin`
+- `just dev-desktop-asr-dev C:\dev.sandorfi\lepupitre-asr-dev\models\ggml-tiny.bin`
 
 ## Validation and smoke
 - Verify sidecar artifact is not placeholder:
   - `node scripts/verify-asr-sidecar.mjs`
 - Optional smoke test:
   - `./scripts/asr-smoke.sh /path/to/lepupitre-asr /path/to/ggml-*.bin`
+  - `just asr-smoke-dev /path/to/ggml-*.bin`
   - or `cargo test --manifest-path desktop/src-tauri/Cargo.toml asr_sidecar_smoke_decode` with `LEPUPITRE_ASR_SMOKE=1`.
 
 ## Error-state mapping
@@ -35,3 +73,9 @@ Expected deterministic UI states:
 - `sidecar_missing`: incomplete or corrupted installation
 - `model_missing`: selected model is not installed
 - `sidecar_init_timeout` / `sidecar_decode_timeout`: sidecar too slow or unresponsive
+
+## Windows troubleshooting
+- `fatal error: 'stdbool.h' file not found` / `fatal error: 'stdio.h' file not found`:
+  - build is not running in a VS C/C++ environment (missing Windows SDK include paths).
+- `_G_fpos_t` / `_IO_FILE` size assertion overflow in generated `bindings.rs`:
+  - bindgen failed and `whisper-rs-sys` fell back to bundled bindings that do not match the current toolchain.
