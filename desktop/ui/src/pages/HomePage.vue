@@ -22,6 +22,13 @@ type QuestMapNode = {
   offsetPx: number;
 };
 
+type DailyLoopStep = {
+  id: string;
+  title: string;
+  done: boolean;
+  ctaRoute: string;
+};
+
 type RewardBadge = {
   id: string;
   title: string;
@@ -55,6 +62,9 @@ const questPickerActiveCode = ref<string | null>(null);
 
 const feedbackAttempts = computed(() =>
   recentAttempts.value.filter((attempt) => Boolean(attempt.feedback_id))
+);
+const hasFeedbackInRecent = computed(() =>
+  recentAttempts.value.some((attempt) => attempt.has_feedback)
 );
 const heroQuest = computed(() => selectedHeroQuest.value ?? trainingDailyQuest.value?.quest ?? null);
 const heroQuestIsOverride = computed(() => Boolean(selectedHeroQuest.value));
@@ -268,6 +278,35 @@ const unlockedRewardCount = computed(
 const nextRewardBadge = computed(
   () => rewardBadges.value.find((badge) => !badge.unlocked) ?? null
 );
+const dailyLoopSteps = computed<DailyLoopStep[]>(() => {
+  const practiceRoute = heroQuest.value ? questRoute(heroQuest.value.code) : "/training";
+  return [
+    {
+      id: "practice",
+      title: t("training.daily_loop_step_practice"),
+      done: practicedToday.value,
+      ctaRoute: practiceRoute,
+    },
+    {
+      id: "feedback",
+      title: t("training.daily_loop_step_feedback"),
+      done: hasFeedbackInRecent.value,
+      ctaRoute: "/feedback",
+    },
+    {
+      id: "momentum",
+      title: t("training.daily_loop_step_momentum"),
+      done: (trainingProgress.value?.streak_days ?? 0) >= 3,
+      ctaRoute: "/training",
+    },
+  ];
+});
+const dailyLoopCompletedCount = computed(
+  () => dailyLoopSteps.value.filter((step) => step.done).length
+);
+const dailyLoopIsComplete = computed(
+  () => dailyLoopCompletedCount.value >= dailyLoopSteps.value.length
+);
 const pickerVisibleQuests = computed(() => [
   ...recentPickerQuests.value,
   ...pickerMainQuests.value,
@@ -337,6 +376,13 @@ function questMapConnectorClass(done: boolean) {
   return done
     ? "bg-[var(--color-success)]"
     : "bg-[color-mix(in_srgb,var(--app-border)_70%,transparent)]";
+}
+
+function dailyLoopStepClass(done: boolean) {
+  if (done) {
+    return "border-[var(--color-success)] bg-[color-mix(in_srgb,var(--color-success)_12%,var(--color-surface))]";
+  }
+  return "border-[var(--app-border)] bg-[var(--color-surface-elevated)]";
 }
 
 function rewardBadgeClass(unlocked: boolean, isNext: boolean) {
@@ -752,6 +798,50 @@ watch(
         >
           {{ mascotMessage.cta_label }}
         </RouterLink>
+      </div>
+    </div>
+
+    <div
+      v-if="trainingProgress"
+      class="app-panel app-panel-compact border"
+      :class="dailyLoopIsComplete ? 'border-[var(--color-success)] bg-[color-mix(in_srgb,var(--color-success)_10%,var(--color-surface))]' : ''"
+    >
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <div class="app-text-eyebrow">{{ t("training.daily_loop_title") }}</div>
+          <div class="app-muted app-text-meta mt-1">{{ t("training.daily_loop_subtitle") }}</div>
+        </div>
+        <span class="app-badge-neutral app-text-caption rounded-full px-2 py-1 font-semibold">
+          {{ dailyLoopCompletedCount }} / {{ dailyLoopSteps.length }}
+        </span>
+      </div>
+      <div class="mt-3 space-y-2">
+        <div
+          v-for="step in dailyLoopSteps"
+          :key="step.id"
+          class="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2"
+          :class="dailyLoopStepClass(step.done)"
+        >
+          <div class="app-text app-text-body-strong text-sm">{{ step.title }}</div>
+          <div class="flex items-center gap-2">
+            <span
+              class="app-text-caption rounded-full px-2 py-0.5 font-semibold"
+              :class="step.done ? 'app-badge-success' : 'app-badge-neutral'"
+            >
+              {{ step.done ? t("training.daily_loop_done") : t("training.daily_loop_pending") }}
+            </span>
+            <RouterLink
+              v-if="!step.done"
+              class="app-link app-text-meta underline"
+              :to="step.ctaRoute"
+            >
+              {{ t("training.daily_loop_open") }}
+            </RouterLink>
+          </div>
+        </div>
+      </div>
+      <div class="app-muted app-text-meta mt-2">
+        {{ dailyLoopIsComplete ? t("training.daily_loop_hint_complete") : t("training.daily_loop_hint_pending") }}
       </div>
     </div>
 
