@@ -213,6 +213,10 @@ Acceptance:
   - extracted run-domain SQL/DB logic from `commands/run.rs` into `core/run.rs`,
   - reduced `commands/run.rs` to orchestration-only Tauri wrappers,
   - moved run feedback link rollback test coverage into `core/run.rs`.
+- Workstream 4 slice delivered:
+  - extracted preferences-domain SQL/validation logic from `commands/preferences.rs` into `core/preferences.rs`,
+  - reduced `commands/preferences.rs` to orchestration-only Tauri wrappers,
+  - moved preference unit coverage (`set/get/remove/validation/isolation`) into `core/preferences.rs`.
 
 ## Dependencies
 

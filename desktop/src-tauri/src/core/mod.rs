@@ -12,6 +12,7 @@ pub mod models;
 pub mod outline;
 pub mod pack;
 pub mod peer_review;
+pub mod preferences;
 pub mod project;
 pub mod quest;
 pub mod recording;

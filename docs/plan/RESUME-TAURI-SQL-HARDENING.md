@@ -11,7 +11,9 @@ Last updated: 2026-02-28
 - Last completed slice:
   - extracted run-domain data access from `commands/run.rs` to `core/run.rs`
   - command layer now wrapper-only for run commands
-- Last known checkpoint commit: `d43ac62`
+  - extracted preferences-domain data access from `commands/preferences.rs` to `core/preferences.rs`
+  - command layer now wrapper-only for preferences commands
+- Last known checkpoint commit: `d43ac62` (updated in-progress after this checkpoint)
 
 ## Resume goal
 
@@ -24,13 +26,6 @@ Continue Workstream 4 by removing direct SQL from command wrappers and consolida
 - [ ] Run baseline checks:
   - `cargo test --manifest-path desktop/src-tauri/Cargo.toml`
   - `pnpm -C desktop docs:lint`
-
-1. Slice A: preferences command extraction
-- Target: `desktop/src-tauri/src/commands/preferences.rs`
-- [ ] Move SQL/data access into `core/preferences.rs` (or `core/preferences/repo.rs` + `queries.rs` if splitting directly).
-- [ ] Keep command file wrapper-only (`#[tauri::command]` + forwarding).
-- [ ] Keep global/profile table semantics unchanged.
-- [ ] Move/add tests in core layer for set/get/delete and profile isolation.
 
 1. Slice B: coach command read-model extraction
 - Target: `desktop/src-tauri/src/commands/coach.rs`
