@@ -188,7 +188,10 @@ Acceptance:
 - Added rollback tests proving no partial `auto_feedback` rows remain when link updates fail.
 - Hardened peer-review import DB graph persistence (project + outline + run + peer review) behind a single transaction.
 - Added pack rollback tests proving import graph rows are rolled back when peer-review insert fails.
-- Remaining Workstream 3 scope: align artifact file/row writes with DB transaction boundaries for full cross-resource atomicity.
+- Added compensation cleanup for peer-review import cross-resource failures:
+  - on DB aggregate persist failure, created artifact rows/files are deleted,
+  - cleanup behavior is test-covered for artifact row/file removal.
+- Remaining Workstream 3 scope: generalize cross-resource compensation/finalization patterns beyond peer-review import.
 
 ## Dependencies
 
