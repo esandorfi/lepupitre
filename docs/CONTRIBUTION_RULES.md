@@ -20,7 +20,7 @@ These are repository process gates for contributors.
 
 ## 4) Quality gates
 - Documentation:
-  - markdown lint (`markdownlint-cli2`) on canonical docs
+  - `pnpm -C desktop docs:lint`
   - markdown link check (`lychee --offline`) on canonical docs
 - Backend:
   - `cargo fmt --all -- --check`

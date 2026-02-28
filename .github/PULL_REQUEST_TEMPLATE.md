@@ -1,8 +1,13 @@
+# Pull Request
+
 ## Summary
+
 - What changed:
 - Why:
 
 ## Validation
+
+- [ ] `pnpm -C desktop docs:lint`
 - [ ] `pnpm -C desktop ui:lint`
 - [ ] `pnpm -C desktop ui:typecheck`
 - [ ] `pnpm -C desktop ui:test`
@@ -12,6 +17,7 @@
 - [ ] Not run (explain why)
 
 ## Docs and governance checklist
+
 - [ ] I reviewed `docs/CONTRIBUTION_RULES.md` and followed required gates.
 - [ ] Canonical docs were updated for behavior/architecture/release changes.
 - [ ] `spec/active/DECISIONS.md` was updated for significant decisions (or N/A).

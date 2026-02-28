@@ -1,7 +1,13 @@
-# Le Pupitre
+<h1 align="center">Le Pupitre - Mac & Win</h1>
 
-Local-first Tauri coach for talks, pitchs, and presentations.
-Practice your voice, keep your data local, improve every talk.
+
+<p align="center"><strong>Practice your voice, keep your data local, improve every talk.</strong></p>
+<p align="center">Local-first Tauri coach for talks, pitches, and presentations.</p>
+<p align="center">
+  <a href="https://github.com/esandorfi/lepupitre/releases">Download</a> |
+  <a href="docs/README.md">Docs</a> |
+  <a href="CONTRIBUTING.md">Contributing</a>
+</p>
 
 ## Problems it solves
 - Practice is irregular and hard to sustain.
@@ -22,9 +28,17 @@ Practice your voice, keep your data local, improve every talk.
 - Trainers, teachers, and workshop facilitators
 - Anyone preparing spoken delivery with digital tools
 
+<hr>
+
+
 ## Install and run
+
+<p align="center">
+  <img src="desktop/src-tauri/icons/icon.png" alt="Le Pupitre icon" width="120" />
+</p>
+
 - Download installers from [GitHub Releases](https://github.com/esandorfi/lepupitre/releases).
-- macOS and Windows packages are built by CI.
+- **macOS** and **Windows** packages are built by CI.
 - Current trust note for `v0.2.x`: installers may still show trust warnings until signing/notarization is fully enabled.
 
 ## Quick start
@@ -33,13 +47,17 @@ Practice your voice, keep your data local, improve every talk.
 3. Complete a first quest (text or audio).
 4. Run feedback and review the next actions.
 
+<hr>
+
 ## Contributing
+
 - Start here: [CONTRIBUTING.md](CONTRIBUTING.md)
 - Documentation portal: [docs/README.md](docs/README.md)
 - Code of conduct: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 - Security policy: [SECURITY.md](SECURITY.md)
 
 ## Documentation model
+
 - `README.md`: product and user onboarding.
 - `docs/`: canonical technical and governance documentation.
 - `spec/active/`: active design proposals.

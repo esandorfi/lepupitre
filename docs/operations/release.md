@@ -22,6 +22,8 @@
 - ASR packaging invariant: both `lepupitre-asr` and `lepupitre-asr.exe` must be present before Rust/ASR smoke steps.
 
 ## Quality gates
+- Documentation:
+  - `pnpm -C desktop docs:lint`
 - Backend:
   - `cargo fmt --all -- --check`
   - `cargo clippy --all-targets --all-features -- -D warnings`

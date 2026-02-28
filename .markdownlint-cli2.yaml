@@ -1,3 +1,12 @@
 config:
   default: true
   MD013: false
+  MD012: false
+  MD022: false
+  MD032: false
+  MD033: false
+  MD036: false
+  MD060: false
+  MD024:
+    siblings_only: true
+  MD041: false

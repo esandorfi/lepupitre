@@ -10,7 +10,7 @@ Thanks for contributing.
 
 ## Development setup
 1. Install Tauri prerequisites for your OS:
-   - https://v2.tauri.app/start/prerequisites/
+   - [Tauri v2 prerequisites](https://v2.tauri.app/start/prerequisites/)
 2. Install dependencies:
    - `pnpm -C desktop install`
 3. Run locally:
@@ -24,6 +24,8 @@ Thanks for contributing.
 4. Run quality gates before opening a PR.
 
 ## Quality gates
+- Documentation:
+  - `pnpm -C desktop docs:lint`
 - Frontend:
   - `pnpm -C desktop ui:lint`
   - `pnpm -C desktop ui:lint:design`

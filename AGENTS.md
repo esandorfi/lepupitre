@@ -23,6 +23,7 @@
 - Update decision records in `spec/active/DECISIONS.md` when required by `docs/CONTRIBUTION_RULES.md`.
 - Write README/docs and decision records in English.
 - When explicitly asked to update top-level docs, update `README.md` and `docs/README.md` together.
+- When touching markdown docs, run `pnpm -C desktop docs:lint` before finishing.
 - Maintain `CHANGELOG.md` in English for every version bump/release.
 - Use `pnpm -C desktop changelog` to generate a brief entry from Git history when releasing.
 - Record unresolved decisions and mismatches; challenge assumptions early.
