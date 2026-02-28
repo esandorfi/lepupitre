@@ -1,17 +1,26 @@
 # Le Pupitre
 
-Local-first Tauri coach for technical talks: daily quests, Boss Runs, and actionable feedback.
+Local-first Tauri coach for talks, pitchs, and presentations.
+Practice your voice, keep your data local, improve every talk.
 
-## Why it exists
-- Speaking quality improves with consistent practice loops.
-- Feedback must stay private by default.
-- Progress should work offline and remain under your control.
+## Problems it solves
+- Practice is irregular and hard to sustain.
+- Feedback is often vague or delayed.
+- Voice recordings and transcripts are sensitive.
+- Progress is hard to measure across repeated runs.
 
-## What you can do
-- Create profiles, talks, and training quests.
-- Practice with text and audio flows, including Boss Run sessions.
-- Review feedback and track progression.
-- Export/import peer-review packs.
+## Why it is different
+- Local Whisper transcription runs on your machine.
+- Voice privacy by default: audio and transcripts stay local.
+- Structured training loops: daily quests and Boss Runs.
+- Actionable feedback for the next iteration.
+
+## Who it is for
+- Technical speakers
+- Conference and meetup speakers
+- Product and demo presenters
+- Trainers, teachers, and workshop facilitators
+- Anyone preparing spoken delivery with digital tools
 
 ## Install and run
 - Download installers from [GitHub Releases](https://github.com/esandorfi/lepupitre/releases).
@@ -20,7 +29,7 @@ Local-first Tauri coach for technical talks: daily quests, Boss Runs, and action
 
 ## Quick start
 1. Create a profile.
-2. Create a talk.
+2. Create a talk or demo topic.
 3. Complete a first quest (text or audio).
 4. Run feedback and review the next actions.
 
