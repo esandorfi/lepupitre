@@ -86,7 +86,6 @@ jobs:
           args: >-
             --offline
             --no-progress
-            --exclude-mail
             README.md
             CONTRIBUTING.md
             CODE_OF_CONDUCT.md
