@@ -273,6 +273,31 @@ export const MascotMessageSchema = z.object({
   cta_route: z.string().min(1).optional().nullable(),
 });
 
+export const TalksBlueprintPayloadSchema = z.object({
+  profileId: IdSchema,
+  projectId: IdSchema,
+  locale: z.string().min(2).max(12).optional().nullable(),
+});
+
+export const TalksBlueprintStepSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1),
+  done: z.boolean(),
+  reward_credits: z.number().int().nonnegative(),
+  cta_route: z.string().min(1).optional().nullable(),
+});
+
+export const TalksBlueprintSchema = z.object({
+  project_id: IdSchema,
+  project_title: z.string().min(1),
+  framework_id: z.string().min(1),
+  framework_label: z.string().min(1),
+  framework_summary: z.string().min(1),
+  completion_percent: z.number().int().min(0).max(100),
+  steps: z.array(TalksBlueprintStepSchema).min(1),
+  next_step_id: z.string().min(1).optional().nullable(),
+});
+
 export const ProfileIdPayloadSchema = z.object({
   profileId: IdSchema,
 });
@@ -623,6 +648,7 @@ export type Quest = z.infer<typeof QuestSchema>;
 export type QuestDaily = z.infer<typeof QuestDailySchema>;
 export type ProgressSnapshot = z.infer<typeof ProgressSnapshotSchema>;
 export type MascotMessage = z.infer<typeof MascotMessageSchema>;
+export type TalksBlueprint = z.infer<typeof TalksBlueprintSchema>;
 export type QuestAttemptSummary = z.infer<typeof QuestAttemptSummarySchema>;
 export type QuestReportItem = z.infer<typeof QuestReportItemSchema>;
 export type TranscriptSegment = z.infer<typeof TranscriptSegmentSchema>;

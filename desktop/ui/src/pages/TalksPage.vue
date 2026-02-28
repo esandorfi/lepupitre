@@ -8,15 +8,17 @@ import SectionPanel from "../components/SectionPanel.vue";
 import { useI18n } from "../lib/i18n";
 import { useUiPreferences } from "../lib/uiPreferences";
 import { appStore } from "../stores/app";
-import type { MascotMessage } from "../schemas/ipc";
+import type { MascotMessage, TalksBlueprint } from "../schemas/ipc";
 
 const { t, locale } = useI18n();
 const { settings: uiSettings } = useUiPreferences();
 const state = computed(() => appStore.state);
 const error = ref<string | null>(null);
 const isLoading = ref(false);
+const isBlueprintLoading = ref(false);
 const isSwitching = ref<string | null>(null);
 const mascotMessage = ref<MascotMessage | null>(null);
+const talksBlueprint = ref<TalksBlueprint | null>(null);
 const router = useRouter();
 const showMascotCard = computed(() => uiSettings.value.mascotEnabled);
 const mascotBody = computed(() =>
@@ -31,6 +33,23 @@ function mascotToneClass(kind: string | null | undefined) {
     return "border-[var(--color-accent)] bg-[color-mix(in_srgb,var(--color-accent-soft)_35%,var(--color-surface))]";
   }
   return "border-[var(--color-border)] bg-[var(--color-surface-elevated)]";
+}
+
+function blueprintPercentClass(percent: number) {
+  if (percent >= 100) {
+    return "bg-[var(--color-success)]";
+  }
+  if (percent >= 60) {
+    return "bg-[var(--color-accent)]";
+  }
+  return "bg-[var(--color-warning)]";
+}
+
+function blueprintStepClass(done: boolean) {
+  if (done) {
+    return "border-[var(--color-success)] bg-[color-mix(in_srgb,var(--color-success)_14%,var(--color-surface))]";
+  }
+  return "border-[var(--app-border)] bg-[var(--color-surface-elevated)]";
 }
 
 function toError(err: unknown) {
@@ -107,11 +126,30 @@ async function bootstrap() {
   try {
     await appStore.bootstrap();
     await appStore.loadProjects();
+    await refreshTalksBlueprint();
     await refreshMascotMessage();
   } catch (err) {
     error.value = toError(err);
   } finally {
     isLoading.value = false;
+  }
+}
+
+async function refreshTalksBlueprint() {
+  if (!state.value.activeProfileId || !state.value.activeProject?.id) {
+    talksBlueprint.value = null;
+    return;
+  }
+  isBlueprintLoading.value = true;
+  try {
+    talksBlueprint.value = await appStore.getTalksBlueprint(
+      state.value.activeProject.id,
+      locale.value
+    );
+  } catch {
+    talksBlueprint.value = null;
+  } finally {
+    isBlueprintLoading.value = false;
   }
 }
 
@@ -136,6 +174,8 @@ async function setActive(projectId: string) {
   error.value = null;
   try {
     await appStore.setActiveProject(projectId);
+    await refreshTalksBlueprint();
+    await refreshMascotMessage();
   } catch (err) {
     error.value = toError(err);
   } finally {
@@ -150,8 +190,15 @@ function goToReport(projectId: string) {
 onMounted(bootstrap);
 
 watch(
-  () => [locale.value, uiSettings.value.mascotEnabled, uiSettings.value.mascotIntensity] as const,
+  () =>
+    [
+      locale.value,
+      uiSettings.value.mascotEnabled,
+      uiSettings.value.mascotIntensity,
+      state.value.activeProject?.id ?? "",
+    ] as const,
   async () => {
+    await refreshTalksBlueprint();
     await refreshMascotMessage();
   }
 );
@@ -189,6 +236,67 @@ watch(
         >
           {{ mascotMessage.cta_label }}
         </RouterLink>
+      </div>
+    </SectionPanel>
+
+    <SectionPanel
+      v-if="state.activeProfileId && state.activeProject"
+      variant="compact"
+      class="border"
+    >
+      <div v-if="isBlueprintLoading" class="app-muted app-text-meta">
+        {{ t("talks.loading") }}
+      </div>
+      <div v-else-if="talksBlueprint" class="space-y-3">
+        <div class="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <div class="app-text-eyebrow">{{ t("talks.blueprint_label") }}</div>
+            <div class="app-text app-text-subheadline mt-1">{{ talksBlueprint.framework_label }}</div>
+            <div class="app-muted app-text-body mt-1">{{ talksBlueprint.framework_summary }}</div>
+          </div>
+          <div class="app-badge-neutral app-text-caption inline-flex items-center rounded-full px-2 py-1 font-semibold">
+            {{ talksBlueprint.completion_percent }}%
+          </div>
+        </div>
+
+        <div class="h-2 overflow-hidden rounded-full app-meter-bg">
+          <div
+            class="h-full rounded-full transition-all"
+            :class="blueprintPercentClass(talksBlueprint.completion_percent)"
+            :style="{ width: `${talksBlueprint.completion_percent}%` }"
+          ></div>
+        </div>
+
+        <div class="space-y-2">
+          <div
+            v-for="step in talksBlueprint.steps"
+            :key="step.id"
+            class="flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2"
+            :class="blueprintStepClass(step.done)"
+          >
+            <div class="min-w-0 flex-1">
+              <div class="app-text app-text-body-strong">{{ step.title }}</div>
+              <div class="app-muted app-text-meta mt-1">
+                +{{ step.reward_credits }} {{ t("training.progress_credits") }}
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span
+                class="app-text-caption inline-flex items-center rounded-full px-2 py-1 font-semibold"
+                :class="step.done ? 'app-badge-success' : 'app-badge-neutral'"
+              >
+                {{ step.done ? t("talks.blueprint_done") : t("talks.blueprint_pending") }}
+              </span>
+              <RouterLink
+                v-if="!step.done && step.cta_route"
+                class="app-link app-text-meta underline"
+                :to="step.cta_route"
+              >
+                {{ t("talks.blueprint_open") }}
+              </RouterLink>
+            </div>
+          </div>
+        </div>
       </div>
     </SectionPanel>
 
