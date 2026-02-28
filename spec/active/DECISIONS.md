@@ -102,3 +102,26 @@ Use this file for new architecture, security, IPC, and release decisions.
   - `NOTICE`
   - `README.md`
   - `docs/operations/SIGNPATH_FOUNDATION_APPLICATION.md`
+
+### DEC-20260228-contextual-help-markdown-runtime
+- Status: accepted
+- Context:
+  - Help and onboarding content was hardcoded in UI i18n strings, making route-context guidance difficult to evolve independently from layout.
+  - `SPEC-UI-HELP-CONTEXTUAL-ASSISTANCE` defines stable `topic_id` mapping and markdown-driven content updates.
+  - The project needs a website deployment slice (`spec/active/site/github-pages.md`) without coupling to desktop release logic.
+- Decision:
+  - Adopt a local markdown runtime help content layer under `desktop/ui/src/content/help/*.md`.
+  - Enforce a frontmatter contract (`id`, `title`, `audiences`, `version`, optional `applies_to_routes`) validated by a typed loader in UI.
+  - Implement canonical route-to-topic mapping and Help deep-link query contract: `/help?topic=<topic_id>&audience=<audience>`.
+  - Use English-first markdown content for both EN/FR until dedicated FR markdown files are added.
+  - Introduce `website/` Astro project with GitHub Pages deployment via `.github/workflows/pages.yml` and CI website build checks.
+- Consequences:
+  - Content updates no longer require core Help/Onboarding logic rewrites.
+  - Route help links remain stable through UI layout changes as long as `topic_id` values are preserved.
+  - French locale keeps functional UI labels, but contextual help markdown remains English in this phase.
+  - Website deployment is independent from desktop release packaging, while downloads list remains linked to GitHub release assets.
+- Related specs/docs:
+  - `spec/active/ui/SPEC-UI-HELP-CONTEXTUAL-ASSISTANCE.md`
+  - `spec/active/help-content/`
+  - `spec/active/site/github-pages.md`
+  - `docs/operations/release.md`
