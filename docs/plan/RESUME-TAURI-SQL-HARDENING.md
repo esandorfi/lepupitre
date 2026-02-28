@@ -7,7 +7,7 @@ Last updated: 2026-02-28
 ## Checkpoint snapshot
 
 - Plan source: [PLAN-TAURI-SQL-HARDENING.md](PLAN-TAURI-SQL-HARDENING.md)
-- Current phase: Workstream 7 (security posture)
+- Current phase: Workstream 7 completed (plan closeout)
 - Last completed slice:
   - extracted run-domain data access from `commands/run.rs` to `core/run.rs`
   - command layer now wrapper-only for run commands
@@ -26,11 +26,14 @@ Last updated: 2026-02-28
   - added DB reliability CI gate script (`scripts/check-db-reliability.sh`) and workflow wiring
   - added migration/corruption/query-plan/index reliability assertions in `core/db.rs` tests
   - defined CI threshold policy + runbook-linked failure output for DB reliability gate
-- Last known checkpoint commit: `d852493` (updated in-progress after this checkpoint)
+  - enforced preference-key sensitive-fragment rejection (Rust + UI schema alignment)
+  - added diagnostics payload metadata-only contract guard test
+  - documented local SQL security posture, encryption-at-rest policy, and threat-model assumptions for operators
+- Last known checkpoint commit: `f0a054a` (updated in-progress after this checkpoint)
 
 ## Resume goal
 
-Start Workstream 7 by finalizing local SQL security posture policy and enforcement checks.
+Close the SQL hardening plan and monitor reliability/security gates through release cycles.
 
 ## Resume checklist (ordered)
 
@@ -41,24 +44,24 @@ Start Workstream 7 by finalizing local SQL security posture policy and enforceme
   - `pnpm -C desktop docs:lint`
 
 1. Workstream 7 kickoff
-- [ ] Define explicit local-data security policy:
+- [x] Define explicit local-data security policy:
   - secrets boundary (no secrets in SQLite)
   - backup/diagnostics data handling expectations
   - encryption-at-rest decision for current scope
-- [ ] Add enforceable checks or tests for security boundary assumptions.
-- [ ] Document threat model and operator expectations for local DB artifacts.
+- [x] Add enforceable checks or tests for security boundary assumptions.
+- [x] Document threat model and operator expectations for local DB artifacts.
 
 1. Guard rails + docs per slice
-- [ ] Update [PLAN-TAURI-SQL-HARDENING.md](PLAN-TAURI-SQL-HARDENING.md) progress bullets.
-- [ ] If architecture/process rule changes, update:
+- [x] Update [PLAN-TAURI-SQL-HARDENING.md](PLAN-TAURI-SQL-HARDENING.md) progress bullets.
+- [x] If architecture/process rule changes, update:
   - [docs/architecture/overview.md](../architecture/overview.md)
   - [docs/CONTRIBUTION_RULES.md](../CONTRIBUTION_RULES.md)
-- [ ] Keep [docs/STATUS.md](../STATUS.md) next-action aligned.
+- [x] Keep [docs/STATUS.md](../STATUS.md) next-action aligned.
 
 1. Done criteria for Workstream 7
-- [ ] Security policy is explicit and implemented for current local-first scope.
-- [ ] Backup/diagnostics workflows avoid accidental sensitive-data leakage.
-- [ ] Security constraints are validated by tests/checks and reflected in runbooks.
+- [x] Security policy is explicit and implemented for current local-first scope.
+- [x] Backup/diagnostics workflows avoid accidental sensitive-data leakage.
+- [x] Security constraints are validated by tests/checks and reflected in runbooks.
 
 ## Quick commands
 

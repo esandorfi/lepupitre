@@ -3,6 +3,15 @@ use rusqlite::{params, Connection, OptionalExtension};
 
 const MAX_KEY_LEN: usize = 160;
 const MAX_VALUE_LEN: usize = 32_768;
+const SENSITIVE_KEY_FRAGMENTS: &[&str] = &[
+    "token",
+    "secret",
+    "password",
+    "credential",
+    "api_key",
+    "apikey",
+    "private_key",
+];
 
 pub(super) fn validate_key(key: &str) -> Result<&str, String> {
     let trimmed = key.trim();
@@ -15,7 +24,21 @@ pub(super) fn validate_key(key: &str) -> Result<&str, String> {
     {
         return Err("preference_key_invalid".to_string());
     }
+    if contains_sensitive_fragment(trimmed) {
+        return Err("preference_key_sensitive_forbidden".to_string());
+    }
     Ok(trimmed)
+}
+
+fn contains_sensitive_fragment(key: &str) -> bool {
+    let normalized = key
+        .to_ascii_lowercase()
+        .chars()
+        .map(|ch| if matches!(ch, '.' | '-' | ':') { '_' } else { ch })
+        .collect::<String>();
+    SENSITIVE_KEY_FRAGMENTS
+        .iter()
+        .any(|fragment| normalized.contains(fragment))
 }
 
 pub(super) fn validate_value(value: Option<&str>) -> Result<(), String> {
@@ -104,6 +127,23 @@ mod tests {
         assert!(validate_key("   ").is_err());
         assert!(validate_key("bad key").is_err());
         assert!(validate_key(&"k".repeat(MAX_KEY_LEN + 1)).is_err());
+    }
+
+    #[test]
+    fn sensitive_key_fragments_are_rejected() {
+        assert_eq!(
+            validate_key("lepupitre.api_token").expect_err("token should fail"),
+            "preference_key_sensitive_forbidden"
+        );
+        assert_eq!(
+            validate_key("lepupitre:client-secret").expect_err("secret should fail"),
+            "preference_key_sensitive_forbidden"
+        );
+        assert_eq!(
+            validate_key("lepupitre.private-key").expect_err("private key should fail"),
+            "preference_key_sensitive_forbidden"
+        );
+        assert!(validate_key("lepupitre.locale").is_ok());
     }
 
     #[test]

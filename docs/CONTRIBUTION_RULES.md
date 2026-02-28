@@ -91,3 +91,12 @@ These are repository process gates for contributors.
   - implement explicit compensation/finalization behavior,
   - document failure/cleanup semantics in architecture/plan docs.
 - PRs that change aggregate write logic must include rollback tests for at least one injected failure path.
+
+## 12) Local SQL security boundary rule
+- Never store credentials/tokens/passwords in SQLite-backed preference keys or domain tables.
+- Preference IPC keys containing sensitive fragments must be rejected in both UI schema and Rust validation.
+- Diagnostics IPC/contracts must remain metadata-only (no DB file paths or row/content dumps).
+- If local DB security posture changes (for example adding app-layer encryption), update:
+  - `spec/active/DECISIONS.md`,
+  - `docs/architecture/overview.md`,
+  - `docs/operations/release.md` in the same PR.

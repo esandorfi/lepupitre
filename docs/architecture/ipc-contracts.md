@@ -27,6 +27,7 @@ If one layer changes, all layers must be updated in the same PR.
 - Payload rules:
   - `profileId` stays camelCase in UI payload schemas.
   - `key` must match the canonical key format (`[A-Za-z0-9._:-]+`).
+  - `key` must not include sensitive fragments (`token`, `secret`, `password`, `credential`, `api_key`, `private_key`).
   - `value` is nullable; `null` means delete.
 - Fallback rule:
   - UI may fall back to local browser storage when Tauri runtime/IPC is unavailable, but command payload shapes still remain the source contract.
@@ -47,6 +48,8 @@ If one layer changes, all layers must be updated in the same PR.
     - `continuityError`
     - `integrityCheck`
     - `foreignKeyViolations`
+- Security boundary:
+  - diagnostics payload is metadata-only and must not include backup paths, corrupted file paths, or content extracts.
 
 ## UI redesign guardrails
 When UI visual structure changes, keep these logic contracts tested:

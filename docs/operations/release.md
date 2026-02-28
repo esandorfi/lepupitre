@@ -83,6 +83,29 @@ const report = await invoke('profile_db_diagnostics', { profileId: 'prof_xxx' })
 - `profile_db_diagnostics` output before/after restore.
 - App version and migration checkpoint (`latestMigration` / `schemaVersion`).
 
+## Local DB security policy
+- SQLite and snapshot files are local operational data stores, not secret stores.
+- Do not persist credentials/tokens/passwords in preferences or DB tables.
+- Diagnostics workflow is metadata-only by design; avoid manual SQL dumps unless explicitly required for incident analysis.
+- If sharing incident artifacts outside trusted maintainers:
+  - prefer diagnostics metadata first,
+  - treat backup/corrupted DB files as sensitive user data and redact or avoid sharing.
+- Encryption at rest in this phase:
+  - no app-level DB encryption layer,
+  - rely on host OS full-disk encryption controls for device-level protection.
+
+### Threat model assumptions (current scope)
+- In scope:
+  - accidental data exposure through logs/runbooks,
+  - local filesystem disclosure when backup/corrupted DB artifacts are shared carelessly.
+- Out of scope for app-layer mitigation in this phase:
+  - host compromise by privileged malware/root user,
+  - physical-device attacks without OS-level disk encryption.
+- Operator expectations:
+  - keep device-level encryption enabled on maintainer machines,
+  - share diagnostics metadata before considering DB artifact exchange,
+  - treat any exported backup/corrupted DB file as potentially sensitive user content.
+
 ## Quality gates
 - Documentation:
   - `pnpm -C desktop docs:lint`

@@ -27,6 +27,16 @@
 - ZIP import validation (path traversal and size limits).
 - Secrets are not stored in SQLite (use keyring/stronghold).
 - Least-privilege capabilities and strict CSP.
+- Preference keys containing sensitive fragments (`token`, `secret`, `password`, `credential`, `api_key`, `private_key`) are rejected at IPC boundary.
+- DB diagnostics payload is metadata-only (schema/migration/integrity counters), never paths/content dumps.
+
+## Local SQL security posture
+- SQLite stores product/runtime state only, not credentials or remote tokens.
+- Diagnostics and recovery runbooks use metadata checks only; no SQL row dumps in default operator flow.
+- Backup artifacts are local-only operational snapshots and must stay on trusted storage under app data directories.
+- Encryption-at-rest decision for current scope:
+  - no app-layer DB encryption is added in this phase,
+  - rely on OS/device encryption controls (BitLocker/FileVault/LUKS or equivalent).
 
 ## Preference persistence baseline
 - UI preference access is centralized in `desktop/ui/src/lib/preferencesStorage.ts`.

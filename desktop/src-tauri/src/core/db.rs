@@ -998,6 +998,7 @@ fn ensure_profile_settings_table(conn: &mut Connection) -> Result<(), String> {
 mod tests {
     use super::*;
     use rusqlite::{params, Connection};
+    use std::collections::BTreeSet;
     use std::path::PathBuf;
     use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -1416,6 +1417,50 @@ mod tests {
         );
         assert_eq!(diagnostics.integrity_check, "ok");
         assert_eq!(diagnostics.foreign_key_violations, 0);
+    }
+
+    #[test]
+    fn diagnostics_payload_stays_metadata_only() {
+        let diagnostics = DbDiagnostics {
+            scope: "profile".to_string(),
+            schema_version: Some("7".to_string()),
+            latest_migration: Some("0007_fk_constraints".to_string()),
+            applied_migration_count: 7,
+            expected_migration_count: 7,
+            continuity_ok: true,
+            continuity_error: None,
+            integrity_check: "ok".to_string(),
+            foreign_key_violations: 0,
+        };
+        let payload = serde_json::to_value(diagnostics).expect("serialize diagnostics");
+        let keys = payload
+            .as_object()
+            .expect("object")
+            .keys()
+            .cloned()
+            .collect::<BTreeSet<String>>();
+        let expected = [
+            "scope",
+            "schemaVersion",
+            "latestMigration",
+            "appliedMigrationCount",
+            "expectedMigrationCount",
+            "continuityOk",
+            "continuityError",
+            "integrityCheck",
+            "foreignKeyViolations",
+        ]
+        .into_iter()
+        .map(str::to_string)
+        .collect::<BTreeSet<String>>();
+        assert_eq!(keys, expected);
+
+        let payload_text = payload.to_string().to_ascii_lowercase();
+        assert!(!payload_text.contains("backup"));
+        assert!(!payload_text.contains("corrupt"));
+        assert!(!payload_text.contains("token"));
+        assert!(!payload_text.contains("secret"));
+        assert!(!payload_text.contains("password"));
     }
 
     #[test]

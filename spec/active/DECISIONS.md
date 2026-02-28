@@ -37,3 +37,24 @@ Use this file for new architecture, security, IPC, and release decisions.
   - `docs/plan/PLAN-TAURI-SQL-HARDENING.md`
   - `docs/plan/PLAN-DOMAIN-CODE-ALIGNMENT.md`
   - `docs/CONTRIBUTION_RULES.md`
+
+### DEC-20260228-local-sql-security-boundary
+- Status: accepted
+- Context:
+  - Local SQLite now includes recovery snapshots and diagnostics workflows.
+  - We need explicit boundaries to avoid accidental secret storage and accidental sensitive data exposure during operations.
+- Decision:
+  - SQLite is not a secret store in current scope.
+  - Preference keys containing sensitive fragments (`token`, `secret`, `password`, `credential`, `api_key`, `private_key`) are rejected at IPC validation boundaries (UI Zod + Rust).
+  - Diagnostics IPC payload remains metadata-only (schema/migration/integrity counters) and excludes file paths/content dumps.
+  - Encryption at rest remains host-OS responsibility for now (no app-layer DB encryption in this phase).
+- Consequences:
+  - Security posture is enforceable by code/tests instead of documentation-only guidance.
+  - Integrations requiring secrets must use keyring/stronghold and not SQLite preferences.
+  - Future app-layer encryption adoption requires an explicit new decision and migration plan.
+- Related specs/docs:
+  - `docs/architecture/overview.md`
+  - `docs/architecture/ipc-contracts.md`
+  - `docs/operations/release.md`
+  - `docs/CONTRIBUTION_RULES.md`
+  - `docs/plan/PLAN-TAURI-SQL-HARDENING.md`

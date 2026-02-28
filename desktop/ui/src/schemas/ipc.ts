@@ -6,7 +6,27 @@ export const EmptyPayloadSchema = z.object({});
 export const IdSchema = z.string().min(1);
 export const VoidResponseSchema = z.union([z.null(), z.undefined()]);
 export const AsrSidecarStatusResponseSchema = z.union([z.null(), z.undefined()]);
-export const PreferenceKeySchema = z.string().min(1).max(160).regex(/^[A-Za-z0-9._:-]+$/);
+const sensitivePreferenceKeyFragments = [
+  "token",
+  "secret",
+  "password",
+  "credential",
+  "api_key",
+  "apikey",
+  "private_key",
+] as const;
+
+export const PreferenceKeySchema = z
+  .string()
+  .min(1)
+  .max(160)
+  .regex(/^[A-Za-z0-9._:-]+$/)
+  .refine((key) => {
+    const normalized = key.toLowerCase().replace(/[.:-]/g, "_");
+    return !sensitivePreferenceKeyFragments.some((fragment) =>
+      normalized.includes(fragment)
+    );
+  }, "Sensitive preference keys are forbidden");
 export const PreferenceValueResponseSchema = z.string().nullable();
 
 export const PreferenceGlobalGetPayloadSchema = z.object({

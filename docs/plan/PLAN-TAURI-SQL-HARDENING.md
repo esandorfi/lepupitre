@@ -269,6 +269,16 @@ Acceptance:
   - defined DB reliability CI threshold policy (100% pass for each reliability group),
   - enhanced `scripts/check-db-reliability.sh` with grouped checks and runbook-linked CI failure annotations.
 - 2026-02-28: Workstream 6 completed.
+- 2026-02-28: Workstream 7 started.
+- Workstream 7 slice delivered:
+  - enforced secret-storage boundary for preferences by rejecting sensitive key fragments in Rust validation,
+  - aligned UI IPC Zod schema with the same sensitive-key rejection policy,
+  - added diagnostics contract guard test to keep DB diagnostics payload metadata-only,
+  - documented local SQL security posture and encryption-at-rest decision in architecture/operations docs,
+  - recorded security decision in `spec/active/DECISIONS.md`.
+- Workstream 7 slice delivered:
+  - documented explicit local DB threat-model assumptions and operator handling expectations for backup/corrupted artifacts.
+- 2026-02-28: Workstream 7 completed.
 
 ## Dependencies
 
@@ -284,4 +294,5 @@ This plan is complete when:
 - FK and transaction guarantees are enforced on critical flows,
 - corruption recovery and backup/restore are operational,
 - CI validates migration, integrity, and performance guardrails,
+- local SQL security policy is explicit and enforced by code/tests,
 - documentation reflects final architecture and operational workflow.

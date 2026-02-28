@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   AsrFinalProgressEventSchema,
   FeedbackContextSchema,
+  PreferenceKeySchema,
   PreferenceProfileGetPayloadSchema,
   TranscriptV1Schema,
   TranscribeAudioPayloadSchema,
@@ -83,5 +84,12 @@ describe("ipc schemas", () => {
       key: "lepupitre.locale",
     });
     expect(parsed.success).toBe(false);
+  });
+
+  it("rejects sensitive preference keys", () => {
+    expect(PreferenceKeySchema.safeParse("lepupitre.api_token").success).toBe(false);
+    expect(PreferenceKeySchema.safeParse("lepupitre:client-secret").success).toBe(false);
+    expect(PreferenceKeySchema.safeParse("lepupitre.private-key").success).toBe(false);
+    expect(PreferenceKeySchema.safeParse("lepupitre.locale").success).toBe(true);
   });
 });
