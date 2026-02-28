@@ -70,6 +70,7 @@ import {
   QuestAttemptSummary,
   QuestReportItem,
   FeedbackV1,
+  AnalyzeResponseSchema,
   FeedbackContext,
   FeedbackTimelineItem,
   MascotMessage,
