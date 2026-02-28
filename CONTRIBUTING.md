@@ -12,11 +12,27 @@ Thanks for contributing.
 ## Development setup
 1. Install Tauri prerequisites for your OS:
    - [Tauri v2 prerequisites](https://v2.tauri.app/start/prerequisites/)
-2. Install dependencies:
+2. Install `pnpm` once globally (not per repository/worktree):
+   - Recommended: `corepack enable` then `corepack prepare pnpm@10.4.0 --activate`
+   - Verify: `pnpm --version`
+3. Install dependencies for this checkout:
    - `pnpm -C desktop install`
-3. Run locally:
+4. Run locally:
    - Full app: `pnpm -C desktop dev`
    - UI only: `pnpm -C desktop ui:dev`
+
+## Worktree behavior (important)
+- `pnpm` is a machine-level tool. You do not reinstall `pnpm` per worktree.
+- Each Git worktree has its own local dependencies (`node_modules`).
+- When you create/switch to a new worktree, run `pnpm -C desktop install` once in that worktree before `dev`/`test` commands.
+- For ASR sidecar/model dev assets, use a shared sibling folder:
+  - `just asr-dev-create`
+  - `just asr-build-dev-home`
+  - `just asr-model-dev tiny` (or `base`) to download+verify model in dev home
+  - keep models in `../lepupitre-asr-dev/models`
+  - run with `just dev-desktop-asr-dev <model-path>`
+  - on Windows, run sidecar builds from "Developer PowerShell for VS 2022" and set:
+    - `$env:LIBCLANG_PATH = 'C:\Program Files\LLVM\bin'`
 
 ## Workflow
 1. Pick a small vertical slice.

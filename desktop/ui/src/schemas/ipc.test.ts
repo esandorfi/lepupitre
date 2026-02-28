@@ -4,6 +4,9 @@ import {
   FeedbackContextSchema,
   PreferenceKeySchema,
   PreferenceProfileGetPayloadSchema,
+  RecordingTelemetryEventSchema,
+  RecordingStatusResponseSchema,
+  TranscriptEditSavePayloadSchema,
   TranscriptV1Schema,
   TranscribeAudioPayloadSchema,
 } from "./ipc";
@@ -91,5 +94,38 @@ describe("ipc schemas", () => {
     expect(PreferenceKeySchema.safeParse("lepupitre:client-secret").success).toBe(false);
     expect(PreferenceKeySchema.safeParse("lepupitre.private-key").success).toBe(false);
     expect(PreferenceKeySchema.safeParse("lepupitre.locale").success).toBe(true);
+  });
+
+  it("accepts recorder status with quality flags", () => {
+    const parsed = RecordingStatusResponseSchema.safeParse({
+      durationMs: 1200,
+      level: 0.2,
+      isPaused: false,
+      signalPresent: true,
+      isClipping: false,
+      qualityHintKey: "good_level",
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  it("accepts recorder telemetry events in camelCase event format", () => {
+    const parsed = RecordingTelemetryEventSchema.safeParse({
+      schemaVersion: "1.0.0",
+      durationMs: 1200,
+      level: 0.2,
+      isClipping: false,
+      signalPresent: true,
+      qualityHintKey: "good_level",
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  it("accepts transcript edit save payload in camelCase", () => {
+    const parsed = TranscriptEditSavePayloadSchema.safeParse({
+      profileId: "prof-1",
+      transcriptId: "art-1",
+      editedText: "Hello world",
+    });
+    expect(parsed.success).toBe(true);
   });
 });

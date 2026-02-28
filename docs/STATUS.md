@@ -26,6 +26,9 @@ This file tracks what is canonical, proposal-only, and archived.
 | [docs/DOCS_GOVERNANCE.md](DOCS_GOVERNANCE.md) | Lifecycle and anti-drift policy | accepted | Maintainers | Enforce in doc PRs |
 | [AGENTS.md](../AGENTS.md) | Agent-only behavior rules | accepted | Maintainers | Keep aligned with governance docs |
 | [docs/plan/PLAN-WHISPER-LOCAL-TRANSCRIPTION.md](plan/PLAN-WHISPER-LOCAL-TRANSCRIPTION.md) | ASR deep plan | implemented | ASR maintainers | Keep synchronized with implementation |
+| [docs/plan/PLAN-RECORDER-VOICE-MEMO-UX.md](plan/PLAN-RECORDER-VOICE-MEMO-UX.md) | Recorder voice-memo UX execution plan | implemented | UI/ASR maintainers | Keep in sync with deferred follow-up scope |
+| [docs/plan/PLAN-RECORDER-VOICE-MEMO-UX-RESUME.md](plan/PLAN-RECORDER-VOICE-MEMO-UX-RESUME.md) | Recorder UX resume checklist for next session | implemented | UI/ASR maintainers | Closed on 2026-02-28; keep as handoff history |
+| [docs/plan/PLAN-RECORDER-WAVEFORM-UX-POLISH.md](plan/PLAN-RECORDER-WAVEFORM-UX-POLISH.md) | Deferred recorder enhancements (waveform + polish) | in_progress | UI/ASR maintainers | Deliver trim vertical slice and shortcut/quality polish |
 | [docs/plan/PLAN-TAURI-SQL-HARDENING.md](plan/PLAN-TAURI-SQL-HARDENING.md) | SQLite hardening execution plan | implemented | Maintainers | Monitor reliability/security gates during release cycles |
 | [docs/plan/PLAN-UI-PREFERENCES-STORAGE.md](plan/PLAN-UI-PREFERENCES-STORAGE.md) | UI preference persistence migration | in_progress | Maintainers | Complete Tauri-native backend migration after boundary enforcement |
 | [docs/plan/PLAN-DOMAIN-CODE-ALIGNMENT.md](plan/PLAN-DOMAIN-CODE-ALIGNMENT.md) | Bounded-context code organization migration | in_progress | Maintainers | Keep new code in domain modules by default and tune guard-rail thresholds as code evolves |

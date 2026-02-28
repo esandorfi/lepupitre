@@ -1,4 +1,4 @@
-use crate::core::{artifacts, asr_models, asr_sidecar, db, ids, models, transcript};
+use crate::core::{artifacts, asr_models, asr_sidecar, db, ids, models, time, transcript};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::fs::File;
@@ -26,6 +26,12 @@ const MAX_FINAL_SEGMENTS_TOTAL: usize = 10_000;
 pub struct TranscribeResponse {
     pub transcript_id: String,
     pub job_id: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TranscriptEditSaveResponse {
+    pub transcript_id: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -240,6 +246,48 @@ pub fn transcript_get(
 ) -> Result<models::TranscriptV1, String> {
     db::ensure_profile_exists(&app, &profile_id)?;
     transcript::load_transcript(&app, &profile_id, &transcript_id)
+}
+
+#[tauri::command]
+pub fn transcript_edit_save(
+    app: tauri::AppHandle,
+    profile_id: String,
+    transcript_id: String,
+    edited_text: String,
+) -> Result<TranscriptEditSaveResponse, String> {
+    db::ensure_profile_exists(&app, &profile_id)?;
+
+    let source = transcript::load_transcript(&app, &profile_id, &transcript_id)?;
+    let edited = transcript::build_edited_transcript(&source, &edited_text)?;
+    let transcript_bytes =
+        serde_json::to_vec(&edited).map_err(|e| format!("transcript_json: {e}"))?;
+    let metadata = build_transcript_edit_metadata(&transcript_id, &source);
+    let record = artifacts::store_bytes(
+        &app,
+        &profile_id,
+        "transcript",
+        "json",
+        &transcript_bytes,
+        &metadata,
+    )?;
+
+    Ok(TranscriptEditSaveResponse {
+        transcript_id: record.id,
+    })
+}
+
+fn build_transcript_edit_metadata(
+    transcript_id: &str,
+    source: &models::TranscriptV1,
+) -> serde_json::Value {
+    serde_json::json!({
+        "source_transcript_id": transcript_id,
+        "edit_kind": "manual",
+        "source_language": source.language,
+        "source_model_id": source.model_id,
+        "source_duration_ms": source.duration_ms,
+        "edited_at": time::now_rfc3339(),
+    })
 }
 
 #[tauri::command]
@@ -749,5 +797,32 @@ mod transcription_tests {
         bytes[40..44].copy_from_slice(&inflated.to_le_bytes());
         let err = decode_wav_mono_16k(&bytes).expect_err("should fail");
         assert_eq!(err, "wav_data");
+    }
+
+    #[test]
+    fn transcript_edit_metadata_includes_source_link_fields() {
+        let source = models::TranscriptV1 {
+            schema_version: "1.0.0".to_string(),
+            language: "fr".to_string(),
+            model_id: Some("tiny".to_string()),
+            duration_ms: Some(3210),
+            segments: vec![models::TranscriptSegment {
+                t_start_ms: 0,
+                t_end_ms: 3210,
+                text: "bonjour".to_string(),
+                confidence: Some(0.8),
+            }],
+        };
+
+        let metadata = build_transcript_edit_metadata("tr-source-1", &source);
+        assert_eq!(metadata["source_transcript_id"], "tr-source-1");
+        assert_eq!(metadata["edit_kind"], "manual");
+        assert_eq!(metadata["source_language"], "fr");
+        assert_eq!(metadata["source_model_id"], "tiny");
+        assert_eq!(metadata["source_duration_ms"], 3210);
+        assert!(metadata
+            .get("edited_at")
+            .and_then(|value| value.as_str())
+            .is_some());
     }
 }

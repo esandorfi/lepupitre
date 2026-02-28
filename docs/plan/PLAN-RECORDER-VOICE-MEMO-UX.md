@@ -10,6 +10,60 @@ Record -> Quick Clean (text-first) -> Analyze/Export
 
 This plan keeps cognitive load low while improving trust, speed, and usability.
 
+## Execution checkpoint (2026-02-28)
+
+Current state: base voice-memo UX scope completed; deferred enhancements tracked in
+[PLAN-RECORDER-WAVEFORM-UX-POLISH.md](PLAN-RECORDER-WAVEFORM-UX-POLISH.md).
+
+### Delivered in this step
+
+- Recorder flow refactored into three phases: `capture` -> `quick_clean` -> `analyze_export`.
+- New recorder subcomponents added:
+  - `RecorderCapturePanel`
+  - `RecorderQuickCleanPanel`
+  - `RecorderExportPanel`
+  - `RecorderAdvancedDrawer`
+- Recorder controls now support pause/resume (`recording_pause`, `recording_resume`).
+- Recorder status now exposes confidence cues for UI quality hints:
+  - `isPaused`
+  - `signalPresent`
+  - `isClipping`
+  - `qualityHintKey`
+- Transcript edit save path added:
+  - `transcript_edit_save(profile_id, transcript_id, edited_text) -> { transcript_id }`
+  - edited transcript persisted as new immutable artifact with metadata links to source transcript.
+- Analyze/export now routes through `activeTranscriptIdForAnalysis = editedTranscriptId ?? baseTranscriptId`.
+- Quest and Boss Run flows now consume recorder-driven analyze flow and edited transcript IDs.
+- Boss Run race condition fixed when auto-transcription completes before run persistence.
+- IPC schema alignment completed for new commands/fields (Rust <-> Zod <-> UI usage).
+- Recorder telemetry event `recording/telemetry/v1` implemented and wired end-to-end:
+  - Rust emits duration/level/quality payload every ~200ms during active recording.
+  - UI consumes telemetry as primary live status source.
+  - `recording_status` polling retained only as deterministic compatibility fallback.
+- Recorder microcopy now uses i18n keys end-to-end (EN/FR parity) across capture, quick-clean, export, and advanced drawer panels.
+- Focused contract tests added for:
+  - recorder stop/analysis flow decisions in UI helper tests
+  - transcript edit metadata source-link guarantees
+  - quality hint precedence transitions in Rust unit tests
+
+### Validation completed
+
+- `pnpm -C desktop docs:lint`
+- `pnpm -C desktop ui:lint`
+- `pnpm -C desktop ui:lint:design` (non-blocking warnings only)
+- `pnpm -C desktop ui:typecheck`
+- `pnpm -C desktop ui:test`
+- `cargo fmt --manifest-path desktop/src-tauri/Cargo.toml --all -- --check`
+- `cargo clippy --manifest-path desktop/src-tauri/Cargo.toml --all-targets --all-features -- -D warnings`
+- `cargo test --manifest-path desktop/src-tauri/Cargo.toml`
+
+### Known caveats for local validation
+
+- `cargo test`/`cargo clippy` require sidecar resource files declared in `tauri.conf.json`.
+- If missing in the working tree, temporary placeholder files may be required at:
+  - `desktop/src-tauri/sidecar/lepupitre-asr`
+  - `desktop/src-tauri/sidecar/lepupitre-asr.exe`
+
 ## Product decisions locked
 
 - Audience: speaker training (not podcast production).

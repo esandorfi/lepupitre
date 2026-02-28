@@ -221,6 +221,10 @@ async function requestFeedback() {
   }
 }
 
+function handleRecorderAnalyze() {
+  void requestFeedback();
+}
+
 async function skipTranscription() {
   await router.push(backLink.value);
 }
@@ -274,7 +278,13 @@ watch(text, (nextValue) => {
 
         <div v-if="isAudioQuest" class="mt-3 space-y-4">
           <p class="app-muted app-text-body-strong">{{ t("quest.audio_hint") }}</p>
-          <AudioRecorder @saved="handleAudioSaved" @transcribed="handleTranscribed" />
+          <AudioRecorder
+            :can-analyze="canAnalyze"
+            :is-analyzing="isAnalyzing"
+            @saved="handleAudioSaved"
+            @transcribed="handleTranscribed"
+            @analyze="handleRecorderAnalyze"
+          />
           <p v-if="audioArtifactId && !transcriptId" class="app-muted app-text-meta">
             {{ t("quest.transcript_optional") }}
           </p>
@@ -318,6 +328,7 @@ watch(text, (nextValue) => {
         <div class="app-text-eyebrow">{{ t("quest.step_analysis") }}</div>
         <div class="mt-3 flex flex-wrap items-center gap-3">
           <button
+            v-if="!isAudioQuest"
             class="app-button-info app-focus-ring app-button-lg inline-flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
             type="button"
             :disabled="!canAnalyze || isAnalyzing"

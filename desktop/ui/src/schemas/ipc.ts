@@ -458,6 +458,18 @@ export const RecordingStatusPayloadSchema = z.object({
 export const RecordingStatusResponseSchema = z.object({
   durationMs: z.number().int().nonnegative(),
   level: z.number().min(0).max(1),
+  isPaused: z.boolean().optional(),
+  signalPresent: z.boolean().optional(),
+  isClipping: z.boolean().optional(),
+  qualityHintKey: z.string().min(1).optional(),
+});
+
+export const RecordingPausePayloadSchema = z.object({
+  recordingId: IdSchema,
+});
+
+export const RecordingResumePayloadSchema = z.object({
+  recordingId: IdSchema,
 });
 
 export const RecordingStopPayloadSchema = z.object({
@@ -521,8 +533,27 @@ export const AsrFinalResultEventSchema = z.object({
   segments: z.array(TranscriptSegmentSchema).min(1),
 });
 
+export const RecordingTelemetryEventSchema = z.object({
+  schemaVersion: z.literal("1.0.0"),
+  durationMs: z.number().int().nonnegative(),
+  level: z.number().min(0).max(1),
+  isClipping: z.boolean(),
+  signalPresent: z.boolean(),
+  qualityHintKey: z.string().min(1),
+});
+
 export const TranscriptGetPayloadSchema = z.object({
   profileId: IdSchema,
+  transcriptId: IdSchema,
+});
+
+export const TranscriptEditSavePayloadSchema = z.object({
+  profileId: IdSchema,
+  transcriptId: IdSchema,
+  editedText: z.string().min(1),
+});
+
+export const TranscriptEditSaveResponseSchema = z.object({
   transcriptId: IdSchema,
 });
 
@@ -671,10 +702,12 @@ export type AsrPartialEvent = z.infer<typeof AsrPartialEventSchema>;
 export type AsrCommitEvent = z.infer<typeof AsrCommitEventSchema>;
 export type AsrFinalProgressEvent = z.infer<typeof AsrFinalProgressEventSchema>;
 export type AsrFinalResultEvent = z.infer<typeof AsrFinalResultEventSchema>;
+export type RecordingTelemetryEvent = z.infer<typeof RecordingTelemetryEventSchema>;
 
 export type RecordingStartResponse = z.infer<typeof RecordingStartResponseSchema>;
 export type RecordingStatusResponse = z.infer<typeof RecordingStatusResponseSchema>;
 export type RecordingStopResponse = z.infer<typeof RecordingStopResponseSchema>;
+export type TranscriptEditSaveResponse = z.infer<typeof TranscriptEditSaveResponseSchema>;
 
 export type ProfileSummary = z.infer<typeof ProfileSummarySchema>;
 export type ProjectSummary = z.infer<typeof ProjectSummarySchema>;
