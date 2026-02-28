@@ -209,6 +209,10 @@ Acceptance:
 - Documented final compensation/finalization contract examples per multi-resource write path in architecture docs.
 - 2026-02-28: Workstream 3 completed.
 - 2026-02-28: Workstream 4 started (data-access module boundary extraction and command SQL removal).
+- Workstream 4 slice delivered:
+  - extracted run-domain SQL/DB logic from `commands/run.rs` into `core/run.rs`,
+  - reduced `commands/run.rs` to orchestration-only Tauri wrappers,
+  - moved run feedback link rollback test coverage into `core/run.rs`.
 
 ## Dependencies
 

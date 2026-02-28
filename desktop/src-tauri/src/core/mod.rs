@@ -15,6 +15,7 @@ pub mod peer_review;
 pub mod project;
 pub mod quest;
 pub mod recording;
+pub mod run;
 pub mod seed;
 pub mod time;
 pub mod transcript;
