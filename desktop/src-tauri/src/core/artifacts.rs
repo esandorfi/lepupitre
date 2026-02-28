@@ -155,7 +155,17 @@ pub fn delete_artifact(
 ) -> Result<(), String> {
     let conn = db::open_profile(app, profile_id)?;
     let profile_dir = db::profile_dir(app, profile_id)?;
-    delete_artifact_with_conn(&conn, &profile_dir, artifact_id)
+    delete_artifacts_with_conn(&conn, &profile_dir, &[artifact_id])
+}
+
+pub fn delete_artifacts(
+    app: &tauri::AppHandle,
+    profile_id: &str,
+    artifact_ids: &[&str],
+) -> Result<(), String> {
+    let conn = db::open_profile(app, profile_id)?;
+    let profile_dir = db::profile_dir(app, profile_id)?;
+    delete_artifacts_with_conn(&conn, &profile_dir, artifact_ids)
 }
 
 fn delete_artifact_with_conn(
@@ -184,6 +194,27 @@ fn delete_artifact_with_conn(
     }
 
     Ok(())
+}
+
+fn delete_artifacts_with_conn(
+    conn: &Connection,
+    profile_dir: &Path,
+    artifact_ids: &[&str],
+) -> Result<(), String> {
+    let mut errors = Vec::new();
+    for artifact_id in artifact_ids {
+        if let Err(err) = delete_artifact_with_conn(conn, profile_dir, artifact_id) {
+            errors.push(format!("{artifact_id}: {err}"));
+        }
+    }
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(format!(
+            "artifact_batch_delete_failed: {}",
+            errors.join("; ")
+        ))
+    }
 }
 
 struct ArtifactInsertRow<'a> {
@@ -262,7 +293,10 @@ fn to_hex(bytes: &[u8]) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{delete_artifact_with_conn, insert_artifact_row_with_cleanup, ArtifactInsertRow};
+    use super::{
+        delete_artifact_with_conn, delete_artifacts_with_conn, insert_artifact_row_with_cleanup,
+        ArtifactInsertRow,
+    };
     use rusqlite::{params, Connection};
     use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -343,6 +377,81 @@ mod tests {
         std::fs::create_dir_all(&profile_dir).expect("mkdir");
 
         delete_artifact_with_conn(&conn, &profile_dir, "missing").expect("idempotent");
+        let _ = std::fs::remove_dir_all(profile_dir);
+    }
+
+    #[test]
+    fn delete_artifacts_with_conn_removes_multiple_rows_and_files() {
+        let conn = Connection::open_in_memory().expect("open");
+        conn.execute_batch(
+            "CREATE TABLE artifacts (
+               id TEXT PRIMARY KEY,
+               type TEXT NOT NULL,
+               local_relpath TEXT NOT NULL,
+               sha256 TEXT NOT NULL,
+               bytes INTEGER NOT NULL,
+               created_at TEXT NOT NULL,
+               metadata_json TEXT NOT NULL
+             );",
+        )
+        .expect("schema");
+
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("time")
+            .as_nanos();
+        let profile_dir = std::env::temp_dir().join(format!("lepupitre-artifacts-batch-{nonce}"));
+        let path_a = profile_dir
+            .join("artifacts")
+            .join("feedback")
+            .join("art_a.json");
+        let path_b = profile_dir
+            .join("artifacts")
+            .join("feedback")
+            .join("art_b.json");
+        std::fs::create_dir_all(path_a.parent().expect("parent a")).expect("mkdir a");
+        std::fs::write(&path_a, b"a").expect("write a");
+        std::fs::write(&path_b, b"b").expect("write b");
+
+        conn.execute(
+            "INSERT INTO artifacts (id, type, local_relpath, sha256, bytes, created_at, metadata_json)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+            params![
+                "art_a",
+                "feedback",
+                "artifacts/feedback/art_a.json",
+                "sha_a",
+                1i64,
+                "2026-02-28T00:00:00Z",
+                "{}"
+            ],
+        )
+        .expect("insert a");
+        conn.execute(
+            "INSERT INTO artifacts (id, type, local_relpath, sha256, bytes, created_at, metadata_json)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+            params![
+                "art_b",
+                "feedback",
+                "artifacts/feedback/art_b.json",
+                "sha_b",
+                1i64,
+                "2026-02-28T00:00:00Z",
+                "{}"
+            ],
+        )
+        .expect("insert b");
+
+        delete_artifacts_with_conn(&conn, &profile_dir, &["art_a", "art_b", "missing"])
+            .expect("batch delete");
+
+        let count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM artifacts", [], |row| row.get(0))
+            .expect("count");
+        assert_eq!(count, 0);
+        assert!(!path_a.exists());
+        assert!(!path_b.exists());
+
         let _ = std::fs::remove_dir_all(profile_dir);
     }
 

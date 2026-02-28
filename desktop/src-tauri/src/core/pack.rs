@@ -484,21 +484,15 @@ pub fn peer_review_import(
         },
     );
     if let Err(persist_err) = persist_result {
-        let cleanup_result = cleanup_import_artifacts(
-            &conn,
+        let cleanup_result = artifacts::delete_artifacts(
+            &app,
+            &profile_id,
             &[
                 &audio_record.id,
                 &transcript_record.id,
                 &outline_record.id,
                 &rubric_record.id,
                 &record.id,
-            ],
-            &[
-                audio_record.abspath.as_path(),
-                transcript_record.abspath.as_path(),
-                outline_record.abspath.as_path(),
-                rubric_record.abspath.as_path(),
-                record.abspath.as_path(),
             ],
         );
         return match cleanup_result {
@@ -898,39 +892,13 @@ fn persist_peer_review_import_rows(
     Ok(())
 }
 
-fn cleanup_import_artifacts(
-    conn: &Connection,
-    artifact_ids: &[&str],
-    artifact_paths: &[&Path],
-) -> Result<(), String> {
-    let mut errors = Vec::new();
-    for artifact_id in artifact_ids {
-        if let Err(err) = conn.execute("DELETE FROM artifacts WHERE id = ?1", params![artifact_id])
-        {
-            errors.push(format!("artifact_row_delete_{artifact_id}: {err}"));
-        }
-    }
-    for path in artifact_paths {
-        if path.exists() {
-            if let Err(err) = std::fs::remove_file(path) {
-                errors.push(format!("artifact_file_delete_{}: {err}", path.display()));
-            }
-        }
-    }
-    if errors.is_empty() {
-        Ok(())
-    } else {
-        Err(format!("artifact_cleanup_failed: {}", errors.join("; ")))
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::{
-        cleanup_import_artifacts, insert_pack_artifact_with_cleanup,
-        persist_peer_review_import_rows, PackArtifactRow, PeerReviewImportRows,
+        insert_pack_artifact_with_cleanup, persist_peer_review_import_rows, PackArtifactRow,
+        PeerReviewImportRows,
     };
-    use rusqlite::{params, Connection};
+    use rusqlite::Connection;
     use std::time::{SystemTime, UNIX_EPOCH};
 
     fn test_conn() -> Connection {
@@ -1066,45 +1034,6 @@ mod tests {
         assert_eq!(outline_count, 0);
         assert_eq!(run_count, 0);
         assert_eq!(peer_count, 0);
-    }
-
-    #[test]
-    fn cleanup_import_artifacts_removes_rows_and_files() {
-        let conn = Connection::open_in_memory().expect("open");
-        conn.execute_batch("CREATE TABLE artifacts (id TEXT PRIMARY KEY);")
-            .expect("artifacts schema");
-
-        let nonce = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .expect("time")
-            .as_nanos();
-        let base_dir = std::env::temp_dir().join(format!("lepupitre-pack-cleanup-{nonce}"));
-        std::fs::create_dir_all(&base_dir).expect("base_dir");
-        let file_a = base_dir.join("a.json");
-        let file_b = base_dir.join("b.json");
-        std::fs::write(&file_a, b"a").expect("write a");
-        std::fs::write(&file_b, b"b").expect("write b");
-
-        conn.execute("INSERT INTO artifacts (id) VALUES (?1)", params!["art_a"])
-            .expect("insert a");
-        conn.execute("INSERT INTO artifacts (id) VALUES (?1)", params!["art_b"])
-            .expect("insert b");
-
-        cleanup_import_artifacts(
-            &conn,
-            &["art_a", "art_b"],
-            &[file_a.as_path(), file_b.as_path()],
-        )
-        .expect("cleanup");
-
-        let count: i64 = conn
-            .query_row("SELECT COUNT(*) FROM artifacts", [], |row| row.get(0))
-            .expect("count");
-        assert_eq!(count, 0);
-        assert!(!file_a.exists());
-        assert!(!file_b.exists());
-
-        let _ = std::fs::remove_dir_all(base_dir);
     }
 
     #[test]

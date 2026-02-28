@@ -201,7 +201,9 @@ Acceptance:
 - Hardened pack export persistence:
   - generated pack ZIP is auto-removed when pack artifact row insert fails,
   - coverage added for cleanup-on-pack-insert-failure.
-- Remaining Workstream 3 scope: document and standardize one shared compensation/finalization helper API across all multi-resource write paths.
+- Standardized shared compensation API in `core/artifacts`:
+  - added batch artifact cleanup (`delete_artifacts`) and switched peer-review import to use it.
+- Remaining Workstream 3 scope: document final compensation/finalization contract examples for every remaining multi-resource write path.
 
 ## Dependencies
 
