@@ -1,12 +1,15 @@
 import { reactive } from "vue";
 import { invokeChecked } from "../composables/useIpc";
 import {
-  EmptyPayloadSchema,
+  createProfile as createWorkspaceProfile,
+  deleteProfile as deleteWorkspaceProfile,
+  listProfiles as listWorkspaceProfiles,
+  renameProfile as renameWorkspaceProfile,
+  switchProfile as switchWorkspaceProfile,
+} from "../domains/workspace/api";
+import {
   IdSchema,
-  ProfileCreatePayloadSchema,
   ProfileIdPayloadSchema,
-  ProfileListResponseSchema,
-  ProfileRenamePayloadSchema,
   ProfileSummary,
   ProjectCreateRequestSchema,
   ProjectUpdatePayload,
@@ -138,12 +141,7 @@ async function hydratePreferenceContext(profileId: string | null) {
 let bootstrapPromise: Promise<void> | null = null;
 
 async function loadProfiles() {
-  const profiles = await invokeChecked(
-    "profile_list",
-    EmptyPayloadSchema,
-    ProfileListResponseSchema,
-    {}
-  );
+  const profiles = await listWorkspaceProfiles();
   state.profiles = profiles;
   const active = profiles.find((profile) => profile.is_active);
   state.activeProfileId = active?.id ?? null;
@@ -184,12 +182,7 @@ async function ensureTrainingProject() {
 }
 
 async function createProfile(name: string) {
-  const id = await invokeChecked(
-    "profile_create",
-    ProfileCreatePayloadSchema,
-    IdSchema,
-    { name }
-  );
+  const id = await createWorkspaceProfile(name);
   await loadProfiles();
   state.activeProfileId = id;
   await loadActiveProject();
@@ -199,12 +192,20 @@ async function createProfile(name: string) {
 }
 
 async function switchProfile(profileId: string) {
-  await invokeChecked(
-    "profile_switch",
-    ProfileIdPayloadSchema,
-    VoidResponseSchema,
-    { profileId }
-  );
+  await switchWorkspaceProfile(profileId);
+  await loadProfiles();
+  await loadActiveProject();
+  await loadProjects();
+  await loadDailyQuest();
+}
+
+async function renameProfile(profileId: string, name: string) {
+  await renameWorkspaceProfile(profileId, name);
+  await loadProfiles();
+}
+
+async function deleteProfile(profileId: string) {
+  await deleteWorkspaceProfile(profileId);
   await loadProfiles();
   await loadActiveProject();
   await loadProjects();
@@ -831,27 +832,8 @@ export const appStore = {
   loadProfiles,
   loadProjects,
   createProfile,
-  async renameProfile(profileId: string, name: string) {
-    await invokeChecked(
-      "profile_rename",
-      ProfileRenamePayloadSchema,
-      VoidResponseSchema,
-      { profileId, name }
-    );
-    await loadProfiles();
-  },
-  async deleteProfile(profileId: string) {
-    await invokeChecked(
-      "profile_delete",
-      ProfileIdPayloadSchema,
-      VoidResponseSchema,
-      { profileId }
-    );
-    await loadProfiles();
-    await loadActiveProject();
-    await loadProjects();
-    await loadDailyQuest();
-  },
+  renameProfile,
+  deleteProfile,
   switchProfile,
   loadActiveProject,
   createProject,

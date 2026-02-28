@@ -13,3 +13,4 @@ pub mod seed;
 pub mod time;
 pub mod transcript;
 pub mod vad;
+pub mod workspace;
