@@ -1,9 +1,8 @@
 use crate::core::db_helpers;
 use crate::core::seed::QuestSeedFile;
+use crate::core::time;
 use rusqlite::{params, Connection, ErrorCode};
-use std::collections::HashSet;
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Mutex, OnceLock};
 use std::thread;
 use std::time::Duration;
@@ -14,9 +13,47 @@ const GLOBAL_MIGRATION: &str = include_str!("../../../../migrations/global/0001_
 const PROFILE_MIGRATION: &str = include_str!("../../../../migrations/profile/0001_init.sql");
 const QUESTS_SEED: &str = include_str!("../../../../seed/quests.v1.json");
 
-static GLOBAL_MIGRATED: AtomicBool = AtomicBool::new(false);
 static GLOBAL_MIGRATION_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-static PROFILE_MIGRATION_STATE: OnceLock<Mutex<HashSet<String>>> = OnceLock::new();
+static PROFILE_MIGRATION_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+
+type MigrationFn = fn(&mut Connection) -> Result<(), String>;
+
+struct Migration {
+    version: &'static str,
+    apply: MigrationFn,
+}
+
+const GLOBAL_MIGRATIONS: &[Migration] = &[Migration {
+    version: "0001_init",
+    apply: migration_global_0001_init,
+}];
+
+const PROFILE_MIGRATIONS: &[Migration] = &[
+    Migration {
+        version: "0001_init",
+        apply: migration_profile_0001_init,
+    },
+    Migration {
+        version: "0002_outline_and_settings",
+        apply: migration_profile_0002_outline_and_settings,
+    },
+    Migration {
+        version: "0003_talk_training_flag",
+        apply: migration_profile_0003_talk_training_flag,
+    },
+    Migration {
+        version: "0004_talk_numbers_backfill",
+        apply: migration_profile_0004_talk_numbers_backfill,
+    },
+    Migration {
+        version: "0005_runs_audio_nullable",
+        apply: migration_profile_0005_runs_audio_nullable,
+    },
+    Migration {
+        version: "0006_seed_quests",
+        apply: migration_profile_0006_seed_quests,
+    },
+];
 
 pub fn open_global(app: &tauri::AppHandle) -> Result<Connection, String> {
     let app_data_dir = app
@@ -26,21 +63,14 @@ pub fn open_global(app: &tauri::AppHandle) -> Result<Connection, String> {
     std::fs::create_dir_all(&app_data_dir).map_err(|e| format!("create_dir: {e}"))?;
 
     let db_path = app_data_dir.join("global.db");
-    let db_exists = db_path.exists();
-    let conn = Connection::open(&db_path).map_err(|e| format!("open: {e}"))?;
+    let mut conn = Connection::open(&db_path).map_err(|e| format!("open: {e}"))?;
     configure_connection_pragmas(&conn)?;
 
-    if !db_exists || !GLOBAL_MIGRATED.load(Ordering::Acquire) {
-        let lock = GLOBAL_MIGRATION_LOCK.get_or_init(|| Mutex::new(()));
-        let _guard = lock
-            .lock()
-            .map_err(|_| "global_migration_lock".to_string())?;
-        if !db_exists || !GLOBAL_MIGRATED.load(Ordering::Acquire) {
-            conn.execute_batch(GLOBAL_MIGRATION)
-                .map_err(|e| format!("migrate: {e}"))?;
-            GLOBAL_MIGRATED.store(true, Ordering::Release);
-        }
-    }
+    let lock = GLOBAL_MIGRATION_LOCK.get_or_init(|| Mutex::new(()));
+    let _guard = lock
+        .lock()
+        .map_err(|_| "global_migration_lock".to_string())?;
+    apply_migrations(&mut conn, "global", GLOBAL_MIGRATIONS)?;
     Ok(conn)
 }
 
@@ -64,28 +94,14 @@ pub fn open_profile(app: &tauri::AppHandle, profile_id: &str) -> Result<Connecti
     std::fs::create_dir_all(&profile_dir).map_err(|e| format!("create_dir: {e}"))?;
 
     let db_path = profile_dir.join("profile.db");
-    let db_exists = db_path.exists();
     let mut conn = Connection::open(&db_path).map_err(|e| format!("open: {e}"))?;
     configure_connection_pragmas(&conn)?;
-    let state = PROFILE_MIGRATION_STATE.get_or_init(|| Mutex::new(HashSet::new()));
-    let mut state_guard = state
+
+    let lock = PROFILE_MIGRATION_LOCK.get_or_init(|| Mutex::new(()));
+    let _guard = lock
         .lock()
         .map_err(|_| "profile_migration_lock".to_string())?;
-    let needs_migration = !db_exists || !state_guard.contains(profile_id);
-    if needs_migration {
-        conn.execute_batch(PROFILE_MIGRATION)
-            .map_err(|e| format!("migrate: {e}"))?;
-
-        seed_quests(&mut conn)?;
-
-        state_guard.insert(profile_id.to_string());
-    }
-
-    ensure_outline_table(&mut conn)?;
-    ensure_profile_settings_table(&mut conn)?;
-    ensure_talk_training_flag(&mut conn)?;
-    ensure_talk_numbers(&mut conn)?;
-    ensure_runs_nullable(&mut conn)?;
+    apply_migrations(&mut conn, "profile", PROFILE_MIGRATIONS)?;
 
     Ok(conn)
 }
@@ -96,6 +112,113 @@ pub fn profile_dir(app: &tauri::AppHandle, profile_id: &str) -> Result<PathBuf, 
         .app_data_dir()
         .map_err(|e| format!("app_data_dir: {e}"))?;
     Ok(app_data_dir.join("profiles").join(profile_id))
+}
+
+fn migration_global_0001_init(conn: &mut Connection) -> Result<(), String> {
+    conn.execute_batch(GLOBAL_MIGRATION)
+        .map_err(|e| format!("migrate_global_0001: {e}"))
+}
+
+fn migration_profile_0001_init(conn: &mut Connection) -> Result<(), String> {
+    conn.execute_batch(PROFILE_MIGRATION)
+        .map_err(|e| format!("migrate_profile_0001: {e}"))
+}
+
+fn migration_profile_0002_outline_and_settings(conn: &mut Connection) -> Result<(), String> {
+    ensure_outline_table(conn)?;
+    ensure_profile_settings_table(conn)?;
+    Ok(())
+}
+
+fn migration_profile_0003_talk_training_flag(conn: &mut Connection) -> Result<(), String> {
+    ensure_talk_training_flag(conn)
+}
+
+fn migration_profile_0004_talk_numbers_backfill(conn: &mut Connection) -> Result<(), String> {
+    ensure_talk_numbers(conn)
+}
+
+fn migration_profile_0005_runs_audio_nullable(conn: &mut Connection) -> Result<(), String> {
+    ensure_runs_nullable(conn)
+}
+
+fn migration_profile_0006_seed_quests(conn: &mut Connection) -> Result<(), String> {
+    seed_quests(conn)
+}
+
+fn apply_migrations(
+    conn: &mut Connection,
+    scope: &str,
+    migrations: &[Migration],
+) -> Result<(), String> {
+    ensure_schema_migrations_table(conn)?;
+    let applied = load_applied_migrations(conn)?;
+    validate_migration_continuity(scope, &applied, migrations)?;
+
+    for migration in migrations.iter().skip(applied.len()) {
+        (migration.apply)(conn)?;
+        record_migration(conn, migration.version)?;
+    }
+
+    Ok(())
+}
+
+fn ensure_schema_migrations_table(conn: &Connection) -> Result<(), String> {
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS schema_migrations (
+           version TEXT PRIMARY KEY,
+           applied_at TEXT NOT NULL
+         )",
+        [],
+    )
+    .map_err(|e| format!("schema_migrations_table: {e}"))?;
+    Ok(())
+}
+
+fn load_applied_migrations(conn: &Connection) -> Result<Vec<String>, String> {
+    let mut stmt = conn
+        .prepare("SELECT version FROM schema_migrations ORDER BY version ASC")
+        .map_err(|e| format!("schema_migrations_prepare: {e}"))?;
+    let rows = stmt
+        .query_map([], |row| row.get::<_, String>(0))
+        .map_err(|e| format!("schema_migrations_query: {e}"))?;
+    let mut out = Vec::new();
+    for row in rows {
+        out.push(row.map_err(|e| format!("schema_migrations_row: {e}"))?);
+    }
+    Ok(out)
+}
+
+fn validate_migration_continuity(
+    scope: &str,
+    applied: &[String],
+    migrations: &[Migration],
+) -> Result<(), String> {
+    if applied.len() > migrations.len() {
+        return Err(format!(
+            "migration_continuity_{scope}: too_many_applied_versions"
+        ));
+    }
+
+    for (idx, applied_version) in applied.iter().enumerate() {
+        let expected = migrations[idx].version;
+        if applied_version != expected {
+            return Err(format!(
+                "migration_continuity_{scope}: expected {expected}, found {applied_version}"
+            ));
+        }
+    }
+
+    Ok(())
+}
+
+fn record_migration(conn: &Connection, version: &str) -> Result<(), String> {
+    conn.execute(
+        "INSERT INTO schema_migrations (version, applied_at) VALUES (?1, ?2)",
+        params![version, time::now_rfc3339()],
+    )
+    .map_err(|e| format!("schema_migrations_insert: {e}"))?;
+    Ok(())
 }
 
 fn seed_quests(conn: &mut Connection) -> Result<(), String> {
@@ -423,6 +546,38 @@ mod tests {
         let _ = std::fs::remove_file(&db_path);
         let _ = std::fs::remove_file(db_path.with_extension("db-wal"));
         let _ = std::fs::remove_file(db_path.with_extension("db-shm"));
+    }
+
+    #[test]
+    fn profile_migrations_are_recorded_in_order() {
+        let mut conn = Connection::open_in_memory().expect("open");
+        apply_migrations(&mut conn, "profile", PROFILE_MIGRATIONS).expect("migrate");
+
+        let applied = load_applied_migrations(&conn).expect("applied");
+        assert_eq!(applied.len(), PROFILE_MIGRATIONS.len());
+        assert_eq!(applied.first().map(String::as_str), Some("0001_init"));
+        assert_eq!(applied.last().map(String::as_str), Some("0006_seed_quests"));
+    }
+
+    #[test]
+    fn migration_continuity_rejects_gaps() {
+        let conn = Connection::open_in_memory().expect("open");
+        ensure_schema_migrations_table(&conn).expect("schema_migrations");
+        conn.execute(
+            "INSERT INTO schema_migrations (version, applied_at) VALUES (?1, ?2)",
+            params!["0001_init", "2026-02-28T00:00:00Z"],
+        )
+        .expect("insert 0001");
+        conn.execute(
+            "INSERT INTO schema_migrations (version, applied_at) VALUES (?1, ?2)",
+            params!["0003_talk_training_flag", "2026-02-28T00:00:01Z"],
+        )
+        .expect("insert 0003");
+
+        let applied = load_applied_migrations(&conn).expect("applied");
+        let err = validate_migration_continuity("profile", &applied, PROFILE_MIGRATIONS)
+            .expect_err("gap should fail");
+        assert!(err.contains("expected 0002_outline_and_settings"));
     }
 
     fn temp_db_path(prefix: &str) -> PathBuf {

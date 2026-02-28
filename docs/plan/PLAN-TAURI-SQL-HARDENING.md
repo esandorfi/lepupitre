@@ -25,6 +25,21 @@ Align LePupitre's Tauri + SQLite backend with a SOTA desktop data architecture:
   - performance hotspots.
 - Keep command files orchestration-only and SQL-free.
 
+### SQL centralization pattern (v1)
+
+- Per bounded context (`workspace`, `talk`, `quest`, `feedback`, `pack`):
+  - `core/<context>/queries.rs`
+  - `core/<context>/repo.rs`
+  - typed row/result structs in `core/<context>/types.rs` (or existing typed modules)
+- Rules:
+  - `queries.rs` holds SQL text and query builders only.
+  - `repo.rs` maps rows and exposes typed functions used by domain services/commands.
+  - command modules call domain/repo functions; they do not define SQL.
+- Keep raw SQL for:
+  - reporting queries,
+  - complex joins,
+  - performance-critical paths with explicit query-plan checks.
+
 ## Non-goals (current phase)
 
 - Full DB watcher architecture refactor across all UI flows.
@@ -141,6 +156,16 @@ Acceptance:
   - `busy_timeout >= 2000ms`
 - Added pragma verification checks at connection open.
 - Added regression test `sqlite_pragmas_are_applied_and_verified`.
+- 2026-02-28: Workstream 2 started.
+- Added migration tracking table (`schema_migrations`) with ordered continuity validation.
+- Replaced open-time runtime schema patching with ordered profile migration steps:
+  - `0001_init`
+  - `0002_outline_and_settings`
+  - `0003_talk_training_flag`
+  - `0004_talk_numbers_backfill`
+  - `0005_runs_audio_nullable`
+  - `0006_seed_quests`
+- Added migration tests for ordering and gap rejection.
 
 ## Dependencies
 
