@@ -25,6 +25,21 @@ const mascotBody = computed(() =>
   uiSettings.value.mascotIntensity === "minimal" ? "" : mascotMessage.value?.body ?? ""
 );
 const isRunFeedback = computed(() => context.value?.subject_type === "run");
+const recommendedQuestCodes = computed(() => {
+  const list = feedback.value?.top_actions.flatMap((action) => action.target_quest_codes) ?? [];
+  return Array.from(new Set(list.filter((code) => typeof code === "string" && code.trim().length > 0)));
+});
+const recommendedQuestLinks = computed(() => {
+  const projectId = context.value?.project_id ?? "";
+  if (!projectId) {
+    return [];
+  }
+  return recommendedQuestCodes.value.map((code) => ({
+    code,
+    label: appStore.formatQuestCode(projectId, code),
+    to: `/quest/${code}?projectId=${projectId}&from=talk`,
+  }));
+});
 const backLink = computed(() => {
   return resolveFeedbackBackLink(context.value, appStore.state.activeProject?.id ?? null);
 });
@@ -182,6 +197,31 @@ watch(
               <div class="app-muted text-xs">{{ action.why_it_matters }}</div>
               <div class="app-text mt-1 text-xs">{{ action.how_to_fix }}</div>
             </div>
+          </div>
+        </div>
+
+        <div v-if="recommendedQuestLinks.length > 0" class="app-card rounded-xl border p-3">
+          <div class="app-subtle text-xs uppercase tracking-[0.2em]">
+            {{ t("feedback.practice_next_title") }}
+          </div>
+          <div class="app-muted mt-1 text-xs">
+            {{ t("feedback.practice_next_subtitle") }}
+          </div>
+          <div class="mt-2 flex flex-wrap gap-2">
+            <RouterLink
+              v-for="item in recommendedQuestLinks"
+              :key="item.code"
+              class="app-button-secondary app-focus-ring app-button-sm inline-flex items-center"
+              :to="item.to"
+            >
+              {{ item.label }}
+            </RouterLink>
+            <RouterLink
+              class="app-link app-text-meta inline-flex items-center underline"
+              to="/training"
+            >
+              {{ t("feedback.practice_next_training") }}
+            </RouterLink>
           </div>
         </div>
 
