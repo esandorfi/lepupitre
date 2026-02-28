@@ -12,6 +12,208 @@ const SQLITE_BUSY_TIMEOUT_MS: u64 = 2000;
 const GLOBAL_MIGRATION: &str = include_str!("../../../../migrations/global/0001_init.sql");
 const PROFILE_MIGRATION: &str = include_str!("../../../../migrations/profile/0001_init.sql");
 const QUESTS_SEED: &str = include_str!("../../../../seed/quests.v1.json");
+const PROFILE_FK_MIGRATION_SQL: &str = "
+PRAGMA foreign_keys = OFF;
+BEGIN;
+
+UPDATE active_state
+SET active_project_id = NULL
+WHERE active_project_id IS NOT NULL
+  AND active_project_id NOT IN (SELECT id FROM talk_projects);
+
+DELETE FROM talk_outlines
+WHERE project_id NOT IN (SELECT id FROM talk_projects);
+
+DELETE FROM auto_feedback
+WHERE feedback_json_artifact_id NOT IN (SELECT id FROM artifacts);
+
+UPDATE quest_attempts
+SET feedback_id = NULL
+WHERE feedback_id IS NOT NULL
+  AND feedback_id NOT IN (SELECT id FROM auto_feedback);
+
+UPDATE runs
+SET feedback_id = NULL
+WHERE feedback_id IS NOT NULL
+  AND feedback_id NOT IN (SELECT id FROM auto_feedback);
+
+UPDATE quest_attempts
+SET audio_artifact_id = NULL
+WHERE audio_artifact_id IS NOT NULL
+  AND audio_artifact_id NOT IN (SELECT id FROM artifacts);
+
+UPDATE quest_attempts
+SET transcript_id = NULL
+WHERE transcript_id IS NOT NULL
+  AND transcript_id NOT IN (SELECT id FROM artifacts);
+
+UPDATE runs
+SET audio_artifact_id = NULL
+WHERE audio_artifact_id IS NOT NULL
+  AND audio_artifact_id NOT IN (SELECT id FROM artifacts);
+
+UPDATE runs
+SET transcript_id = NULL
+WHERE transcript_id IS NOT NULL
+  AND transcript_id NOT IN (SELECT id FROM artifacts);
+
+DELETE FROM feedback_notes
+WHERE feedback_id NOT IN (SELECT id FROM auto_feedback);
+
+DELETE FROM quest_attempts
+WHERE project_id NOT IN (SELECT id FROM talk_projects)
+   OR quest_code NOT IN (SELECT code FROM quests);
+
+DELETE FROM runs
+WHERE project_id NOT IN (SELECT id FROM talk_projects);
+
+DELETE FROM peer_reviews
+WHERE run_id NOT IN (SELECT id FROM runs)
+   OR review_json_artifact_id NOT IN (SELECT id FROM artifacts);
+
+CREATE TABLE IF NOT EXISTS talk_projects_new (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  audience TEXT,
+  goal TEXT,
+  duration_target_sec INTEGER,
+  talk_number INTEGER,
+  stage TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  is_training INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS auto_feedback_new (
+  id TEXT PRIMARY KEY,
+  subject_type TEXT NOT NULL,
+  subject_id TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  feedback_json_artifact_id TEXT NOT NULL,
+  overall_score INTEGER NOT NULL,
+  FOREIGN KEY(feedback_json_artifact_id) REFERENCES artifacts(id) ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS quest_attempts_new (
+  id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL,
+  quest_code TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  output_text TEXT,
+  audio_artifact_id TEXT,
+  transcript_id TEXT,
+  feedback_id TEXT,
+  FOREIGN KEY(project_id) REFERENCES talk_projects_new(id) ON DELETE CASCADE ON UPDATE CASCADE,
+  FOREIGN KEY(quest_code) REFERENCES quests(code) ON DELETE RESTRICT ON UPDATE CASCADE,
+  FOREIGN KEY(audio_artifact_id) REFERENCES artifacts(id) ON DELETE SET NULL ON UPDATE CASCADE,
+  FOREIGN KEY(transcript_id) REFERENCES artifacts(id) ON DELETE SET NULL ON UPDATE CASCADE,
+  FOREIGN KEY(feedback_id) REFERENCES auto_feedback_new(id) ON DELETE SET NULL ON UPDATE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS runs_new (
+  id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  audio_artifact_id TEXT,
+  transcript_id TEXT,
+  feedback_id TEXT,
+  FOREIGN KEY(project_id) REFERENCES talk_projects_new(id) ON DELETE CASCADE ON UPDATE CASCADE,
+  FOREIGN KEY(audio_artifact_id) REFERENCES artifacts(id) ON DELETE SET NULL ON UPDATE CASCADE,
+  FOREIGN KEY(transcript_id) REFERENCES artifacts(id) ON DELETE SET NULL ON UPDATE CASCADE,
+  FOREIGN KEY(feedback_id) REFERENCES auto_feedback_new(id) ON DELETE SET NULL ON UPDATE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS feedback_notes_new (
+  feedback_id TEXT PRIMARY KEY,
+  note_text TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY(feedback_id) REFERENCES auto_feedback_new(id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS peer_reviews_new (
+  id TEXT PRIMARY KEY,
+  run_id TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  reviewer_tag TEXT,
+  review_json_artifact_id TEXT NOT NULL,
+  FOREIGN KEY(run_id) REFERENCES runs_new(id) ON DELETE CASCADE ON UPDATE CASCADE,
+  FOREIGN KEY(review_json_artifact_id) REFERENCES artifacts(id) ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS active_state_new (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  active_project_id TEXT,
+  FOREIGN KEY(active_project_id) REFERENCES talk_projects_new(id) ON DELETE SET NULL ON UPDATE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS talk_outlines_new (
+  project_id TEXT PRIMARY KEY,
+  outline_md TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY(project_id) REFERENCES talk_projects_new(id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+INSERT INTO talk_projects_new (id, title, audience, goal, duration_target_sec, talk_number, stage, created_at, updated_at, is_training)
+SELECT id, title, audience, goal, duration_target_sec, talk_number, stage, created_at, updated_at, COALESCE(is_training, 0)
+FROM talk_projects;
+
+INSERT INTO auto_feedback_new (id, subject_type, subject_id, created_at, feedback_json_artifact_id, overall_score)
+SELECT id, subject_type, subject_id, created_at, feedback_json_artifact_id, overall_score
+FROM auto_feedback;
+
+INSERT INTO quest_attempts_new (id, project_id, quest_code, created_at, output_text, audio_artifact_id, transcript_id, feedback_id)
+SELECT id, project_id, quest_code, created_at, output_text, audio_artifact_id, transcript_id, feedback_id
+FROM quest_attempts;
+
+INSERT INTO runs_new (id, project_id, created_at, audio_artifact_id, transcript_id, feedback_id)
+SELECT id, project_id, created_at, audio_artifact_id, transcript_id, feedback_id
+FROM runs;
+
+INSERT INTO feedback_notes_new (feedback_id, note_text, updated_at)
+SELECT feedback_id, note_text, updated_at
+FROM feedback_notes;
+
+INSERT INTO peer_reviews_new (id, run_id, created_at, reviewer_tag, review_json_artifact_id)
+SELECT id, run_id, created_at, reviewer_tag, review_json_artifact_id
+FROM peer_reviews;
+
+INSERT INTO active_state_new (id, active_project_id)
+SELECT id, active_project_id
+FROM active_state;
+
+INSERT INTO talk_outlines_new (project_id, outline_md, created_at, updated_at)
+SELECT project_id, outline_md, created_at, updated_at
+FROM talk_outlines;
+
+DROP TABLE quest_attempts;
+DROP TABLE runs;
+DROP TABLE feedback_notes;
+DROP TABLE peer_reviews;
+DROP TABLE active_state;
+DROP TABLE talk_outlines;
+DROP TABLE auto_feedback;
+DROP TABLE talk_projects;
+
+ALTER TABLE talk_projects_new RENAME TO talk_projects;
+ALTER TABLE auto_feedback_new RENAME TO auto_feedback;
+ALTER TABLE quest_attempts_new RENAME TO quest_attempts;
+ALTER TABLE runs_new RENAME TO runs;
+ALTER TABLE feedback_notes_new RENAME TO feedback_notes;
+ALTER TABLE peer_reviews_new RENAME TO peer_reviews;
+ALTER TABLE active_state_new RENAME TO active_state;
+ALTER TABLE talk_outlines_new RENAME TO talk_outlines;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_talk_projects_one_training
+  ON talk_projects(is_training)
+  WHERE is_training = 1;
+CREATE INDEX IF NOT EXISTS idx_attempts_project_time ON quest_attempts(project_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_runs_project_time ON runs(project_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_artifacts_sha ON artifacts(sha256);
+
+COMMIT;
+PRAGMA foreign_keys = ON;
+";
 
 static GLOBAL_MIGRATION_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
 static PROFILE_MIGRATION_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
@@ -52,6 +254,10 @@ const PROFILE_MIGRATIONS: &[Migration] = &[
     Migration {
         version: "0006_seed_quests",
         apply: migration_profile_0006_seed_quests,
+    },
+    Migration {
+        version: "0007_fk_constraints",
+        apply: migration_profile_0007_fk_constraints,
     },
 ];
 
@@ -146,6 +352,12 @@ fn migration_profile_0006_seed_quests(conn: &mut Connection) -> Result<(), Strin
     seed_quests(conn)
 }
 
+fn migration_profile_0007_fk_constraints(conn: &mut Connection) -> Result<(), String> {
+    conn.execute_batch(PROFILE_FK_MIGRATION_SQL)
+        .map_err(|e| format!("migrate_profile_0007: {e}"))?;
+    verify_foreign_key_integrity(conn)
+}
+
 fn apply_migrations(
     conn: &mut Connection,
     scope: &str,
@@ -218,6 +430,33 @@ fn record_migration(conn: &Connection, version: &str) -> Result<(), String> {
         params![version, time::now_rfc3339()],
     )
     .map_err(|e| format!("schema_migrations_insert: {e}"))?;
+    Ok(())
+}
+
+fn verify_foreign_key_integrity(conn: &Connection) -> Result<(), String> {
+    let mut stmt = conn
+        .prepare("PRAGMA foreign_key_check")
+        .map_err(|e| format!("foreign_key_check_prepare: {e}"))?;
+    let mut rows = stmt
+        .query([])
+        .map_err(|e| format!("foreign_key_check_query: {e}"))?;
+    if let Some(row) = rows
+        .next()
+        .map_err(|e| format!("foreign_key_check_row: {e}"))?
+    {
+        let table: String = row
+            .get(0)
+            .map_err(|e| format!("foreign_key_check_table: {e}"))?;
+        let rowid: i64 = row
+            .get(1)
+            .map_err(|e| format!("foreign_key_check_rowid: {e}"))?;
+        let parent: String = row
+            .get(2)
+            .map_err(|e| format!("foreign_key_check_parent: {e}"))?;
+        return Err(format!(
+            "foreign_key_check_failed: {table}:{rowid}->{parent}"
+        ));
+    }
     Ok(())
 }
 
@@ -556,7 +795,10 @@ mod tests {
         let applied = load_applied_migrations(&conn).expect("applied");
         assert_eq!(applied.len(), PROFILE_MIGRATIONS.len());
         assert_eq!(applied.first().map(String::as_str), Some("0001_init"));
-        assert_eq!(applied.last().map(String::as_str), Some("0006_seed_quests"));
+        assert_eq!(
+            applied.last().map(String::as_str),
+            Some("0007_fk_constraints")
+        );
     }
 
     #[test]
@@ -581,7 +823,7 @@ mod tests {
     }
 
     #[test]
-    fn legacy_profile_schema_upgrades_with_data_preserved() {
+    fn legacy_profile_schema_upgrades_and_normalizes_orphans() {
         let mut conn = Connection::open_in_memory().expect("open");
         conn.execute_batch(
             "CREATE TABLE talk_projects (
@@ -654,17 +896,42 @@ mod tests {
             .expect("talk number");
         assert_eq!(talk_number, Some(1));
 
-        let preserved_audio: String = conn
+        let normalized_audio: Option<String> = conn
             .query_row(
                 "SELECT audio_artifact_id FROM runs WHERE id = ?1",
                 params!["run_legacy"],
                 |row| row.get(0),
             )
             .expect("run audio");
-        assert_eq!(preserved_audio, "audio_legacy");
+        assert_eq!(normalized_audio, None);
 
         let applied = load_applied_migrations(&conn).expect("applied");
         assert_eq!(applied.len(), PROFILE_MIGRATIONS.len());
+    }
+
+    #[test]
+    fn profile_fk_constraints_are_enforced_after_migration() {
+        let mut conn = Connection::open_in_memory().expect("open");
+        apply_migrations(&mut conn, "profile", PROFILE_MIGRATIONS).expect("migrate");
+
+        let insert_err = conn
+            .execute(
+                "INSERT INTO runs (id, project_id, created_at, audio_artifact_id, transcript_id, feedback_id)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                params![
+                    "run_missing_project",
+                    "project_missing",
+                    "2026-02-28T00:00:00Z",
+                    Option::<String>::None,
+                    Option::<String>::None,
+                    Option::<String>::None
+                ],
+            )
+            .expect_err("fk rejection");
+        assert!(insert_err
+            .to_string()
+            .contains("FOREIGN KEY constraint failed"));
+        verify_foreign_key_integrity(&conn).expect("fk integrity");
     }
 
     #[test]
@@ -699,7 +966,10 @@ mod tests {
         assert_eq!(applied.len(), PROFILE_MIGRATIONS.len());
         assert_eq!(applied[0], "0001_init");
         assert_eq!(applied[1], "0002_outline_and_settings");
-        assert_eq!(applied.last().map(String::as_str), Some("0006_seed_quests"));
+        assert_eq!(
+            applied.last().map(String::as_str),
+            Some("0007_fk_constraints")
+        );
     }
 
     fn temp_db_path(prefix: &str) -> PathBuf {

@@ -169,6 +169,15 @@ Acceptance:
 - Added upgrade-path fixture tests:
   - legacy schema upgrade with data preservation,
   - continuation from recorded migration prefix.
+- 2026-02-28: Workstream 3 started.
+- Added profile migration `0007_fk_constraints` to enforce explicit foreign keys on core tables (`talk_projects`, `quest_attempts`, `runs`, `auto_feedback`, `feedback_notes`, `peer_reviews`, `active_state`, `talk_outlines`).
+- Added migration-time orphan normalization for legacy rows before constraints are enforced.
+- Added FK integrity verification (`PRAGMA foreign_key_check`) at migration end.
+- Added regression coverage:
+  - migration order now includes `0007_fk_constraints`,
+  - legacy upgrade path verifies orphan normalization behavior,
+  - FK enforcement test rejects invalid references after migration.
+- Remaining Workstream 3 scope: transaction boundaries for multi-step writes and rollback tests on injected failure paths.
 
 ## Dependencies
 
