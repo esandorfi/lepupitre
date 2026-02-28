@@ -1,0 +1,155 @@
+---
+const { title = "Le Pupitre" } = Astro.props;
+const base = import.meta.env.BASE_URL;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>{title}</title>
+    <meta
+      name="description"
+      content="Local-first desktop rehearsal workspace for talks, demos, pitches, and keynotes."
+    />
+    <style>
+      :root {
+        --bg: #f3efe4;
+        --bg-alt: #fff9ef;
+        --panel: #fffdf6;
+        --ink: #1c1d24;
+        --muted: #5c5b66;
+        --line: #d6ceb9;
+        --accent: #af4f2f;
+        --accent-soft: #f5d7c8;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 85% -10%, #f5a88a44, transparent 40%),
+          radial-gradient(circle at -5% 120%, #d9bea644, transparent 45%),
+          linear-gradient(135deg, var(--bg), var(--bg-alt));
+        font-family: "Avenir Next", "Trebuchet MS", "Segoe UI Variable", sans-serif;
+      }
+
+      .site {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 20px 16px 40px;
+      }
+
+      .shell {
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: color-mix(in srgb, var(--panel) 92%, #ffffff 8%);
+        box-shadow: 0 16px 42px rgb(22 19 15 / 12%);
+        overflow: hidden;
+      }
+
+      nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--line);
+        background: linear-gradient(90deg, #fff9ef, #fff4e7);
+      }
+
+      nav a {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        border: 1px solid transparent;
+        color: var(--ink);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.92rem;
+        transition: 140ms ease;
+      }
+
+      nav a:hover {
+        border-color: var(--line);
+        background: #fff;
+      }
+
+      main {
+        padding: 24px 18px 26px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+        letter-spacing: 0.01em;
+      }
+
+      p,
+      li {
+        line-height: 1.6;
+      }
+
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: #fff;
+        padding: 16px;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin: 2px 0;
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid var(--accent);
+        color: var(--accent);
+        text-decoration: none;
+        font-weight: 700;
+        transition: 140ms ease;
+      }
+
+      .btn:hover {
+        background: var(--accent-soft);
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      @media (max-width: 680px) {
+        .site {
+          padding: 12px 10px 24px;
+        }
+
+        main {
+          padding: 18px 14px 20px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="site">
+      <div class="shell">
+        <nav>
+          <a href={base}>Home</a>
+          <a href={`${base}downloads/`}>Downloads</a>
+          <a href="https://github.com/esandorfi/lepupitre">GitHub</a>
+        </nav>
+        <main>
+          <slot />
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

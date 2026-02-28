@@ -19,6 +19,7 @@ jobs:
       docs: ${{ steps.filter.outputs.docs }}
       ui: ${{ steps.filter.outputs.ui }}
       rust: ${{ steps.filter.outputs.rust }}
+      website: ${{ steps.filter.outputs.website }}
       ci: ${{ steps.filter.outputs.ci }}
     steps:
       - name: Checkout
@@ -47,6 +48,8 @@ jobs:
               - 'scripts/check-db-reliability.sh'
               - 'scripts/dev-asr-env.sh'
               - 'scripts/verify-asr-sidecar.mjs'
+            website:
+              - 'website/**'
             ci:
               - '.github/workflows/**'
 
@@ -149,6 +152,31 @@ jobs:
 
       - name: UI tests
         run: pnpm -C desktop ui:test
+
+  website:
+    name: Website checks
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.full_run == 'true' || needs.changes.outputs.website == 'true' || needs.changes.outputs.ci == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.19.0"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: "10"
+
+      - name: Install website deps
+        run: pnpm -C website install --frozen-lockfile
+
+      - name: Build website
+        run: pnpm -C website build
 
   rust:
     name: Rust checks
