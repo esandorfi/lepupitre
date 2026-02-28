@@ -203,7 +203,10 @@ Acceptance:
   - coverage added for cleanup-on-pack-insert-failure.
 - Standardized shared compensation API in `core/artifacts`:
   - added batch artifact cleanup (`delete_artifacts`) and switched peer-review import to use it.
-- Remaining Workstream 3 scope: document final compensation/finalization contract examples for every remaining multi-resource write path.
+- Centralized external-file artifact registration in `core/artifacts`:
+  - `register_existing_file` now owns hash + row insert + cleanup semantics for prebuilt files,
+  - `pack_export` uses this shared path (no pack-local artifact insert SQL).
+- Remaining Workstream 3 scope: document final compensation/finalization contract examples for each multi-resource write path in architecture docs.
 
 ## Dependencies
 

@@ -148,6 +148,47 @@ pub fn finalize_draft(
     })
 }
 
+pub fn register_existing_file(
+    app: &tauri::AppHandle,
+    profile_id: &str,
+    artifact_id: &str,
+    artifact_type: &str,
+    relpath: &str,
+    abspath: &Path,
+    metadata: &Value,
+) -> Result<ArtifactRecord, String> {
+    let profile_dir = db::profile_dir(app, profile_id)?;
+    if !abspath.starts_with(&profile_dir) {
+        return Err("artifact_path_not_allowed".to_string());
+    }
+
+    let (sha256, byte_len) = sha256_file(abspath)?;
+    let created_at = time::now_rfc3339();
+    let metadata_json =
+        serde_json::to_string(metadata).map_err(|e| format!("artifact_metadata: {e}"))?;
+    let conn = db::open_profile(app, profile_id)?;
+    insert_artifact_row_with_cleanup(
+        &conn,
+        ArtifactInsertRow {
+            artifact_id,
+            artifact_type,
+            relpath,
+            sha256: &sha256,
+            byte_len: byte_len as i64,
+            created_at: &created_at,
+            metadata_json: &metadata_json,
+        },
+        abspath,
+    )?;
+
+    Ok(ArtifactRecord {
+        id: artifact_id.to_string(),
+        abspath: abspath.to_path_buf(),
+        bytes: byte_len,
+        sha256,
+    })
+}
+
 pub fn delete_artifact(
     app: &tauri::AppHandle,
     profile_id: &str,
@@ -263,7 +304,7 @@ fn remove_file_if_exists(path: &Path) -> Result<(), String> {
     Ok(())
 }
 
-fn sha256_file(path: &PathBuf) -> Result<(String, u64), String> {
+fn sha256_file(path: &Path) -> Result<(String, u64), String> {
     let mut file = std::fs::File::open(path).map_err(|e| format!("artifact_open: {e}"))?;
     let mut hasher = Sha256::new();
     let mut buffer = [0u8; 8192];
@@ -295,7 +336,7 @@ fn to_hex(bytes: &[u8]) -> String {
 mod tests {
     use super::{
         delete_artifact_with_conn, delete_artifacts_with_conn, insert_artifact_row_with_cleanup,
-        ArtifactInsertRow,
+        sha256_file, ArtifactInsertRow,
     };
     use rusqlite::{params, Connection};
     use std::time::{SystemTime, UNIX_EPOCH};
@@ -514,5 +555,18 @@ mod tests {
         assert!(err.contains("artifact_cleanup_file:"));
 
         let _ = std::fs::remove_dir_all(dir_path);
+    }
+
+    #[test]
+    fn sha256_file_reads_path() {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("time")
+            .as_nanos();
+        let file_path = std::env::temp_dir().join(format!("lepupitre-sha256-{nonce}.bin"));
+        std::fs::write(&file_path, b"abc").expect("write");
+        let (_sha, bytes) = sha256_file(&file_path).expect("sha");
+        assert_eq!(bytes, 3);
+        let _ = std::fs::remove_file(file_path);
     }
 }

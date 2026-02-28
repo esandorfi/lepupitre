@@ -183,26 +183,20 @@ pub fn pack_export(
 
     zip.finish().map_err(|e| format!("pack_finish: {e}"))?;
 
-    let (pack_sha, pack_bytes) = file_sha256(&pack_path)?;
     let relpath = format!("artifacts/packs/{pack_id}.zip");
     let metadata = serde_json::json!({
         "run_id": run_id,
         "project_id": project_id,
         "pack_id": pack_id,
     });
-    let metadata_json =
-        serde_json::to_string(&metadata).map_err(|e| format!("pack_metadata: {e}"))?;
-    insert_pack_artifact_with_cleanup(
-        &conn,
-        PackArtifactRow {
-            artifact_id: &pack_id,
-            relpath: &relpath,
-            sha256: &pack_sha,
-            bytes: pack_bytes as i64,
-            created_at: &created_at,
-            metadata_json: &metadata_json,
-        },
+    artifacts::register_existing_file(
+        &app,
+        &profile_id,
+        &pack_id,
+        "pack",
+        &relpath,
         &pack_path,
+        &metadata,
     )?;
 
     Ok(models::ExportResult {
@@ -652,24 +646,6 @@ fn sha256_hex(bytes: &[u8]) -> String {
     out
 }
 
-fn file_sha256(path: &Path) -> Result<(String, u64), String> {
-    let mut file = File::open(path).map_err(|e| format!("pack_hash_open: {e}"))?;
-    let mut hasher = Sha256::new();
-    let mut buffer = [0u8; 8192];
-    let mut total = 0u64;
-    loop {
-        let read = file
-            .read(&mut buffer)
-            .map_err(|e| format!("pack_hash: {e}"))?;
-        if read == 0 {
-            break;
-        }
-        total += read as u64;
-        hasher.update(&buffer[..read]);
-    }
-    Ok((sha256_hex(&hasher.finalize()), total))
-}
-
 fn validate_zip_entries(archive: &mut ZipArchive<File>) -> Result<(), String> {
     for i in 0..archive.len() {
         let file = archive
@@ -777,51 +753,6 @@ fn next_talk_number(conn: &rusqlite::Connection) -> Result<i64, String> {
     Ok(max_value + 1)
 }
 
-struct PackArtifactRow<'a> {
-    artifact_id: &'a str,
-    relpath: &'a str,
-    sha256: &'a str,
-    bytes: i64,
-    created_at: &'a str,
-    metadata_json: &'a str,
-}
-
-fn insert_pack_artifact_with_cleanup(
-    conn: &Connection,
-    row: PackArtifactRow<'_>,
-    pack_path: &Path,
-) -> Result<(), String> {
-    let insert_result = conn.execute(
-        "INSERT INTO artifacts (id, type, local_relpath, sha256, bytes, created_at, metadata_json)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-        params![
-            row.artifact_id,
-            "pack",
-            row.relpath,
-            row.sha256,
-            row.bytes,
-            row.created_at,
-            row.metadata_json
-        ],
-    );
-    if let Err(err) = insert_result {
-        let persist_err = format!("pack_insert: {err}");
-        match remove_file_if_exists(pack_path) {
-            Ok(()) => Err(persist_err),
-            Err(cleanup_err) => Err(format!("{persist_err}; {cleanup_err}")),
-        }
-    } else {
-        Ok(())
-    }
-}
-
-fn remove_file_if_exists(path: &Path) -> Result<(), String> {
-    if path.exists() {
-        std::fs::remove_file(path).map_err(|e| format!("pack_cleanup_file: {e}"))?;
-    }
-    Ok(())
-}
-
 struct PeerReviewImportRows<'a> {
     project_id: &'a str,
     talk_title: &'a str,
@@ -894,12 +825,8 @@ fn persist_peer_review_import_rows(
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        insert_pack_artifact_with_cleanup, persist_peer_review_import_rows, PackArtifactRow,
-        PeerReviewImportRows,
-    };
+    use super::{persist_peer_review_import_rows, PeerReviewImportRows};
     use rusqlite::Connection;
-    use std::time::{SystemTime, UNIX_EPOCH};
 
     fn test_conn() -> Connection {
         let conn = Connection::open_in_memory().expect("open");
@@ -1034,33 +961,5 @@ mod tests {
         assert_eq!(outline_count, 0);
         assert_eq!(run_count, 0);
         assert_eq!(peer_count, 0);
-    }
-
-    #[test]
-    fn insert_pack_artifact_with_cleanup_removes_zip_on_insert_failure() {
-        let conn = Connection::open_in_memory().expect("open");
-        let nonce = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .expect("time")
-            .as_nanos();
-        let zip_path = std::env::temp_dir().join(format!("lepupitre-pack-insert-fail-{nonce}.zip"));
-        std::fs::write(&zip_path, b"zip").expect("write zip");
-        assert!(zip_path.exists());
-
-        let err = insert_pack_artifact_with_cleanup(
-            &conn,
-            PackArtifactRow {
-                artifact_id: "pack_1",
-                relpath: "artifacts/packs/pack_1.zip",
-                sha256: "abc",
-                bytes: 3,
-                created_at: "2026-02-28T00:00:00Z",
-                metadata_json: "{}",
-            },
-            &zip_path,
-        )
-        .expect_err("insert fails because artifacts table is missing");
-        assert!(err.contains("pack_insert:"));
-        assert!(!zip_path.exists());
     }
 }
