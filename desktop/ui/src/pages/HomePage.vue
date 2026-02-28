@@ -12,6 +12,15 @@ import type {
   QuestDaily,
 } from "../schemas/ipc";
 
+type QuestMapNode = {
+  id: string;
+  label: string;
+  reward: number;
+  done: boolean;
+  current: boolean;
+  offsetPx: number;
+};
+
 const { t, locale } = useI18n();
 const { settings: uiSettings } = useUiPreferences();
 const state = computed(() => appStore.state);
@@ -113,6 +122,7 @@ const showRecentQuestSection = computed(
 );
 const showMascotCard = computed(() => uiSettings.value.mascotEnabled);
 const showCredits = computed(() => uiSettings.value.gamificationMode !== "minimal");
+const showQuestMap = computed(() => uiSettings.value.gamificationMode !== "minimal");
 const isQuestWorldMode = computed(() => uiSettings.value.gamificationMode === "quest-world");
 const mascotBody = computed(() => {
   if (!mascotMessage.value) {
@@ -136,6 +146,55 @@ const creditsToMilestone = computed(() => {
     return 0;
   }
   return Math.max(0, progress.next_milestone - progress.credits);
+});
+const practicedToday = computed(() => {
+  const value = trainingProgress.value?.last_attempt_at;
+  if (!value) {
+    return false;
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return false;
+  }
+  const today = new Date();
+  return parsed.toDateString() === today.toDateString();
+});
+const questMapNodes = computed<QuestMapNode[]>(() => {
+  const progress = trainingProgress.value;
+  if (!progress) {
+    return [];
+  }
+  const checkpoints = Math.max(3, Math.min(7, progress.weekly_target));
+  const completed = Math.min(progress.weekly_completed, checkpoints);
+  return Array.from({ length: checkpoints }, (_, index) => {
+    const order = index + 1;
+    const isDone = order <= completed;
+    const isCurrent = !isDone && order === completed + 1;
+    return {
+      id: `weekly-${order}`,
+      label: `${t("training.quest_map_checkpoint")} ${order}`,
+      reward: order === checkpoints ? 20 : 10,
+      done: isDone,
+      current: isCurrent,
+      offsetPx: order % 2 === 0 ? 14 : 0,
+    };
+  });
+});
+const questMapHint = computed(() => {
+  const progress = trainingProgress.value;
+  if (!progress) {
+    return t("training.quest_map_empty");
+  }
+  if (progress.weekly_completed >= progress.weekly_target) {
+    return t("training.quest_map_hint_complete");
+  }
+  if (practicedToday.value) {
+    return t("training.quest_map_hint_today");
+  }
+  if (progress.weekly_completed === 0) {
+    return t("training.quest_map_hint_start");
+  }
+  return t("training.quest_map_hint_continue");
 });
 const pickerVisibleQuests = computed(() => [
   ...recentPickerQuests.value,
@@ -190,6 +249,22 @@ function mascotToneClass(kind: string | null | undefined) {
     return "border-[var(--color-accent)] bg-[color-mix(in_srgb,var(--color-accent-soft)_35%,var(--color-surface))]";
   }
   return "border-[var(--color-border)] bg-[var(--color-surface-elevated)]";
+}
+
+function questMapNodeClass(node: QuestMapNode) {
+  if (node.done) {
+    return "border-[var(--color-success)] bg-[color-mix(in_srgb,var(--color-success)_22%,var(--color-surface))] text-[var(--color-success)]";
+  }
+  if (node.current) {
+    return "border-[var(--color-accent)] bg-[var(--color-surface-selected)] text-[var(--color-accent)]";
+  }
+  return "border-[var(--app-border)] bg-[var(--color-surface-elevated)] text-[var(--color-muted)]";
+}
+
+function questMapConnectorClass(done: boolean) {
+  return done
+    ? "bg-[var(--color-success)]"
+    : "bg-[color-mix(in_srgb,var(--app-border)_70%,transparent)]";
 }
 
 function trainingHeroQuestStorageKey(profileId: string) {
@@ -826,6 +901,49 @@ watch(
           <div v-if="showCredits" class="app-muted app-text-meta">
             {{ t("training.progress_next") }}: {{ trainingProgress.next_milestone }}
             ({{ creditsToMilestone }} {{ t("training.progress_to_next") }})
+          </div>
+
+          <div
+            v-if="showQuestMap && questMapNodes.length > 0"
+            class="rounded-xl border border-[var(--app-border)] p-3"
+            :class="isQuestWorldMode ? 'bg-[color-mix(in_srgb,var(--color-accent-soft)_20%,var(--color-surface))]' : 'bg-[var(--color-surface-elevated)]'"
+          >
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="app-text-eyebrow">{{ t("training.quest_map_title") }}</div>
+              <span class="app-badge-neutral app-text-caption rounded-full px-2 py-1 font-semibold">
+                {{ trainingProgress.weekly_completed }} / {{ trainingProgress.weekly_target }}
+              </span>
+            </div>
+            <div class="mt-3 overflow-x-auto pb-1">
+              <div class="flex min-w-[440px] items-start gap-2 pr-1">
+                <template v-for="(node, index) in questMapNodes" :key="node.id">
+                  <div class="flex items-start gap-2">
+                    <div class="flex w-[76px] flex-col items-center text-center" :style="{ marginTop: `${node.offsetPx}px` }">
+                      <div
+                        class="flex h-9 w-9 items-center justify-center rounded-full border text-sm font-semibold transition"
+                        :class="questMapNodeClass(node)"
+                      >
+                        {{ index + 1 }}
+                      </div>
+                      <div class="app-text app-text-caption mt-1 leading-tight">
+                        {{ node.label }}
+                      </div>
+                      <div class="app-muted app-text-meta mt-1">
+                        +{{ node.reward }} {{ t("training.progress_credits") }}
+                      </div>
+                    </div>
+                    <div
+                      v-if="index < questMapNodes.length - 1"
+                      class="mt-4 h-[2px] w-8 rounded-full transition"
+                      :class="questMapConnectorClass(node.done)"
+                    ></div>
+                  </div>
+                </template>
+              </div>
+            </div>
+            <div class="app-muted app-text-meta mt-2">
+              {{ questMapHint }}
+            </div>
           </div>
         </div>
       </div>
