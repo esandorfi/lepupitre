@@ -1,6 +1,6 @@
 # RESUME-TAURI-SQL-HARDENING
 
-Status: ready_to_resume  
+Status: completed  
 Owner: maintainers  
 Last updated: 2026-02-28
 

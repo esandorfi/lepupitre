@@ -1,6 +1,6 @@
 # PLAN-TAURI-SQL-HARDENING
 
-Status: in_progress  
+Status: completed  
 Owner: maintainers  
 Last updated: 2026-02-28
 
