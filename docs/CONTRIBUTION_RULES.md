@@ -109,3 +109,18 @@ These are repository process gates for contributors.
   - `spec/active/DECISIONS.md`,
   - `docs/architecture/overview.md`,
   - `docs/operations/release.md` in the same PR.
+
+## 13) SQL and test audit boundary rule
+- Keep SQL placement explicit:
+  - allowed in migrations and domain/platform repository-query modules,
+  - forbidden in command wrappers and UI layers.
+- Keep test boundaries explicit:
+  - unit tests validate domain/service/lib behavior,
+  - integration tests validate command/domain contracts and use-case outcomes.
+- SQL usage in tests is restricted:
+  - allowed for repo/query tests, migration tests, and fixture builders,
+  - avoid ad hoc SQL setup in command integration tests when domain/repo helpers can express the setup.
+- For any changed hot SQL query:
+  - keep/introduce index coverage,
+  - include query-plan validation path (`EXPLAIN QUERY PLAN`) in reliability checks.
+- Use [docs/plan/PLAN-SQL-TEST-AUDIT.md](plan/PLAN-SQL-TEST-AUDIT.md) as the execution reference for the full audit pass after topology freeze.

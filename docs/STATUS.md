@@ -31,7 +31,9 @@ This file tracks what is canonical, proposal-only, and archived.
 | [docs/plan/PLAN-RECORDER-VOICE-MEMO-UX-RESUME.md](plan/PLAN-RECORDER-VOICE-MEMO-UX-RESUME.md) | Recorder UX resume checklist for next session | implemented | UI/ASR maintainers | Closed on 2026-02-28; keep as handoff history |
 | [docs/plan/PLAN-RECORDER-WAVEFORM-UX-POLISH.md](plan/PLAN-RECORDER-WAVEFORM-UX-POLISH.md) | Deferred recorder enhancements (waveform + polish) | implemented | UI/ASR maintainers | Closed on 2026-03-01 after full validation gate |
 | [docs/plan/PLAN-RECORDER-AUDIO-SOTA.md](plan/PLAN-RECORDER-AUDIO-SOTA.md) | Recorder-first audio architecture hardening plan | implemented | UI/ASR maintainers | Monitor telemetry budget thresholds and keep recorder smoke gates stable across CI/release |
+| [docs/plan/PLAN-RECORDER-NEXT-EXECUTION.md](plan/PLAN-RECORDER-NEXT-EXECUTION.md) | Recorder vNext A/B migration + future API catalog sync plan | proposed | UI/ASR maintainers | Start after topology freeze; first deliverable is canonical consolidation of NEXT_1_3/2_3/3_3 |
 | [docs/plan/PLAN-TAURI-SQL-HARDENING.md](plan/PLAN-TAURI-SQL-HARDENING.md) | SQLite hardening execution plan | implemented | Maintainers | Monitor reliability/security gates during release cycles |
+| [docs/plan/PLAN-SQL-TEST-AUDIT.md](plan/PLAN-SQL-TEST-AUDIT.md) | SQL placement and test-boundary audit plan | in_progress | Maintainers | Execute post-freeze queue: fix reliability test selectors, enforce strict SQL-boundary CI checks, and complete repo/queries/types pattern migration for remaining modules |
 | [docs/plan/PLAN-UI-PREFERENCES-STORAGE.md](plan/PLAN-UI-PREFERENCES-STORAGE.md) | UI preference persistence migration | in_progress | Maintainers | Complete Tauri-native backend migration after boundary enforcement |
 | [docs/plan/PLAN-DOMAIN-CODE-ALIGNMENT.md](plan/PLAN-DOMAIN-CODE-ALIGNMENT.md) | Bounded-context code organization migration | in_progress | Maintainers | Continue topology reset from legacy `core/` to `domain/` + `platform/` + `kernel/` and remove compatibility re-exports |
 
@@ -41,8 +43,10 @@ This file tracks what is canonical, proposal-only, and archived.
 |---|---|---|---|---|
 | [spec/README.md](../spec/README.md) | Spec workspace contract | accepted | Maintainers | Keep aligned with governance |
 | [spec/active/README.md](../spec/active/README.md) | Active spec index | accepted | Maintainers | Keep groups and rules current |
+| [spec/active/ui/README.md](../spec/active/ui/README.md) | UI spec index (date/goal/status) | accepted | UI/Maintainers | Update ledger rows when UI specs change |
 | [spec/active/DECISIONS.md](../spec/active/DECISIONS.md) | Current decision log | accepted | Maintainers | Use for all new major decisions |
 | [spec/active/product/SPEC-VOICEUP.md](../spec/active/product/SPEC-VOICEUP.md) | Product direction | proposed | Product | Convert approved parts into executable plan items |
+| [spec/active/ui/SPEC-UI-AUDIO-RECORDER-CURRENT.md](../spec/active/ui/SPEC-UI-AUDIO-RECORDER-CURRENT.md) | Current audio recorder UI contract | proposed | UI/ASR | Promote stable recorder rules to canonical docs when finalized |
 | [spec/active/ui/SPEC-UI-HELP-CONTEXTUAL-ASSISTANCE.md](../spec/active/ui/SPEC-UI-HELP-CONTEXTUAL-ASSISTANCE.md) | Help/onboarding architecture proposal | proposed | UI/Product | Keep as proposal for now |
 | [spec/active/help-content/](../spec/active/help-content/) | Help/onboarding editorial drafts | in_progress | Product | Keep `desktop/ui/src/content/help/` synchronized with active markdown drafts |
 | [spec/active/site/github-pages.md](../spec/active/site/github-pages.md) | Project website + GitHub Pages proposal | in_progress | Product/Engineering | Keep Astro website and Pages workflow aligned with release asset contract |
