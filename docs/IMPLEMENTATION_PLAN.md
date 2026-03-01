@@ -1,6 +1,6 @@
 # Implementation Plan
 
-Snapshot date: 2026-02-28
+Snapshot date: 2026-03-01
 
 This is the active execution plan. Historical planning material should be archived.
 This file is not documentation governance; governance rules live in `docs/DOCS_GOVERNANCE.md`.
@@ -132,6 +132,28 @@ Done when:
 - New code lands in domain-aligned modules by default.
 - Legacy monolith files are reduced to orchestration boundaries.
 - Architecture docs and CI guard rails enforce the agreed structure.
+
+## Track H: Recorder-first voice UX and audio quality
+Goal: make recording the first successful action while keeping native desktop audio reliability.
+
+Scope:
+- Add a first-class `Quick record` entrypoint in shell navigation.
+- Keep recording independent from Whisper model availability (record now, transcribe later).
+- Simplify default quick-clean flow (trim as advanced capability, not first cognitive step).
+- Add live waveform visualization and in-page playback in recorder flows.
+- Define a creative waveform visual system (multiple styles) with strict performance budgets.
+- Add deterministic microphone/device quality guidance (low level/clipping/noise) with clear actions.
+- Preserve Tauri-native architecture constraints:
+  - Rust-native capture/processing remains source of truth.
+  - IPC carries lightweight visualization payloads, never raw PCM stream frames.
+
+Execution detail:
+- [docs/plan/PLAN-RECORDER-AUDIO-SOTA.md](plan/PLAN-RECORDER-AUDIO-SOTA.md)
+
+Done when:
+- First-time users can record immediately from primary nav and review playback without ASR prerequisites.
+- Recorder feedback is stable (meter/waveform/quality hints) and maps to deterministic remediation actions.
+- Recording data flow remains performant on Windows/macOS without high-frequency IPC bottlenecks.
 
 ## Working rules for this plan
 - Keep this file short and current.
