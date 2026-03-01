@@ -320,6 +320,11 @@ UI (`desktop/ui/src`)
   - Structure: `pack.rs` now keeps high-level export/inspect/import flow, while `pack/archive.rs` centralizes zip entry validation, content reads, artifact writes, and SHA checks.
   - Goal: isolate archive-specific mechanics from domain orchestration to keep small, purpose-focused files.
 
+- 2026-03-01: Domain decomposition continued (exchange pack types/content split).
+  - Rust: extracted pack manifest/file-entry contracts to `domain/exchange/pack/types.rs` and rubric/viewer content builders to `domain/exchange/pack/content.rs`.
+  - Structure: `pack.rs` now wires typed contracts and content builders while keeping orchestration readable; low-level contract/content details live in dedicated modules.
+  - Goal: keep files smaller and role-oriented for easier onboarding and AI-assisted edits.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.

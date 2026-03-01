@@ -4,7 +4,7 @@ use crate::kernel::{ids, time};
 use crate::platform::artifacts;
 use crate::platform::db;
 use rusqlite::params;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use std::collections::HashMap;
 use std::fs::File;
 use std::path::PathBuf;
@@ -12,36 +12,13 @@ use zip::write::FileOptions;
 use zip::{CompressionMethod, ZipArchive, ZipWriter};
 
 mod archive;
+mod content;
 mod repo;
+mod types;
+
+use types::{PackFileEntry, PackManifestV1, PackRun};
 
 const RUBRIC_JSON: &str = include_str!("../../../../../seed/rubric.tech_talk_internal.v1.json");
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-struct PackManifestV1 {
-    schema_version: String,
-    pack_id: String,
-    created_at: String,
-    app_version: String,
-    profile_id: Option<String>,
-    project_id: String,
-    run: PackRun,
-    files: Vec<PackFileEntry>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-struct PackRun {
-    run_id: String,
-    duration_ms: i64,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-struct PackFileEntry {
-    path: String,
-    role: String,
-    sha256: String,
-    bytes: u64,
-    mime: String,
-}
 
 pub fn pack_export(
     app: tauri::AppHandle,
@@ -83,8 +60,8 @@ pub fn pack_export(
     let outline_bytes = outline.as_bytes().to_vec();
 
     let rubric_bytes = RUBRIC_JSON.as_bytes().to_vec();
-    let review_bytes = build_review_template(&rubric_bytes)?;
-    let viewer_bytes = build_viewer_html(&project_title).into_bytes();
+    let review_bytes = content::build_review_template(&rubric_bytes)?;
+    let viewer_bytes = content::build_viewer_html(&project_title).into_bytes();
 
     let files = vec![
         PackFileEntry {
@@ -508,66 +485,4 @@ fn artifact_path(
 ) -> Result<PathBuf, String> {
     let profile_dir = db::profile_dir(app, profile_id)?;
     Ok(profile_dir.join(relpath))
-}
-
-fn build_review_template(rubric_bytes: &[u8]) -> Result<Vec<u8>, String> {
-    let rubric: serde_json::Value =
-        serde_json::from_slice(rubric_bytes).map_err(|e| format!("rubric_parse: {e}"))?;
-    let rubric_id = rubric
-        .get("rubric_id")
-        .and_then(|value| value.as_str())
-        .ok_or_else(|| "rubric_id_missing".to_string())?;
-    let items = rubric
-        .get("items")
-        .and_then(|value| value.as_array())
-        .ok_or_else(|| "rubric_items_missing".to_string())?;
-    let required = rubric
-        .get("required_free_text")
-        .and_then(|value| value.as_array())
-        .ok_or_else(|| "rubric_free_text_missing".to_string())?;
-
-    let mut scores = serde_json::Map::new();
-    for item in items {
-        if let Some(key) = item.get("key").and_then(|value| value.as_str()) {
-            scores.insert(key.to_string(), serde_json::Value::from(3));
-        }
-    }
-    let mut free_text = serde_json::Map::new();
-    for item in required {
-        if let Some(key) = item.get("key").and_then(|value| value.as_str()) {
-            free_text.insert(key.to_string(), serde_json::Value::from(""));
-        }
-    }
-
-    let template = serde_json::json!({
-        "schema_version": "1.0.0",
-        "rubric_id": rubric_id,
-        "reviewer_tag": "",
-        "scores": scores,
-        "free_text": free_text,
-        "timestamps": []
-    });
-    serde_json::to_vec_pretty(&template).map_err(|e| format!("review_template_json: {e}"))
-}
-
-fn build_viewer_html(title: &str) -> String {
-    let escaped = escape_html(title);
-    format!(
-        "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\" />\n<title>{escaped}</title>\n</head>\n<body>\n<h1>{escaped}</h1>\n<p>Open audio.wav and transcript.json from the pack.</p>\n</body>\n</html>\n"
-    )
-}
-
-fn escape_html(input: &str) -> String {
-    let mut out = String::with_capacity(input.len());
-    for ch in input.chars() {
-        match ch {
-            '&' => out.push_str("&amp;"),
-            '<' => out.push_str("&lt;"),
-            '>' => out.push_str("&gt;"),
-            '"' => out.push_str("&quot;"),
-            '\'' => out.push_str("&#39;"),
-            _ => out.push(ch),
-        }
-    }
-    out
 }
