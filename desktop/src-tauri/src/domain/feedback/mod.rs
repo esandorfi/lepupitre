@@ -1,41 +1,14 @@
 pub mod analysis;
+mod repo;
+mod types;
 
 use crate::domain::asr::transcript;
 use crate::kernel::models;
 use crate::kernel::{ids, time};
 use crate::platform::artifacts;
 use crate::platform::db;
-use rusqlite::{params, Connection, OptionalExtension};
-use serde::Serialize;
 
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct AnalyzeResponse {
-    pub feedback_id: String,
-}
-
-#[derive(Debug, Serialize)]
-pub struct FeedbackContext {
-    pub subject_type: String,
-    pub subject_id: String,
-    pub project_id: String,
-    pub quest_code: Option<String>,
-    pub quest_title: Option<String>,
-    pub run_id: Option<String>,
-}
-
-#[derive(Debug, Serialize)]
-pub struct FeedbackTimelineItem {
-    pub id: String,
-    pub created_at: String,
-    pub overall_score: i64,
-    pub subject_type: String,
-    pub project_id: String,
-    pub quest_code: Option<String>,
-    pub quest_title: Option<String>,
-    pub run_id: Option<String>,
-    pub note_updated_at: Option<String>,
-}
+pub use types::{AnalyzeResponse, FeedbackContext, FeedbackTimelineItem};
 
 pub fn feedback_timeline_list(
     app: &tauri::AppHandle,
@@ -48,49 +21,10 @@ pub fn feedback_timeline_list(
     let limit = normalize_timeline_limit(limit);
 
     if let Some(project_id) = project_id.as_ref() {
-        ensure_project_exists(&conn, project_id)?;
+        repo::ensure_project_exists(&conn, project_id)?;
     }
 
-    let mut stmt = conn
-        .prepare(
-            "SELECT af.id, af.created_at, af.overall_score, af.subject_type,
-                    COALESCE(qa.project_id, r.project_id) AS project_id,
-                    qa.quest_code, q.title, r.id, fn.updated_at
-             FROM auto_feedback af
-             LEFT JOIN quest_attempts qa
-               ON af.subject_type = 'quest_attempt' AND qa.id = af.subject_id
-             LEFT JOIN quests q ON qa.quest_code = q.code
-             LEFT JOIN runs r
-               ON af.subject_type = 'run' AND r.id = af.subject_id
-             LEFT JOIN feedback_notes fn ON fn.feedback_id = af.id
-             WHERE af.subject_type IN ('quest_attempt', 'run')
-               AND COALESCE(qa.project_id, r.project_id) IS NOT NULL
-               AND (?1 IS NULL OR COALESCE(qa.project_id, r.project_id) = ?1)
-             ORDER BY af.created_at DESC
-             LIMIT ?2",
-        )
-        .map_err(|e| format!("feedback_timeline_prepare: {e}"))?;
-    let rows = stmt
-        .query_map(params![project_id, limit], |row| {
-            Ok(FeedbackTimelineItem {
-                id: row.get(0)?,
-                created_at: row.get(1)?,
-                overall_score: row.get(2)?,
-                subject_type: row.get(3)?,
-                project_id: row.get(4)?,
-                quest_code: row.get(5)?,
-                quest_title: row.get(6)?,
-                run_id: row.get(7)?,
-                note_updated_at: row.get(8)?,
-            })
-        })
-        .map_err(|e| format!("feedback_timeline_query: {e}"))?;
-
-    let mut items = Vec::new();
-    for row in rows {
-        items.push(row.map_err(|e| format!("feedback_timeline_row: {e}"))?);
-    }
-    Ok(items)
+    repo::select_feedback_timeline(&conn, project_id.as_deref(), limit)
 }
 
 pub fn analyze_attempt(
@@ -101,34 +35,19 @@ pub fn analyze_attempt(
     db::ensure_profile_exists(app, profile_id)?;
     let mut conn = db::open_profile(app, profile_id)?;
 
-    let row = conn
-        .query_row(
-            "SELECT qa.output_text, qa.transcript_id, q.estimated_sec
-             FROM quest_attempts qa
-             JOIN quests q ON qa.quest_code = q.code
-             WHERE qa.id = ?1",
-            [attempt_id],
-            |row| {
-                Ok((
-                    row.get::<_, Option<String>>(0)?,
-                    row.get::<_, Option<String>>(1)?,
-                    row.get::<_, i64>(2)?,
-                ))
-            },
-        )
-        .map_err(|e| format!("attempt_lookup: {e}"))?;
+    let (output_text, transcript_id, estimated_sec) =
+        repo::select_attempt_input(&conn, attempt_id)?;
 
     let mut source = "text";
-    let text = if let Some(text) = row.0 {
+    let text = if let Some(text) = output_text {
         text
-    } else if let Some(transcript_id) = row.1 {
+    } else if let Some(transcript_id) = transcript_id {
         source = "transcript";
         let transcript = transcript::load_transcript(app, profile_id, &transcript_id)?;
         transcript::transcript_text(&transcript)?
     } else {
         return Err("attempt_missing_text".to_string());
     };
-    let estimated_sec = row.2;
 
     let feedback = analysis::build_feedback_from_text(&text, estimated_sec);
     let feedback_json = serde_json::to_vec(&feedback).map_err(|e| format!("feedback_json: {e}"))?;
@@ -148,7 +67,7 @@ pub fn analyze_attempt(
 
     let feedback_id = ids::new_id("fb");
     let now = time::now_rfc3339();
-    let persist_result = persist_attempt_feedback_link(
+    let persist_result = repo::persist_attempt_feedback_link(
         &mut conn,
         &feedback_id,
         attempt_id,
@@ -174,13 +93,7 @@ pub fn feedback_get(
 ) -> Result<models::FeedbackV1, String> {
     db::ensure_profile_exists(app, profile_id)?;
     let conn = db::open_profile(app, profile_id)?;
-    let artifact_id: String = conn
-        .query_row(
-            "SELECT feedback_json_artifact_id FROM auto_feedback WHERE id = ?1",
-            [feedback_id],
-            |row| row.get(0),
-        )
-        .map_err(|e| format!("feedback_lookup: {e}"))?;
+    let artifact_id = repo::select_feedback_artifact_id(&conn, feedback_id)?;
 
     let artifact = artifacts::get_artifact(app, profile_id, &artifact_id)?;
     if artifact.artifact_type != "feedback" {
@@ -202,25 +115,11 @@ pub fn feedback_context_get(
     db::ensure_profile_exists(app, profile_id)?;
     let conn = db::open_profile(app, profile_id)?;
 
-    let (subject_type, subject_id): (String, String) = conn
-        .query_row(
-            "SELECT subject_type, subject_id FROM auto_feedback WHERE id = ?1",
-            [feedback_id],
-            |row| Ok((row.get(0)?, row.get(1)?)),
-        )
-        .map_err(|e| format!("feedback_lookup: {e}"))?;
+    let (subject_type, subject_id) = repo::select_feedback_subject(&conn, feedback_id)?;
 
     if subject_type == "quest_attempt" {
-        let (attempt_id, project_id, quest_code, quest_title): (String, String, String, String) =
-            conn.query_row(
-                "SELECT qa.id, qa.project_id, qa.quest_code, q.title
-                 FROM quest_attempts qa
-                 JOIN quests q ON qa.quest_code = q.code
-                 WHERE qa.id = ?1",
-                [subject_id.as_str()],
-                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
-            )
-            .map_err(|e| format!("attempt_lookup: {e}"))?;
+        let (attempt_id, project_id, quest_code, quest_title) =
+            repo::select_quest_attempt_context(&conn, &subject_id)?;
 
         return Ok(FeedbackContext {
             subject_type,
@@ -233,13 +132,7 @@ pub fn feedback_context_get(
     }
 
     if subject_type == "run" {
-        let project_id: String = conn
-            .query_row(
-                "SELECT project_id FROM runs WHERE id = ?1",
-                [subject_id.as_str()],
-                |row| row.get(0),
-            )
-            .map_err(|e| format!("run_lookup: {e}"))?;
+        let project_id = repo::select_run_project_id(&conn, &subject_id)?;
 
         return Ok(FeedbackContext {
             subject_type,
@@ -261,15 +154,7 @@ pub fn feedback_note_get(
 ) -> Result<Option<String>, String> {
     db::ensure_profile_exists(app, profile_id)?;
     let conn = db::open_profile(app, profile_id)?;
-    let note = conn
-        .query_row(
-            "SELECT note_text FROM feedback_notes WHERE feedback_id = ?1",
-            [feedback_id],
-            |row| row.get(0),
-        )
-        .optional()
-        .map_err(|e| format!("note_lookup: {e}"))?;
-    Ok(note)
+    repo::select_feedback_note(&conn, feedback_id)
 }
 
 pub fn feedback_note_set(
@@ -281,49 +166,18 @@ pub fn feedback_note_set(
     db::ensure_profile_exists(app, profile_id)?;
     let conn = db::open_profile(app, profile_id)?;
 
-    let exists: i64 = conn
-        .query_row(
-            "SELECT COUNT(*) FROM auto_feedback WHERE id = ?1",
-            [feedback_id],
-            |row| row.get(0),
-        )
-        .map_err(|e| format!("feedback_check: {e}"))?;
-    if exists == 0 {
+    if !repo::feedback_exists(&conn, feedback_id)? {
         return Err("feedback_not_found".to_string());
     }
 
     let trimmed = note.trim();
     if trimmed.is_empty() {
-        conn.execute(
-            "DELETE FROM feedback_notes WHERE feedback_id = ?1",
-            [feedback_id],
-        )
-        .map_err(|e| format!("note_delete: {e}"))?;
+        repo::delete_feedback_note(&conn, feedback_id)?;
         return Ok(());
     }
 
     let now = time::now_rfc3339();
-    conn.execute(
-        "INSERT INTO feedback_notes (feedback_id, note_text, updated_at)
-         VALUES (?1, ?2, ?3)
-         ON CONFLICT(feedback_id) DO UPDATE SET note_text = excluded.note_text, updated_at = excluded.updated_at",
-        params![feedback_id, trimmed, now],
-    )
-    .map_err(|e| format!("note_upsert: {e}"))?;
-    Ok(())
-}
-
-fn ensure_project_exists(conn: &rusqlite::Connection, project_id: &str) -> Result<(), String> {
-    let count: i64 = conn
-        .query_row(
-            "SELECT COUNT(*) FROM talk_projects WHERE id = ?1",
-            params![project_id],
-            |row| row.get(0),
-        )
-        .map_err(|e| format!("project_exists: {e}"))?;
-    if count == 0 {
-        return Err("project_not_found".to_string());
-    }
+    repo::upsert_feedback_note(&conn, feedback_id, trimmed, &now)?;
     Ok(())
 }
 
@@ -332,44 +186,9 @@ fn normalize_timeline_limit(limit: Option<u32>) -> i64 {
     raw.min(100) as i64
 }
 
-fn persist_attempt_feedback_link(
-    conn: &mut Connection,
-    feedback_id: &str,
-    attempt_id: &str,
-    feedback_artifact_id: &str,
-    overall_score: i64,
-    now: &str,
-) -> Result<(), String> {
-    let tx = conn.transaction().map_err(|e| format!("tx: {e}"))?;
-    tx.execute(
-        "INSERT INTO auto_feedback (id, subject_type, subject_id, created_at, feedback_json_artifact_id, overall_score)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-        params![
-            feedback_id,
-            "quest_attempt",
-            attempt_id,
-            now,
-            feedback_artifact_id,
-            overall_score
-        ],
-    )
-    .map_err(|e| format!("feedback_insert: {e}"))?;
-    let updated = tx
-        .execute(
-            "UPDATE quest_attempts SET feedback_id = ?1 WHERE id = ?2",
-            params![feedback_id, attempt_id],
-        )
-        .map_err(|e| format!("attempt_update: {e}"))?;
-    if updated == 0 {
-        return Err("attempt_update_missing".to_string());
-    }
-    tx.commit().map_err(|e| format!("commit: {e}"))?;
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{normalize_timeline_limit, persist_attempt_feedback_link};
+    use super::{normalize_timeline_limit, repo};
     use rusqlite::Connection;
 
     #[test]
@@ -409,7 +228,7 @@ mod tests {
         )
         .expect("schema");
 
-        let err = persist_attempt_feedback_link(
+        let err = repo::persist_attempt_feedback_link(
             &mut conn,
             "fb_missing",
             "att_missing",

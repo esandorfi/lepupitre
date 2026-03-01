@@ -275,6 +275,11 @@ UI (`desktop/ui/src`)
   - Structure: business orchestration/validation remains in `mod.rs`, while SQL persistence and projection queries move to `repo.rs`.
   - Goal: keep talk context evolvable with smaller, role-focused files.
 
+- 2026-03-01: Domain decomposition continued (feedback split into smaller files).
+  - Rust: replaced monolithic `domain/feedback/mod.rs` internals with `domain/feedback/{mod.rs,repo.rs,types.rs}` plus existing `analysis.rs`.
+  - Structure: feedback orchestration/artifact handling remains in `mod.rs`; SQL lookups and transactions are isolated in `repo.rs`.
+  - Goal: keep feedback context readable with small, role-focused files and explicit boundaries.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
