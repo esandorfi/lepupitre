@@ -19,14 +19,14 @@ Use this when `cargo test` or `cargo clippy` fails with:
 1. Ensure resource directory exists:
 
 ```powershell
-Set-Location C:\dev.sandorfi\lepupitre-recorder-ux
+Set-Location C:\dev\lepupitre-recorder-ux
 New-Item -ItemType Directory -Force -Path "desktop/src-tauri/sidecar" | Out-Null
 ```
 
 1. Preferred: copy real sidecar from shared dev home:
 
 ```powershell
-Copy-Item "C:\dev.sandorfi\lepupitre-asr-dev\bin\lepupitre-asr.exe" "desktop/src-tauri/sidecar/lepupitre-asr.exe" -Force
+Copy-Item "C:\dev\lepupitre-asr-dev\bin\lepupitre-asr.exe" "desktop/src-tauri/sidecar/lepupitre-asr.exe" -Force
 Copy-Item "desktop/src-tauri/sidecar/lepupitre-asr.exe" "desktop/src-tauri/sidecar/lepupitre-asr" -Force
 ```
 
@@ -64,7 +64,7 @@ cargo clippy --manifest-path desktop/src-tauri/Cargo.toml --all-targets --all-fe
      - Run from "Developer PowerShell for VS 2022" (or call `VsDevCmd.bat`) so `INCLUDE`/`LIB` are present.
      - From a regular PowerShell, use:
        - `$vs = 'C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\VsDevCmd.bat'`
-       - `cmd.exe /c "\"$vs\" -arch=x64 -host_arch=x64 && cd /d C:\dev.sandorfi\lepupitre && just asr-build-dev-home"`
+       - `cmd.exe /c "\"$vs\" -arch=x64 -host_arch=x64 && cd /d C:\dev\lepupitre && just asr-build-dev-home"`
      - If LLVM is installed in the default location, set:
        - PowerShell: `$env:LIBCLANG_PATH = 'C:\Program Files\LLVM\bin'`
      - `asr-build-dev-home` forces single-job Cargo build on Windows (`CARGO_BUILD_JOBS=1`) to avoid intermittent MSBuild install-target failures in `whisper-rs-sys`.
@@ -89,9 +89,9 @@ Helper:
 Windows PowerShell (tiny model):
 
 ```powershell
-New-Item -ItemType Directory -Force C:\dev.sandorfi\lepupitre-asr-dev\models | Out-Null
-Invoke-WebRequest -Uri "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin" -OutFile "C:\dev.sandorfi\lepupitre-asr-dev\models\ggml-tiny.bin"
-(Get-FileHash "C:\dev.sandorfi\lepupitre-asr-dev\models\ggml-tiny.bin" -Algorithm SHA256).Hash
+New-Item -ItemType Directory -Force C:\dev\lepupitre-asr-dev\models | Out-Null
+Invoke-WebRequest -Uri "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin" -OutFile "C:\dev\lepupitre-asr-dev\models\ggml-tiny.bin"
+(Get-FileHash "C:\dev\lepupitre-asr-dev\models\ggml-tiny.bin" -Algorithm SHA256).Hash
 ```
 
 Expected SHA256:
@@ -99,8 +99,8 @@ Expected SHA256:
 - `ggml-base.bin`: `60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe`
 
 Then run:
-- `just asr-smoke-dev C:\dev.sandorfi\lepupitre-asr-dev\models\ggml-tiny.bin`
-- `just dev-desktop-asr-dev C:\dev.sandorfi\lepupitre-asr-dev\models\ggml-tiny.bin`
+- `just asr-smoke-dev C:\dev\lepupitre-asr-dev\models\ggml-tiny.bin`
+- `just dev-desktop-asr-dev C:\dev\lepupitre-asr-dev\models\ggml-tiny.bin`
 
 ## Validation and smoke
 - Verify sidecar artifact is not placeholder:
