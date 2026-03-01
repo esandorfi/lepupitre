@@ -400,6 +400,11 @@ UI (`desktop/ui/src`)
   - Structure: project resolution and progress stats/streak DB reads now live in `progress.rs`; talks blueprint source aggregation reads now live in `blueprint.rs`.
   - Goal: keep coach persistence reads use-case oriented and easier to evolve in small files.
 
+- 2026-03-01: Domain decomposition continued (run service split).
+  - Rust: split `domain/run/mod.rs` use-cases into `domain/run/{writes.rs,reads.rs,analyze.rs}` while keeping `mod.rs` as a compact API facade.
+  - Structure: run create/finish/transcript assignment + artifact-kind guards now live in `writes.rs`; run fetch/list reads now live in `reads.rs`; feedback generation/persistence flow now lives in `analyze.rs`.
+  - Goal: keep run domain orchestration small and feature-oriented instead of one growing facade module.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
