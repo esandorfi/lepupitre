@@ -152,6 +152,11 @@ UI (`desktop/ui/src`)
   - Rust: moved recording-side ASR settings normalization and sidecar spawn logic from `commands/audio.rs` into `core/asr.rs`.
   - Rust: `commands/audio.rs` now consumes `core/asr` for recorder ASR runtime configuration/spawn concerns.
 
+- 2026-03-01: Recorder ASR runtime extraction (live decode strategy) completed.
+  - Rust: moved live decoder strategy types (`LiveDecoder`, `SidecarLiveDecoder`, `MockAsrDecoder`) from `commands/audio.rs` into `core/asr.rs`.
+  - Rust: moved live sidecar benchmark helper from `commands/audio.rs` into `core/asr.rs`.
+  - Rust: `commands/audio.rs` now delegates live ASR decode runtime behavior to `core/asr` abstractions.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.

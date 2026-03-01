@@ -127,6 +127,7 @@ Scope:
 
 Execution detail:
 - [docs/plan/PLAN-DOMAIN-CODE-ALIGNMENT.md](plan/PLAN-DOMAIN-CODE-ALIGNMENT.md)
+- Recent progress (2026-03-01): recorder/ASR runtime extraction now includes live decode strategy in `core/asr.rs`; next focus is app-store coordinator shrink.
 
 Done when:
 - New code lands in domain-aligned modules by default.
