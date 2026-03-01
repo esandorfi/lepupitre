@@ -290,6 +290,11 @@ UI (`desktop/ui/src`)
   - Structure: `domain/asr/mod.rs` now re-exports settings APIs while keeping callers unchanged.
   - Goal: progressively reduce ASR module size with safe, behavior-preserving slices.
 
+- 2026-03-01: Domain decomposition continued (ASR diagnostics split).
+  - Rust: extracted diagnostics contracts and bundle composition from `domain/asr/mod.rs` into `domain/asr/diagnostics.rs`.
+  - Structure: diagnostics API is re-exported from `domain/asr/mod.rs`; callers remain unchanged.
+  - Goal: isolate diagnostics concerns from core ASR decode/download runtime.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
