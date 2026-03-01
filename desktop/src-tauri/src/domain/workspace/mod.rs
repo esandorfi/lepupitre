@@ -1,4 +1,6 @@
-use crate::core::{db, ids, models::ProfileSummary, time};
+use crate::core::models::ProfileSummary;
+use crate::kernel::{ids, time};
+use crate::platform::db;
 use rusqlite::{params, Connection};
 use std::path::Path;
 use tauri::{AppHandle, Manager};

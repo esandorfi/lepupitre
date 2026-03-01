@@ -21,7 +21,6 @@ pub mod seed;
 pub mod time;
 pub mod transcript;
 pub mod vad;
-pub mod workspace;
 
 pub mod coach {
     pub use crate::domain::coach::*;
@@ -33,4 +32,8 @@ pub mod preferences {
 
 pub mod run {
     pub use crate::domain::run::*;
+}
+
+pub mod workspace {
+    pub use crate::domain::workspace::*;
 }

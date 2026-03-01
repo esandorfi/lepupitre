@@ -1,4 +1,6 @@
-use crate::core::{db, models::ProfileSummary, workspace};
+use crate::core::models::ProfileSummary;
+use crate::domain::workspace;
+use crate::platform::db;
 use serde::Serialize;
 use tauri::State;
 

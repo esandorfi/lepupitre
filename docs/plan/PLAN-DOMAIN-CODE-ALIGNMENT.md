@@ -187,6 +187,11 @@ UI (`desktop/ui/src`)
   - Rust: command wrappers now import the new module locations (`commands/run.rs`, `commands/coach.rs`, `commands/preferences.rs`).
   - Rust: added temporary `core` compatibility re-exports to keep migration incremental.
 
+- 2026-03-01: Topology reset continued (workspace context).
+  - Rust: moved `workspace` context from `core/workspace.rs` to `domain/workspace/mod.rs`.
+  - Rust: `commands/profile.rs` now imports `domain::workspace` and `platform::db`.
+  - Guard rails: legacy path checks now enforce removal of `core/workspace.rs`.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
