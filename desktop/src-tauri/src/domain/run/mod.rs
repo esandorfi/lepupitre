@@ -2,7 +2,8 @@ mod queries;
 mod repo;
 mod types;
 
-use crate::core::{analysis, artifacts, transcript};
+use crate::core::{artifacts, transcript};
+use crate::domain::feedback::analysis;
 use crate::kernel::{ids, time};
 use crate::platform::db;
 use tauri::AppHandle;

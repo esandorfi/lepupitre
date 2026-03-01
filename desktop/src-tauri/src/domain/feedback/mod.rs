@@ -1,4 +1,6 @@
-use crate::core::{analysis, artifacts, models, transcript};
+pub mod analysis;
+
+use crate::core::{artifacts, models, transcript};
 use crate::kernel::{ids, time};
 use crate::platform::db;
 use rusqlite::{params, Connection, OptionalExtension};

@@ -1,4 +1,3 @@
-pub mod analysis;
 pub mod artifacts;
 pub mod dsp;
 pub mod models;
@@ -19,6 +18,10 @@ pub mod asr_live {
 
 pub mod asr_models {
     pub use crate::domain::asr::asr_models::*;
+}
+
+pub mod analysis {
+    pub use crate::domain::feedback::analysis::*;
 }
 
 pub mod asr_sidecar {

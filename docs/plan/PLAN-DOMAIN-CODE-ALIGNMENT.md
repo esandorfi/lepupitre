@@ -232,6 +232,11 @@ UI (`desktop/ui/src`)
   - Rust: `commands/audio.rs` and `commands/transcription.rs` now import `platform::db` and `platform::asr_sidecar`.
   - Guard rails: legacy path checks now enforce removal of `core/db.rs`, `core/db_helpers.rs`, `core/seed.rs`, and `core/asr_sidecar.rs`.
 
+- 2026-03-01: Topology reset continued (feedback analysis engine).
+  - Rust: moved feedback analysis/scoring logic from `core/analysis.rs` to `domain/feedback/analysis.rs`.
+  - Rust: `domain/run` and `domain/feedback` now consume feedback analysis via domain path imports.
+  - Guard rails: legacy path checks now enforce removal of `core/analysis.rs`.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.

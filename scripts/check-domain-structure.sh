@@ -61,6 +61,7 @@ check_path_absent "desktop/src-tauri/src/core/asr_sidecar.rs"
 check_path_absent "desktop/src-tauri/src/core/db.rs"
 check_path_absent "desktop/src-tauri/src/core/db_helpers.rs"
 check_path_absent "desktop/src-tauri/src/core/seed.rs"
+check_path_absent "desktop/src-tauri/src/core/analysis.rs"
 
 # Command wrappers for migrated contexts must import new layer paths.
 check_forbidden_match \
