@@ -35,6 +35,7 @@ pub struct TranscriptEditSaveResponse {
 }
 
 #[derive(Debug, Deserialize, Clone)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct AsrSettingsPayload {
     model: Option<String>,

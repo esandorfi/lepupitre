@@ -56,6 +56,7 @@ const SIDECAR_ENV_PATH: &str = "LEPUPITRE_ASR_SIDECAR";
 const SIDECAR_MODEL_ENV_PATH: &str = "LEPUPITRE_ASR_MODEL_PATH";
 
 #[derive(Debug, Deserialize, Clone)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct AsrSettingsPayload {
     model: Option<String>,

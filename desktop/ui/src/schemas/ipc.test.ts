@@ -5,6 +5,7 @@ import {
   FeedbackContextSchema,
   PreferenceKeySchema,
   PreferenceProfileGetPayloadSchema,
+  RecordingStartPayloadSchema,
   RecordingInputDevicesResponseSchema,
   RecordingTelemetryBudgetResponseSchema,
   RecordingTelemetryEventSchema,
@@ -21,12 +22,25 @@ describe("ipc schemas", () => {
       audioArtifactId: "a-1",
       asrSettings: {
         model: "tiny",
-        mode: "auto",
         language: "en",
         spokenPunctuation: true,
       },
     });
     expect(parsed.success).toBe(true);
+  });
+
+  it("rejects transcribe payload when recording-only ASR fields are present", () => {
+    const parsed = TranscribeAudioPayloadSchema.safeParse({
+      profileId: "p-1",
+      audioArtifactId: "a-1",
+      asrSettings: {
+        model: "tiny",
+        mode: "auto",
+        language: "en",
+        spokenPunctuation: true,
+      },
+    });
+    expect(parsed.success).toBe(false);
   });
 
   it("accepts trim payload with camelCase fields", () => {
@@ -150,6 +164,19 @@ describe("ipc schemas", () => {
       { id: "mic-1-USB", label: "USB", isDefault: false },
     ]);
     expect(parsed.success).toBe(true);
+  });
+
+  it("rejects recording_start payload when transcription-only ASR fields are present", () => {
+    const parsed = RecordingStartPayloadSchema.safeParse({
+      profileId: "p-1",
+      asrSettings: {
+        model: "tiny",
+        mode: "auto",
+        language: "en",
+        spokenPunctuation: true,
+      },
+    });
+    expect(parsed.success).toBe(false);
   });
 
   it("accepts recorder telemetry budget payload", () => {

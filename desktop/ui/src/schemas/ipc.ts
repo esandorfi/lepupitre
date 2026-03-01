@@ -449,18 +449,38 @@ export const AudioTrimResponseSchema = AudioSaveResponseSchema.extend({
   durationMs: z.number().int().nonnegative(),
 });
 
-export const AsrSettingsSchema = z.object({
+export const RecordingAsrSettingsSchema = z
+  .object({
+    model: z.enum(["tiny", "base"]).optional(),
+    mode: z.enum(["auto", "live+final", "final-only"]).optional(),
+    language: z.enum(["auto", "en", "fr"]).optional(),
+  })
+  .strict();
+
+export const TranscribeAsrSettingsSchema = z
+  .object({
+    model: z.enum(["tiny", "base"]).optional(),
+    language: z.enum(["auto", "en", "fr"]).optional(),
+    spokenPunctuation: z.boolean().optional(),
+  })
+  .strict();
+
+export const AsrSettingsSchema = z
+  .object({
   model: z.enum(["tiny", "base"]).optional(),
   mode: z.enum(["auto", "live+final", "final-only"]).optional(),
   language: z.enum(["auto", "en", "fr"]).optional(),
   spokenPunctuation: z.boolean().optional(),
-});
+  })
+  .strict();
 
-export const RecordingStartPayloadSchema = z.object({
-  profileId: IdSchema,
-  asrSettings: AsrSettingsSchema.optional(),
-  inputDeviceId: z.string().min(1).optional().nullable(),
-});
+export const RecordingStartPayloadSchema = z
+  .object({
+    profileId: IdSchema,
+    asrSettings: RecordingAsrSettingsSchema.optional(),
+    inputDeviceId: z.string().min(1).optional().nullable(),
+  })
+  .strict();
 
 export const RecordingStartResponseSchema = z.object({
   recordingId: IdSchema,
@@ -514,11 +534,13 @@ export const RecordingStopResponseSchema = AudioSaveResponseSchema.extend({
   durationMs: z.number().int().nonnegative(),
 });
 
-export const TranscribeAudioPayloadSchema = z.object({
-  profileId: IdSchema,
-  audioArtifactId: IdSchema,
-  asrSettings: AsrSettingsSchema.optional(),
-});
+export const TranscribeAudioPayloadSchema = z
+  .object({
+    profileId: IdSchema,
+    audioArtifactId: IdSchema,
+    asrSettings: TranscribeAsrSettingsSchema.optional(),
+  })
+  .strict();
 
 export const TranscribeResponseSchema = z.object({
   transcriptId: IdSchema,

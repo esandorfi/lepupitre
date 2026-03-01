@@ -16,11 +16,15 @@ const SETTINGS = {
 };
 
 describe("asrPayloads", () => {
-  it("builds recording_start payload with asr settings intact", () => {
+  it("builds recording_start payload with recording ASR settings only", () => {
     const payload = buildRecordingStartPayload("profile-1", SETTINGS);
     const parsed = RecordingStartPayloadSchema.parse(payload);
     expect(parsed.profileId).toBe("profile-1");
-    expect(parsed.asrSettings).toEqual(SETTINGS);
+    expect(parsed.asrSettings).toEqual({
+      model: "base",
+      mode: "final-only",
+      language: "fr",
+    });
   });
 
   it("includes selected input device id when provided", () => {
@@ -29,11 +33,15 @@ describe("asrPayloads", () => {
     expect(parsed.inputDeviceId).toBe("mic-1-USB");
   });
 
-  it("builds transcribe_audio payload with asr settings intact", () => {
+  it("builds transcribe_audio payload with transcribe ASR settings only", () => {
     const payload = buildTranscribeAudioPayload("profile-1", "audio-1", SETTINGS);
     const parsed = TranscribeAudioPayloadSchema.parse(payload);
     expect(parsed.profileId).toBe("profile-1");
     expect(parsed.audioArtifactId).toBe("audio-1");
-    expect(parsed.asrSettings).toEqual(SETTINGS);
+    expect(parsed.asrSettings).toEqual({
+      model: "base",
+      language: "fr",
+      spokenPunctuation: true,
+    });
   });
 });

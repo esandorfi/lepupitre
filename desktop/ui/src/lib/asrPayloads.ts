@@ -1,28 +1,44 @@
 import type { TranscriptionSettings } from "./transcriptionSettings";
 
-type AsrSettingsPayload = {
+type RecordingAsrSettingsPayload = {
   model: "tiny" | "base";
   mode: "auto" | "live+final" | "final-only";
+  language: "auto" | "en" | "fr";
+};
+
+type TranscribeAsrSettingsPayload = {
+  model: "tiny" | "base";
   language: "auto" | "en" | "fr";
   spokenPunctuation: boolean;
 };
 
 type RecordingStartPayload = {
   profileId: string;
-  asrSettings: AsrSettingsPayload;
+  asrSettings: RecordingAsrSettingsPayload;
   inputDeviceId?: string;
 };
 
 type TranscribeAudioPayload = {
   profileId: string;
   audioArtifactId: string;
-  asrSettings: AsrSettingsPayload;
+  asrSettings: TranscribeAsrSettingsPayload;
 };
 
-function toAsrSettingsPayload(settings: TranscriptionSettings): AsrSettingsPayload {
+function toRecordingAsrSettingsPayload(
+  settings: TranscriptionSettings
+): RecordingAsrSettingsPayload {
   return {
     model: settings.model,
     mode: settings.mode,
+    language: settings.language,
+  };
+}
+
+function toTranscribeAsrSettingsPayload(
+  settings: TranscriptionSettings
+): TranscribeAsrSettingsPayload {
+  return {
+    model: settings.model,
     language: settings.language,
     spokenPunctuation: settings.spokenPunctuation,
   };
@@ -35,7 +51,7 @@ export function buildRecordingStartPayload(
 ): RecordingStartPayload {
   const payload: RecordingStartPayload = {
     profileId,
-    asrSettings: toAsrSettingsPayload(settings),
+    asrSettings: toRecordingAsrSettingsPayload(settings),
   };
   if (inputDeviceId) {
     payload.inputDeviceId = inputDeviceId;
@@ -51,6 +67,6 @@ export function buildTranscribeAudioPayload(
   return {
     profileId,
     audioArtifactId,
-    asrSettings: toAsrSettingsPayload(settings),
+    asrSettings: toTranscribeAsrSettingsPayload(settings),
   };
 }
