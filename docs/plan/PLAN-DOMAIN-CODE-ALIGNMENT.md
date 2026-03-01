@@ -375,6 +375,11 @@ UI (`desktop/ui/src`)
   - Structure: `mod.rs` now handles route-based selection and gating conditions, while `routes.rs` owns localized message payload construction per route/context.
   - Goal: isolate decision flow from copy payload generation to keep mascot behavior easier to evolve and review.
 
+- 2026-03-01: Domain decomposition continued (ASR models split).
+  - Rust: replaced `domain/asr/asr_models.rs` with `domain/asr/asr_models/{mod.rs,specs.rs,integrity.rs}`.
+  - Structure: `mod.rs` keeps high-level model status/list/verify orchestration; `specs.rs` owns model catalog definitions and lookup helpers; `integrity.rs` owns manifest serialization and checksum routines.
+  - Goal: isolate static model catalog data and integrity internals from orchestration logic to keep ASR model management easier to evolve.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
