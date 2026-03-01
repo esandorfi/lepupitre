@@ -270,6 +270,11 @@ UI (`desktop/ui/src`)
   - Structure: `mod.rs` now owns orchestration and filesystem boundaries; SQL transactions and profile queries are isolated in `repo.rs`.
   - Goal: keep bounded-context modules small and enforce a consistent service/repository layout.
 
+- 2026-03-01: Domain decomposition continued (talk/project split into smaller files).
+  - Rust: replaced `domain/talk/project.rs` with `domain/talk/project/{mod.rs,repo.rs,types.rs}`.
+  - Structure: business orchestration/validation remains in `mod.rs`, while SQL persistence and projection queries move to `repo.rs`.
+  - Goal: keep talk context evolvable with smaller, role-focused files.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
