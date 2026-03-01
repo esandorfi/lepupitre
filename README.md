@@ -1,17 +1,22 @@
 
-
 <p align="center">
   <img src="docs/images/app_icon_26_02_3.png" alt="Le Pupitre" width="164" height="164" />
 </p>
 
 <h1 align="center">Le Pupitre - Desktop app for Mac and Windows</h1>
 
-<p align="center"><strong>Practice your voice, keep your data local, improve every talk.</strong></p>
-<p align="center">Local-first Tauri coach for conference talks, product demos, pitches, and keynotes.</p>
-<p align="center">A desktop rehearsal workspace for speakers who need clear feedback, private voice data, and consistent progress.</p>
+<p align="center"><strong>Record locally. Get coaching signals. Improve every talk.</strong><br>
+Local-first Tauri coach for conference talks, product demos, pitches, and keynotes.<br>
+A desktop rehearsal workspace for speakers who need clear feedback, private voice data, and consistent progress.</p>
 
 <p align="center">
-  <a href="https://github.com/esandorfi/lepupitre/releases"><strong>Download</strong></a>
+  Start in 10 seconds with the built-in <em>Audio Recorder</em> — no cloud, no accounts, no sharing.
+</p>
+
+<p align="center">
+  <a href="#start-here-the-audio-recorder-fastest-way-to-improve">Start here</a>
+  &nbsp;·&nbsp;
+  <a href="https://lepupitre.app/downloads/">Download</a>
   &nbsp;·&nbsp;
   <a href="docs/README.md">Docs</a>
   &nbsp;·&nbsp;
@@ -21,16 +26,66 @@
 <br/>
 
 <p align="center">
-  <img src="docs/images/app_screen_26_02_5.png" alt="Le Pupitre download hero" width="900" />
+  <img src="docs/images/app_screen_26_02_3.png" alt="Le Pupitre download hero" width="900" />
 </p>
 
 <p align="center">
   <em>Rehearse on desktop, get structured feedback, and iterate—without sending your voice to the cloud.</em>
 </p>
 
+
+
 ---
 
-## The workflow: from rehearsal to **Jour J**
+
+<a id="start-here-the-audio-recorder-fastest-way-to-improve"></a>
+<p align="center">
+  <img src="docs/images/app_screen_26_02_G.png" alt="Audio Recorder entry screen" width="600" />
+</p>
+
+## Start here: the Audio Recorder - fastest way to improve
+
+<p>
+  <strong>Press record → speak → get feedback.</strong><br/>
+  The Audio Recorder is the quickest entry into Le Pupitre’s training loop: capture a rehearsal, review pacing and structure,
+  and iterate — <strong>without uploading your voice</strong>.
+</p>
+
+<p>
+  Train your <strong>opening</strong>, your <strong>timing</strong>, and your <strong>transitions</strong>—then save attempts to compare progress over time.
+</p>
+
+
+
+<p><strong>What you get immediately</strong></p>
+<ul>
+  <li>Duration + pace (WPM) at a glance</li>
+  <li>Waveform + checkpoints for structure</li>
+  <li>Optional local transcription (Whisper on-device)</li>
+  <li>A saved, local history of attempts to track progress</li>
+</ul>
+
+<p><em>Local-first by default: audio, transcripts, and progress stay on your machine.</em></p>
+
+---
+
+
+
+<p align="center">
+  <img src="docs/images/app_screen_26_02_4.png" alt="Public talks" width="600" />
+</p>
+
+## Who it’s for — and why Le Pupitre exists
+
+If you speak for work or school—conference talks, product demos, pitches, team updates, or classroom presentations—Le Pupitre helps you train like it matters. Not by collecting notes, but by making progress visible: timing, pacing, structure, and iteration.
+
+Most people don’t lack motivation—they lack a loop. Practice gets skipped, feedback is vague or delayed, and it’s hard to compare one run to the next. Le Pupitre gives you an evidence-based loop: **record → measure → improve → repeat → deliver**, all the way to **Jour J**.
+
+And because voice data is sensitive, Le Pupitre is **local-first**: recordings, transcripts, and progress stay on your machine by default (with optional on-device Whisper). It’s also **open source**—community-driven and built in the open.
+
+---
+
+## How it works: from rehearsal to <strong>Jour J</strong>
 
 <table>
   <tr>
@@ -47,7 +102,7 @@
       </ul>
     </td>
     <td width="48%">
-      <img src="docs/images/app_screen_26_02_4.png" alt="Live rehearsal + analysis overlay" width="520" />
+      <img src="docs/images/app_screen_26_02_5.png" alt="Live rehearsal + analysis overlay" width="520" />
     </td>
   </tr>
 </table>
@@ -75,71 +130,19 @@
 <table>
   <tr>
     <td width="52%">
-      <h3>3) Celebrate progress and publish outcomes</h3>
+      <h3>3) Celebrate progress and share outcomes</h3>
       <p>
         Keep momentum with visible progress and positive reinforcement. Share results when you want, and
-        turn rehearsals into a real “training program”.
+        turn rehearsals into a real training routine.
       </p>
       <ul>
         <li>Clear scoring (“Great Job!” moments)</li>
         <li>Shareable progress snapshots</li>
-        <li>Publish-ready workflow mindset</li>
+        <li>Progress that stays comparable across runs</li>
       </ul>
     </td>
     <td width="48%">
       <img src="docs/images/app_screen_26_02_8.png" alt="Celebrate, share, score, publish collage" width="520" />
-    </td>
-  </tr>
-</table>
-
----
-
-## Why Le Pupitre is different
-
-<table>
-  <tr>
-    <td width="48%">
-      <img src="docs/images/app_screen_26_02_3.png" alt="Le Pupitre UI example" width="520" />
-    </td>
-    <td width="52%">
-      <h3>Local-first by design</h3>
-      <p>
-        Your recordings and transcripts are sensitive. Le Pupitre is built for privacy and focus:
-        the default is <strong>local audio</strong>, <strong>local text</strong>, <strong>local progress</strong>.
-      </p>
-      <ul>
-        <li>Local Whisper transcription (runs on your machine)</li>
-        <li>Voice privacy by default: audio and transcripts stay local</li>
-        <li>Repeatable training loops: daily quests and “Boss Runs”</li>
-        <li>Actionable feedback for the next iteration</li>
-      </ul>
-    </td>
-  </tr>
-</table>
-
----
-
-## Problems it solves : the “Speaker’s Journey”
-
-<table>
-  <tr>
-    <td width="52%">
-      <ul>
-        <li><strong>Practice is irregular</strong> and hard to sustain.</li>
-        <li><strong>Feedback is vague</strong> or comes too late.</li>
-        <li><strong>Voice data is sensitive</strong> (recordings + transcripts).</li>
-        <li><strong>Progress is unclear</strong> across repeated runs.</li>
-      </ul>
-      <p>
-        Le Pupitre turns rehearsal into an <strong>evidence-based loop</strong>:
-        measure → improve → repeat → deliver.
-      </p>
-      <p>
-        <strong>As a speaker journey</strong>: Daily Training → Talk Writing → Feedback → Challenging → Jour J
-        </p>
-    </td>
-    <td width="48%">
-      <img src="docs/images/app_screen_26_02_C.png" alt="Empty stage (anticipation)" width="520" />
     </td>
   </tr>
 </table>
@@ -198,31 +201,14 @@
   </tr>
 </table>
 
-
-
----
-
-## Who it is for
-
-- Technical speakers  
-- Conference and meetup speakers  
-- Product and demo presenters  
-- Team leads, founders, and customer-facing presenters  
-- Anyone preparing spoken delivery with digital tools  
-
 ---
 
 ## Install and run
 
 - Download installers from [GitHub Releases](https://github.com/esandorfi/lepupitre/releases).
-- **macOS** and **Windows** packages are built by CI.
-- Current trust note for `v0.2.x`: installers may still show trust warnings until signing/notarization is fully enabled.
+- <strong>macOS</strong> and <strong>Windows</strong> packages are built by CI.
+- Current trust note for <code>v0.2.x</code>: installers may still show trust warnings until signing/notarization is fully enabled.
 
-### Quick start
-1. Create a profile.
-2. Create a talk or demo topic.
-3. Complete a first quest (text or audio).
-4. Run feedback and review the next actions.
 
 ---
 
@@ -237,6 +223,8 @@ Free code signing provided by SignPath.io, certificate by SignPath Foundation.
 ---
 
 ## Contributing
+
+Le Pupitre is open source and built in the open. If you want to help, you’re welcome.
 
 - Start here: [CONTRIBUTING.md](CONTRIBUTING.md)
 - Documentation portal: [docs/README.md](docs/README.md)
@@ -255,3 +243,4 @@ Free code signing provided by SignPath.io, certificate by SignPath Foundation.
 
 ## License
 Apache-2.0
+
