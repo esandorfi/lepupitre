@@ -385,6 +385,11 @@ UI (`desktop/ui/src`)
   - Structure: timeline listing, analyze flow, feedback context/file loading, and notes upsert/get/delete are now isolated into dedicated modules while `mod.rs` stays a small API facade.
   - Goal: keep feedback domain use-cases small and feature-oriented with stable command-facing API.
 
+- 2026-03-01: Domain decomposition continued (feedback repository internals split).
+  - Rust: split `domain/feedback/repo.rs` internals into `domain/feedback/repo/{queries.rs,mutations.rs}` with a small facade preserving current exports.
+  - Structure: read-side lookup/timeline/note queries live in `queries.rs`; note upsert/delete and attempt-feedback persistence transaction writes live in `mutations.rs`.
+  - Goal: keep feedback persistence internals role-focused and easier to evolve without one SQL-heavy repository file.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
