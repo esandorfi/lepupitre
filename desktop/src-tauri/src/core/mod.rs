@@ -1,8 +1,5 @@
 pub mod analysis;
 pub mod artifacts;
-pub mod asr;
-pub mod asr_live;
-pub mod asr_models;
 pub mod asr_sidecar;
 pub mod db;
 pub mod db_helpers;
@@ -14,6 +11,18 @@ pub mod vad;
 
 pub mod coach {
     pub use crate::domain::coach::*;
+}
+
+pub mod asr {
+    pub use crate::domain::asr::*;
+}
+
+pub mod asr_live {
+    pub use crate::domain::asr::asr_live::*;
+}
+
+pub mod asr_models {
+    pub use crate::domain::asr::asr_models::*;
 }
 
 pub mod feedback {

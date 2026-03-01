@@ -222,6 +222,11 @@ UI (`desktop/ui/src`)
   - Rust: `core::ids` and `core::time` are now compatibility re-exports to `kernel::*`.
   - Guard rails: legacy path checks now enforce removal of `core/ids.rs` and `core/time.rs`.
 
+- 2026-03-01: Topology reset continued (ASR domain modules).
+  - Rust: moved `asr`, `asr_live`, and `asr_models` from `core/` to `domain/asr/`.
+  - Rust: `commands/audio.rs` and `commands/transcription.rs` now import `domain::asr` modules directly.
+  - Guard rails: legacy path checks now enforce removal of `core/asr.rs`, `core/asr_live.rs`, and `core/asr_models.rs`.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.

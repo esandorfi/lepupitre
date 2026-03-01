@@ -1,3 +1,4 @@
+pub mod asr;
 pub mod coach;
 pub mod exchange;
 pub mod feedback;
