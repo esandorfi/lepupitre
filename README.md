@@ -242,6 +242,8 @@ Free code signing provided by SignPath.io, certificate by SignPath Foundation.
 - Documentation portal: [docs/README.md](docs/README.md)
 - Code of conduct: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 - Security policy: [SECURITY.md](SECURITY.md)
+- Worktree sidecar check procedure (Windows):
+  [docs/architecture/asr.md#worktree-check-procedure-windows](docs/architecture/asr.md#worktree-check-procedure-windows)
 
 ### Documentation model
 - [README.md](README.md): product and user onboarding.

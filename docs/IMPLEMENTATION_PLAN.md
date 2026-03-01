@@ -46,10 +46,15 @@ Scope:
 - Keep sidecar resource checks deterministic on Windows/macOS CI.
 - Maintain ASR smoke tests as opt-in but reliable when enabled.
 - Tighten error handling paths (`sidecar_missing`, `model_missing`, timeouts).
+- Add ops verification primitives (`--version`, `doctor --json`, support diagnostics bundle).
+
+Execution detail:
+- [docs/plan/PLAN-ASR-OPS-VERIFICATION.md](plan/PLAN-ASR-OPS-VERIFICATION.md)
 
 Done when:
 - Release and smoke-test CI runs are stable.
 - ASR failure modes are deterministic in UI and logs.
+- ASR operator diagnostics are one-command and deterministic across supported platforms.
 
 ## Track D: SQLite architecture hardening (Tauri backend)
 

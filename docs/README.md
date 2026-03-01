@@ -9,6 +9,7 @@ Use this map to avoid documentation drift.
 - [docs/architecture/overview.md](architecture/overview.md): architecture baseline.
 - [docs/architecture/ipc-contracts.md](architecture/ipc-contracts.md): IPC contract rules.
 - [docs/architecture/asr.md](architecture/asr.md): ASR architecture and troubleshooting.
+- [docs/architecture/asr.md#worktree-check-procedure-windows](architecture/asr.md#worktree-check-procedure-windows): sidecar resource check procedure for Windows worktrees.
 - [docs/operations/release.md](operations/release.md): release mechanics and CI flow.
 - [docs/operations/signing.md](operations/signing.md): signing and notarization status.
 - [docs/operations/CODE_SIGNING_POLICY.md](operations/CODE_SIGNING_POLICY.md): public code-signing policy.
