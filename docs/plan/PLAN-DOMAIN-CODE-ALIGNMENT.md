@@ -140,6 +140,10 @@ UI (`desktop/ui/src`)
   - Rust: `commands/audio.rs` now delegates trim codec/range operations to `core/recorder`.
   - Tests: trim/decode utility tests moved to `core/recorder` module tests.
 
+- 2026-03-01: Recorder ASR runtime extraction (settings + sidecar spawn) completed.
+  - Rust: moved recording-side ASR settings normalization and sidecar spawn logic from `commands/audio.rs` into `core/asr.rs`.
+  - Rust: `commands/audio.rs` now consumes `core/asr` for recorder ASR runtime configuration/spawn concerns.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.

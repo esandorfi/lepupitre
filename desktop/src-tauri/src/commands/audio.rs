@@ -1,6 +1,6 @@
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{Sample, SampleFormat};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::{mpsc, Arc, Mutex};
@@ -9,8 +9,8 @@ use std::time::{Duration, Instant};
 use tauri::{Emitter, Manager, State};
 
 use crate::core::artifacts;
+use crate::core::asr;
 use crate::core::asr_live::LiveTranscriptState;
-use crate::core::asr_models;
 use crate::core::asr_sidecar;
 use crate::core::db;
 use crate::core::dsp;
@@ -50,92 +50,6 @@ const RECORDING_TELEMETRY_MAX_EVENT_RATE_HZ: f32 = 8.0;
 const RECORDING_TELEMETRY_MAX_PAYLOAD_BYTES: usize = 4096;
 const RECORDING_WAVEFORM_WINDOW_SAMPLES: usize = TARGET_SAMPLE_RATE as usize;
 const RECORDING_WAVEFORM_BINS: usize = 48;
-
-const DEFAULT_MODEL_ID: &str = "tiny";
-const SIDECAR_ENV_PATH: &str = "LEPUPITRE_ASR_SIDECAR";
-const SIDECAR_MODEL_ENV_PATH: &str = "LEPUPITRE_ASR_MODEL_PATH";
-
-#[derive(Debug, Deserialize, Clone)]
-#[serde(deny_unknown_fields)]
-#[serde(rename_all = "camelCase")]
-pub struct AsrSettingsPayload {
-    model: Option<String>,
-    mode: Option<String>,
-    language: Option<String>,
-}
-
-#[derive(Debug, Clone)]
-struct AsrRuntimeSettings {
-    model_id: String,
-    language: String,
-    live_enabled: bool,
-    auto_benchmark: bool,
-}
-
-fn normalize_asr_settings(payload: Option<AsrSettingsPayload>) -> AsrRuntimeSettings {
-    let mut model_id = DEFAULT_MODEL_ID.to_string();
-    let mut language = "auto".to_string();
-    let mut live_enabled = true;
-    let mut auto_benchmark = false;
-
-    if let Some(payload) = payload {
-        if let Some(model) = payload.model.as_deref() {
-            if model == "tiny" || model == "base" {
-                model_id = model.to_string();
-            }
-        }
-        if let Some(language_value) = payload.language.as_deref() {
-            if language_value == "auto" || language_value == "en" || language_value == "fr" {
-                language = language_value.to_string();
-            }
-        }
-        if let Some(mode) = payload.mode.as_deref() {
-            if mode == "final-only" {
-                live_enabled = false;
-            } else if mode == "auto" && model_id == "tiny" {
-                auto_benchmark = true;
-            }
-        }
-    }
-
-    AsrRuntimeSettings {
-        model_id,
-        language,
-        live_enabled,
-        auto_benchmark,
-    }
-}
-
-fn try_spawn_sidecar(
-    app: &tauri::AppHandle,
-    settings: &AsrRuntimeSettings,
-) -> Result<asr_sidecar::SidecarDecoder, String> {
-    let sidecar_path = if let Ok(path) = std::env::var(SIDECAR_ENV_PATH) {
-        let path = std::path::PathBuf::from(path);
-        if path.exists() {
-            path
-        } else {
-            return Err("sidecar_missing".to_string());
-        }
-    } else {
-        asr_sidecar::resolve_sidecar_path(app)?
-    };
-
-    let model_path = if let Ok(path) = std::env::var(SIDECAR_MODEL_ENV_PATH) {
-        std::path::PathBuf::from(path)
-    } else {
-        let spec = asr_models::model_spec(&settings.model_id)
-            .ok_or_else(|| "model_unknown".to_string())?;
-        let dir = asr_models::models_dir(app)?;
-        let path = dir.join(spec.filename);
-        if !path.exists() {
-            return Err("model_missing".to_string());
-        }
-        path
-    };
-
-    asr_sidecar::SidecarDecoder::spawn(&sidecar_path, &model_path, &settings.language)
-}
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -299,11 +213,11 @@ pub fn recording_start(
     app: tauri::AppHandle,
     state: State<RecordingManager>,
     profile_id: String,
-    asr_settings: Option<AsrSettingsPayload>,
+    asr_settings: Option<asr::RecordingAsrSettingsPayload>,
     input_device_id: Option<String>,
 ) -> Result<RecordingStartResult, String> {
     db::ensure_profile_exists(&app, &profile_id)?;
-    let asr_settings = normalize_asr_settings(asr_settings);
+    let asr_settings = asr::normalize_recording_settings(asr_settings);
 
     let mut guard = state.session.lock().map_err(|_| "recording_lock")?;
     if guard.is_some() {
@@ -659,7 +573,7 @@ fn run_live_asr(
     app: tauri::AppHandle,
     state: Arc<Mutex<RecordingState>>,
     stop_rx: mpsc::Receiver<()>,
-    settings: AsrRuntimeSettings,
+    settings: asr::RecordingAsrRuntimeSettings,
 ) {
     crate::commands::assert_valid_event_name(ASR_PARTIAL_EVENT);
     crate::commands::assert_valid_event_name(ASR_COMMIT_EVENT);
@@ -667,7 +581,7 @@ fn run_live_asr(
     let mut settings = settings;
     let mut sidecar_decoder: Option<asr_sidecar::SidecarDecoder> = None;
     if settings.auto_benchmark {
-        match try_spawn_sidecar(&app, &settings) {
+        match asr::spawn_sidecar_decoder(&app, &settings.model_id, &settings.language) {
             Ok(mut decoder) => match benchmark_sidecar(&mut decoder) {
                 Ok(true) => {
                     sidecar_decoder = Some(decoder);
@@ -702,7 +616,7 @@ fn run_live_asr(
     let mut decoder: Box<dyn LiveDecoder> = if let Some(sidecar) = sidecar_decoder {
         Box::new(SidecarLiveDecoder::new(sidecar))
     } else {
-        match try_spawn_sidecar(&app, &settings) {
+        match asr::spawn_sidecar_decoder(&app, &settings.model_id, &settings.language) {
             Ok(sidecar) => Box::new(SidecarLiveDecoder::new(sidecar)),
             Err(err) => {
                 eprintln!("asr sidecar unavailable: {err}");

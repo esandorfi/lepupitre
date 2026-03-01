@@ -23,11 +23,28 @@ pub struct TranscriptionAsrSettingsPayload {
     pub spoken_punctuation: Option<bool>,
 }
 
+#[derive(Debug, Deserialize, Clone)]
+#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
+pub struct RecordingAsrSettingsPayload {
+    pub model: Option<String>,
+    pub mode: Option<String>,
+    pub language: Option<String>,
+}
+
 #[derive(Debug, Clone)]
 pub struct AsrRuntimeSettings {
     pub model_id: String,
     pub language: String,
     pub spoken_punctuation: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct RecordingAsrRuntimeSettings {
+    pub model_id: String,
+    pub language: String,
+    pub live_enabled: bool,
+    pub auto_benchmark: bool,
 }
 
 pub fn normalize_transcription_settings(
@@ -57,6 +74,42 @@ pub fn normalize_transcription_settings(
         model_id,
         language,
         spoken_punctuation,
+    }
+}
+
+pub fn normalize_recording_settings(
+    payload: Option<RecordingAsrSettingsPayload>,
+) -> RecordingAsrRuntimeSettings {
+    let mut model_id = DEFAULT_MODEL_ID.to_string();
+    let mut language = "auto".to_string();
+    let mut live_enabled = true;
+    let mut auto_benchmark = false;
+
+    if let Some(payload) = payload {
+        if let Some(model) = payload.model.as_deref() {
+            if model == "tiny" || model == "base" {
+                model_id = model.to_string();
+            }
+        }
+        if let Some(language_value) = payload.language.as_deref() {
+            if language_value == "auto" || language_value == "en" || language_value == "fr" {
+                language = language_value.to_string();
+            }
+        }
+        if let Some(mode) = payload.mode.as_deref() {
+            if mode == "final-only" {
+                live_enabled = false;
+            } else if mode == "auto" && model_id == "tiny" {
+                auto_benchmark = true;
+            }
+        }
+    }
+
+    RecordingAsrRuntimeSettings {
+        model_id,
+        language,
+        live_enabled,
+        auto_benchmark,
     }
 }
 
@@ -204,6 +257,16 @@ fn resolve_model_path(app: &AppHandle, model_id: &str) -> Result<PathBuf, String
         return Err("model_missing".to_string());
     }
     Ok(path)
+}
+
+pub fn spawn_sidecar_decoder(
+    app: &AppHandle,
+    model_id: &str,
+    language: &str,
+) -> Result<asr_sidecar::SidecarDecoder, String> {
+    let sidecar_path = resolve_sidecar_path(app)?;
+    let model_path = resolve_model_path(app, model_id)?;
+    asr_sidecar::SidecarDecoder::spawn(&sidecar_path, &model_path, language)
 }
 
 pub fn download_model_blocking<F>(
