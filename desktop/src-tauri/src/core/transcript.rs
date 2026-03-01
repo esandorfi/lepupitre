@@ -1,4 +1,4 @@
-use crate::core::{artifacts, db, models};
+use crate::core::{artifacts, db, models, time};
 
 pub fn load_transcript(
     app: &tauri::AppHandle,
@@ -61,6 +61,20 @@ pub fn build_edited_transcript(
         model_id: source.model_id.clone(),
         duration_ms: Some(duration_ms),
         segments,
+    })
+}
+
+pub fn build_transcript_edit_metadata(
+    transcript_id: &str,
+    source: &models::TranscriptV1,
+) -> serde_json::Value {
+    serde_json::json!({
+        "source_transcript_id": transcript_id,
+        "edit_kind": "manual",
+        "source_language": source.language,
+        "source_model_id": source.model_id,
+        "source_duration_ms": source.duration_ms,
+        "edited_at": time::now_rfc3339(),
     })
 }
 

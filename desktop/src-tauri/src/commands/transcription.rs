@@ -276,7 +276,7 @@ pub fn transcript_edit_save(
     let edited = transcript::build_edited_transcript(&source, &edited_text)?;
     let transcript_bytes =
         serde_json::to_vec(&edited).map_err(|e| format!("transcript_json: {e}"))?;
-    let metadata = build_transcript_edit_metadata(&transcript_id, &source);
+    let metadata = transcript::build_transcript_edit_metadata(&transcript_id, &source);
     let record = artifacts::store_bytes(
         &app,
         &profile_id,
@@ -288,20 +288,6 @@ pub fn transcript_edit_save(
 
     Ok(TranscriptEditSaveResponse {
         transcript_id: record.id,
-    })
-}
-
-fn build_transcript_edit_metadata(
-    transcript_id: &str,
-    source: &models::TranscriptV1,
-) -> serde_json::Value {
-    serde_json::json!({
-        "source_transcript_id": transcript_id,
-        "edit_kind": "manual",
-        "source_language": source.language,
-        "source_model_id": source.model_id,
-        "source_duration_ms": source.duration_ms,
-        "edited_at": time::now_rfc3339(),
     })
 }
 
@@ -667,7 +653,7 @@ mod transcription_tests {
             }],
         };
 
-        let metadata = build_transcript_edit_metadata("tr-source-1", &source);
+        let metadata = transcript::build_transcript_edit_metadata("tr-source-1", &source);
         assert_eq!(metadata["source_transcript_id"], "tr-source-1");
         assert_eq!(metadata["edit_kind"], "manual");
         assert_eq!(metadata["source_language"], "fr");

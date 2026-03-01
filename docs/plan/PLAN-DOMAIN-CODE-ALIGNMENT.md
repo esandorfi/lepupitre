@@ -131,6 +131,10 @@ UI (`desktop/ui/src`)
   - Rust: extracted ASR model download/checksum/manifest write flow from `commands/transcription.rs` into `core/asr.rs`.
   - Rust: `commands/transcription.rs` now delegates download execution to `core/asr` and keeps event emission in the command wrapper.
 
+- 2026-03-01: Transcript domain extraction (edit metadata builder) completed.
+  - Rust: moved transcript edit metadata construction from `commands/transcription.rs` to `core/transcript.rs`.
+  - Rust: `commands/transcription.rs` now delegates this concern to transcript domain helpers.
+
 - 2026-03-01: Recorder backend extraction (trim codec utilities) completed.
   - Rust: extracted WAV trim/decode/encode/range helpers from `commands/audio.rs` into `core/recorder.rs`.
   - Rust: `commands/audio.rs` now delegates trim codec/range operations to `core/recorder`.
