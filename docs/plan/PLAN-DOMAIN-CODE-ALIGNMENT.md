@@ -405,6 +405,11 @@ UI (`desktop/ui/src`)
   - Structure: run create/finish/transcript assignment + artifact-kind guards now live in `writes.rs`; run fetch/list reads now live in `reads.rs`; feedback generation/persistence flow now lives in `analyze.rs`.
   - Goal: keep run domain orchestration small and feature-oriented instead of one growing facade module.
 
+- 2026-03-01: Domain decomposition continued (training quest service split).
+  - Rust: split `domain/training/quest/mod.rs` use-cases into `domain/training/quest/{reads.rs,submissions.rs}` while keeping `mod.rs` as a compact API facade.
+  - Structure: quest daily/detail/list/report reads now live in `reads.rs`; text/audio attempt submission and artifact-kind guards now live in `submissions.rs`.
+  - Goal: keep training quest domain flows small and clearly separated between read and write paths.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
