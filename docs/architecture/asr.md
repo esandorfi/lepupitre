@@ -53,8 +53,8 @@ cargo clippy --manifest-path desktop/src-tauri/Cargo.toml --all-targets --all-fe
 
 ## Local development
 1. Build sidecar: `./scripts/build-asr-sidecar.sh`
-2. Optionally copy into resources: `./scripts/build-asr-sidecar.sh --copy`
-3. Dev shared ASR home (recommended for worktrees):
+1. Optionally copy into resources: `./scripts/build-asr-sidecar.sh --copy`
+1. Dev shared ASR home (recommended for worktrees):
    - Create folders once: `just asr-dev-create`
    - Build + copy sidecar there: `just asr-build-dev-home`
    - Location:
@@ -62,13 +62,16 @@ cargo clippy --manifest-path desktop/src-tauri/Cargo.toml --all-targets --all-fe
      - `../lepupitre-asr-dev/models/`
    - Windows notes:
      - Run from "Developer PowerShell for VS 2022" (or call `VsDevCmd.bat`) so `INCLUDE`/`LIB` are present.
+     - From a regular PowerShell, use:
+       - `$vs = 'C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\VsDevCmd.bat'`
+       - `cmd.exe /c "\"$vs\" -arch=x64 -host_arch=x64 && cd /d C:\dev.sandorfi\lepupitre && just asr-build-dev-home"`
      - If LLVM is installed in the default location, set:
        - PowerShell: `$env:LIBCLANG_PATH = 'C:\Program Files\LLVM\bin'`
      - `asr-build-dev-home` forces single-job Cargo build on Windows (`CARGO_BUILD_JOBS=1`) to avoid intermittent MSBuild install-target failures in `whisper-rs-sys`.
-4. Set env vars:
+1. Set env vars:
    - `LEPUPITRE_ASR_SIDECAR=/absolute/path/to/lepupitre-asr`
    - `LEPUPITRE_ASR_MODEL_PATH=/absolute/path/to/ggml-*.bin`
-5. Run app: `pnpm -C desktop dev`
+1. Run app: `pnpm -C desktop dev`
 
 Helper:
 - `./scripts/dev-asr-env.sh /path/to/ggml-tiny.bin`
