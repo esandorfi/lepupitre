@@ -390,6 +390,11 @@ UI (`desktop/ui/src`)
   - Structure: read-side lookup/timeline/note queries live in `queries.rs`; note upsert/delete and attempt-feedback persistence transaction writes live in `mutations.rs`.
   - Goal: keep feedback persistence internals role-focused and easier to evolve without one SQL-heavy repository file.
 
+- 2026-03-01: Domain decomposition continued (run repository split).
+  - Rust: split `domain/run/repo.rs` internals into `domain/run/repo/{lookups.rs,writes.rs}` with a small facade preserving current exports.
+  - Structure: run/project lookup/list/state reads and row mapping now live in `lookups.rs`; run insert/update and run-feedback transaction persistence now live in `writes.rs`.
+  - Goal: keep run persistence internals compact and role-oriented while preserving command-facing domain APIs.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
