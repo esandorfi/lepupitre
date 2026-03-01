@@ -1,6 +1,5 @@
 use crate::kernel::models;
 use crate::platform::artifacts;
-use crate::platform::db;
 
 pub fn load_transcript(
     app: &tauri::AppHandle,
@@ -11,8 +10,8 @@ pub fn load_transcript(
     if artifact.artifact_type != "transcript" {
         return Err("artifact_not_transcript".to_string());
     }
-    let profile_dir = db::profile_dir(app, profile_id)?;
-    let transcript_path = profile_dir.join(&artifact.relpath);
+    let transcript_path =
+        artifacts::resolve_profile_relpath_for_read(app, profile_id, &artifact.relpath)?;
     let bytes = std::fs::read(&transcript_path).map_err(|e| format!("transcript_read: {e}"))?;
     serde_json::from_slice(&bytes).map_err(|e| format!("transcript_parse: {e}"))
 }

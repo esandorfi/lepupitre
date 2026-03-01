@@ -31,6 +31,23 @@ pub fn run_list(
 ) -> Result<Vec<RunSummary>, String> {
     db::ensure_profile_exists(app, profile_id)?;
     let conn = db::open_profile(app, profile_id)?;
-    let limit = limit.unwrap_or(12).max(1) as i64;
+    let limit = normalize_run_list_limit(limit);
     repo::select_runs(&conn, project_id, limit)
+}
+
+pub(super) fn normalize_run_list_limit(limit: Option<u32>) -> i64 {
+    limit.unwrap_or(12).clamp(1, 100) as i64
+}
+
+#[cfg(test)]
+mod tests {
+    use super::normalize_run_list_limit;
+
+    #[test]
+    fn run_list_limit_is_bounded() {
+        assert_eq!(normalize_run_list_limit(None), 12);
+        assert_eq!(normalize_run_list_limit(Some(0)), 1);
+        assert_eq!(normalize_run_list_limit(Some(8)), 8);
+        assert_eq!(normalize_run_list_limit(Some(5000)), 100);
+    }
 }

@@ -25,6 +25,25 @@ pub struct ArtifactDraft {
     pub abspath: PathBuf,
 }
 
+pub fn resolve_profile_relpath_for_read(
+    app: &tauri::AppHandle,
+    profile_id: &str,
+    relpath: &str,
+) -> Result<PathBuf, String> {
+    let profile_dir = db::profile_dir(app, profile_id)?;
+    let profile_root = profile_dir
+        .canonicalize()
+        .map_err(|e| format!("artifact_profile_dir: {e}"))?;
+    let candidate = profile_dir.join(relpath);
+    let canonical = candidate
+        .canonicalize()
+        .map_err(|e| format!("artifact_path: {e}"))?;
+    if !canonical.starts_with(&profile_root) {
+        return Err("artifact_path_not_allowed".to_string());
+    }
+    Ok(canonical)
+}
+
 pub fn get_artifact(
     app: &tauri::AppHandle,
     profile_id: &str,
@@ -159,11 +178,17 @@ pub fn register_existing_file(
     metadata: &Value,
 ) -> Result<ArtifactRecord, String> {
     let profile_dir = db::profile_dir(app, profile_id)?;
-    if !abspath.starts_with(&profile_dir) {
+    let profile_root = profile_dir
+        .canonicalize()
+        .map_err(|e| format!("artifact_profile_dir: {e}"))?;
+    let canonical_path = abspath
+        .canonicalize()
+        .map_err(|e| format!("artifact_path: {e}"))?;
+    if !canonical_path.starts_with(&profile_root) {
         return Err("artifact_path_not_allowed".to_string());
     }
 
-    let (sha256, byte_len) = sha256_file(abspath)?;
+    let (sha256, byte_len) = sha256_file(&canonical_path)?;
     let created_at = time::now_rfc3339();
     let metadata_json =
         serde_json::to_string(metadata).map_err(|e| format!("artifact_metadata: {e}"))?;
@@ -179,12 +204,12 @@ pub fn register_existing_file(
             created_at: &created_at,
             metadata_json: &metadata_json,
         },
-        abspath,
+        &canonical_path,
     )?;
 
     Ok(ArtifactRecord {
         id: artifact_id.to_string(),
-        abspath: abspath.to_path_buf(),
+        abspath: canonical_path,
         bytes: byte_len,
         sha256,
     })
@@ -232,7 +257,16 @@ fn delete_artifact_with_conn(
 
     let abspath = profile_dir.join(relpath);
     if abspath.exists() {
-        std::fs::remove_file(&abspath).map_err(|e| format!("artifact_delete_file: {e}"))?;
+        let profile_root = profile_dir
+            .canonicalize()
+            .map_err(|e| format!("artifact_profile_dir: {e}"))?;
+        let canonical = abspath
+            .canonicalize()
+            .map_err(|e| format!("artifact_delete_path: {e}"))?;
+        if !canonical.starts_with(&profile_root) {
+            return Err("artifact_path_not_allowed".to_string());
+        }
+        std::fs::remove_file(&canonical).map_err(|e| format!("artifact_delete_file: {e}"))?;
     }
 
     Ok(())

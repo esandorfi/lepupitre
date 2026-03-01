@@ -45,7 +45,7 @@ pub fn quest_attempts_list(
 ) -> Result<Vec<QuestAttemptSummary>, String> {
     db::ensure_profile_exists(app, profile_id)?;
     let conn = db::open_profile(app, profile_id)?;
-    let limit = limit.unwrap_or(6).max(1) as i64;
+    let limit = normalize_attempts_limit(limit);
     repo::select_attempt_summaries(&conn, project_id, limit)
 }
 
@@ -57,4 +57,21 @@ pub fn quest_report(
     db::ensure_profile_exists(app, profile_id)?;
     let conn = db::open_profile(app, profile_id)?;
     repo::select_report(&conn, project_id)
+}
+
+fn normalize_attempts_limit(limit: Option<u32>) -> i64 {
+    limit.unwrap_or(6).clamp(1, 100) as i64
+}
+
+#[cfg(test)]
+mod tests {
+    use super::normalize_attempts_limit;
+
+    #[test]
+    fn attempts_limit_is_bounded() {
+        assert_eq!(normalize_attempts_limit(None), 6);
+        assert_eq!(normalize_attempts_limit(Some(0)), 1);
+        assert_eq!(normalize_attempts_limit(Some(10)), 10);
+        assert_eq!(normalize_attempts_limit(Some(10_000)), 100);
+    }
 }

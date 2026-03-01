@@ -420,6 +420,15 @@ impl SidecarDecoder {
 impl Drop for SidecarDecoder {
     fn drop(&mut self) {
         let _ = self.send_request(SidecarRequest::Shutdown);
+        for _ in 0..5 {
+            match self._child.try_wait() {
+                Ok(Some(_)) => return,
+                Ok(None) => thread::sleep(Duration::from_millis(20)),
+                Err(_) => break,
+            }
+        }
+        let _ = self._child.kill();
+        let _ = self._child.wait();
     }
 }
 

@@ -31,7 +31,7 @@ pub fn peer_review_list(
 ) -> Result<Vec<PeerReviewSummary>, String> {
     db::ensure_profile_exists(&app, &profile_id)?;
     let conn = db::open_profile(&app, &profile_id)?;
-    let limit = limit.unwrap_or(12).max(1);
+    let limit = normalize_peer_review_limit(limit);
 
     let mut stmt = conn
         .prepare(
@@ -93,8 +93,8 @@ pub fn peer_review_get(
     if artifact.artifact_type != "peer_review" {
         return Err("peer_review_artifact_type".to_string());
     }
-    let profile_dir = db::profile_dir(&app, &profile_id)?;
-    let review_path = profile_dir.join(&artifact.relpath);
+    let review_path =
+        artifacts::resolve_profile_relpath_for_read(&app, &profile_id, &artifact.relpath)?;
     let bytes = std::fs::read(&review_path).map_err(|e| format!("peer_review_read: {e}"))?;
     let review: models::PeerReviewV1 =
         serde_json::from_slice(&bytes).map_err(|e| format!("peer_review_parse: {e}"))?;
@@ -107,4 +107,21 @@ pub fn peer_review_get(
         reviewer_tag,
         review,
     })
+}
+
+fn normalize_peer_review_limit(limit: Option<i64>) -> i64 {
+    limit.unwrap_or(12).clamp(1, 100)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::normalize_peer_review_limit;
+
+    #[test]
+    fn peer_review_limit_is_bounded() {
+        assert_eq!(normalize_peer_review_limit(None), 12);
+        assert_eq!(normalize_peer_review_limit(Some(-7)), 1);
+        assert_eq!(normalize_peer_review_limit(Some(9)), 9);
+        assert_eq!(normalize_peer_review_limit(Some(9999)), 100);
+    }
 }

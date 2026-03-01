@@ -185,6 +185,5 @@ pub(super) fn artifact_path(
     profile_id: &str,
     relpath: &str,
 ) -> Result<PathBuf, String> {
-    let profile_dir = db::profile_dir(app, profile_id)?;
-    Ok(profile_dir.join(relpath))
+    artifacts::resolve_profile_relpath_for_read(app, profile_id, relpath)
 }

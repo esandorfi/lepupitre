@@ -208,6 +208,18 @@ impl RecordingManager {
     }
 }
 
+fn restore_recording_session(
+    manager: &State<RecordingManager>,
+    session: RecordingController,
+) -> Result<(), String> {
+    let mut guard = manager.session.lock().map_err(|_| "recording_lock".to_string())?;
+    if guard.is_some() {
+        return Err("recording_state_conflict".to_string());
+    }
+    *guard = Some(session);
+    Ok(())
+}
+
 #[tauri::command]
 pub fn recording_start(
     app: tauri::AppHandle,
@@ -267,8 +279,24 @@ pub fn recording_start(
     });
 
     let start_info = start_rx
-        .recv_timeout(Duration::from_millis(START_TIMEOUT_MS))
-        .map_err(|_| "recording_start_timeout".to_string())??;
+        .recv_timeout(Duration::from_millis(START_TIMEOUT_MS));
+    let start_info = match start_info {
+        Ok(Ok(info)) => info,
+        Ok(Err(err)) => {
+            let _ = thread.join();
+            let _ = std::fs::remove_file(&draft.abspath);
+            return Err(err);
+        }
+        Err(_) => {
+            let (reply_tx, _reply_rx) = mpsc::channel::<Result<RecordingStopInfo, String>>();
+            let _ = cmd_tx.send(RecordingCommand::Stop {
+                respond_to: reply_tx,
+            });
+            let _ = thread.join();
+            let _ = std::fs::remove_file(&draft.abspath);
+            return Err("recording_start_timeout".to_string());
+        }
+    };
 
     let recording_id = crate::kernel::ids::new_id("rec");
 
@@ -399,24 +427,46 @@ pub fn recording_stop(
             *guard = Some(session);
             return Err("recording_id_mismatch".to_string());
         }
+        if session.profile_id != profile_id {
+            *guard = Some(session);
+            return Err("recording_profile_mismatch".to_string());
+        }
         session
     };
 
-    if session.profile_id != profile_id {
-        return Err("recording_profile_mismatch".to_string());
-    }
-
     let (reply_tx, reply_rx) = mpsc::channel::<Result<RecordingStopInfo, String>>();
-    session
+    if session
         .command_tx
         .send(RecordingCommand::Stop {
             respond_to: reply_tx,
         })
-        .map_err(|_| "recording_stop_send".to_string())?;
+        .is_err()
+    {
+        let restore_err = restore_recording_session(&state, session).err();
+        return match restore_err {
+            Some(restore) => Err(format!("recording_stop_send; {restore}")),
+            None => Err("recording_stop_send".to_string()),
+        };
+    }
 
-    let stop_info = reply_rx
-        .recv_timeout(Duration::from_millis(STOP_TIMEOUT_MS))
-        .map_err(|_| "recording_stop_timeout".to_string())??;
+    let stop_info = match reply_rx.recv_timeout(Duration::from_millis(STOP_TIMEOUT_MS)) {
+        Ok(Ok(info)) => info,
+        Ok(Err(err)) => {
+            let _ = session.live.stop_tx.send(());
+            let _ = session.telemetry.stop_tx.send(());
+            let _ = session.live.thread.join();
+            let _ = session.telemetry.thread.join();
+            let _ = session.thread.join();
+            return Err(err);
+        }
+        Err(_) => {
+            let restore_err = restore_recording_session(&state, session).err();
+            return match restore_err {
+                Some(restore) => Err(format!("recording_stop_timeout; {restore}")),
+                None => Err("recording_stop_timeout".to_string()),
+            };
+        }
+    };
 
     let _ = session.live.stop_tx.send(());
     let _ = session.telemetry.stop_tx.send(());
