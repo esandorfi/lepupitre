@@ -310,6 +310,11 @@ UI (`desktop/ui/src`)
   - Structure: transcript I/O, edit metadata/rewrite, export formatting, and spoken punctuation rules are now isolated by concern and re-exported from `transcript/mod.rs`.
   - Goal: keep transcript-domain files small and navigable while preserving existing command/domain call sites.
 
+- 2026-03-01: Domain decomposition continued (exchange pack repository split).
+  - Rust: extracted SQL/persistence and DB query helpers from `domain/exchange/pack.rs` into `domain/exchange/pack/repo.rs`.
+  - Structure: `pack.rs` keeps export/inspect/import orchestration and zip validation, while `pack/repo.rs` owns artifact/outline lookups and peer-review import transaction writes.
+  - Goal: isolate DB responsibilities behind a dedicated submodule and keep pack orchestration easier to navigate.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
