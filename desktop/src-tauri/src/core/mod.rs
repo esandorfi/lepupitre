@@ -17,6 +17,7 @@ pub mod peer_review;
 pub mod preferences;
 pub mod project;
 pub mod quest;
+pub mod recorder;
 pub mod recording;
 pub mod run;
 pub mod seed;
