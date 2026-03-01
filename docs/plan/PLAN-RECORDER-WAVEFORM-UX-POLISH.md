@@ -21,6 +21,10 @@ Delivered in this pass:
   - applying trim invalidates in-memory transcript state
   - UI requires re-transcription after trim before analyze/export continuation
   - trimmed artifact propagates through existing `saved` flow for quest/boss-run linkage
+- B.2 quality-state UX polish implemented:
+  - recorder quality hint transitions now use stabilization hysteresis in UI
+  - danger states escalate immediately; de-escalation uses hold windows to reduce flicker
+  - focused unit tests added for transition timing behavior
 
 ## Goal
 
