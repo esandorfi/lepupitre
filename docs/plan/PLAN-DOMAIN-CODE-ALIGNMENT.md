@@ -325,6 +325,11 @@ UI (`desktop/ui/src`)
   - Structure: `pack.rs` now wires typed contracts and content builders while keeping orchestration readable; low-level contract/content details live in dedicated modules.
   - Goal: keep files smaller and role-oriented for easier onboarding and AI-assisted edits.
 
+- 2026-03-01: Domain decomposition continued (exchange pack inspect split).
+  - Rust: extracted `pack_inspect` flow and inspect DTOs into `domain/exchange/pack/inspect.rs`.
+  - Structure: `pack.rs` now re-exports inspect API while retaining export/import orchestration; inspect-only zip validation and summary shaping are isolated in a dedicated module.
+  - Goal: separate import/export paths from inspect path for clearer bounded responsibilities and smaller files.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
