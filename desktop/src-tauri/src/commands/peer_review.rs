@@ -1,4 +1,4 @@
-use crate::core::peer_review as peer_review_core;
+use crate::domain::exchange::peer_review as peer_review_core;
 
 pub use peer_review_core::{PeerReviewDetail, PeerReviewSummary};
 

@@ -9,8 +9,6 @@ pub mod db_helpers;
 pub mod dsp;
 pub mod ids;
 pub mod models;
-pub mod pack;
-pub mod peer_review;
 pub mod recorder;
 pub mod recording;
 pub mod seed;
@@ -24,6 +22,14 @@ pub mod coach {
 
 pub mod feedback {
     pub use crate::domain::feedback::*;
+}
+
+pub mod pack {
+    pub use crate::domain::exchange::pack::*;
+}
+
+pub mod peer_review {
+    pub use crate::domain::exchange::peer_review::*;
 }
 
 pub mod preferences {

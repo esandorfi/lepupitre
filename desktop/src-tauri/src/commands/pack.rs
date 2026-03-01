@@ -1,4 +1,5 @@
-use crate::core::{models, pack as pack_core};
+use crate::core::models;
+use crate::domain::exchange::pack as pack_core;
 
 pub use pack_core::{PackInspectResponse, PeerReviewImportResponse};
 

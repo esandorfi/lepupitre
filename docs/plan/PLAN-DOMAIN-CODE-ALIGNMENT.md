@@ -207,6 +207,11 @@ UI (`desktop/ui/src`)
   - Rust: `commands/quest.rs` now imports `domain::training::quest`.
   - Guard rails: legacy path checks now enforce removal of `core/quest.rs`.
 
+- 2026-03-01: Topology reset continued (exchange context).
+  - Rust: moved `pack` and `peer_review` contexts from `core/` to `domain/exchange/`.
+  - Rust: `commands/pack.rs` and `commands/peer_review.rs` now import `domain::exchange::*`.
+  - Guard rails: legacy path checks now enforce removal of `core/pack.rs` and `core/peer_review.rs`.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.

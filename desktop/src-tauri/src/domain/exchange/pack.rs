@@ -1,4 +1,6 @@
-use crate::core::{artifacts, db, ids, models, time, transcript};
+use crate::core::{artifacts, models, transcript};
+use crate::kernel::{ids, time};
+use crate::platform::db;
 use rusqlite::{params, Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -9,7 +11,7 @@ use std::path::{Path, PathBuf};
 use zip::write::FileOptions;
 use zip::{CompressionMethod, ZipArchive, ZipWriter};
 
-const RUBRIC_JSON: &str = include_str!("../../../../seed/rubric.tech_talk_internal.v1.json");
+const RUBRIC_JSON: &str = include_str!("../../../../../seed/rubric.tech_talk_internal.v1.json");
 const MAX_ZIP_ENTRY_BYTES: u64 = 64 * 1024 * 1024;
 
 #[derive(Debug)]
