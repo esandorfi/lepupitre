@@ -1,4 +1,5 @@
-use crate::core::{feedback as feedback_core, models};
+use crate::core::models;
+use crate::domain::feedback as feedback_core;
 
 pub use feedback_core::{AnalyzeResponse, FeedbackContext, FeedbackTimelineItem};
 

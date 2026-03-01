@@ -197,6 +197,11 @@ UI (`desktop/ui/src`)
   - Rust: `commands/project.rs` and `commands/outline.rs` now import `domain::talk::*`.
   - Guard rails: legacy path checks now enforce removal of `core/project.rs` and `core/outline.rs`.
 
+- 2026-03-01: Topology reset continued (feedback context).
+  - Rust: moved `feedback` context from `core/feedback.rs` to `domain/feedback/mod.rs`.
+  - Rust: `commands/feedback.rs` now imports `domain::feedback`.
+  - Guard rails: legacy path checks now enforce removal of `core/feedback.rs`.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.

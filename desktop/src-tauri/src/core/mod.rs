@@ -7,7 +7,6 @@ pub mod asr_sidecar;
 pub mod db;
 pub mod db_helpers;
 pub mod dsp;
-pub mod feedback;
 pub mod ids;
 pub mod models;
 pub mod pack;
@@ -22,6 +21,10 @@ pub mod vad;
 
 pub mod coach {
     pub use crate::domain::coach::*;
+}
+
+pub mod feedback {
+    pub use crate::domain::feedback::*;
 }
 
 pub mod preferences {
