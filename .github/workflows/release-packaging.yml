@@ -113,6 +113,9 @@ jobs:
       - name: Verify ASR sidecar binary
         run: node scripts/verify-asr-sidecar.mjs
 
+      - name: Verify ASR sidecar doctor contract
+        run: node scripts/check-asr-sidecar-doctor.mjs
+
       - name: Recorder smoke test (macOS)
         if: matrix.os == 'macos-latest'
         shell: bash

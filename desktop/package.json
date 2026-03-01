@@ -10,6 +10,7 @@
     "build": "pnpm asr:verify && pnpm tauri build",
     "tauri": "tauri",
     "asr:verify": "node ../scripts/verify-asr-sidecar.mjs",
+    "asr:doctor:check": "node ../scripts/check-asr-sidecar-doctor.mjs",
     "ui:dev": "pnpm -C ui dev",
     "ui:build": "pnpm -C ui build",
     "ui:lint": "pnpm -C ui lint",

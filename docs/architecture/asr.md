@@ -108,6 +108,8 @@ Then run:
 - Verify sidecar identity/protocol quickly:
   - `<path-to-sidecar> --version`
   - `<path-to-sidecar> doctor --json`
+  - scripted contract check: `node scripts/check-asr-sidecar-doctor.mjs`
+    - optional explicit path: `node scripts/check-asr-sidecar-doctor.mjs --sidecar=<path-to-sidecar>`
   - `doctor --json` returns a stable payload (version/protocol/target/capabilities/dependencies).
 - Optional smoke test:
   - `./scripts/asr-smoke.sh /path/to/lepupitre-asr /path/to/ggml-*.bin`

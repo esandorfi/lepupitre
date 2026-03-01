@@ -26,6 +26,9 @@
 - Local packaging: `pnpm -C desktop build`
 - On `v*` tags, GitHub Actions builds macOS and Windows artifacts and attaches them to the release.
 - ASR packaging invariant: both `lepupitre-asr` and `lepupitre-asr.exe` must be present before Rust/ASR smoke steps.
+- ASR identity contract gate in release CI:
+  - `node scripts/verify-asr-sidecar.mjs`
+  - `node scripts/check-asr-sidecar-doctor.mjs`
 - Release signing preflight:
   - `scripts/check-release-signing.sh` validates required secrets when trust toggles are enabled.
 - Release trust verification:
