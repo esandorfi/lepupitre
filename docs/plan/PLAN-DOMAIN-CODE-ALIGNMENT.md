@@ -330,6 +330,11 @@ UI (`desktop/ui/src`)
   - Structure: `pack.rs` now re-exports inspect API while retaining export/import orchestration; inspect-only zip validation and summary shaping are isolated in a dedicated module.
   - Goal: separate import/export paths from inspect path for clearer bounded responsibilities and smaller files.
 
+- 2026-03-01: Domain decomposition continued (exchange pack import split).
+  - Rust: extracted `peer_review_import` flow and response contract into `domain/exchange/pack/import.rs`.
+  - Structure: `pack.rs` now re-exports import API and keeps export orchestration plus shared artifact-path helper; import-side zip parsing, artifact writes, and transactional persistence orchestration are isolated.
+  - Goal: separate import and export use-cases into dedicated modules for cleaner bounded-context navigation.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
