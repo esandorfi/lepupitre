@@ -7,10 +7,8 @@ pub mod asr_sidecar;
 pub mod db;
 pub mod db_helpers;
 pub mod dsp;
-pub mod ids;
 pub mod models;
 pub mod seed;
-pub mod time;
 pub mod transcript;
 pub mod vad;
 
@@ -20,6 +18,10 @@ pub mod coach {
 
 pub mod feedback {
     pub use crate::domain::feedback::*;
+}
+
+pub mod ids {
+    pub use crate::kernel::ids::*;
 }
 
 pub mod pack {
@@ -36,6 +38,10 @@ pub mod preferences {
 
 pub mod run {
     pub use crate::domain::run::*;
+}
+
+pub mod time {
+    pub use crate::kernel::time::*;
 }
 
 pub mod outline {

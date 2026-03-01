@@ -52,6 +52,8 @@ check_path_absent "desktop/src-tauri/src/core/pack.rs"
 check_path_absent "desktop/src-tauri/src/core/peer_review.rs"
 check_path_absent "desktop/src-tauri/src/core/recorder.rs"
 check_path_absent "desktop/src-tauri/src/core/recording.rs"
+check_path_absent "desktop/src-tauri/src/core/ids.rs"
+check_path_absent "desktop/src-tauri/src/core/time.rs"
 
 # Command wrappers for migrated contexts must import new layer paths.
 check_forbidden_match \

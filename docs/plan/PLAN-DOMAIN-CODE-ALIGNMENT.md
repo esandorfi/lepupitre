@@ -217,6 +217,11 @@ UI (`desktop/ui/src`)
   - Rust: `commands/audio.rs` now imports `domain::recorder` and `domain::recorder::recording`.
   - Guard rails: legacy path checks now enforce removal of `core/recorder.rs` and `core/recording.rs`.
 
+- 2026-03-01: Topology reset continued (kernel primitives).
+  - Rust: moved `ids` and `time` primitive implementations from `core/` to `kernel/`.
+  - Rust: `core::ids` and `core::time` are now compatibility re-exports to `kernel::*`.
+  - Guard rails: legacy path checks now enforce removal of `core/ids.rs` and `core/time.rs`.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
