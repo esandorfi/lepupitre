@@ -265,6 +265,11 @@ UI (`desktop/ui/src`)
   - Structure: public API stays unchanged while SQL-heavy persistence logic is isolated in `repo.rs`.
   - Goal: keep domain files small and easier to navigate for humans and AI coding agents.
 
+- 2026-03-01: Domain decomposition continued (workspace split into smaller files).
+  - Rust: replaced monolithic `domain/workspace/mod.rs` internals with `domain/workspace/{mod.rs,repo.rs}`.
+  - Structure: `mod.rs` now owns orchestration and filesystem boundaries; SQL transactions and profile queries are isolated in `repo.rs`.
+  - Goal: keep bounded-context modules small and enforce a consistent service/repository layout.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
