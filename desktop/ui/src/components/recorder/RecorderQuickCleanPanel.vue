@@ -11,6 +11,7 @@ const props = defineProps<{
   transcribeProgress: number;
   transcribeStageLabel: string | null;
   canTranscribe: boolean;
+  showTranscribeBlockedHint: boolean;
   transcribeBlockedMessage: string | null;
   isSavingEdited: boolean;
   canOpenOriginal: boolean;
@@ -168,8 +169,11 @@ watch(
     </section>
 
     <div v-if="!props.hasTranscript" class="space-y-3">
-      <p class="app-muted app-text-body">{{ t("audio.quick_clean_not_ready") }}</p>
-      <p v-if="props.transcribeBlockedMessage" class="app-danger-text app-text-meta">
+      <p class="app-muted app-text-body">{{ t("audio.quick_clean_transcribe_optional") }}</p>
+      <p
+        v-if="props.showTranscribeBlockedHint && props.transcribeBlockedMessage"
+        class="app-muted app-text-meta"
+      >
         {{ props.transcribeBlockedMessage }}
       </p>
       <button

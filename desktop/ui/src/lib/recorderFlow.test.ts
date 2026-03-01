@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   isTypingTargetElement,
   recorderStopTransitionPlan,
+  resolveRecorderTranscribeReadiness,
   resolveRecorderShortcutAction,
   resolveActiveTranscriptIdForAnalysis,
 } from "./recorderFlow";
@@ -20,6 +21,26 @@ describe("recorderFlow", () => {
     const disabled = recorderStopTransitionPlan(true, false);
     expect(disabled.nextPhase).toBe("quick_clean");
     expect(disabled.shouldAutoTranscribe).toBe(false);
+  });
+
+  it("keeps record success independent from transcription prerequisites", () => {
+    const blocked = resolveRecorderTranscribeReadiness({
+      hasAudioArtifact: true,
+      isTranscribing: false,
+      isApplyingTrim: false,
+      transcribeBlockedCode: "model_missing",
+    });
+    expect(blocked.canTranscribe).toBe(false);
+    expect(blocked.showBlockedHint).toBe(true);
+
+    const ready = resolveRecorderTranscribeReadiness({
+      hasAudioArtifact: true,
+      isTranscribing: false,
+      isApplyingTrim: false,
+      transcribeBlockedCode: null,
+    });
+    expect(ready.canTranscribe).toBe(true);
+    expect(ready.showBlockedHint).toBe(false);
   });
 
   it("detects typing targets so shortcuts can be ignored", () => {

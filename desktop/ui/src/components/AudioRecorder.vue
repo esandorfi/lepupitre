@@ -19,6 +19,7 @@ import {
 import {
   isTypingTargetElement,
   recorderStopTransitionPlan,
+  resolveRecorderTranscribeReadiness,
   resolveRecorderShortcutAction,
   resolveActiveTranscriptIdForAnalysis,
 } from "../lib/recorderFlow";
@@ -177,13 +178,15 @@ const canAnalyzeRecorder = computed(
 );
 
 const canExport = computed(() => !!activeTranscriptIdForAnalysis.value);
-const canTranscribe = computed(
-  () =>
-    !!lastArtifactId.value &&
-    !isTranscribing.value &&
-    !isApplyingTrim.value &&
-    !transcribeBlockedCode.value
+const transcribeReadiness = computed(() =>
+  resolveRecorderTranscribeReadiness({
+    hasAudioArtifact: !!lastArtifactId.value,
+    isTranscribing: isTranscribing.value,
+    isApplyingTrim: isApplyingTrim.value,
+    transcribeBlockedCode: transcribeBlockedCode.value,
+  })
 );
+const canTranscribe = computed(() => transcribeReadiness.value.canTranscribe);
 const canOpenOriginal = computed(() => !!lastSavedPath.value);
 const livePreview = computed(() => {
   const committed = liveSegments.value
@@ -601,9 +604,6 @@ async function transcribeRecording() {
     return;
   }
   if (!canTranscribe.value) {
-    if (transcribeBlockedMessage.value) {
-      setError(transcribeBlockedMessage.value, transcribeBlockedCode.value);
-    }
     return;
   }
 
@@ -1032,6 +1032,7 @@ watch(
       :transcribe-progress="transcribeProgress"
       :transcribe-stage-label="transcribeStageLabel"
       :can-transcribe="canTranscribe"
+      :show-transcribe-blocked-hint="transcribeReadiness.showBlockedHint"
       :transcribe-blocked-message="transcribeBlockedMessage"
       :is-saving-edited="isSavingEdited"
       :can-open-original="canOpenOriginal"

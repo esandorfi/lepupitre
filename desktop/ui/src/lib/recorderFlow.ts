@@ -7,6 +7,11 @@ export type RecorderShortcutAction =
   | "analyze"
   | null;
 
+export type RecorderTranscribeReadiness = {
+  canTranscribe: boolean;
+  showBlockedHint: boolean;
+};
+
 export function resolveActiveTranscriptIdForAnalysis(
   baseTranscriptId: string | null,
   editedTranscriptId: string | null
@@ -36,6 +41,32 @@ export function recorderStopTransitionPlan(
   return {
     nextPhase: "quick_clean",
     shouldAutoTranscribe: autoTranscribeOnStop && canTranscribe,
+  };
+}
+
+export function resolveRecorderTranscribeReadiness(input: {
+  hasAudioArtifact: boolean;
+  isTranscribing: boolean;
+  isApplyingTrim: boolean;
+  transcribeBlockedCode: string | null;
+}): RecorderTranscribeReadiness {
+  if (!input.hasAudioArtifact || input.isTranscribing || input.isApplyingTrim) {
+    return {
+      canTranscribe: false,
+      showBlockedHint: false,
+    };
+  }
+
+  if (input.transcribeBlockedCode) {
+    return {
+      canTranscribe: false,
+      showBlockedHint: true,
+    };
+  }
+
+  return {
+    canTranscribe: true,
+    showBlockedHint: false,
   };
 }
 
