@@ -46,6 +46,8 @@ const ASR_PARTIAL_EVENT: &str = "asr/partial/v1";
 const ASR_COMMIT_EVENT: &str = "asr/commit/v1";
 const RECORDING_TELEMETRY_EVENT: &str = "recording/telemetry/v1";
 const RECORDING_TELEMETRY_STEP_MS: u64 = 200;
+const RECORDING_WAVEFORM_WINDOW_SAMPLES: usize = TARGET_SAMPLE_RATE as usize;
+const RECORDING_WAVEFORM_BINS: usize = 48;
 
 const DEFAULT_MODEL_ID: &str = "tiny";
 const SIDECAR_ENV_PATH: &str = "LEPUPITRE_ASR_SIDECAR";
@@ -219,6 +221,7 @@ struct RecordingTelemetryEvent {
     pub is_clipping: bool,
     pub signal_present: bool,
     pub quality_hint_key: &'static str,
+    pub waveform_peaks: Vec<f32>,
 }
 
 struct RecordingStartInfo {
@@ -745,15 +748,22 @@ fn run_recording_telemetry(
         }
 
         let payload = match state.lock() {
-            Ok(guard) => RecordingTelemetryEvent {
-                schema_version: "1.0.0",
-                duration_ms: (guard.total_samples as f64 / TARGET_SAMPLE_RATE as f64 * 1000.0)
-                    .round() as i64,
-                level: guard.last_level,
-                is_clipping: guard.clipping_latched,
-                signal_present: guard.signal_present,
-                quality_hint_key: quality_hint_key(&guard),
-            },
+            Ok(guard) => {
+                let waveform_samples = guard.ring.snapshot_last(RECORDING_WAVEFORM_WINDOW_SAMPLES);
+                RecordingTelemetryEvent {
+                    schema_version: "1.0.0",
+                    duration_ms: (guard.total_samples as f64 / TARGET_SAMPLE_RATE as f64 * 1000.0)
+                        .round() as i64,
+                    level: guard.last_level,
+                    is_clipping: guard.clipping_latched,
+                    signal_present: guard.signal_present,
+                    quality_hint_key: quality_hint_key(&guard),
+                    waveform_peaks: build_waveform_peaks(
+                        &waveform_samples,
+                        RECORDING_WAVEFORM_BINS,
+                    ),
+                }
+            }
             Err(_) => break,
         };
 
@@ -970,6 +980,33 @@ fn quality_hint_key(state: &RecordingState) -> &'static str {
         return "too_quiet";
     }
     "good_level"
+}
+
+fn build_waveform_peaks(samples: &[f32], bins: usize) -> Vec<f32> {
+    if bins == 0 {
+        return Vec::new();
+    }
+    if samples.is_empty() {
+        return vec![0.0; bins];
+    }
+
+    let chunk_size = samples.len().div_ceil(bins).max(1);
+    let mut peaks = Vec::with_capacity(bins);
+    let mut cursor = 0usize;
+    for _ in 0..bins {
+        let end = (cursor + chunk_size).min(samples.len());
+        if cursor >= samples.len() || cursor >= end {
+            peaks.push(0.0);
+            continue;
+        }
+        let peak = samples[cursor..end]
+            .iter()
+            .fold(0.0_f32, |acc, sample| acc.max(sample.abs()))
+            .clamp(0.0, 1.0);
+        peaks.push(peak);
+        cursor = end;
+    }
+    peaks
 }
 
 fn handle_input<T>(state: &Arc<Mutex<RecordingState>>, data: &[T], channels: u16)
@@ -1437,5 +1474,20 @@ mod audio_tests {
     fn resolve_trim_sample_range_rejects_invalid_windows() {
         let err = resolve_trim_sample_range(16_000, 500, 500, 16_000).expect_err("should fail");
         assert_eq!(err, "trim_range_invalid");
+    }
+
+    #[test]
+    fn build_waveform_peaks_returns_fixed_bins_for_empty_input() {
+        let peaks = build_waveform_peaks(&[], 4);
+        assert_eq!(peaks, vec![0.0, 0.0, 0.0, 0.0]);
+    }
+
+    #[test]
+    fn build_waveform_peaks_tracks_peak_values_per_bucket() {
+        let peaks = build_waveform_peaks(&[0.1, -0.2, 0.7, -0.9, 0.4, 0.3], 3);
+        assert_eq!(peaks.len(), 3);
+        assert!((peaks[0] - 0.2).abs() < 1e-6);
+        assert!((peaks[1] - 0.9).abs() < 1e-6);
+        assert!((peaks[2] - 0.4).abs() < 1e-6);
     }
 }

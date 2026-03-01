@@ -137,6 +137,7 @@ describe("ipc schemas", () => {
       isClipping: false,
       signalPresent: true,
       qualityHintKey: "good_level",
+      waveformPeaks: [0.1, 0.2, 0.15],
     });
     expect(parsed.success).toBe(true);
   });

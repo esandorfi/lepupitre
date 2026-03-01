@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { invoke } from "@tauri-apps/api/core";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-shell";
 import { RouterLink } from "vue-router";
@@ -137,6 +137,8 @@ const isExporting = ref(false);
 const recordingId = ref<string | null>(null);
 const liveSegments = ref<TranscriptSegment[]>([]);
 const livePartial = ref<string | null>(null);
+const liveWaveformPeaks = ref<number[]>([]);
+const lastWaveformPeaks = ref<number[]>([]);
 const advancedOpen = ref(readPreference(ADVANCED_DRAWER_PREF_KEY) === "1");
 const telemetryReceived = ref(false);
 
@@ -188,6 +190,9 @@ const transcribeReadiness = computed(() =>
 );
 const canTranscribe = computed(() => transcribeReadiness.value.canTranscribe);
 const canOpenOriginal = computed(() => !!lastSavedPath.value);
+const audioPreviewSrc = computed(() =>
+  lastSavedPath.value ? convertFileSrc(lastSavedPath.value) : null
+);
 const livePreview = computed(() => {
   const committed = liveSegments.value
     .slice(-2)
@@ -466,6 +471,8 @@ async function startRecording() {
   phase.value = "capture";
   resetTranscriptionState();
   resetLiveTranscript();
+  liveWaveformPeaks.value = [];
+  lastWaveformPeaks.value = [];
 
   try {
     const result = await invokeChecked(
@@ -542,6 +549,7 @@ async function stopRecording() {
     lastSavedPath.value = result.path;
     lastArtifactId.value = result.artifactId;
     lastDurationSec.value = result.durationMs / 1000;
+    lastWaveformPeaks.value = liveWaveformPeaks.value.slice();
     emit("saved", { artifactId: result.artifactId, path: result.path });
     liveLevel.value = 0;
     statusKey.value = "audio.status_idle";
@@ -588,6 +596,7 @@ async function applyTrim(payload: { startMs: number; endMs: number }) {
     lastArtifactId.value = result.artifactId;
     lastDurationSec.value = result.durationMs / 1000;
     resetTranscriptionState();
+    lastWaveformPeaks.value = [];
     emit("saved", { artifactId: result.artifactId, path: result.path });
     announce(t("audio.quick_clean_trim_applied"));
     await refreshTranscribeReadiness();
@@ -906,6 +915,7 @@ onMounted(async () => {
     clearStatusTimer();
     liveDurationSec.value = parsed.data.durationMs / 1000;
     liveLevel.value = parsed.data.level;
+    liveWaveformPeaks.value = parsed.data.waveformPeaks.slice();
     applyQualityHint(parsed.data.qualityHintKey);
   });
 
@@ -1019,6 +1029,7 @@ watch(
       :rec-badge-label="recBadgeLabel"
       :show-rec-badge="isRecording || isPaused"
       :live-preview="livePreview"
+      :waveform-peaks="liveWaveformPeaks"
       @primary="handleCapturePrimaryAction"
       @stop="stopRecording"
     />
@@ -1038,6 +1049,8 @@ watch(
       :can-open-original="canOpenOriginal"
       :is-revealing="isRevealing"
       :is-applying-trim="isApplyingTrim"
+      :audio-preview-src="audioPreviewSrc"
+      :waveform-peaks="lastWaveformPeaks"
       @transcribe="transcribeRecording"
       @apply-trim="applyTrim"
       @save-edited="saveEditedTranscript"

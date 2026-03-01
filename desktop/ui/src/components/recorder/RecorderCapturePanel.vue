@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import RecorderWaveform from "./RecorderWaveform.vue";
+
 const props = defineProps<{
   primaryLabel: string;
   stopLabel: string;
@@ -11,6 +13,7 @@ const props = defineProps<{
   recBadgeLabel: string;
   showRecBadge: boolean;
   livePreview: string | null;
+  waveformPeaks: number[];
 }>();
 
 const emit = defineEmits<{
@@ -70,6 +73,7 @@ function qualityClass() {
     </div>
 
     <div class="space-y-2">
+      <RecorderWaveform :peaks="props.waveformPeaks" />
       <div class="app-meter-bg h-2 w-full rounded-full">
         <div
           class="h-2 rounded-full bg-[var(--app-info)] transition-all"

@@ -556,6 +556,7 @@ export const RecordingTelemetryEventSchema = z.object({
   isClipping: z.boolean(),
   signalPresent: z.boolean(),
   qualityHintKey: z.string().min(1),
+  waveformPeaks: z.array(z.number().min(0).max(1)).min(1),
 });
 
 export const TranscriptGetPayloadSchema = z.object({

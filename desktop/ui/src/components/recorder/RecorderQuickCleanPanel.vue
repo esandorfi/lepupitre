@@ -2,6 +2,7 @@
 import { computed, ref, watch } from "vue";
 import { useI18n } from "../../lib/i18n";
 import { formatTrimClock, normalizeTrimWindow } from "../../lib/recorderTrim";
+import RecorderWaveform from "./RecorderWaveform.vue";
 
 const props = defineProps<{
   transcriptText: string;
@@ -17,6 +18,8 @@ const props = defineProps<{
   canOpenOriginal: boolean;
   isRevealing: boolean;
   isApplyingTrim: boolean;
+  audioPreviewSrc: string | null;
+  waveformPeaks: number[];
 }>();
 
 const emit = defineEmits<{
@@ -108,6 +111,17 @@ watch(
     </div>
 
     <section class="app-panel app-panel-compact space-y-3">
+      <div class="space-y-2">
+        <RecorderWaveform :peaks="props.waveformPeaks" />
+        <audio
+          v-if="props.audioPreviewSrc"
+          class="w-full"
+          controls
+          preload="metadata"
+          :src="props.audioPreviewSrc"
+        ></audio>
+      </div>
+
       <div class="flex items-center justify-between gap-2">
         <h3 class="app-text font-semibold">{{ t("audio.quick_clean_trim_title") }}</h3>
         <button

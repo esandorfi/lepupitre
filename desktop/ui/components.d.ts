@@ -21,6 +21,7 @@ declare module 'vue' {
     RecorderCapturePanel: typeof import('./src/components/recorder/RecorderCapturePanel.vue')['default']
     RecorderExportPanel: typeof import('./src/components/recorder/RecorderExportPanel.vue')['default']
     RecorderQuickCleanPanel: typeof import('./src/components/recorder/RecorderQuickCleanPanel.vue')['default']
+    RecorderWaveform: typeof import('./src/components/recorder/RecorderWaveform.vue')['default']
     RouteContextBar: typeof import('./src/components/shell/RouteContextBar.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
