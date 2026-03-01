@@ -48,7 +48,7 @@ These are repository process gates for contributors.
 ## 5) Test matrix and obligations
 - Treat [docs/testing/TEST_MATRIX.md](testing/TEST_MATRIX.md) as the source of truth for core use-case test obligations.
 - If a PR changes core domain behavior, update matching domain contract tests in the same PR.
-- CI enforces selected backend obligations; enforcement details live in repository scripts/workflows.
+- CI enforces selected backend and UI obligations; enforcement details live in repository scripts/workflows.
 
 ## 6) Release and changelog gate
 - For every release/version bump:

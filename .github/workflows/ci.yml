@@ -70,6 +70,13 @@ jobs:
           chmod +x scripts/check-test-obligations.sh
           ./scripts/check-test-obligations.sh "${{ github.event.pull_request.base.sha }}" "${{ github.sha }}"
 
+      - name: Enforce UI test obligations (PR)
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          chmod +x scripts/check-ui-test-obligations.sh
+          ./scripts/check-ui-test-obligations.sh "${{ github.event.pull_request.base.sha }}" "${{ github.sha }}"
+
       - name: Enforce domain structure guard rails
         shell: bash
         run: |

@@ -47,7 +47,7 @@
       </ul>
     </td>
     <td width="48%">
-      <img src="docs/images/app_screen_26_02_3.png" alt="Live rehearsal + analysis overlay" width="520" />
+      <img src="docs/images/app_screen_26_02_4.png" alt="Live rehearsal + analysis overlay" width="520" />
     </td>
   </tr>
 </table>
@@ -119,7 +119,7 @@
 
 ---
 
-## Problems it solves
+## Problems it solves : the “Speaker’s Journey”
 
 <table>
   <tr>
@@ -134,9 +134,12 @@
         Le Pupitre turns rehearsal into an <strong>evidence-based loop</strong>:
         measure → improve → repeat → deliver.
       </p>
+      <p>
+        <strong>As a speaker journey</strong>: Daily Training → Talk Writing → Feedback → Challenging → Jour J
+        </p>
     </td>
     <td width="48%">
-      <img src="docs/images/app_screen_26_02_4.png" alt="Empty stage (anticipation)" width="520" />
+      <img src="docs/images/app_screen_26_02_C.png" alt="Empty stage (anticipation)" width="520" />
     </td>
   </tr>
 </table>
@@ -195,17 +198,7 @@
   </tr>
 </table>
 
----
 
-## The “Speaker’s Journey”
-
-<p align="center">
-  <img src="docs/images/app_screen_26_02_C.png" alt="Speaker's Journey map" width="900" />
-</p>
-
-<p align="center">
-  <em>Daily Training → Talk Writing → Feedback → Challenging → Jour J</em>
-</p>
 
 ---
 

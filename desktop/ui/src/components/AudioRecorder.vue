@@ -7,6 +7,10 @@ import { RouterLink } from "vue-router";
 import { classifyAsrError } from "../lib/asrErrors";
 import { useI18n } from "../lib/i18n";
 import { useTranscriptionSettings } from "../lib/transcriptionSettings";
+import {
+  buildRecordingStartPayload,
+  buildTranscribeAudioPayload,
+} from "../lib/asrPayloads";
 import { appStore } from "../stores/app";
 import { invokeChecked } from "../composables/useIpc";
 import {
@@ -203,7 +207,7 @@ async function startRecording() {
       "recording_start",
       RecordingStartPayloadSchema,
       RecordingStartResponseSchema,
-      { profileId: activeProfileId.value, asrSettings: transcriptionSettings.value }
+      buildRecordingStartPayload(activeProfileId.value, transcriptionSettings.value)
     );
     recordingId.value = result.recordingId;
     isRecording.value = true;
@@ -260,11 +264,11 @@ async function transcribeRecording() {
       "transcribe_audio",
       TranscribeAudioPayloadSchema,
       TranscribeResponseSchema,
-      {
-        profileId: activeProfileId.value,
-        audioArtifactId: lastArtifactId.value,
-        asrSettings: transcriptionSettings.value,
-      }
+      buildTranscribeAudioPayload(
+        activeProfileId.value,
+        lastArtifactId.value,
+        transcriptionSettings.value
+      )
     );
     transcribeJobId.value = response.jobId ?? transcribeJobId.value;
     lastTranscriptId.value = response.transcriptId;

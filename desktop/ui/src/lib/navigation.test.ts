@@ -187,7 +187,7 @@ describe("buildContextBreadcrumbs", () => {
     expect(breadcrumbs[0]?.to).toBe("/talks/p-7/train");
     expect(breadcrumbs[1]?.label).toBe("T7-Q-15");
     expect(breadcrumbs[1]?.to).toBe("/quest/Q-15?from=talk&projectId=p-7");
-    expect(breadcrumbs[2]?.to).toBe("/feedback/fb-22");
+    expect(breadcrumbs[2]?.to).toBe("/feedback/fb-22?projectId=p-7");
   });
 
   it("builds peer review breadcrumb with project query context", () => {
@@ -204,8 +204,35 @@ describe("buildContextBreadcrumbs", () => {
     );
 
     expect(breadcrumbs.length).toBe(2);
-    expect(breadcrumbs[0]?.to).toBe("/talks/p-7/train");
+    expect(breadcrumbs[0]?.to).toBe("/talks/p-7/train?projectId=p-7");
     expect(breadcrumbs[1]?.to).toBe("/peer-review/pr-42?projectId=p-7");
+  });
+
+  it("keeps existing query params across generated links", () => {
+    const breadcrumbs = buildContextBreadcrumbs(
+      baseContext({
+        routeName: "feedback",
+        routeParams: { feedbackId: "fb-22" },
+        routeQuery: { from: "timeline", tab: "all", projectId: "p-legacy" },
+        projects: [PROJECT_P7],
+        activeProject: ACTIVE_PROJECT_P7,
+        lastFeedbackContext: {
+          subject_type: "attempt",
+          subject_id: "att-1",
+          project_id: "p-7",
+          quest_code: "Q-15",
+          quest_title: "Talk opener",
+          run_id: null,
+        },
+        getTalkNumber: () => 7,
+        formatQuestCode: (_projectId: string, questCode: string) => `T7-${questCode}`,
+      }),
+      (key) => key
+    );
+
+    expect(breadcrumbs[0]?.to).toBe("/talks/p-7/train?from=timeline&tab=all&projectId=p-legacy");
+    expect(breadcrumbs[1]?.to).toBe("/quest/Q-15?tab=all&from=talk&projectId=p-7");
+    expect(breadcrumbs[2]?.to).toBe("/feedback/fb-22?from=timeline&tab=all&projectId=p-7");
   });
 
   it("does not emit talk breadcrumbs on onboarding/help routes", () => {

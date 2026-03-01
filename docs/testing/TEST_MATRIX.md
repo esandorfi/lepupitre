@@ -48,5 +48,5 @@ If a test becomes hard to read or requires heavy ad hoc setup, treat it as a cod
 
 ## Enforcement
 
-CI enforces selected high-risk backend obligations.
+CI enforces selected high-risk backend and UI obligations.
 Enforcement mechanics live in repository scripts/workflows and may evolve without changing this domain contract document.

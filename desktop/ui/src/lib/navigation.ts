@@ -132,6 +132,40 @@ function truncate(value: string, max = 18): string {
   return `${value.slice(0, Math.max(0, max - 3))}...`;
 }
 
+function appendQuery(
+  path: string,
+  query: Record<string, unknown>,
+  overrides: Record<string, string | null>
+): string {
+  const params = new URLSearchParams();
+  for (const [key, raw] of Object.entries(query)) {
+    if (typeof raw === "string") {
+      params.append(key, raw);
+      continue;
+    }
+    if (Array.isArray(raw)) {
+      for (const item of raw) {
+        if (typeof item === "string") {
+          params.append(key, item);
+        }
+      }
+    }
+  }
+
+  for (const [key, value] of Object.entries(overrides)) {
+    params.delete(key);
+    if (value) {
+      params.set(key, value);
+    }
+  }
+
+  const serialized = params.toString();
+  if (!serialized) {
+    return path;
+  }
+  return `${path}?${serialized}`;
+}
+
 function isTalkRoute(routeName: string | null): routeName is RouteName {
   return Boolean(routeName && TALK_ROUTE_NAMES.has(routeName as RouteName));
 }
@@ -141,12 +175,15 @@ function resolveActiveTalkId(context: ShellNavigationContext): string {
   if (paramId) {
     return paramId;
   }
+  if (context.routeName === "feedback") {
+    const feedbackProjectId = context.lastFeedbackContext?.project_id ?? "";
+    if (feedbackProjectId) {
+      return feedbackProjectId;
+    }
+  }
   const queryId = readValue(context.routeQuery, "projectId");
   if (queryId) {
     return queryId;
-  }
-  if (context.routeName === "feedback") {
-    return context.lastFeedbackContext?.project_id ?? "";
   }
   if (context.routeName === "boss-run") {
     return context.activeProject?.id ?? "";
@@ -233,19 +270,25 @@ export function buildContextBreadcrumbs(
   const activeQuestCode = resolveActiveQuestCode(context);
   const activeFeedbackId = resolveActiveFeedbackId(context);
   const activePeerReviewId = resolveActivePeerReviewId(context);
-  const talkReportLink = activeTalkId ? `/talks/${activeTalkId}/train` : "/talks";
+  const talkReportLink = activeTalkId
+    ? appendQuery(`/talks/${activeTalkId}/train`, context.routeQuery, {})
+    : appendQuery("/talks", context.routeQuery, {});
   const projectId = activeTalkId || context.activeProject?.id || "";
   const questLink = activeQuestCode
-    ? projectId
-      ? `/quest/${activeQuestCode}?from=talk&projectId=${projectId}`
-      : `/quest/${activeQuestCode}`
+    ? appendQuery(`/quest/${activeQuestCode}`, context.routeQuery, {
+        from: "talk",
+        projectId: projectId || null,
+      })
     : "/";
-  const feedbackLink = activeFeedbackId ? `/feedback/${activeFeedbackId}` : "/";
-  const peerReviewProjectId = readValue(context.routeQuery, "projectId");
+  const feedbackLink = activeFeedbackId
+    ? appendQuery(`/feedback/${activeFeedbackId}`, context.routeQuery, {
+        projectId: projectId || null,
+      })
+    : "/";
   const peerReviewLink = activePeerReviewId
-    ? peerReviewProjectId
-      ? `/peer-review/${activePeerReviewId}?projectId=${peerReviewProjectId}`
-      : `/peer-review/${activePeerReviewId}`
+    ? appendQuery(`/peer-review/${activePeerReviewId}`, context.routeQuery, {
+        projectId: projectId || null,
+      })
     : "/";
 
   const items: ContextBreadcrumb[] = [];
