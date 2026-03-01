@@ -202,6 +202,11 @@ UI (`desktop/ui/src`)
   - Rust: `commands/feedback.rs` now imports `domain::feedback`.
   - Guard rails: legacy path checks now enforce removal of `core/feedback.rs`.
 
+- 2026-03-01: Topology reset continued (training/quest context).
+  - Rust: moved `quest` context from `core/quest.rs` to `domain/training/quest.rs`.
+  - Rust: `commands/quest.rs` now imports `domain::training::quest`.
+  - Guard rails: legacy path checks now enforce removal of `core/quest.rs`.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.

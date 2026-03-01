@@ -47,18 +47,20 @@ check_path_absent "desktop/src-tauri/src/core/workspace.rs"
 check_path_absent "desktop/src-tauri/src/core/project.rs"
 check_path_absent "desktop/src-tauri/src/core/outline.rs"
 check_path_absent "desktop/src-tauri/src/core/feedback.rs"
+check_path_absent "desktop/src-tauri/src/core/quest.rs"
 
 # Command wrappers for migrated contexts must import new layer paths.
 check_forbidden_match \
   "Migrated command wrappers still import legacy core contexts." \
-  'crate::core::(run|coach|preferences|workspace|project|outline|feedback)' \
+  'crate::core::(run|coach|preferences|workspace|project|outline|feedback|quest)' \
   desktop/src-tauri/src/commands/run.rs \
   desktop/src-tauri/src/commands/coach.rs \
   desktop/src-tauri/src/commands/preferences.rs \
   desktop/src-tauri/src/commands/profile.rs \
   desktop/src-tauri/src/commands/project.rs \
   desktop/src-tauri/src/commands/outline.rs \
-  desktop/src-tauri/src/commands/feedback.rs
+  desktop/src-tauri/src/commands/feedback.rs \
+  desktop/src-tauri/src/commands/quest.rs
 
 # Dependency direction: migrated command wrappers must not contain SQL/DB logic.
 check_forbidden_match \

@@ -11,7 +11,6 @@ pub mod ids;
 pub mod models;
 pub mod pack;
 pub mod peer_review;
-pub mod quest;
 pub mod recorder;
 pub mod recording;
 pub mod seed;
@@ -41,6 +40,10 @@ pub mod outline {
 
 pub mod project {
     pub use crate::domain::talk::project::*;
+}
+
+pub mod quest {
+    pub use crate::domain::training::quest::*;
 }
 
 pub mod workspace {
