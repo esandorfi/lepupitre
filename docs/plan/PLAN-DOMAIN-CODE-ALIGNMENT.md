@@ -355,6 +355,11 @@ UI (`desktop/ui/src`)
   - Structure: read-side project fetch/list/active/training-state queries live in `queries.rs`; create/update/active-state writes live in `writes.rs`.
   - Goal: keep talk project persistence code role-focused and reduce monolithic repository growth.
 
+- 2026-03-01: Domain decomposition continued (ASR transcript punctuation rules split).
+  - Rust: extracted spoken punctuation rule contracts and language dictionaries from `domain/asr/transcript/punctuation.rs` into `domain/asr/transcript/punctuation_rules.rs`.
+  - Structure: `punctuation.rs` now focuses on token matching and text rewriting flow; `punctuation_rules.rs` owns rule data and language selection.
+  - Goal: isolate large static rule dictionaries from processing logic to keep files smaller and edits safer.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
