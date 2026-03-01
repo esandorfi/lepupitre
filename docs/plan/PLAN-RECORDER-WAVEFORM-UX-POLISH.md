@@ -1,6 +1,6 @@
 # Plan: Recorder Waveform + UX Polish (Deferred Scope)
 
-Status: in_progress  
+Status: implemented  
 Parent: [PLAN-RECORDER-VOICE-MEMO-UX.md](PLAN-RECORDER-VOICE-MEMO-UX.md)
 
 ## Execution checkpoint (2026-03-01)
@@ -33,6 +33,15 @@ Delivered in this pass:
   - recorder now exposes explicit sidecar-missing recovery CTA from quick-clean entrypoint
   - model-missing path remains routed to Settings; sidecar-missing path routes to Help
   - missing prerequisites are now actionable from both blocked-message and diagnostics context
+
+### Validation completed
+
+- `pnpm -C desktop ui:typecheck`
+- `pnpm -C desktop ui:test`
+- `pnpm -C desktop docs:lint`
+- `cargo fmt --manifest-path desktop/src-tauri/Cargo.toml --all -- --check`
+- `cargo clippy --manifest-path desktop/src-tauri/Cargo.toml --all-targets --all-features -- -D warnings`
+- `cargo test --manifest-path desktop/src-tauri/Cargo.toml`
 
 ## Goal
 
