@@ -61,7 +61,8 @@ if (gitOk(`git rev-parse -q --verify refs/tags/${tag}`)) {
   process.exit(1);
 }
 
-execSync(`git tag ${tag}`, { cwd: repoDir, stdio: "inherit" });
+const tagMessage = `Release ${tag}`;
+execSync(`git tag -a ${tag} -m "${tagMessage}"`, { cwd: repoDir, stdio: "inherit" });
 
 try {
   execSync(`git push origin ${branch}`, { cwd: repoDir, stdio: "inherit" });

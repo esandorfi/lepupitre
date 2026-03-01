@@ -230,7 +230,8 @@ if (doCommit) {
 }
 
 if (!noTag) {
-  execSync(`git tag ${nextTag}`, { stdio: "inherit" });
+  const tagMessage = `Release ${nextTag}`;
+  execSync(`git tag -a ${nextTag} -m "${tagMessage}"`, { stdio: "inherit" });
 }
 
 if (doPush) {
