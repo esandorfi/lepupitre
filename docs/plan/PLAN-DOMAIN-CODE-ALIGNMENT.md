@@ -285,6 +285,11 @@ UI (`desktop/ui/src`)
   - Structure: `mod.rs` now exposes thin entrypoints; progress math, blueprint generation, and mascot message logic live in dedicated files.
   - Goal: make coach behavior easier to evolve with feature-oriented, small files.
 
+- 2026-03-01: Domain decomposition continued (ASR settings split).
+  - Rust: extracted ASR settings payload/runtime models and normalization logic from `domain/asr/mod.rs` into `domain/asr/settings.rs`.
+  - Structure: `domain/asr/mod.rs` now re-exports settings APIs while keeping callers unchanged.
+  - Goal: progressively reduce ASR module size with safe, behavior-preserving slices.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
