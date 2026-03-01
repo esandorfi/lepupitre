@@ -1,42 +1,41 @@
 # PLAN-DOMAIN-CODE-ALIGNMENT
 
-Status: proposed  
-Owner: maintainers  
-Last updated: 2026-02-28
+Status: in_progress
+Owner: maintainers
+Last updated: 2026-03-01
 
 ## Objective
 
 Align repository structure with product bounded contexts so code reads by use-case first, framework second.
 
-## Audit snapshot
+## Full bounded-context map
 
-Current hotspots:
-- Rust command modules are large and mixed by concern (`audio.rs`, `pack.rs`, `transcription.rs`, `coach.rs`).
-- UI has a large orchestration store (`desktop/ui/src/stores/app.ts`) and several large page files.
-- Domain logic is partly centralized in `ui/src/lib/*`, which is good, but domain ownership is not explicit by context.
+1. Workspace
+- Profiles, active workspace, workspace-scoped preferences, diagnostics entrypoints.
 
-## Bounded contexts (target map)
+1. Talk
+- Talk lifecycle, metadata, stage transitions, outline/builder.
 
-1. Workspace context
-- profiles, active workspace selection, workspace-scoped preferences.
+1. Training
+- Quest selection, submissions, progression and readiness guards.
 
-1. Talk lifecycle context
-- talk creation, metadata, stage transitions, outline/builder.
+1. Run
+- Boss run lifecycle, run persistence, transcript binding.
 
-1. Training/Quest context
-- daily quest selection, attempts, progression guardrails.
+1. Feedback
+- Analysis generation, feedback context/timeline/notes.
 
-1. Run/Feedback context
-- boss runs, analysis, feedback context/timeline/notes.
+1. Exchange
+- Pack export/import, peer review payloads.
 
-1. Exchange context
-- pack export/import, peer review payloads.
+1. Recorder
+- Capture lifecycle, input devices, pause/resume/stop, telemetry, waveform payloads, trim/reveal.
 
-1. ASR context
-- sidecar lifecycle, model management, live/final transcription.
+1. ASR
+- Sidecar lifecycle, model management, live/final transcription, transcript export.
 
-1. Platform context
-- preferences persistence, security probes, release/runtime wiring.
+1. Platform
+- Preferences persistence policy, security probes, release/runtime wiring.
 
 ## Target topology (incremental)
 
@@ -44,58 +43,84 @@ Rust (`desktop/src-tauri/src`)
 - `commands/`
   - thin command entrypoints only (validation + orchestration).
 - `core/`
-  - `domain/<context>/` models + invariants.
-  - `application/<context>/` use-case services.
-  - `infra/sqlite/<context>/` table/query modules.
-  - `infra/asr/` sidecar/model runtime.
-  - shared utilities (`ids`, `time`, errors).
+  - domain services by bounded context (`workspace`, `talk`, `training`, `run`, `feedback`, `exchange`, `recorder`, `asr`, `platform`).
+  - DB/data adapters by domain (`repo.rs`, `queries.rs`, `types.rs`) when SQL is involved.
+  - shared utilities (`ids`, `time`, typed models, errors).
 
 UI (`desktop/ui/src`)
 - `domains/<context>/`
-  - `logic/` pure domain logic + tests.
   - `api/` IPC adapters (schema-aware).
-  - `state/` context store/composables.
-  - `ui/` context-specific components.
+  - `state/` context stores/composables.
+  - `ui/` context components.
 - `app/` shell, router composition, cross-domain wiring.
-- Keep `lib/` only for truly cross-domain utilities.
+- Keep `lib/` only for truly cross-domain pure utilities.
+
+## Guard rails (enforced)
+
+1. Dependency direction
+- Rust `core` must not depend on `commands`.
+- Migrated command wrappers must not contain direct DB/SQL logic.
+- UI domain APIs must not import `stores`, `pages`, or `components`.
+
+1. Hotspot size budgets
+- Existing migrated wrapper budgets stay enforced.
+- Active hotspot budgets now include:
+  - `desktop/src-tauri/src/commands/audio.rs`
+  - `desktop/src-tauri/src/commands/transcription.rs`
+  - `desktop/ui/src/components/AudioRecorder.vue`
+  - `desktop/ui/src/domains/recorder/api.ts`
+  - `desktop/ui/src/domains/asr/api.ts`
 
 ## Migration strategy
 
-1. Freeze dependency direction rules
-- command/page layers may depend on domain logic; domain logic must not depend on page/view concerns.
+1. Freeze boundary rules first
+- Keep command/page layers orchestration-only.
+- Keep domain logic free of view framework concerns.
 
-1. Extract by vertical slice
-- prioritize `workspace`, `quest`, `feedback`, then `talk`, then `pack`.
-- move logic without behavior changes first; keep PRs small.
+1. Extract by vertical slices
+- Keep behavior unchanged per slice.
+- Prefer small reversible pull requests.
 
-1. Split monolith orchestrators
-- Rust: break large command files into service modules.
-- UI: break `stores/app.ts` into context stores with a small app coordinator.
+1. Prioritized sequence
+- Completed: workspace, training/quest, feedback, talk, exchange.
+- In progress: recorder + ASR split.
+- Next: run/platform boundary cleanup and app coordinator reduction.
 
-1. Add structural guard rails
-- file-size budget warnings for command/store/page hotspots.
-- lint/check script for forbidden cross-context imports.
+1. Keep IPC contract stability during refactor
+- Preserve command names and event channels where possible.
+- Any field/name change updates Rust serde + Zod schemas + UI usage in the same PR.
 
 ## Progress updates
 
-- 2026-02-28: Workspace slice started.
-- Rust: `commands/profile.rs` reduced to thin command entrypoints; workspace behavior moved to `core/workspace.rs`.
-- UI: workspace profile IPC calls extracted to `ui/src/domains/workspace/api.ts`; `stores/app.ts` consumes this boundary.
-- 2026-02-28: Quest slice completed.
-- Rust: `commands/quest.rs` reduced to thin command entrypoints; quest behavior moved to `core/quest.rs`.
-- UI: quest IPC calls extracted to `ui/src/domains/quest/api.ts`; `stores/app.ts` consumes this boundary.
+- 2026-02-28: Workspace slice completed.
+  - Rust: `commands/profile.rs` reduced to thin command entrypoints; workspace behavior moved to `core/workspace.rs`.
+  - UI: workspace profile IPC calls extracted to `ui/src/domains/workspace/api.ts`; `stores/app.ts` consumes this boundary.
+
+- 2026-02-28: Training/quest slice completed.
+  - Rust: `commands/quest.rs` reduced to thin command entrypoints; quest behavior moved to `core/quest.rs`.
+  - UI: quest IPC calls extracted to `ui/src/domains/quest/api.ts`; `stores/app.ts` consumes this boundary.
+
 - 2026-02-28: Feedback slice completed.
-- Rust: `commands/feedback.rs` reduced to thin command entrypoints; feedback behavior moved to `core/feedback.rs`.
-- UI: feedback IPC calls extracted to `ui/src/domains/feedback/api.ts`; `stores/app.ts` consumes this boundary.
+  - Rust: `commands/feedback.rs` reduced to thin command entrypoints; feedback behavior moved to `core/feedback.rs`.
+  - UI: feedback IPC calls extracted to `ui/src/domains/feedback/api.ts`; `stores/app.ts` consumes this boundary.
+
 - 2026-02-28: Talk slice completed.
-- Rust: `commands/project.rs` and `commands/outline.rs` reduced to thin command entrypoints; talk behavior moved to `core/project.rs` and `core/outline.rs`.
-- UI: talk IPC calls extracted to `ui/src/domains/talk/api.ts`; `stores/app.ts` consumes this boundary.
-- 2026-02-28: Pack/exchange slice completed.
-- Rust: `commands/pack.rs` and `commands/peer_review.rs` reduced to thin command entrypoints; exchange behavior moved to `core/pack.rs` and `core/peer_review.rs`.
-- UI: pack/review IPC calls extracted to `ui/src/domains/pack/api.ts`; `stores/app.ts` consumes this boundary.
+  - Rust: `commands/project.rs` and `commands/outline.rs` reduced to thin command entrypoints; talk behavior moved to `core/project.rs` and `core/outline.rs`.
+  - UI: talk IPC calls extracted to `ui/src/domains/talk/api.ts`; `stores/app.ts` consumes this boundary.
+
+- 2026-02-28: Exchange slice completed.
+  - Rust: `commands/pack.rs` and `commands/peer_review.rs` reduced to thin command entrypoints; exchange behavior moved to `core/pack.rs` and `core/peer_review.rs`.
+  - UI: pack/review IPC calls extracted to `ui/src/domains/pack/api.ts`; `stores/app.ts` consumes this boundary.
+
 - 2026-02-28: Structural guard rails added.
-- Added `scripts/check-domain-structure.sh` with dependency-direction checks and explicit file-size budgets.
-- CI now enforces this guard rail on each run.
+  - Added `scripts/check-domain-structure.sh` with dependency-direction checks and file-size budgets.
+  - CI now enforces this guard rail on each run.
+
+- 2026-03-01: Recorder + ASR UI boundary slice completed.
+  - UI: recorder IPC calls extracted to `ui/src/domains/recorder/api.ts`.
+  - UI: ASR/transcript IPC calls extracted to `ui/src/domains/asr/api.ts`.
+  - UI: `AudioRecorder.vue` now consumes recorder/ASR domain APIs instead of direct IPC command calls.
+  - Guard rails: domain-structure size budgets updated for recorder/ASR hotspot files.
 
 ## Acceptance criteria
 

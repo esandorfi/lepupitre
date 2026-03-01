@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   AudioTrimPayloadSchema,
+  AudioRevealWavPayloadSchema,
   AsrFinalProgressEventSchema,
   AsrDiagnosticsExportResponseSchema,
   AsrSidecarStatusResponseSchema,
@@ -51,6 +52,13 @@ describe("ipc schemas", () => {
       audioArtifactId: "a-1",
       startMs: 1000,
       endMs: 2000,
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  it("accepts audio reveal payload", () => {
+    const parsed = AudioRevealWavPayloadSchema.safeParse({
+      path: "C:/Users/name/AppData/Roaming/LePupitre/profiles/p-1/audio/a-1.wav",
     });
     expect(parsed.success).toBe(true);
   });

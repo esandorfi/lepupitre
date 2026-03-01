@@ -471,6 +471,10 @@ export const AudioTrimResponseSchema = AudioSaveResponseSchema.extend({
   durationMs: z.number().int().nonnegative(),
 });
 
+export const AudioRevealWavPayloadSchema = z.object({
+  path: z.string().min(1),
+});
+
 export const RecordingAsrSettingsSchema = z
   .object({
     model: z.enum(["tiny", "base"]).optional(),

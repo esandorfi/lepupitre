@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { convertFileSrc, invoke } from "@tauri-apps/api/core";
+import { convertFileSrc } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-shell";
 import { RouterLink } from "vue-router";
@@ -42,43 +42,36 @@ import {
   buildTranscribeAudioPayload,
 } from "../lib/asrPayloads";
 import { appStore } from "../stores/app";
-import { invokeChecked } from "../composables/useIpc";
 import {
-  AudioTrimPayloadSchema,
-  AudioTrimResponseSchema,
+  audioRevealWav,
+  audioTrimWav,
+  listRecordingInputDevices,
+  recordingPause,
+  recordingResume,
+  recordingStart,
+  recordingStatus,
+  recordingStop,
+  recordingTelemetryBudget,
+} from "../domains/recorder/api";
+import {
+  asrModelVerify,
+  asrSidecarStatus,
+  transcriptEditSave,
+  transcriptExport,
+  transcriptGet,
+  transcribeAudio,
+} from "../domains/asr/api";
+import {
   AsrCommitEventSchema,
   AsrFinalProgressEventSchema,
   AsrFinalResultEventSchema,
-  AsrModelVerifyPayloadSchema,
-  AsrModelVerifyResultSchema,
   AsrPartialEventSchema,
-  AsrSidecarStatusResponseSchema,
-  EmptyPayloadSchema,
-  ExportResultSchema,
-  RecordingPausePayloadSchema,
-  RecordingResumePayloadSchema,
-  RecordingStartPayloadSchema,
-  RecordingStartResponseSchema,
-  RecordingInputDevicesResponseSchema,
   type RecordingInputDevice,
-  RecordingTelemetryBudgetResponseSchema,
   type RecordingTelemetryBudget,
   RecordingTelemetryEventSchema,
-  RecordingStatusPayloadSchema,
-  RecordingStatusResponseSchema,
-  RecordingStopPayloadSchema,
-  RecordingStopResponseSchema,
-  TranscriptEditSavePayloadSchema,
-  TranscriptEditSaveResponseSchema,
   TranscriptExportFormat,
-  TranscriptExportPayloadSchema,
-  TranscriptGetPayloadSchema,
   TranscriptSegment,
   TranscriptV1,
-  TranscriptV1Schema,
-  TranscribeAudioPayloadSchema,
-  TranscribeResponseSchema,
-  VoidResponseSchema,
 } from "../schemas/ipc";
 
 type AudioStatusKey =
@@ -459,12 +452,7 @@ async function refreshStatus() {
     return;
   }
   try {
-    const status = await invokeChecked(
-      "recording_status",
-      RecordingStatusPayloadSchema,
-      RecordingStatusResponseSchema,
-      { recordingId: currentRecordingId }
-    );
+    const status = await recordingStatus(currentRecordingId);
     if (recordingId.value !== currentRecordingId) {
       return;
     }
@@ -486,12 +474,7 @@ async function refreshTranscribeReadiness() {
   clearError();
 
   try {
-    await invokeChecked(
-      "asr_sidecar_status",
-      EmptyPayloadSchema,
-      AsrSidecarStatusResponseSchema,
-      {}
-    );
+    await asrSidecarStatus();
   } catch (err) {
     const code = classifyAsrError(err instanceof Error ? err.message : String(err));
     if (code === "sidecar_missing") {
@@ -508,12 +491,7 @@ async function refreshTranscribeReadiness() {
 
   try {
     const model = transcriptionSettings.value.model ?? "tiny";
-    const verified = await invokeChecked(
-      "asr_model_verify",
-      AsrModelVerifyPayloadSchema,
-      AsrModelVerifyResultSchema,
-      { modelId: model }
-    );
+    const verified = await asrModelVerify(model);
     if (!verified.installed || verified.checksum_ok === false) {
       transcribeBlockedCode.value = "model_missing";
       transcribeBlockedMessage.value = t("audio.error_model_missing");
@@ -530,12 +508,7 @@ async function refreshTranscribeReadiness() {
 async function refreshInputDevices() {
   isLoadingInputDevices.value = true;
   try {
-    const devices = await invokeChecked(
-      "recording_input_devices",
-      EmptyPayloadSchema,
-      RecordingInputDevicesResponseSchema,
-      {}
-    );
+    const devices = await listRecordingInputDevices();
     inputDevices.value = devices;
     if (devices.length === 0) {
       selectedInputDeviceId.value = null;
@@ -557,12 +530,7 @@ async function refreshInputDevices() {
 
 async function refreshTelemetryBudget() {
   try {
-    telemetryBudget.value = await invokeChecked(
-      "recording_telemetry_budget",
-      EmptyPayloadSchema,
-      RecordingTelemetryBudgetResponseSchema,
-      {}
-    );
+    telemetryBudget.value = await recordingTelemetryBudget();
   } catch {
     telemetryBudget.value = null;
   }
@@ -606,10 +574,7 @@ async function startRecording() {
   resetTelemetryObservation();
 
   try {
-    const result = await invokeChecked(
-      "recording_start",
-      RecordingStartPayloadSchema,
-      RecordingStartResponseSchema,
+    const result = await recordingStart(
       buildRecordingStartPayload(
         activeProfileId.value,
         transcriptionSettings.value,
@@ -634,9 +599,7 @@ async function pauseRecording() {
     return;
   }
   try {
-    await invokeChecked("recording_pause", RecordingPausePayloadSchema, VoidResponseSchema, {
-      recordingId: recordingId.value,
-    });
+    await recordingPause(recordingId.value);
     applyTransport("pause");
     statusKey.value = "audio.status_recording";
     announce(t("audio.announcement_paused"));
@@ -650,9 +613,7 @@ async function resumeRecording() {
     return;
   }
   try {
-    await invokeChecked("recording_resume", RecordingResumePayloadSchema, VoidResponseSchema, {
-      recordingId: recordingId.value,
-    });
+    await recordingResume(recordingId.value);
     applyTransport("resume");
     statusKey.value = "audio.status_recording";
     announce(t("audio.announcement_resumed"));
@@ -671,12 +632,7 @@ async function stopRecording() {
   clearTelemetryFallbackTimer();
 
   try {
-    const result = await invokeChecked(
-      "recording_stop",
-      RecordingStopPayloadSchema,
-      RecordingStopResponseSchema,
-      { profileId: activeProfileId.value, recordingId: recordingId.value }
-    );
+    const result = await recordingStop(activeProfileId.value, recordingId.value);
     lastSavedPath.value = result.path;
     lastArtifactId.value = result.artifactId;
     lastDurationSec.value = result.durationMs / 1000;
@@ -712,17 +668,12 @@ async function applyTrim(payload: { startMs: number; endMs: number }) {
 
   isApplyingTrim.value = true;
   try {
-    const result = await invokeChecked(
-      "audio_trim_wav",
-      AudioTrimPayloadSchema,
-      AudioTrimResponseSchema,
-      {
-        profileId: activeProfileId.value,
-        audioArtifactId: lastArtifactId.value,
-        startMs: payload.startMs,
-        endMs: payload.endMs,
-      }
-    );
+    const result = await audioTrimWav({
+      profileId: activeProfileId.value,
+      audioArtifactId: lastArtifactId.value,
+      startMs: payload.startMs,
+      endMs: payload.endMs,
+    });
     lastSavedPath.value = result.path;
     lastArtifactId.value = result.artifactId;
     lastDurationSec.value = result.durationMs / 1000;
@@ -755,10 +706,7 @@ async function transcribeRecording() {
   transcribeStageLabel.value = null;
 
   try {
-    const response = await invokeChecked(
-      "transcribe_audio",
-      TranscribeAudioPayloadSchema,
-      TranscribeResponseSchema,
+    const response = await transcribeAudio(
       buildTranscribeAudioPayload(
         activeProfileId.value,
         lastArtifactId.value,
@@ -770,15 +718,7 @@ async function transcribeRecording() {
     editedTranscriptId.value = null;
     exportPath.value = null;
 
-    const loaded = await invokeChecked(
-      "transcript_get",
-      TranscriptGetPayloadSchema,
-      TranscriptV1Schema,
-      {
-        profileId: activeProfileId.value,
-        transcriptId: response.transcriptId,
-      }
-    );
+    const loaded = await transcriptGet(activeProfileId.value, response.transcriptId);
     transcript.value = loaded;
     transcriptDraftText.value = transcriptToEditorText(loaded);
     emit("transcribed", {
@@ -826,26 +766,13 @@ async function saveEditedTranscript() {
   isSavingEdited.value = true;
   clearError();
   try {
-    const saved = await invokeChecked(
-      "transcript_edit_save",
-      TranscriptEditSavePayloadSchema,
-      TranscriptEditSaveResponseSchema,
-      {
-        profileId: activeProfileId.value,
-        transcriptId: baseTranscriptId.value,
-        editedText,
-      }
+    const saved = await transcriptEditSave(
+      activeProfileId.value,
+      baseTranscriptId.value,
+      editedText
     );
     editedTranscriptId.value = saved.transcriptId;
-    const loaded = await invokeChecked(
-      "transcript_get",
-      TranscriptGetPayloadSchema,
-      TranscriptV1Schema,
-      {
-        profileId: activeProfileId.value,
-        transcriptId: saved.transcriptId,
-      }
-    );
+    const loaded = await transcriptGet(activeProfileId.value, saved.transcriptId);
     transcript.value = loaded;
     transcriptDraftText.value = transcriptToEditorText(loaded);
     emit("transcribed", {
@@ -908,15 +835,10 @@ async function exportTranscript(format: TranscriptExportFormat) {
   isExporting.value = true;
   clearError();
   try {
-    const result = await invokeChecked(
-      "transcript_export",
-      TranscriptExportPayloadSchema,
-      ExportResultSchema,
-      {
-        profileId: activeProfileId.value,
-        transcriptId: activeTranscriptIdForAnalysis.value,
-        format,
-      }
+    const result = await transcriptExport(
+      activeProfileId.value,
+      activeTranscriptIdForAnalysis.value,
+      format
     );
     exportPath.value = result.path;
   } catch (err) {
@@ -956,7 +878,7 @@ async function revealRecording() {
   isRevealing.value = true;
   clearError();
   try {
-    await invoke("audio_reveal_wav", { path: lastSavedPath.value });
+    await audioRevealWav(lastSavedPath.value);
   } catch (err) {
     setError(err instanceof Error ? err.message : String(err));
   } finally {

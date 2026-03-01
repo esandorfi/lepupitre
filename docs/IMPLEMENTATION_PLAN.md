@@ -120,7 +120,7 @@ Done when:
 Goal: align Rust and UI code layout with product bounded contexts for readability and maintainability.
 
 Scope:
-- Define bounded contexts and ownership map (workspace, talks, training/quest, runs/feedback, packs/reviews, ASR, preferences).
+- Define bounded contexts and ownership map (workspace, talks, training/quest, runs, feedback, packs/reviews, recorder, ASR, preferences/platform).
 - Introduce domain-oriented directory layout in Rust and UI incrementally.
 - Reduce monolithic orchestration files by extracting domain services/modules.
 - Add structural guard rails (path conventions, file-size budgets, dependency direction rules).

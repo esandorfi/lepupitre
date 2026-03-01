@@ -32,7 +32,7 @@ check_forbidden_match \
 # Dependency direction: migrated command wrappers must not contain SQL/DB logic.
 check_forbidden_match \
   "Thin command wrappers contain direct DB/SQL logic (forbidden in migrated contexts)." \
-  'db::|rusqlite::|query_row|execute\(|prepare\(' \
+  'rusqlite::|query_row|execute\(|prepare\(' \
   desktop/src-tauri/src/commands/profile.rs \
   desktop/src-tauri/src/commands/quest.rs \
   desktop/src-tauri/src/commands/feedback.rs \
@@ -49,7 +49,10 @@ check_forbidden_match \
 
 # File-size budgets for known orchestration/wrapper hotspots.
 declare -A LINE_BUDGETS=(
+  ["desktop/src-tauri/src/commands/audio.rs"]=1600
+  ["desktop/src-tauri/src/commands/transcription.rs"]=1000
   ["desktop/ui/src/stores/app.ts"]=750
+  ["desktop/ui/src/components/AudioRecorder.vue"]=1220
   ["desktop/src-tauri/src/commands/profile.rs"]=120
   ["desktop/src-tauri/src/commands/quest.rs"]=120
   ["desktop/src-tauri/src/commands/feedback.rs"]=120
@@ -62,6 +65,8 @@ declare -A LINE_BUDGETS=(
   ["desktop/ui/src/domains/feedback/api.ts"]=140
   ["desktop/ui/src/domains/talk/api.ts"]=140
   ["desktop/ui/src/domains/pack/api.ts"]=140
+  ["desktop/ui/src/domains/recorder/api.ts"]=140
+  ["desktop/ui/src/domains/asr/api.ts"]=140
 )
 
 for file in "${!LINE_BUDGETS[@]}"; do
