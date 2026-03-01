@@ -350,6 +350,11 @@ UI (`desktop/ui/src`)
   - Structure: read-side quest/attempt/report queries and row mapping live in `queries.rs`; attempt insert/update and quest existence checks live in `writes.rs`.
   - Goal: keep quest persistence logic role-oriented and easier to evolve without growing one SQL monolith file.
 
+- 2026-03-01: Domain decomposition continued (talk project repository split).
+  - Rust: split `domain/talk/project/repo.rs` internals into `domain/talk/project/repo/{queries.rs,writes.rs}` with a small facade preserving current exports.
+  - Structure: read-side project fetch/list/active/training-state queries live in `queries.rs`; create/update/active-state writes live in `writes.rs`.
+  - Goal: keep talk project persistence code role-focused and reduce monolithic repository growth.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
