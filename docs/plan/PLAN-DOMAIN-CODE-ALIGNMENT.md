@@ -370,6 +370,11 @@ UI (`desktop/ui/src`)
   - Structure: `mod.rs` now keeps blueprint orchestration and completion math, `framework.rs` owns framework selection heuristics, and `steps.rs` owns localized step construction.
   - Goal: keep coach blueprint logic small and intention-revealing for future feature evolution.
 
+- 2026-03-01: Domain decomposition continued (coach mascot split).
+  - Rust: replaced `domain/coach/mascot.rs` with `domain/coach/mascot/{mod.rs,routes.rs}`.
+  - Structure: `mod.rs` now handles route-based selection and gating conditions, while `routes.rs` owns localized message payload construction per route/context.
+  - Goal: isolate decision flow from copy payload generation to keep mascot behavior easier to evolve and review.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
