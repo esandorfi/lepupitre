@@ -28,6 +28,11 @@ export const AsrSidecarStatusResponseSchema = z
     dependencies: AsrSidecarDependenciesSchema,
   })
   .strict();
+export const AsrDiagnosticsExportResponseSchema = z
+  .object({
+    path: z.string().min(1),
+  })
+  .strict();
 const sensitivePreferenceKeyFragments = [
   "token",
   "secret",

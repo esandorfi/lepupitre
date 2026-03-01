@@ -75,6 +75,7 @@ Current checks are split across scripts and smoke tests, but support/onboarding 
 
 Execution status (2026-03-01):
 - Phase 1 completed: sidecar `--version`, `doctor --json`, and app-side compatibility gate shipped.
+- Phase 2 started: support diagnostics bundle command (`asr_diagnostics_export`) shipped with redacted path hints.
 
 ## Phase 1 (MVP: operator visibility)
 1. Implement `--version`.

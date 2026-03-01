@@ -113,6 +113,11 @@ Then run:
   - `./scripts/asr-smoke.sh /path/to/lepupitre-asr /path/to/ggml-*.bin`
   - `just asr-smoke-dev /path/to/ggml-*.bin`
   - or `cargo test --manifest-path desktop/src-tauri/Cargo.toml asr_sidecar_smoke_decode` with `LEPUPITRE_ASR_SMOKE=1`.
+- Export support diagnostics bundle from app:
+  - Tauri command: `asr_diagnostics_export`
+  - Output file: `appData/diagnostics/asr/asr-diagnostics-<timestamp>.json`
+  - Bundle includes sidecar doctor payload, model metadata, app/platform info, and known ASR error signatures.
+  - Path values are redacted to filename hints by default.
 
 ### App compatibility gate
 - `asr_sidecar_status` now verifies:

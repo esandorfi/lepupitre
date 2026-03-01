@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   AudioTrimPayloadSchema,
   AsrFinalProgressEventSchema,
+  AsrDiagnosticsExportResponseSchema,
   AsrSidecarStatusResponseSchema,
   FeedbackContextSchema,
   PreferenceKeySchema,
@@ -116,6 +117,13 @@ describe("ipc schemas", () => {
         whisperRuntime: "1.7.6",
         ggml: "bundled_with_whisper_cpp",
       },
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  it("accepts ASR diagnostics export response payload", () => {
+    const parsed = AsrDiagnosticsExportResponseSchema.safeParse({
+      path: "C:/Users/name/AppData/Roaming/LePupitre/diagnostics/asr/asr-diagnostics-20260301T140000Z.json",
     });
     expect(parsed.success).toBe(true);
   });

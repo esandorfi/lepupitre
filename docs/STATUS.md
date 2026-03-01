@@ -26,7 +26,7 @@ This file tracks what is canonical, proposal-only, and archived.
 | [docs/DOCS_GOVERNANCE.md](DOCS_GOVERNANCE.md) | Lifecycle and anti-drift policy | accepted | Maintainers | Enforce in doc PRs |
 | [AGENTS.md](../AGENTS.md) | Agent-only behavior rules | accepted | Maintainers | Keep aligned with governance docs |
 | [docs/plan/PLAN-WHISPER-LOCAL-TRANSCRIPTION.md](plan/PLAN-WHISPER-LOCAL-TRANSCRIPTION.md) | ASR deep plan | implemented | ASR maintainers | Keep synchronized with implementation |
-| [docs/plan/PLAN-ASR-OPS-VERIFICATION.md](plan/PLAN-ASR-OPS-VERIFICATION.md) | ASR ops verification and diagnostics hardening | in_progress | ASR maintainers | Deliver Phase 2 (support bundle + checksum verification + CI doctor checks) |
+| [docs/plan/PLAN-ASR-OPS-VERIFICATION.md](plan/PLAN-ASR-OPS-VERIFICATION.md) | ASR ops verification and diagnostics hardening | in_progress | ASR maintainers | Deliver remaining Phase 2 gates (checksum verification + CI doctor checks) |
 | [docs/plan/PLAN-RECORDER-VOICE-MEMO-UX.md](plan/PLAN-RECORDER-VOICE-MEMO-UX.md) | Recorder voice-memo UX execution plan | implemented | UI/ASR maintainers | Keep in sync with deferred follow-up scope |
 | [docs/plan/PLAN-RECORDER-VOICE-MEMO-UX-RESUME.md](plan/PLAN-RECORDER-VOICE-MEMO-UX-RESUME.md) | Recorder UX resume checklist for next session | implemented | UI/ASR maintainers | Closed on 2026-02-28; keep as handoff history |
 | [docs/plan/PLAN-RECORDER-WAVEFORM-UX-POLISH.md](plan/PLAN-RECORDER-WAVEFORM-UX-POLISH.md) | Deferred recorder enhancements (waveform + polish) | implemented | UI/ASR maintainers | Closed on 2026-03-01 after full validation gate |
