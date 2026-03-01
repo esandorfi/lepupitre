@@ -360,6 +360,11 @@ UI (`desktop/ui/src`)
   - Structure: `punctuation.rs` now focuses on token matching and text rewriting flow; `punctuation_rules.rs` owns rule data and language selection.
   - Goal: isolate large static rule dictionaries from processing logic to keep files smaller and edits safer.
 
+- 2026-03-01: Domain decomposition continued (exchange pack repository internals split).
+  - Rust: split `domain/exchange/pack/repo.rs` internals into `domain/exchange/pack/repo/{lookups.rs,import_persistence.rs}` with a small facade preserving current exports.
+  - Structure: artifact/outline/talk-number lookup helpers live in `lookups.rs`; peer-review import transactional write graph (with rollback tests) lives in `import_persistence.rs`.
+  - Goal: keep exchange repository internals role-focused and easier to evolve without growing a single SQL-heavy file.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
