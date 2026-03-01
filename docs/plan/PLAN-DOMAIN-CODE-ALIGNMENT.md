@@ -300,6 +300,11 @@ UI (`desktop/ui/src`)
   - Structure: `download_model_blocking` is re-exported from `domain/asr/mod.rs`; command call sites remain unchanged.
   - Goal: isolate external I/O heavy download logic from ASR decode/runtime core.
 
+- 2026-03-01: Domain decomposition continued (ASR live decoder split).
+  - Rust: extracted live decode strategy types and benchmark helper from `domain/asr/mod.rs` into `domain/asr/live_decoder.rs`.
+  - Structure: `LiveDecoder`, `SidecarLiveDecoder`, `MockAsrDecoder`, and `benchmark_live_sidecar` are re-exported from `domain/asr/mod.rs`.
+  - Goal: isolate live ASR strategy behavior from core ASR orchestration.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
