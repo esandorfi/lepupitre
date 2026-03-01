@@ -227,6 +227,11 @@ UI (`desktop/ui/src`)
   - Rust: `commands/audio.rs` and `commands/transcription.rs` now import `domain::asr` modules directly.
   - Guard rails: legacy path checks now enforce removal of `core/asr.rs`, `core/asr_live.rs`, and `core/asr_models.rs`.
 
+- 2026-03-01: Topology reset continued (platform infrastructure modules).
+  - Rust: moved `db`, `db_helpers`, `seed`, and `asr_sidecar` from `core/` to `platform/`.
+  - Rust: `commands/audio.rs` and `commands/transcription.rs` now import `platform::db` and `platform::asr_sidecar`.
+  - Guard rails: legacy path checks now enforce removal of `core/db.rs`, `core/db_helpers.rs`, `core/seed.rs`, and `core/asr_sidecar.rs`.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.

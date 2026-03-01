@@ -1,8 +1,9 @@
 pub mod asr_live;
 pub mod asr_models;
 
-use crate::core::{asr_sidecar, models};
+use crate::core::models;
 use crate::kernel::time;
+use crate::platform::asr_sidecar;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::fs::File;

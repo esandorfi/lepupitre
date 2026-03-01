@@ -1,11 +1,7 @@
 pub mod analysis;
 pub mod artifacts;
-pub mod asr_sidecar;
-pub mod db;
-pub mod db_helpers;
 pub mod dsp;
 pub mod models;
-pub mod seed;
 pub mod transcript;
 pub mod vad;
 
@@ -23,6 +19,18 @@ pub mod asr_live {
 
 pub mod asr_models {
     pub use crate::domain::asr::asr_models::*;
+}
+
+pub mod asr_sidecar {
+    pub use crate::platform::asr_sidecar::*;
+}
+
+pub mod db {
+    pub use crate::platform::db::*;
+}
+
+pub mod db_helpers {
+    pub use crate::platform::db_helpers::*;
 }
 
 pub mod feedback {
@@ -47,6 +55,10 @@ pub mod preferences {
 
 pub mod run {
     pub use crate::domain::run::*;
+}
+
+pub mod seed {
+    pub use crate::platform::seed::*;
 }
 
 pub mod time {
