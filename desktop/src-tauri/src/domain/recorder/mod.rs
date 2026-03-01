@@ -1,3 +1,5 @@
+pub mod recording;
+
 use cpal::traits::{DeviceTrait, HostTrait};
 
 #[derive(Debug, Clone)]

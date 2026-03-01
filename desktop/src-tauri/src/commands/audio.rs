@@ -15,9 +15,9 @@ use crate::core::asr_sidecar;
 use crate::core::db;
 use crate::core::dsp;
 use crate::core::models;
-use crate::core::recorder;
-use crate::core::recording::{LinearResampler, RingBuffer, WavWriter};
 use crate::core::vad::{VadConfig, VadState};
+use crate::domain::recorder;
+use crate::domain::recorder::recording::{LinearResampler, RingBuffer, WavWriter};
 
 const TARGET_SAMPLE_RATE: u32 = 16000;
 const RING_SECONDS: u32 = 30;

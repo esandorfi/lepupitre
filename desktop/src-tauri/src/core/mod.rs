@@ -9,8 +9,6 @@ pub mod db_helpers;
 pub mod dsp;
 pub mod ids;
 pub mod models;
-pub mod recorder;
-pub mod recording;
 pub mod seed;
 pub mod time;
 pub mod transcript;
@@ -50,6 +48,14 @@ pub mod project {
 
 pub mod quest {
     pub use crate::domain::training::quest::*;
+}
+
+pub mod recorder {
+    pub use crate::domain::recorder::*;
+}
+
+pub mod recording {
+    pub use crate::domain::recorder::recording::*;
 }
 
 pub mod workspace {

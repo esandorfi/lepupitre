@@ -212,6 +212,11 @@ UI (`desktop/ui/src`)
   - Rust: `commands/pack.rs` and `commands/peer_review.rs` now import `domain::exchange::*`.
   - Guard rails: legacy path checks now enforce removal of `core/pack.rs` and `core/peer_review.rs`.
 
+- 2026-03-01: Topology reset continued (recorder context).
+  - Rust: moved `recorder` and `recording` modules from `core/` to `domain/recorder/`.
+  - Rust: `commands/audio.rs` now imports `domain::recorder` and `domain::recorder::recording`.
+  - Guard rails: legacy path checks now enforce removal of `core/recorder.rs` and `core/recording.rs`.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
