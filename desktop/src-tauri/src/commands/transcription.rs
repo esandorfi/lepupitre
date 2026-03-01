@@ -1,6 +1,7 @@
-use crate::core::{artifacts, ids, models};
+use crate::core::{ids, models};
 use crate::domain::asr::transcript;
 use crate::domain::asr::{self, asr_models};
+use crate::platform::artifacts;
 use crate::platform::{asr_sidecar, db};
 use serde::{Deserialize, Serialize};
 use tauri::Emitter;

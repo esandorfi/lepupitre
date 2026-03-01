@@ -1,5 +1,6 @@
-use crate::core::{artifacts, models::Quest, models::QuestDaily};
+use crate::core::{models::Quest, models::QuestDaily};
 use crate::kernel::{ids, time};
+use crate::platform::artifacts;
 use crate::platform::db;
 use rusqlite::{params, OptionalExtension};
 use serde::Serialize;

@@ -1,6 +1,7 @@
-use crate::core::{artifacts, models};
+use crate::core::models;
 use crate::domain::asr::transcript;
 use crate::kernel::{ids, time};
+use crate::platform::artifacts;
 use crate::platform::db;
 use rusqlite::{params, Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};

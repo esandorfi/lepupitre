@@ -1,4 +1,5 @@
-use crate::core::{artifacts, models};
+use crate::core::models;
+use crate::platform::artifacts;
 use crate::platform::db;
 use rusqlite::params;
 use serde::Serialize;

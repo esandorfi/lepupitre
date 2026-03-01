@@ -1,6 +1,3 @@
-pub mod artifacts;
-pub mod models;
-
 pub mod coach {
     pub use crate::domain::coach::*;
 }
@@ -19,6 +16,10 @@ pub mod asr_models {
 
 pub mod analysis {
     pub use crate::domain::feedback::analysis::*;
+}
+
+pub mod artifacts {
+    pub use crate::platform::artifacts::*;
 }
 
 pub mod asr_sidecar {
@@ -43,6 +44,10 @@ pub mod dsp {
 
 pub mod ids {
     pub use crate::kernel::ids::*;
+}
+
+pub mod models {
+    pub use crate::kernel::models::*;
 }
 
 pub mod pack {

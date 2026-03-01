@@ -1,3 +1,4 @@
+pub mod artifacts;
 pub mod asr_sidecar;
 pub mod db;
 pub mod db_helpers;

@@ -247,6 +247,21 @@ UI (`desktop/ui/src`)
   - Rust: `commands/transcription.rs`, `domain/feedback`, `domain/run`, and `domain/exchange` now import transcript helpers from `domain::asr::transcript`.
   - Guard rails: legacy path checks now enforce removal of `core/transcript.rs`.
 
+- 2026-03-01: Topology reset continued (artifact infrastructure module).
+  - Rust: moved artifact storage/retrieval helpers from `core/artifacts.rs` to `platform/artifacts.rs`.
+  - Rust: command/domain callers now import artifact helpers from `platform::artifacts`.
+  - Guard rails: legacy path checks now enforce removal of `core/artifacts.rs`.
+
+- 2026-03-01: Topology reset continued (shared model contracts).
+  - Rust: moved shared data contracts from `core/models.rs` to `kernel/models.rs`.
+  - Rust: `core::models` is now a compatibility re-export to `kernel::models`.
+  - Guard rails: legacy path checks now enforce removal of `core/models.rs`.
+
+- 2026-03-01: Topology reset milestone reached (`core/` reduced to compatibility facade).
+  - Rust: removed remaining implementation modules under `core/` (`artifacts`, `models`, `transcript`, `db`, `asr_sidecar`, etc.) by relocating them into `domain/`, `platform/`, and `kernel/`.
+  - Structure: `desktop/src-tauri/src/core/` now contains only `mod.rs` compatibility re-exports.
+  - Next cleanup: progressively replace `crate::core::*` imports with direct `domain/platform/kernel` imports and remove facade aliases when fully migrated.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
