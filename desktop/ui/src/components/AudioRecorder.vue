@@ -11,6 +11,7 @@ import RecorderQuickCleanPanel from "./recorder/RecorderQuickCleanPanel.vue";
 import { classifyAsrError } from "../lib/asrErrors";
 import { useI18n } from "../lib/i18n";
 import { readPreference, writePreference } from "../lib/preferencesStorage";
+import { useUiPreferences } from "../lib/uiPreferences";
 import {
   createRecorderQualityHintStabilizer,
   normalizeRecorderQualityHint,
@@ -93,6 +94,7 @@ const props = withDefaults(
 );
 
 const { t } = useI18n();
+const { settings: uiSettings, setWaveformStyle } = useUiPreferences();
 const { settings: transcriptionSettings, updateSettings: updateTranscriptionSettings } =
   useTranscriptionSettings();
 const emit = defineEmits<{
@@ -178,6 +180,7 @@ const activeTranscriptIdForAnalysis = computed(
 const canAnalyzeRecorder = computed(
   () => !!activeTranscriptIdForAnalysis.value && !!props.canAnalyze
 );
+const waveformStyle = computed(() => uiSettings.value.waveformStyle);
 
 const canExport = computed(() => !!activeTranscriptIdForAnalysis.value);
 const transcribeReadiness = computed(() =>
@@ -1030,6 +1033,7 @@ watch(
       :show-rec-badge="isRecording || isPaused"
       :live-preview="livePreview"
       :waveform-peaks="liveWaveformPeaks"
+      :waveform-style="waveformStyle"
       @primary="handleCapturePrimaryAction"
       @stop="stopRecording"
     />
@@ -1051,6 +1055,7 @@ watch(
       :is-applying-trim="isApplyingTrim"
       :audio-preview-src="audioPreviewSrc"
       :waveform-peaks="lastWaveformPeaks"
+      :waveform-style="waveformStyle"
       @transcribe="transcribeRecording"
       @apply-trim="applyTrim"
       @save-edited="saveEditedTranscript"
@@ -1080,12 +1085,14 @@ watch(
       :mode="transcriptionSettings.mode"
       :language="transcriptionSettings.language"
       :spoken-punctuation="transcriptionSettings.spokenPunctuation"
+      :waveform-style="waveformStyle"
       :diagnostics-code="errorCode ?? transcribeBlockedCode"
       @toggle="setAdvancedOpen(!advancedOpen)"
       @update:model="(value) => updateTranscriptionSettings({ model: value })"
       @update:mode="(value) => updateTranscriptionSettings({ mode: value })"
       @update:language="(value) => updateTranscriptionSettings({ language: value })"
       @update:spoken-punctuation="(value) => updateTranscriptionSettings({ spokenPunctuation: value })"
+      @update:waveform-style="(value) => setWaveformStyle(value)"
     />
 
     <div v-if="lastSavedPath" class="flex flex-wrap items-center gap-2 text-xs">

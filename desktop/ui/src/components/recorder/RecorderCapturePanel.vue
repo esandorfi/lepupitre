@@ -14,6 +14,7 @@ const props = defineProps<{
   showRecBadge: boolean;
   livePreview: string | null;
   waveformPeaks: number[];
+  waveformStyle: "classic" | "pulse-bars" | "ribbon" | "spark";
 }>();
 
 const emit = defineEmits<{
@@ -73,7 +74,7 @@ function qualityClass() {
     </div>
 
     <div class="space-y-2">
-      <RecorderWaveform :peaks="props.waveformPeaks" />
+      <RecorderWaveform :peaks="props.waveformPeaks" :style-mode="props.waveformStyle" />
       <div class="app-meter-bg h-2 w-full rounded-full">
         <div
           class="h-2 rounded-full bg-[var(--app-info)] transition-all"

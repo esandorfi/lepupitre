@@ -1,5 +1,6 @@
 import { ref } from "vue";
 import { hydratePreference, readPreference, writePreference } from "./preferencesStorage";
+import { isWaveformStyle, type WaveformStyle } from "./waveform";
 
 export type PrimaryNavMode = "top" | "sidebar-icon";
 export type GamificationMode = "minimal" | "balanced" | "quest-world";
@@ -12,6 +13,7 @@ export type UiSettings = {
   gamificationMode: GamificationMode;
   mascotEnabled: boolean;
   mascotIntensity: MascotIntensity;
+  waveformStyle: WaveformStyle;
 };
 
 const STORAGE_KEY = "lepupitre_ui_settings_v1";
@@ -24,6 +26,7 @@ const defaultSettings: UiSettings = {
   gamificationMode: "balanced",
   mascotEnabled: true,
   mascotIntensity: "contextual",
+  waveformStyle: "classic",
 };
 
 function isPrimaryNavMode(value: unknown): value is PrimaryNavMode {
@@ -86,6 +89,9 @@ function parseSettings(raw: string): UiSettings {
       mascotIntensity: isMascotIntensity(parsed.mascotIntensity)
         ? parsed.mascotIntensity
         : defaultSettings.mascotIntensity,
+      waveformStyle: isWaveformStyle(parsed.waveformStyle)
+        ? parsed.waveformStyle
+        : defaultSettings.waveformStyle,
     };
   } catch {
     return defaultSettings;
@@ -128,6 +134,10 @@ function setMascotIntensity(mascotIntensity: MascotIntensity) {
   updateSettings({ mascotIntensity });
 }
 
+function setWaveformStyle(waveformStyle: WaveformStyle) {
+  updateSettings({ waveformStyle });
+}
+
 export function useUiPreferences() {
   return {
     settings,
@@ -137,5 +147,6 @@ export function useUiPreferences() {
     setGamificationMode,
     setMascotEnabled,
     setMascotIntensity,
+    setWaveformStyle,
   };
 }

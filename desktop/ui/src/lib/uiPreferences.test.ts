@@ -48,6 +48,7 @@ describe("uiPreferences", () => {
     expect(settings.value.gamificationMode).toBe("balanced");
     expect(settings.value.mascotEnabled).toBe(true);
     expect(settings.value.mascotIntensity).toBe("contextual");
+    expect(settings.value.waveformStyle).toBe("classic");
   });
 
   it("updates and persists navigation mode", async () => {
@@ -102,6 +103,7 @@ describe("uiPreferences", () => {
     expect(settings.value.gamificationMode).toBe("balanced");
     expect(settings.value.mascotEnabled).toBe(true);
     expect(settings.value.mascotIntensity).toBe("contextual");
+    expect(settings.value.waveformStyle).toBe("classic");
   });
 
   it("migrates legacy storage key to the current key", async () => {
@@ -142,6 +144,7 @@ describe("uiPreferences", () => {
     expect(settings.value.gamificationMode).toBe("balanced");
     expect(settings.value.mascotEnabled).toBe(true);
     expect(settings.value.mascotIntensity).toBe("contextual");
+    expect(settings.value.waveformStyle).toBe("classic");
   });
 
   it("persists voiceup mascot and gamification preferences", async () => {
@@ -164,5 +167,29 @@ describe("uiPreferences", () => {
     expect(stored).toContain("\"gamificationMode\":\"quest-world\"");
     expect(stored).toContain("\"mascotEnabled\":false");
     expect(stored).toContain("\"mascotIntensity\":\"minimal\"");
+  });
+
+  it("persists waveform style preferences and falls back when invalid", async () => {
+    const { useUiPreferences } = await import("./uiPreferences");
+    const { settings, setWaveformStyle } = useUiPreferences();
+
+    setWaveformStyle("spark");
+
+    expect(settings.value.waveformStyle).toBe("spark");
+    const stored = globalThis.localStorage.getItem("lepupitre_ui_settings_v1") ?? "";
+    expect(stored).toContain("\"waveformStyle\":\"spark\"");
+
+    vi.resetModules();
+    Object.defineProperty(globalThis, "localStorage", {
+      value: createStorage({
+        lepupitre_ui_settings_v1: JSON.stringify({
+          waveformStyle: "invalid-style",
+        }),
+      }),
+      configurable: true,
+      writable: true,
+    });
+    const reloaded = (await import("./uiPreferences")).useUiPreferences();
+    expect(reloaded.settings.value.waveformStyle).toBe("classic");
   });
 });

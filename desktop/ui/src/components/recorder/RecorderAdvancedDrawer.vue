@@ -7,6 +7,7 @@ const props = defineProps<{
   mode: "auto" | "live+final" | "final-only";
   language: "auto" | "en" | "fr";
   spokenPunctuation: boolean;
+  waveformStyle: "classic" | "pulse-bars" | "ribbon" | "spark";
   diagnosticsCode: string | null;
 }>();
 
@@ -16,6 +17,7 @@ const emit = defineEmits<{
   (event: "update:mode", value: "auto" | "live+final" | "final-only"): void;
   (event: "update:language", value: "auto" | "en" | "fr"): void;
   (event: "update:spokenPunctuation", value: boolean): void;
+  (event: "update:waveformStyle", value: "classic" | "pulse-bars" | "ribbon" | "spark"): void;
 }>();
 
 const { t } = useI18n();
@@ -76,6 +78,20 @@ const { t } = useI18n();
           @change="emit('update:spokenPunctuation', ($event.target as HTMLInputElement).checked)"
         />
         <span>{{ t("settings.transcription.spoken_punctuation_label") }}</span>
+      </label>
+
+      <label class="space-y-1 app-text-meta md:col-span-2">
+        <span class="app-subtle">{{ t("settings.recorder.waveform_style_label") }}</span>
+        <select
+          class="app-input w-full rounded-lg border px-3 py-2"
+          :value="props.waveformStyle"
+          @change="emit('update:waveformStyle', ($event.target as HTMLSelectElement).value as 'classic' | 'pulse-bars' | 'ribbon' | 'spark')"
+        >
+          <option value="classic">{{ t("settings.recorder.waveform_style_classic") }}</option>
+          <option value="pulse-bars">{{ t("settings.recorder.waveform_style_pulse_bars") }}</option>
+          <option value="ribbon">{{ t("settings.recorder.waveform_style_ribbon") }}</option>
+          <option value="spark">{{ t("settings.recorder.waveform_style_spark") }}</option>
+        </select>
       </label>
     </div>
     <p v-if="props.open && props.diagnosticsCode" class="app-muted mt-2 text-xs">

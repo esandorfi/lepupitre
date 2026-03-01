@@ -20,6 +20,7 @@ const props = defineProps<{
   isApplyingTrim: boolean;
   audioPreviewSrc: string | null;
   waveformPeaks: number[];
+  waveformStyle: "classic" | "pulse-bars" | "ribbon" | "spark";
 }>();
 
 const emit = defineEmits<{
@@ -112,7 +113,7 @@ watch(
 
     <section class="app-panel app-panel-compact space-y-3">
       <div class="space-y-2">
-        <RecorderWaveform :peaks="props.waveformPeaks" />
+        <RecorderWaveform :peaks="props.waveformPeaks" :style-mode="props.waveformStyle" />
         <audio
           v-if="props.audioPreviewSrc"
           class="w-full"
