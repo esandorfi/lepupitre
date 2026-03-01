@@ -1,4 +1,4 @@
-use crate::core::preferences as preferences_core;
+use crate::platform::preferences as preferences_core;
 
 #[tauri::command]
 pub fn preference_global_get(app: tauri::AppHandle, key: String) -> Result<Option<String>, String> {

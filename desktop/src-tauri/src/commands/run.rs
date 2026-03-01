@@ -1,4 +1,4 @@
-use crate::core::run as run_core;
+use crate::domain::run as run_core;
 
 pub use run_core::{RunAnalyzeResponse, RunSummary};
 

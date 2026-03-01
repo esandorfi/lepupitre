@@ -23,11 +23,34 @@ check_forbidden_match() {
   fi
 }
 
-# Dependency direction: Rust core modules must not depend on command layer.
+check_path_absent() {
+  local path="$1"
+  if [[ -e "$path" ]]; then
+    fail "Legacy path must stay removed: $path"
+  fi
+}
+
+# Dependency direction: Rust backend layers must not depend on command layer.
 check_forbidden_match \
-  "Rust core depends on commands (forbidden)." \
+  "Rust backend layers depend on commands (forbidden)." \
   'crate::commands' \
-  desktop/src-tauri/src/core
+  desktop/src-tauri/src/core \
+  desktop/src-tauri/src/domain \
+  desktop/src-tauri/src/platform \
+  desktop/src-tauri/src/kernel
+
+# Topology migration guard: migrated contexts must not return to legacy core paths.
+check_path_absent "desktop/src-tauri/src/core/run"
+check_path_absent "desktop/src-tauri/src/core/coach"
+check_path_absent "desktop/src-tauri/src/core/preferences"
+
+# Command wrappers for migrated contexts must import new layer paths.
+check_forbidden_match \
+  "Migrated command wrappers still import legacy core contexts." \
+  'crate::core::(run|coach|preferences)' \
+  desktop/src-tauri/src/commands/run.rs \
+  desktop/src-tauri/src/commands/coach.rs \
+  desktop/src-tauri/src/commands/preferences.rs
 
 # Dependency direction: migrated command wrappers must not contain SQL/DB logic.
 check_forbidden_match \

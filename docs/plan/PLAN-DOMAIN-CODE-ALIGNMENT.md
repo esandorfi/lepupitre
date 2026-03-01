@@ -37,15 +37,32 @@ Align repository structure with product bounded contexts so code reads by use-ca
 1. Platform
 - Preferences persistence policy, security probes, release/runtime wiring.
 
+## Primary rule (architecture)
+
+Rust backend topology is now:
+- `commands/`: thin IPC entrypoints (validation + orchestration only).
+- `domain/`: product bounded contexts only.
+- `platform/`: concrete adapters (sqlite/fs/sidecar/security/preferences/runtime).
+- `kernel/`: tiny shared primitives (ids/time/errors/contracts).
+
+`core/` is transitional compatibility only.
+- No new feature logic is allowed under `core/`.
+- Existing `core/*` modules are migrated into `domain/`, `platform/`, or `kernel/` in incremental slices.
+
 ## Target topology (incremental)
 
 Rust (`desktop/src-tauri/src`)
 - `commands/`
-  - thin command entrypoints only (validation + orchestration).
+  - thin command entrypoints only.
+- `domain/<context>/`
+  - one folder per product bounded context (`workspace`, `talk`, `training`, `run`, `feedback`, `exchange`, `recorder`, `asr`, `coach`).
+  - internal split by responsibility (`mod.rs`, `service.rs` or `mod.rs`, `repo.rs`, `queries.rs`, `types.rs`).
+- `platform/<capability>/`
+  - runtime and infrastructure adapters (`db`, `preferences`, `security`, sidecar/process, filesystem/artifacts).
+- `kernel/`
+  - cross-cutting primitives reused by domain/platform.
 - `core/`
-  - domain services by bounded context (`workspace`, `talk`, `training`, `run`, `feedback`, `exchange`, `recorder`, `asr`, `platform`).
-  - DB/data adapters by domain (`repo.rs`, `queries.rs`, `types.rs`) when SQL is involved.
-  - shared utilities (`ids`, `time`, typed models, errors).
+  - temporary facade/re-export layer during migration only.
 
 UI (`desktop/ui/src`)
 - `domains/<context>/`
@@ -58,7 +75,8 @@ UI (`desktop/ui/src`)
 ## Guard rails (enforced)
 
 1. Dependency direction
-- Rust `core` must not depend on `commands`.
+- Rust `domain`, `platform`, `kernel`, and `core` must not depend on `commands`.
+- New Rust files must not be added directly under `core/` (except compatibility wiring in `core/mod.rs`).
 - Migrated command wrappers must not contain direct DB/SQL logic.
 - UI domain APIs must not import `stores`, `pages`, or `components`.
 
@@ -75,16 +93,21 @@ UI (`desktop/ui/src`)
 
 1. Freeze boundary rules first
 - Keep command/page layers orchestration-only.
-- Keep domain logic free of view framework concerns.
+- Keep domain logic free of UI framework and IPC concerns.
+- Keep platform adapter concerns out of command wrappers.
 
 1. Extract by vertical slices
 - Keep behavior unchanged per slice.
 - Prefer small reversible pull requests.
 
 1. Prioritized sequence
-- Completed: workspace, training/quest, feedback, talk, exchange.
-- In progress: recorder + ASR split.
-- Next: run/platform boundary cleanup and app coordinator reduction.
+- Completed (legacy path extraction): workspace, training/quest, feedback, talk, exchange, recorder/ASR runtime extractions.
+- Restarted (topology migration): move domain contexts outside `core/` first, then platform/kernel split, then remove `core` facade.
+- Next:
+  - migrate remaining contexts to `domain/<context>/`,
+  - move adapter modules into `platform/`,
+  - move shared primitives into `kernel/`,
+  - delete legacy `core` modules when no import remains.
 
 1. Keep IPC contract stability during refactor
 - Preserve command names and event channels where possible.
@@ -157,13 +180,23 @@ UI (`desktop/ui/src`)
   - Rust: moved live sidecar benchmark helper from `commands/audio.rs` into `core/asr.rs`.
   - Rust: `commands/audio.rs` now delegates live ASR decode runtime behavior to `core/asr` abstractions.
 
+- 2026-03-01: Topology reset started (`domain/`, `platform/`, `kernel` as primary rule).
+  - Rule: new backend code must target `domain/`, `platform/`, or `kernel` (not legacy `core/`).
+  - Rust: moved `run` and `coach` contexts from `core/` to `domain/`.
+  - Rust: moved `preferences` from `core/` to `platform/`.
+  - Rust: command wrappers now import the new module locations (`commands/run.rs`, `commands/coach.rs`, `commands/preferences.rs`).
+  - Rust: added temporary `core` compatibility re-exports to keep migration incremental.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
-- Core use-cases are traceable from route/command to domain service to storage adapter.
+- Domain use-cases are traceable from route/command to domain service to storage adapter.
 - Monolithic files are reduced and bounded by orchestration role.
 - Architecture docs stay aligned with real topology.
 
 ## Exit criteria
 
-This plan is complete when directory structure reflects bounded contexts and enforced guard rails prevent drift back to mixed monolith patterns.
+This plan is complete when:
+- `domain/`, `platform/`, and `kernel/` are the only active backend layers (besides `commands/`),
+- legacy `core/` feature modules are removed,
+- enforced guard rails prevent drift back to mixed monolith patterns.

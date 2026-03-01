@@ -122,12 +122,13 @@ Goal: align Rust and UI code layout with product bounded contexts for readabilit
 Scope:
 - Define bounded contexts and ownership map (workspace, talks, training/quest, runs, feedback, packs/reviews, recorder, ASR, preferences/platform).
 - Introduce domain-oriented directory layout in Rust and UI incrementally.
+- Make Rust topology explicit: `commands/` + `domain/` + `platform/` + `kernel/`; keep `core/` as migration-only facade.
 - Reduce monolithic orchestration files by extracting domain services/modules.
 - Add structural guard rails (path conventions, file-size budgets, dependency direction rules).
 
 Execution detail:
 - [docs/plan/PLAN-DOMAIN-CODE-ALIGNMENT.md](plan/PLAN-DOMAIN-CODE-ALIGNMENT.md)
-- Recent progress (2026-03-01): recorder/ASR runtime extraction now includes live decode strategy in `core/asr.rs`; next focus is app-store coordinator shrink.
+- Recent progress (2026-03-01): topology reset started; `run` and `coach` moved to `domain/`, `preferences` moved to `platform/`, with `core/` compatibility re-exports during migration.
 
 Done when:
 - New code lands in domain-aligned modules by default.

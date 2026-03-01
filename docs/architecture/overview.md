@@ -10,10 +10,10 @@
 ## System model
 - Hexagonal architecture is the default model.
 - `commands/`: small Tauri IPC surface.
-- `core/domain`: entities, invariants, identifiers.
-- `core/application/usecases`: business orchestration.
-- `core/ports`: contracts (`TranscriptionProvider`, `ArtifactStore`, etc.).
-- `core/adapters`: sqlite/fs/whisper/zip/secrets/jobs.
+- `domain/`: product bounded contexts and business orchestration.
+- `platform/`: sqlite/fs/sidecar/security/preferences/runtime adapters.
+- `kernel/`: shared primitives (ids/time/errors/contracts).
+- `core/`: migration-only compatibility facade while modules are moved.
 
 ## Baseline decisions
 1. UI stack is standardized on Vue.
@@ -51,8 +51,9 @@
 ## SQLite data-access baseline
 - Keep `rusqlite` as the backend driver.
 - Centralize SQL by domain in DB modules:
-  - `core/<domain>/repo.rs` for typed DB access functions.
-  - `core/<domain>/queries.rs` for SQL statements/query builders.
+  - `domain/<domain>/repo.rs` for typed domain-level persistence adapters where applicable.
+  - `domain/<domain>/queries.rs` for SQL statements/query builders when SQL stays close to domain flows.
+  - or `platform/<capability>/` when persistence/runtime adapters are shared across domains.
 - Keep Tauri command files orchestration-only (no direct SQL).
 - Keep raw SQL for reporting, complex joins, and performance-critical paths, with tests and query-plan checks.
 

@@ -1,4 +1,4 @@
-use crate::core::coach as coach_core;
+use crate::domain::coach as coach_core;
 
 pub use coach_core::{MascotMessage, ProgressSnapshot, TalksBlueprint};
 

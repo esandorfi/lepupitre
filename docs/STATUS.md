@@ -33,7 +33,7 @@ This file tracks what is canonical, proposal-only, and archived.
 | [docs/plan/PLAN-RECORDER-AUDIO-SOTA.md](plan/PLAN-RECORDER-AUDIO-SOTA.md) | Recorder-first audio architecture hardening plan | implemented | UI/ASR maintainers | Monitor telemetry budget thresholds and keep recorder smoke gates stable across CI/release |
 | [docs/plan/PLAN-TAURI-SQL-HARDENING.md](plan/PLAN-TAURI-SQL-HARDENING.md) | SQLite hardening execution plan | implemented | Maintainers | Monitor reliability/security gates during release cycles |
 | [docs/plan/PLAN-UI-PREFERENCES-STORAGE.md](plan/PLAN-UI-PREFERENCES-STORAGE.md) | UI preference persistence migration | in_progress | Maintainers | Complete Tauri-native backend migration after boundary enforcement |
-| [docs/plan/PLAN-DOMAIN-CODE-ALIGNMENT.md](plan/PLAN-DOMAIN-CODE-ALIGNMENT.md) | Bounded-context code organization migration | in_progress | Maintainers | Continue app-store coordinator shrink and remaining command-layer orchestration trims |
+| [docs/plan/PLAN-DOMAIN-CODE-ALIGNMENT.md](plan/PLAN-DOMAIN-CODE-ALIGNMENT.md) | Bounded-context code organization migration | in_progress | Maintainers | Continue topology reset from legacy `core/` to `domain/` + `platform/` + `kernel/` and remove compatibility re-exports |
 
 ## Active spec docs (`spec/active/`)
 

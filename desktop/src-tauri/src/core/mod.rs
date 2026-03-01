@@ -4,7 +4,6 @@ pub mod asr;
 pub mod asr_live;
 pub mod asr_models;
 pub mod asr_sidecar;
-pub mod coach;
 pub mod db;
 pub mod db_helpers;
 pub mod dsp;
@@ -14,14 +13,24 @@ pub mod models;
 pub mod outline;
 pub mod pack;
 pub mod peer_review;
-pub mod preferences;
 pub mod project;
 pub mod quest;
 pub mod recorder;
 pub mod recording;
-pub mod run;
 pub mod seed;
 pub mod time;
 pub mod transcript;
 pub mod vad;
 pub mod workspace;
+
+pub mod coach {
+    pub use crate::domain::coach::*;
+}
+
+pub mod preferences {
+    pub use crate::platform::preferences::*;
+}
+
+pub mod run {
+    pub use crate::domain::run::*;
+}
