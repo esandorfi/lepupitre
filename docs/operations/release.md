@@ -29,6 +29,9 @@
 - ASR identity contract gate in release CI:
   - `node scripts/verify-asr-sidecar.mjs`
   - `node scripts/check-asr-sidecar-doctor.mjs`
+- ASR checksum publication in release CI:
+  - generate + verify `asr-sidecar-checksums-<runner-os>.json`
+  - upload as workflow artifact and attach to tagged GitHub releases
 - Release signing preflight:
   - `scripts/check-release-signing.sh` validates required secrets when trust toggles are enabled.
 - Release trust verification:

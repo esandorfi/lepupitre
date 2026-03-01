@@ -111,6 +111,9 @@ Then run:
   - scripted contract check: `node scripts/check-asr-sidecar-doctor.mjs`
     - optional explicit path: `node scripts/check-asr-sidecar-doctor.mjs --sidecar=<path-to-sidecar>`
   - `doctor --json` returns a stable payload (version/protocol/target/capabilities/dependencies).
+- Generate/verify sidecar checksum manifest:
+  - `node scripts/asr-sidecar-checksum-manifest.mjs generate`
+  - `node scripts/asr-sidecar-checksum-manifest.mjs verify`
 - Optional smoke test:
   - `./scripts/asr-smoke.sh /path/to/lepupitre-asr /path/to/ggml-*.bin`
   - `just asr-smoke-dev /path/to/ggml-*.bin`

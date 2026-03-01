@@ -77,6 +77,7 @@ Execution status (2026-03-01):
 - Phase 1 completed: sidecar `--version`, `doctor --json`, and app-side compatibility gate shipped.
 - Phase 2 started: support diagnostics bundle command (`asr_diagnostics_export`) shipped with redacted path hints.
 - Phase 2 progressed: release CI now runs sidecar doctor contract verification (`scripts/check-asr-sidecar-doctor.mjs`).
+- Phase 2 completed: sidecar checksum manifest generate/verify script shipped and release CI publishes checksum manifests.
 
 ## Phase 1 (MVP: operator visibility)
 1. Implement `--version`.

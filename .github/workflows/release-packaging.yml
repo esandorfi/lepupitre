@@ -116,6 +116,30 @@ jobs:
       - name: Verify ASR sidecar doctor contract
         run: node scripts/check-asr-sidecar-doctor.mjs
 
+      - name: Generate and verify ASR sidecar checksum manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          MANIFEST_PATH="${RUNNER_TEMP}/asr-sidecar-checksums-${RUNNER_OS}.json"
+          node scripts/asr-sidecar-checksum-manifest.mjs generate --output="${MANIFEST_PATH}"
+          node scripts/asr-sidecar-checksum-manifest.mjs verify --manifest="${MANIFEST_PATH}"
+
+      - name: Upload ASR sidecar checksum manifest artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: asr-sidecar-checksums-${{ matrix.os }}
+          path: ${{ runner.temp }}/asr-sidecar-checksums-${{ runner.os }}.json
+
+      - name: Attach ASR sidecar checksum manifest to GitHub release
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          MANIFEST_PATH="${RUNNER_TEMP}/asr-sidecar-checksums-${RUNNER_OS}.json"
+          gh release upload "${GITHUB_REF_NAME}" "${MANIFEST_PATH}" --clobber
+
       - name: Recorder smoke test (macOS)
         if: matrix.os == 'macos-latest'
         shell: bash
