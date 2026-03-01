@@ -2,7 +2,7 @@ pub mod asr_live;
 pub mod asr_models;
 pub mod transcript;
 
-use crate::core::models;
+use crate::kernel::models;
 use crate::kernel::time;
 use crate::platform::asr_sidecar;
 use serde::{Deserialize, Serialize};

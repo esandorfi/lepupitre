@@ -104,7 +104,7 @@ Scope:
 - Define a product use-case test matrix as canonical source of test obligations.
 - Add command-level integration tests for critical backend flows (workspace/talk/quest/run/feedback/pack).
 - Add CI guard rails that require matching tests when core domain files change.
-- Add coverage thresholds on stable logic layers (UI `lib/*`, Rust `core/*`) only.
+- Add coverage thresholds on stable logic layers (UI `lib/*`, Rust `domain/*` + `platform/*` + `kernel/*`) only.
 - Keep tests readable as specification (Given/When/Then naming and domain contracts).
 
 Execution detail:
@@ -122,13 +122,13 @@ Goal: align Rust and UI code layout with product bounded contexts for readabilit
 Scope:
 - Define bounded contexts and ownership map (workspace, talks, training/quest, runs, feedback, packs/reviews, recorder, ASR, preferences/platform).
 - Introduce domain-oriented directory layout in Rust and UI incrementally.
-- Make Rust topology explicit: `commands/` + `domain/` + `platform/` + `kernel/`; keep `core/` as migration-only facade.
+- Make Rust topology explicit: `commands/` + `domain/` + `platform/` + `kernel/`.
 - Reduce monolithic orchestration files by extracting domain services/modules.
 - Add structural guard rails (path conventions, file-size budgets, dependency direction rules).
 
 Execution detail:
 - [docs/plan/PLAN-DOMAIN-CODE-ALIGNMENT.md](plan/PLAN-DOMAIN-CODE-ALIGNMENT.md)
-- Recent progress (2026-03-01): topology reset started; `run` and `coach` moved to `domain/`, `preferences` moved to `platform/`, with `core/` compatibility re-exports during migration.
+- Recent progress (2026-03-01): topology reset completed; Rust backend now uses `commands/` + `domain/` + `platform/` + `kernel/` with legacy `core/` removed.
 
 Done when:
 - New code lands in domain-aligned modules by default.

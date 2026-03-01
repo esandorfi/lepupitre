@@ -1,6 +1,6 @@
-use crate::core::{ids, models};
 use crate::domain::asr::transcript;
 use crate::domain::asr::{self, asr_models};
+use crate::kernel::{ids, models};
 use crate::platform::artifacts;
 use crate::platform::{asr_sidecar, db};
 use serde::{Deserialize, Serialize};

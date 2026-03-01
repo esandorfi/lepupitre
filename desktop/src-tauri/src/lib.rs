@@ -1,5 +1,4 @@
 mod commands;
-pub mod core;
 pub mod domain;
 pub mod kernel;
 pub mod platform;

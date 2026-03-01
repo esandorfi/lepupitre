@@ -2,7 +2,7 @@
 
 ## Stack
 - Desktop shell: Tauri v2
-- Backend/core: Rust
+- Backend: Rust
 - UI: Vue 3 + Vite + TypeScript + Vue Router + Nuxt UI + Tailwind
 - Storage: SQLite (global + per profile) + filesystem artifacts
 - Speech-to-text: local whisper.cpp sidecar
@@ -13,7 +13,6 @@
 - `domain/`: product bounded contexts and business orchestration.
 - `platform/`: sqlite/fs/sidecar/security/preferences/runtime adapters.
 - `kernel/`: shared primitives (ids/time/errors/contracts).
-- `core/`: migration-only compatibility facade while modules are moved.
 
 ## Baseline decisions
 1. UI stack is standardized on Vue.
@@ -82,7 +81,7 @@
 - `pack_export` (`domain/exchange/pack.rs`):
   - Resources: generated ZIP file + `artifacts` row.
   - Contract: artifact registration is centralized in `artifacts::register_existing_file` and cleans up the ZIP on row insert failure.
-- `store_bytes` / `finalize_draft` (`core/artifacts.rs`):
+- `store_bytes` / `finalize_draft` (`platform/artifacts.rs`):
   - Resources: written file + `artifacts` row.
   - Contract: on row insert failure, file cleanup is automatic in the artifact layer.
 

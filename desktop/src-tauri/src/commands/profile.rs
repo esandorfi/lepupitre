@@ -1,5 +1,5 @@
-use crate::core::models::ProfileSummary;
 use crate::domain::workspace;
+use crate::kernel::models::ProfileSummary;
 use crate::platform::db;
 use serde::Serialize;
 use tauri::State;

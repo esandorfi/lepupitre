@@ -1,5 +1,5 @@
-use crate::core::models;
 use crate::domain::exchange::pack as pack_core;
+use crate::kernel::models;
 
 pub use pack_core::{PackInspectResponse, PeerReviewImportResponse};
 

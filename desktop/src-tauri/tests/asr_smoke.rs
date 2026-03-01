@@ -1,4 +1,4 @@
-use lepupitre_lib::core::asr_sidecar;
+use lepupitre_lib::platform::asr_sidecar;
 use std::path::PathBuf;
 
 fn env_enabled() -> bool {

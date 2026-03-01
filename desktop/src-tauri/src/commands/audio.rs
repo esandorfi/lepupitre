@@ -8,13 +8,13 @@ use std::thread;
 use std::time::Duration;
 use tauri::{Emitter, Manager, State};
 
-use crate::core::models;
 use crate::domain::asr;
 use crate::domain::asr::asr_live::LiveTranscriptState;
 use crate::domain::recorder;
 use crate::domain::recorder::dsp;
 use crate::domain::recorder::recording::{LinearResampler, RingBuffer, WavWriter};
 use crate::domain::recorder::vad::{VadConfig, VadState};
+use crate::kernel::models;
 use crate::platform::artifacts;
 use crate::platform::asr_sidecar;
 use crate::platform::db;
@@ -270,7 +270,7 @@ pub fn recording_start(
         .recv_timeout(Duration::from_millis(START_TIMEOUT_MS))
         .map_err(|_| "recording_start_timeout".to_string())??;
 
-    let recording_id = crate::core::ids::new_id("rec");
+    let recording_id = crate::kernel::ids::new_id("rec");
 
     let (live_tx, live_rx) = mpsc::channel::<()>();
     let live_state = state.clone();

@@ -1,4 +1,4 @@
-use crate::core::models;
+use crate::kernel::models;
 
 #[derive(Debug, Clone)]
 pub struct LivePartial {

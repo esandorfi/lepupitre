@@ -1,4 +1,4 @@
-use crate::core::models;
+use crate::kernel::models;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::fs::File;

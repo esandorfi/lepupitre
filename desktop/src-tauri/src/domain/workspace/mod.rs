@@ -1,4 +1,4 @@
-use crate::core::models::ProfileSummary;
+use crate::kernel::models::ProfileSummary;
 use crate::kernel::{ids, time};
 use crate::platform::db;
 use rusqlite::{params, Connection};

@@ -34,12 +34,12 @@ check_path_absent() {
 check_forbidden_match \
   "Rust backend layers depend on commands (forbidden)." \
   'crate::commands' \
-  desktop/src-tauri/src/core \
   desktop/src-tauri/src/domain \
   desktop/src-tauri/src/platform \
   desktop/src-tauri/src/kernel
 
-# Topology migration guard: migrated contexts must not return to legacy core paths.
+# Topology migration guard: legacy core path must stay removed.
+check_path_absent "desktop/src-tauri/src/core"
 check_path_absent "desktop/src-tauri/src/core/run"
 check_path_absent "desktop/src-tauri/src/core/coach"
 check_path_absent "desktop/src-tauri/src/core/preferences"
@@ -68,22 +68,11 @@ check_path_absent "desktop/src-tauri/src/core/transcript.rs"
 check_path_absent "desktop/src-tauri/src/core/artifacts.rs"
 check_path_absent "desktop/src-tauri/src/core/models.rs"
 
-# Command wrappers for migrated contexts must import new layer paths.
+# Legacy core imports are forbidden after topology reset completion.
 check_forbidden_match \
-  "Migrated command wrappers still import legacy core contexts." \
-  'crate::core::(run|coach|preferences|workspace|project|outline|feedback|quest|pack|peer_review|recorder|recording|asr|asr_live|asr_models|asr_sidecar|db|db_helpers|seed|dsp|vad|transcript|artifacts)' \
-  desktop/src-tauri/src/commands/run.rs \
-  desktop/src-tauri/src/commands/coach.rs \
-  desktop/src-tauri/src/commands/preferences.rs \
-  desktop/src-tauri/src/commands/profile.rs \
-  desktop/src-tauri/src/commands/project.rs \
-  desktop/src-tauri/src/commands/outline.rs \
-  desktop/src-tauri/src/commands/feedback.rs \
-  desktop/src-tauri/src/commands/quest.rs \
-  desktop/src-tauri/src/commands/pack.rs \
-  desktop/src-tauri/src/commands/peer_review.rs \
-  desktop/src-tauri/src/commands/audio.rs \
-  desktop/src-tauri/src/commands/transcription.rs
+  "Legacy core imports are forbidden in Rust backend." \
+  'crate::core::|use crate::core' \
+  desktop/src-tauri/src
 
 # Dependency direction: migrated command wrappers must not contain SQL/DB logic.
 check_forbidden_match \

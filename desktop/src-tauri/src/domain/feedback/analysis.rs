@@ -1,4 +1,4 @@
-use crate::core::models;
+use crate::kernel::models;
 use std::collections::{HashMap, HashSet};
 
 pub fn build_feedback_from_text(text: &str, estimated_sec: i64) -> models::FeedbackV1 {

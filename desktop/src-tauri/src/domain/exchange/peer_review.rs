@@ -1,4 +1,4 @@
-use crate::core::models;
+use crate::kernel::models;
 use crate::platform::artifacts;
 use crate::platform::db;
 use rusqlite::params;

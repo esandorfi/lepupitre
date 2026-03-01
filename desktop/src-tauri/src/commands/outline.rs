@@ -1,5 +1,5 @@
-use crate::core::models;
 use crate::domain::talk::outline as outline_core;
+use crate::kernel::models;
 
 #[tauri::command]
 pub fn outline_get(

@@ -1,4 +1,4 @@
-use crate::core::{models::Quest, models::QuestDaily};
+use crate::kernel::models::{Quest, QuestDaily};
 use crate::kernel::{ids, time};
 use crate::platform::artifacts;
 use crate::platform::db;

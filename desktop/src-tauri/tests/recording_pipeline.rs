@@ -1,9 +1,9 @@
 use std::path::PathBuf;
 
 use hound::WavReader;
-use lepupitre_lib::core::dsp::Agc;
-use lepupitre_lib::core::recording::{LinearResampler, RingBuffer};
-use lepupitre_lib::core::vad::{VadConfig, VadState};
+use lepupitre_lib::domain::recorder::dsp::Agc;
+use lepupitre_lib::domain::recorder::recording::{LinearResampler, RingBuffer};
+use lepupitre_lib::domain::recorder::vad::{VadConfig, VadState};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum RecorderTransportState {

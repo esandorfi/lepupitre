@@ -45,10 +45,6 @@ Rust backend topology is now:
 - `platform/`: concrete adapters (sqlite/fs/sidecar/security/preferences/runtime).
 - `kernel/`: tiny shared primitives (ids/time/errors/contracts).
 
-`core/` is transitional compatibility only.
-- No new feature logic is allowed under `core/`.
-- Existing `core/*` modules are migrated into `domain/`, `platform/`, or `kernel/` in incremental slices.
-
 ## Target topology (incremental)
 
 Rust (`desktop/src-tauri/src`)
@@ -61,8 +57,6 @@ Rust (`desktop/src-tauri/src`)
   - runtime and infrastructure adapters (`db`, `preferences`, `security`, sidecar/process, filesystem/artifacts).
 - `kernel/`
   - cross-cutting primitives reused by domain/platform.
-- `core/`
-  - temporary facade/re-export layer during migration only.
 
 UI (`desktop/ui/src`)
 - `domains/<context>/`
@@ -75,8 +69,9 @@ UI (`desktop/ui/src`)
 ## Guard rails (enforced)
 
 1. Dependency direction
-- Rust `domain`, `platform`, `kernel`, and `core` must not depend on `commands`.
-- New Rust files must not be added directly under `core/` (except compatibility wiring in `core/mod.rs`).
+- Rust `domain`, `platform`, and `kernel` must not depend on `commands`.
+- Legacy `crate::core::*` imports are forbidden.
+- Legacy `desktop/src-tauri/src/core` path must stay absent.
 - Migrated command wrappers must not contain direct DB/SQL logic.
 - UI domain APIs must not import `stores`, `pages`, or `components`.
 
@@ -102,12 +97,11 @@ UI (`desktop/ui/src`)
 
 1. Prioritized sequence
 - Completed (legacy path extraction): workspace, training/quest, feedback, talk, exchange, recorder/ASR runtime extractions.
-- Restarted (topology migration): move domain contexts outside `core/` first, then platform/kernel split, then remove `core` facade.
+- Completed (topology migration): domain contexts moved outside `core/`, platform/kernel split completed, and `core/` removed.
 - Next:
-  - migrate remaining contexts to `domain/<context>/`,
-  - move adapter modules into `platform/`,
-  - move shared primitives into `kernel/`,
-  - delete legacy `core` modules when no import remains.
+  - split large context modules into smaller submodules (`service`, `repo`, `queries`, `types`) where readability gains are clear,
+  - keep command wrappers thin while maintaining IPC schema stability,
+  - enforce drift-prevention guardrails in CI.
 
 1. Keep IPC contract stability during refactor
 - Preserve command names and event channels where possible.
@@ -260,7 +254,11 @@ UI (`desktop/ui/src`)
 - 2026-03-01: Topology reset milestone reached (`core/` reduced to compatibility facade).
   - Rust: removed remaining implementation modules under `core/` (`artifacts`, `models`, `transcript`, `db`, `asr_sidecar`, etc.) by relocating them into `domain/`, `platform/`, and `kernel/`.
   - Structure: `desktop/src-tauri/src/core/` now contains only `mod.rs` compatibility re-exports.
-  - Next cleanup: progressively replace `crate::core::*` imports with direct `domain/platform/kernel` imports and remove facade aliases when fully migrated.
+
+- 2026-03-01: Topology reset completed (`core/` removed).
+  - Rust: removed `desktop/src-tauri/src/core/mod.rs` and `pub mod core` from crate root.
+  - Rust: replaced all remaining `crate::core::*` imports with direct `kernel`/`domain`/`platform` imports.
+  - Guard rails: `scripts/check-domain-structure.sh` now forbids legacy `crate::core::*` imports and enforces absence of `desktop/src-tauri/src/core`.
 
 ## Acceptance criteria
 
@@ -273,5 +271,5 @@ UI (`desktop/ui/src`)
 
 This plan is complete when:
 - `domain/`, `platform/`, and `kernel/` are the only active backend layers (besides `commands/`),
-- legacy `core/` feature modules are removed,
+- legacy `core/` path is removed,
 - enforced guard rails prevent drift back to mixed monolith patterns.

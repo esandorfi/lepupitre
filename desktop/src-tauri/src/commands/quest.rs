@@ -1,5 +1,5 @@
-use crate::core::{models::Quest, models::QuestDaily};
 use crate::domain::training::quest as quest_core;
+use crate::kernel::models::{Quest, QuestDaily};
 
 pub use quest_core::{QuestAttemptSummary, QuestReportItem};
 

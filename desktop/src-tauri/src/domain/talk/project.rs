@@ -1,6 +1,4 @@
-use crate::core::{
-    models::ProjectCreatePayload, models::ProjectSummary, models::ProjectUpdatePayload,
-};
+use crate::kernel::models::{ProjectCreatePayload, ProjectSummary, ProjectUpdatePayload};
 use crate::kernel::{ids, time};
 use crate::platform::db;
 use rusqlite::{params, OptionalExtension};

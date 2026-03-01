@@ -1,7 +1,7 @@
 pub mod analysis;
 
-use crate::core::models;
 use crate::domain::asr::transcript;
+use crate::kernel::models;
 use crate::kernel::{ids, time};
 use crate::platform::artifacts;
 use crate::platform::db;

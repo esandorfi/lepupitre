@@ -1,4 +1,4 @@
-use crate::core::models;
+use crate::kernel::models;
 use crate::kernel::time;
 use crate::platform::artifacts;
 use crate::platform::db;

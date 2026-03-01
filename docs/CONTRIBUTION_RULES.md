@@ -31,7 +31,8 @@ These are repository process gates for contributors.
   - SignPath OSS compliance check (`./scripts/check-signpath-oss-compliance.sh`)
 - Domain structure:
   - `scripts/check-domain-structure.sh`
-  - Guards dependency direction (`core` not depending on `commands`, UI domain APIs not depending on view/store layers)
+  - Guards dependency direction (`domain`/`platform`/`kernel` not depending on `commands`, UI domain APIs not depending on view/store layers)
+  - Forbids legacy `crate::core::*` imports in Rust backend
   - Enforces file-size budgets for known orchestration/wrapper hotspots
 - Backend:
   - `cargo fmt --all -- --check`
@@ -75,7 +76,7 @@ These are repository process gates for contributors.
 
 ## 9) SQL placement rule
 - Do not add direct SQL in migrated command wrappers.
-- New SQL should be centralized under domain DB modules (`core/<domain>/repo.rs` + `core/<domain>/queries.rs`).
+- New SQL should be centralized under domain/platform DB modules (`domain/<domain>/repo.rs` + `domain/<domain>/queries.rs` or `platform/<capability>/` adapters).
 - Keep raw SQL for reporting/complex/performance-critical queries, but keep it out of orchestration code.
 
 ## 10) Migration flow rule
