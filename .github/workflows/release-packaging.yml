@@ -125,7 +125,7 @@ jobs:
           node scripts/asr-sidecar-checksum-manifest.mjs verify --manifest="${MANIFEST_PATH}"
 
       - name: Upload ASR sidecar checksum manifest artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: asr-sidecar-checksums-${{ matrix.os }}
           path: ${{ runner.temp }}/asr-sidecar-checksums-${{ runner.os }}.json
@@ -221,7 +221,7 @@ jobs:
 
       - name: Upload artifacts (manual run)
         if: github.event_name == 'workflow_dispatch'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: lepupitre-${{ matrix.os }}
           path: |
