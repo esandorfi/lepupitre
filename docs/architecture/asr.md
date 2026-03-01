@@ -12,6 +12,45 @@ Tauri resource paths must include both filenames in CI and packaging:
 
 This avoids OS-specific path failures during Rust checks and packaging.
 
+## Worktree check procedure (Windows)
+Use this when `cargo test` or `cargo clippy` fails with:
+`resource path sidecar\lepupitre-asr doesn't exist`.
+
+1. Ensure resource directory exists:
+
+```powershell
+Set-Location C:\dev.sandorfi\lepupitre-recorder-ux
+New-Item -ItemType Directory -Force -Path "desktop/src-tauri/sidecar" | Out-Null
+```
+
+1. Preferred: copy real sidecar from shared dev home:
+
+```powershell
+Copy-Item "C:\dev.sandorfi\lepupitre-asr-dev\bin\lepupitre-asr.exe" "desktop/src-tauri/sidecar/lepupitre-asr.exe" -Force
+Copy-Item "desktop/src-tauri/sidecar/lepupitre-asr.exe" "desktop/src-tauri/sidecar/lepupitre-asr" -Force
+```
+
+1. Compile-only fallback: create placeholders:
+
+```powershell
+New-Item -ItemType File -Force -Path "desktop/src-tauri/sidecar/lepupitre-asr.exe" | Out-Null
+New-Item -ItemType File -Force -Path "desktop/src-tauri/sidecar/lepupitre-asr" | Out-Null
+```
+
+1. Verify both files are present:
+
+```powershell
+Test-Path "desktop/src-tauri/sidecar/lepupitre-asr.exe"
+Test-Path "desktop/src-tauri/sidecar/lepupitre-asr"
+```
+
+1. Run checks:
+
+```powershell
+cargo test --manifest-path desktop/src-tauri/Cargo.toml
+cargo clippy --manifest-path desktop/src-tauri/Cargo.toml --all-targets --all-features -- -D warnings
+```
+
 ## Local development
 1. Build sidecar: `./scripts/build-asr-sidecar.sh`
 2. Optionally copy into resources: `./scripts/build-asr-sidecar.sh --copy`
