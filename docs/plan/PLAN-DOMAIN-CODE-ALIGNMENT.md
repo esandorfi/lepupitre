@@ -127,6 +127,10 @@ UI (`desktop/ui/src`)
   - Rust: `commands/transcription.rs` now delegates WAV decode + sidecar decode orchestration to `core/asr`.
   - Tests: existing transcription decode contract tests remain green against `core/asr` implementation.
 
+- 2026-03-01: ASR backend extraction (model download service) completed.
+  - Rust: extracted ASR model download/checksum/manifest write flow from `commands/transcription.rs` into `core/asr.rs`.
+  - Rust: `commands/transcription.rs` now delegates download execution to `core/asr` and keeps event emission in the command wrapper.
+
 - 2026-03-01: Recorder backend extraction (trim codec utilities) completed.
   - Rust: extracted WAV trim/decode/encode/range helpers from `commands/audio.rs` into `core/recorder.rs`.
   - Rust: `commands/audio.rs` now delegates trim codec/range operations to `core/recorder`.
