@@ -35,7 +35,7 @@
   - [docs/operations/CODE_SIGNING_POLICY.md](CODE_SIGNING_POLICY.md)
 - Website publishing:
   - push `website/**` changes to `main`
-  - Pages workflow builds Astro and deploys `website/dist` to GitHub Pages
+  - Pages workflow builds Astro, uploads `website/dist`, and deploys via `actions/deploy-pages`
   - repository Pages source must be set to `GitHub Actions`
 
 ## Database upgrade behavior
