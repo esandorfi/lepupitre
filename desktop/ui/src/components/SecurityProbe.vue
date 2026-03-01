@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { invoke } from "@tauri-apps/api/core";
+import { securityPrepareAppdataFile, securityProbeFs } from "../domains/security/api";
 import { useI18n } from "../lib/i18n";
 
 const { t } = useI18n();
@@ -43,7 +43,7 @@ async function testFs() {
   fsStatus.value = "running";
   fsDetail.value = null;
   try {
-    await invoke("security_probe_fs", { path: probePath });
+    await securityProbeFs(probePath);
     fsStatus.value = "allowed";
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -60,8 +60,8 @@ async function testFsAllowed() {
   fsAllowedStatus.value = "running";
   fsAllowedDetail.value = null;
   try {
-    const allowedPath = await invoke<string>("security_prepare_appdata_file");
-    await invoke("security_probe_fs", { path: allowedPath });
+    const allowedPath = await securityPrepareAppdataFile();
+    await securityProbeFs(allowedPath);
     fsAllowedStatus.value = "allowed";
   } catch (err) {
     fsAllowedStatus.value = "error";

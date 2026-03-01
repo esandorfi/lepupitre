@@ -1,5 +1,9 @@
 import { reactive } from "vue";
-import { invokeChecked } from "../composables/useIpc";
+import {
+  getMascotContextMessage as getMascotContextMessageFromApi,
+  getProgressSnapshot as getProgressSnapshotFromApi,
+  getTalksBlueprint as getTalksBlueprintFromApi,
+} from "../domains/coach/api";
 import {
   createProfile as createWorkspaceProfile,
   deleteProfile as deleteWorkspaceProfile,
@@ -43,7 +47,15 @@ import {
   inspectPack as inspectPackFromApi,
 } from "../domains/pack/api";
 import {
-  IdSchema,
+  analyzeRun as analyzeRunFromApi,
+  createRun as createRunFromApi,
+  finishRun as finishRunFromApi,
+  getLatestRun as getLatestRunFromApi,
+  getRun as getRunFromApi,
+  getRuns as getRunsFromApi,
+  setRunTranscript as setRunTranscriptFromApi,
+} from "../domains/run/api";
+import {
   ProfileSummary,
   ProjectUpdatePayload,
   ProjectListItem,
@@ -52,21 +64,9 @@ import {
   ExportResult,
   PeerReviewSummary,
   PeerReviewDetail,
-  RunAnalyzePayloadSchema,
-  AnalyzeResponseSchema,
-  RunCreatePayloadSchema,
-  RunFinishPayloadSchema,
-  RunGetPayloadSchema,
-  RunListPayloadSchema,
-  RunLatestPayloadSchema,
-  RunSetTranscriptPayloadSchema,
   RunSummary,
-  RunSummaryListSchema,
-  RunSummaryNullableSchema,
   QuestDaily,
   ProgressSnapshot,
-  ProgressSnapshotPayloadSchema,
-  ProgressSnapshotSchema,
   Quest,
   QuestAttemptSummary,
   QuestReportItem,
@@ -74,12 +74,7 @@ import {
   FeedbackContext,
   FeedbackTimelineItem,
   MascotMessage,
-  MascotMessagePayloadSchema,
-  MascotMessageSchema,
   TalksBlueprint,
-  TalksBlueprintPayloadSchema,
-  TalksBlueprintSchema,
-  VoidResponseSchema,
 } from "../schemas/ipc";
 import { hydratePreferences, setActivePreferenceProfile } from "../lib/preferencesStorage";
 
@@ -313,15 +308,7 @@ async function getProgressSnapshot(projectId?: string | null): Promise<ProgressS
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
   }
-  return invokeChecked(
-    "progress_get_snapshot",
-    ProgressSnapshotPayloadSchema,
-    ProgressSnapshotSchema,
-    {
-      profileId: state.activeProfileId,
-      projectId: projectId ?? null,
-    }
-  );
+  return getProgressSnapshotFromApi(state.activeProfileId, projectId ?? null);
 }
 
 async function getMascotContextMessage(payload: {
@@ -332,17 +319,7 @@ async function getMascotContextMessage(payload: {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
   }
-  return invokeChecked(
-    "mascot_get_context_message",
-    MascotMessagePayloadSchema,
-    MascotMessageSchema,
-    {
-      profileId: state.activeProfileId,
-      routeName: payload.routeName,
-      projectId: payload.projectId ?? null,
-      locale: payload.locale ?? null,
-    }
-  );
+  return getMascotContextMessageFromApi(state.activeProfileId, payload);
 }
 
 async function getTalksBlueprint(
@@ -352,16 +329,7 @@ async function getTalksBlueprint(
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
   }
-  return invokeChecked(
-    "talks_get_blueprint",
-    TalksBlueprintPayloadSchema,
-    TalksBlueprintSchema,
-    {
-      profileId: state.activeProfileId,
-      projectId,
-      locale: locale ?? null,
-    }
-  );
+  return getTalksBlueprintFromApi(state.activeProfileId, projectId, locale ?? null);
 }
 
 async function getQuestReport(projectId: string): Promise<QuestReportItem[]> {
@@ -466,44 +434,28 @@ async function createRun(projectId: string) {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
   }
-  return invokeChecked("run_create", RunCreatePayloadSchema, IdSchema, {
-    profileId: state.activeProfileId,
-    projectId,
-  });
+  return createRunFromApi(state.activeProfileId, projectId);
 }
 
 async function finishRun(runId: string, audioArtifactId: string) {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
   }
-  await invokeChecked("run_finish", RunFinishPayloadSchema, VoidResponseSchema, {
-    profileId: state.activeProfileId,
-    runId,
-    audioArtifactId,
-  });
+  await finishRunFromApi(state.activeProfileId, runId, audioArtifactId);
 }
 
 async function setRunTranscript(runId: string, transcriptId: string) {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
   }
-  await invokeChecked("run_set_transcript", RunSetTranscriptPayloadSchema, VoidResponseSchema, {
-    profileId: state.activeProfileId,
-    runId,
-    transcriptId,
-  });
+  await setRunTranscriptFromApi(state.activeProfileId, runId, transcriptId);
 }
 
 async function analyzeRun(runId: string) {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
   }
-  const response = await invokeChecked(
-    "run_analyze",
-    RunAnalyzePayloadSchema,
-    AnalyzeResponseSchema,
-    { profileId: state.activeProfileId, runId }
-  );
+  const response = await analyzeRunFromApi(state.activeProfileId, runId);
   state.lastFeedbackId = response.feedbackId;
   return response.feedbackId;
 }
@@ -512,33 +464,21 @@ async function getLatestRun(projectId: string): Promise<RunSummary | null> {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
   }
-  return invokeChecked(
-    "run_get_latest",
-    RunLatestPayloadSchema,
-    RunSummaryNullableSchema,
-    { profileId: state.activeProfileId, projectId }
-  );
+  return getLatestRunFromApi(state.activeProfileId, projectId);
 }
 
 async function getRun(runId: string): Promise<RunSummary | null> {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
   }
-  return invokeChecked("run_get", RunGetPayloadSchema, RunSummaryNullableSchema, {
-    profileId: state.activeProfileId,
-    runId,
-  });
+  return getRunFromApi(state.activeProfileId, runId);
 }
 
 async function getRuns(projectId: string, limit = 12): Promise<RunSummary[]> {
   if (!state.activeProfileId) {
     throw new Error("no_active_profile");
   }
-  return invokeChecked("run_list", RunListPayloadSchema, RunSummaryListSchema, {
-    profileId: state.activeProfileId,
-    projectId,
-    limit,
-  });
+  return getRunsFromApi(state.activeProfileId, projectId, limit);
 }
 
 async function getOutline(projectId: string): Promise<OutlineDoc> {

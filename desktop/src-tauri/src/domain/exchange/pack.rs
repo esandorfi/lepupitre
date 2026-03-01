@@ -3,7 +3,6 @@ use crate::kernel::models;
 use crate::kernel::{ids, time};
 use crate::platform::artifacts;
 use crate::platform::db;
-use rusqlite::params;
 use std::fs::File;
 use std::path::PathBuf;
 use zip::write::FileOptions;
@@ -30,23 +29,8 @@ pub fn pack_export(
     db::ensure_profile_exists(&app, &profile_id)?;
     let conn = db::open_profile(&app, &profile_id)?;
 
-    let (project_id, audio_id, transcript_id): (String, Option<String>, Option<String>) = conn
-        .query_row(
-            "SELECT project_id, audio_artifact_id, transcript_id FROM runs WHERE id = ?1",
-            params![run_id],
-            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
-        )
-        .map_err(|e| format!("run_lookup: {e}"))?;
-    let audio_id = audio_id.ok_or_else(|| "run_missing_audio".to_string())?;
-    let transcript_id = transcript_id.ok_or_else(|| "run_missing_transcript".to_string())?;
-
-    let project_title: String = conn
-        .query_row(
-            "SELECT title FROM talk_projects WHERE id = ?1",
-            params![project_id],
-            |row| row.get(0),
-        )
-        .map_err(|e| format!("project_lookup: {e}"))?;
+    let (project_id, audio_id, transcript_id) = repo::run_export_refs(&conn, &run_id)?;
+    let project_title = repo::project_title(&conn, &project_id)?;
 
     let audio = repo::load_artifact(&conn, &audio_id, "audio")?;
     let transcript_artifact = repo::load_artifact(&conn, &transcript_id, "transcript")?;

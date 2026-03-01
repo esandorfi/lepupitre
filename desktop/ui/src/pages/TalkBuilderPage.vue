@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, RouterLink } from "vue-router";
-import { invoke } from "@tauri-apps/api/core";
 import TalkStepPageShell from "../components/TalkStepPageShell.vue";
+import { audioRevealWav } from "../domains/recorder/api";
 import { useI18n } from "../lib/i18n";
 import { appStore } from "../stores/app";
 import type { TalksBlueprint } from "../schemas/ipc";
@@ -212,7 +212,7 @@ async function revealExport() {
   isRevealing.value = true;
   error.value = null;
   try {
-    await invoke("audio_reveal_wav", { path: exportPath.value });
+    await audioRevealWav(exportPath.value);
   } catch (err) {
     error.value = toError(err);
   } finally {

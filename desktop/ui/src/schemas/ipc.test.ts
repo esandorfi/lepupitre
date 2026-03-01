@@ -13,6 +13,9 @@ import {
   RecordingTelemetryBudgetResponseSchema,
   RecordingTelemetryEventSchema,
   RecordingStatusResponseSchema,
+  SecurityPrepareAppdataFileResponseSchema,
+  SecurityProbeFsPayloadSchema,
+  SecurityProbeFsResponseSchema,
   TranscriptEditSavePayloadSchema,
   TranscriptV1Schema,
   TranscribeAudioPayloadSchema,
@@ -235,5 +238,20 @@ describe("ipc schemas", () => {
       editedText: "Hello world",
     });
     expect(parsed.success).toBe(true);
+  });
+
+  it("accepts security fs probe payload and response", () => {
+    expect(SecurityProbeFsPayloadSchema.safeParse({ path: "C:/safe/path.txt" }).success).toBe(
+      true
+    );
+    expect(SecurityProbeFsResponseSchema.safeParse("allowed:file").success).toBe(true);
+  });
+
+  it("accepts security appdata prepare response", () => {
+    expect(
+      SecurityPrepareAppdataFileResponseSchema.safeParse(
+        "C:/Users/name/AppData/Roaming/LePupitre/probe/allow.txt"
+      ).success
+    ).toBe(true);
   });
 });

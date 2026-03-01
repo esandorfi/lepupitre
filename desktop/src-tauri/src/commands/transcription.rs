@@ -168,9 +168,15 @@ fn transcribe_audio_blocking(
 
     let (samples, duration_ms) = asr::decode_wav_mono_16k(&audio_bytes)?;
     let total_ms = duration_ms;
-    let segments = asr::decode_with_sidecar(app, &asr_settings, &samples, total_ms, |processed, total| {
-        let _ = emit_final_progress(app, processed, total);
-    })?;
+    let segments = asr::decode_with_sidecar(
+        app,
+        &asr_settings,
+        &samples,
+        total_ms,
+        |processed, total| {
+            let _ = emit_final_progress(app, processed, total);
+        },
+    )?;
     let segments = if asr_settings.spoken_punctuation {
         transcript::apply_spoken_punctuation(&segments, &asr_settings.language)
     } else {
@@ -184,13 +190,7 @@ fn transcribe_audio_blocking(
         segments,
     };
 
-    emit_progress(
-        app,
-        job_id,
-        "transcribe",
-        70,
-        Some("serialize".to_string()),
-    )?;
+    emit_progress(app, job_id, "transcribe", 70, Some("serialize".to_string()))?;
 
     let transcript_bytes =
         serde_json::to_vec(&transcript).map_err(|e| format!("transcript_json: {e}"))?;

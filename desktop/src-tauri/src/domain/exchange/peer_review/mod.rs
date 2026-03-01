@@ -1,7 +1,9 @@
+mod queries;
+mod repo;
+
 use crate::kernel::models;
 use crate::platform::artifacts;
 use crate::platform::db;
-use rusqlite::params;
 use serde::Serialize;
 
 #[derive(Debug, Serialize)]
@@ -31,37 +33,8 @@ pub fn peer_review_list(
 ) -> Result<Vec<PeerReviewSummary>, String> {
     db::ensure_profile_exists(&app, &profile_id)?;
     let conn = db::open_profile(&app, &profile_id)?;
-    let limit = normalize_peer_review_limit(limit);
-
-    let mut stmt = conn
-        .prepare(
-            "SELECT pr.id, pr.run_id, r.project_id, pr.created_at, pr.reviewer_tag
-             FROM peer_reviews pr
-             JOIN runs r ON r.id = pr.run_id
-             WHERE r.project_id = ?1
-             ORDER BY pr.created_at DESC
-             LIMIT ?2",
-        )
-        .map_err(|e| format!("peer_review_list_prepare: {e}"))?;
-
-    let rows = stmt
-        .query_map(params![project_id, limit], |row| {
-            Ok(PeerReviewSummary {
-                id: row.get(0)?,
-                run_id: row.get(1)?,
-                project_id: row.get(2)?,
-                created_at: row.get(3)?,
-                reviewer_tag: row.get(4)?,
-            })
-        })
-        .map_err(|e| format!("peer_review_list_query: {e}"))?;
-
-    let mut reviews = Vec::new();
-    for row in rows {
-        reviews.push(row.map_err(|e| format!("peer_review_list_row: {e}"))?);
-    }
-
-    Ok(reviews)
+    let normalized_limit = repo::normalize_peer_review_limit(limit);
+    repo::list_peer_reviews(&conn, &project_id, normalized_limit)
 }
 
 pub fn peer_review_get(
@@ -72,24 +45,9 @@ pub fn peer_review_get(
     db::ensure_profile_exists(&app, &profile_id)?;
     let conn = db::open_profile(&app, &profile_id)?;
 
-    let (run_id, project_id, created_at, reviewer_tag, artifact_id): (
-        String,
-        String,
-        String,
-        Option<String>,
-        String,
-    ) = conn
-        .query_row(
-            "SELECT pr.run_id, r.project_id, pr.created_at, pr.reviewer_tag, pr.review_json_artifact_id
-             FROM peer_reviews pr
-             JOIN runs r ON r.id = pr.run_id
-             WHERE pr.id = ?1",
-            params![peer_review_id],
-            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?)),
-        )
-        .map_err(|e| format!("peer_review_lookup: {e}"))?;
+    let detail_row = repo::fetch_peer_review_detail_row(&conn, &peer_review_id)?;
 
-    let artifact = artifacts::get_artifact(&app, &profile_id, &artifact_id)?;
+    let artifact = artifacts::get_artifact(&app, &profile_id, &detail_row.artifact_id)?;
     if artifact.artifact_type != "peer_review" {
         return Err("peer_review_artifact_type".to_string());
     }
@@ -101,21 +59,17 @@ pub fn peer_review_get(
 
     Ok(PeerReviewDetail {
         id: peer_review_id,
-        run_id,
-        project_id,
-        created_at,
-        reviewer_tag,
+        run_id: detail_row.run_id,
+        project_id: detail_row.project_id,
+        created_at: detail_row.created_at,
+        reviewer_tag: detail_row.reviewer_tag,
         review,
     })
 }
 
-fn normalize_peer_review_limit(limit: Option<i64>) -> i64 {
-    limit.unwrap_or(12).clamp(1, 100)
-}
-
 #[cfg(test)]
 mod tests {
-    use super::normalize_peer_review_limit;
+    use super::repo::normalize_peer_review_limit;
 
     #[test]
     fn peer_review_limit_is_bounded() {

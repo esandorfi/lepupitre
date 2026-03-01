@@ -1,3 +1,4 @@
+use super::queries;
 use rusqlite::{params, OptionalExtension};
 
 #[derive(Debug)]
@@ -14,7 +15,7 @@ pub(in crate::domain::exchange::pack) fn load_artifact(
 ) -> Result<ArtifactRow, String> {
     let row = conn
         .query_row(
-            "SELECT local_relpath, sha256, bytes, type FROM artifacts WHERE id = ?1",
+            queries::SELECT_ARTIFACT_BY_ID,
             params![artifact_id],
             |row| {
                 Ok((
@@ -43,7 +44,7 @@ pub(in crate::domain::exchange::pack) fn outline_markdown(
 ) -> Result<String, String> {
     let stored: Option<String> = conn
         .query_row(
-            "SELECT outline_md FROM talk_outlines WHERE project_id = ?1",
+            queries::SELECT_OUTLINE_MARKDOWN,
             params![project_id],
             |row| row.get(0),
         )
@@ -56,13 +57,35 @@ pub(in crate::domain::exchange::pack) fn next_talk_number(
     conn: &rusqlite::Connection,
 ) -> Result<i64, String> {
     let max_value: i64 = conn
-        .query_row(
-            "SELECT COALESCE(MAX(talk_number), 0) FROM talk_projects",
-            [],
-            |row| row.get(0),
-        )
+        .query_row(queries::SELECT_NEXT_TALK_NUMBER, [], |row| row.get(0))
         .map_err(|e| format!("talk_number_max: {e}"))?;
     Ok(max_value + 1)
+}
+
+pub(in crate::domain::exchange::pack) fn run_export_refs(
+    conn: &rusqlite::Connection,
+    run_id: &str,
+) -> Result<(String, String, String), String> {
+    let (project_id, audio_id, transcript_id): (String, Option<String>, Option<String>) = conn
+        .query_row(queries::SELECT_RUN_EXPORT_REFS, params![run_id], |row| {
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+        })
+        .map_err(|e| format!("run_lookup: {e}"))?;
+    let audio_id = audio_id.ok_or_else(|| "run_missing_audio".to_string())?;
+    let transcript_id = transcript_id.ok_or_else(|| "run_missing_transcript".to_string())?;
+    Ok((project_id, audio_id, transcript_id))
+}
+
+pub(in crate::domain::exchange::pack) fn project_title(
+    conn: &rusqlite::Connection,
+    project_id: &str,
+) -> Result<String, String> {
+    conn.query_row(
+        queries::SELECT_PROJECT_TITLE_BY_ID,
+        params![project_id],
+        |row| row.get(0),
+    )
+    .map_err(|e| format!("project_lookup: {e}"))
 }
 
 fn default_outline(title: &str) -> String {

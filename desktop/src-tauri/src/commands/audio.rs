@@ -212,7 +212,10 @@ fn restore_recording_session(
     manager: &State<RecordingManager>,
     session: RecordingController,
 ) -> Result<(), String> {
-    let mut guard = manager.session.lock().map_err(|_| "recording_lock".to_string())?;
+    let mut guard = manager
+        .session
+        .lock()
+        .map_err(|_| "recording_lock".to_string())?;
     if guard.is_some() {
         return Err("recording_state_conflict".to_string());
     }
@@ -278,8 +281,7 @@ pub fn recording_start(
         }
     });
 
-    let start_info = start_rx
-        .recv_timeout(Duration::from_millis(START_TIMEOUT_MS));
+    let start_info = start_rx.recv_timeout(Duration::from_millis(START_TIMEOUT_MS));
     let start_info = match start_info {
         Ok(Ok(info)) => info,
         Ok(Err(err)) => {
@@ -719,9 +721,9 @@ fn run_live_asr(
 
         thread::sleep(Duration::from_millis(LIVE_STEP_MS));
 
-        let (last_vad, total_samples) = match state.lock() {
-            Ok(guard) => (guard.last_vad, guard.total_samples),
-            Err(_) => continue,
+        let (last_vad, total_samples) = match try_live_flags(&state) {
+            Some(flags) => flags,
+            None => continue,
         };
         let now_ms = (total_samples as f64 / TARGET_SAMPLE_RATE as f64 * 1000.0).round() as i64;
 
@@ -737,7 +739,10 @@ fn run_live_asr(
             continue;
         }
 
-        let window = snapshot_window(&state, window_samples);
+        let window = match try_snapshot_window(&state, window_samples) {
+            Some(window) => window,
+            None => continue,
+        };
         let window_start_ms = now_ms - (window.len() as i64 * 1000 / TARGET_SAMPLE_RATE as i64);
         let segments = decoder.decode(
             &window,
@@ -779,29 +784,68 @@ fn run_recording_telemetry(
             break;
         }
 
-        let payload = match state.lock() {
-            Ok(guard) => {
-                let waveform_samples = guard.ring.snapshot_last(RECORDING_WAVEFORM_WINDOW_SAMPLES);
-                RecordingTelemetryEvent {
-                    schema_version: "1.0.0",
-                    duration_ms: (guard.total_samples as f64 / TARGET_SAMPLE_RATE as f64 * 1000.0)
-                        .round() as i64,
-                    level: guard.last_level,
-                    is_clipping: guard.clipping_latched,
-                    signal_present: guard.signal_present,
-                    quality_hint_key: quality_hint_key(&guard),
-                    waveform_peaks: build_waveform_peaks(
-                        &waveform_samples,
-                        RECORDING_WAVEFORM_BINS,
-                    ),
+        let snapshot =
+            match try_recording_telemetry_snapshot(&state, RECORDING_WAVEFORM_WINDOW_SAMPLES) {
+                Some(snapshot) => snapshot,
+                None => {
+                    thread::sleep(Duration::from_millis(RECORDING_TELEMETRY_STEP_MS));
+                    continue;
                 }
-            }
-            Err(_) => break,
+            };
+        let waveform_peaks =
+            build_waveform_peaks(&snapshot.waveform_samples, RECORDING_WAVEFORM_BINS);
+        let payload = RecordingTelemetryEvent {
+            schema_version: "1.0.0",
+            duration_ms: snapshot.duration_ms,
+            level: snapshot.level,
+            is_clipping: snapshot.is_clipping,
+            signal_present: snapshot.signal_present,
+            quality_hint_key: snapshot.quality_hint_key,
+            waveform_peaks,
         };
 
         let _ = app.emit(RECORDING_TELEMETRY_EVENT, payload);
         thread::sleep(Duration::from_millis(RECORDING_TELEMETRY_STEP_MS));
     }
+}
+
+struct RecordingTelemetrySnapshot {
+    duration_ms: i64,
+    level: f32,
+    is_clipping: bool,
+    signal_present: bool,
+    quality_hint_key: &'static str,
+    waveform_samples: Vec<f32>,
+}
+
+fn try_live_flags(state: &Arc<Mutex<RecordingState>>) -> Option<(bool, u64)> {
+    let guard = state.try_lock().ok()?;
+    Some((guard.last_vad, guard.total_samples))
+}
+
+fn try_snapshot_window(
+    state: &Arc<Mutex<RecordingState>>,
+    window_samples: usize,
+) -> Option<Vec<f32>> {
+    let guard = state.try_lock().ok()?;
+    Some(guard.ring.snapshot_last(window_samples))
+}
+
+fn try_recording_telemetry_snapshot(
+    state: &Arc<Mutex<RecordingState>>,
+    waveform_window_samples: usize,
+) -> Option<RecordingTelemetrySnapshot> {
+    let guard = state.try_lock().ok()?;
+    let waveform_samples = guard.ring.snapshot_last(waveform_window_samples);
+    Some(RecordingTelemetrySnapshot {
+        duration_ms: (guard.total_samples as f64 / TARGET_SAMPLE_RATE as f64 * 1000.0).round()
+            as i64,
+        level: guard.last_level,
+        is_clipping: guard.clipping_latched,
+        signal_present: guard.signal_present,
+        quality_hint_key: quality_hint_key(&guard),
+        waveform_samples,
+    })
 }
 
 fn estimate_recording_telemetry_payload_bytes(waveform_bins: usize) -> usize {
@@ -1014,7 +1058,6 @@ where
         }
     }
     guard.ring.push(&processed);
-
 }
 
 #[tauri::command]

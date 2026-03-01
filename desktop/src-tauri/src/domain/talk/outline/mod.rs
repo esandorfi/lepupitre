@@ -1,7 +1,9 @@
+mod queries;
+mod repo;
+
 use crate::kernel::models;
 use crate::kernel::time;
 use crate::platform::db;
-use rusqlite::{params, OptionalExtension};
 
 pub fn outline_get(
     app: &tauri::AppHandle,
@@ -11,22 +13,8 @@ pub fn outline_get(
     db::ensure_profile_exists(app, profile_id)?;
     let conn = db::open_profile(app, profile_id)?;
 
-    let project_title: String = conn
-        .query_row(
-            "SELECT title FROM talk_projects WHERE id = ?1",
-            params![project_id],
-            |row| row.get(0),
-        )
-        .map_err(|e| format!("project_lookup: {e}"))?;
-
-    let stored: Option<(String, String)> = conn
-        .query_row(
-            "SELECT outline_md, updated_at FROM talk_outlines WHERE project_id = ?1",
-            params![project_id],
-            |row| Ok((row.get(0)?, row.get(1)?)),
-        )
-        .optional()
-        .map_err(|e| format!("outline_lookup: {e}"))?;
+    let project_title = repo::project_title(&conn, project_id)?;
+    let stored = repo::stored_outline(&conn, project_id)?;
 
     if let Some((markdown, updated_at)) = stored {
         return Ok(models::OutlineDoc {
@@ -52,26 +40,12 @@ pub fn outline_set(
     db::ensure_profile_exists(app, profile_id)?;
     let conn = db::open_profile(app, profile_id)?;
 
-    let exists: i64 = conn
-        .query_row(
-            "SELECT COUNT(*) FROM talk_projects WHERE id = ?1",
-            params![project_id],
-            |row| row.get(0),
-        )
-        .map_err(|e| format!("project_check: {e}"))?;
-    if exists == 0 {
+    if !repo::project_exists(&conn, project_id)? {
         return Err("project_not_found".to_string());
     }
 
     let now = time::now_rfc3339();
-    conn.execute(
-        "INSERT INTO talk_outlines (project_id, outline_md, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4)
-         ON CONFLICT(project_id) DO UPDATE SET outline_md = excluded.outline_md, updated_at = excluded.updated_at",
-        params![project_id, markdown, now, now],
-    )
-    .map_err(|e| format!("outline_upsert: {e}"))?;
-
+    repo::upsert_outline(&conn, project_id, markdown, &now)?;
     Ok(())
 }
 
@@ -83,22 +57,8 @@ pub fn export_outline(
     db::ensure_profile_exists(app, profile_id)?;
     let conn = db::open_profile(app, profile_id)?;
 
-    let project_title: String = conn
-        .query_row(
-            "SELECT title FROM talk_projects WHERE id = ?1",
-            params![project_id],
-            |row| row.get(0),
-        )
-        .map_err(|e| format!("project_lookup: {e}"))?;
-
-    let outline: Option<String> = conn
-        .query_row(
-            "SELECT outline_md FROM talk_outlines WHERE project_id = ?1",
-            params![project_id],
-            |row| row.get(0),
-        )
-        .optional()
-        .map_err(|e| format!("outline_lookup: {e}"))?;
+    let project_title = repo::project_title(&conn, project_id)?;
+    let outline = repo::outline_markdown(&conn, project_id)?;
 
     let content = outline.unwrap_or_else(|| default_outline(&project_title));
     let profile_dir = db::profile_dir(app, profile_id)?;

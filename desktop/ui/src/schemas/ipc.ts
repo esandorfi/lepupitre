@@ -475,6 +475,13 @@ export const AudioRevealWavPayloadSchema = z.object({
   path: z.string().min(1),
 });
 
+export const SecurityProbeFsPayloadSchema = z.object({
+  path: z.string().min(1),
+});
+
+export const SecurityProbeFsResponseSchema = z.string().min(1);
+export const SecurityPrepareAppdataFileResponseSchema = z.string().min(1);
+
 export const RecordingAsrSettingsSchema = z
   .object({
     model: z.enum(["tiny", "base"]).optional(),
