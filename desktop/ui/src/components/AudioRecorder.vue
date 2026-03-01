@@ -19,6 +19,7 @@ import {
 import {
   isTypingTargetElement,
   recorderStopTransitionPlan,
+  resolveRecorderShortcutAction,
   resolveActiveTranscriptIdForAnalysis,
 } from "../lib/recorderFlow";
 import { useTranscriptionSettings } from "../lib/transcriptionSettings";
@@ -836,25 +837,33 @@ function handleShortcut(event: KeyboardEvent) {
     return;
   }
 
-  if (event.key === " ") {
-    event.preventDefault();
-    void handleCapturePrimaryAction();
+  const action = resolveRecorderShortcutAction({
+    key: event.key,
+    ctrlOrMeta: event.metaKey || event.ctrlKey,
+    phase: phase.value,
+    canTranscribe: canTranscribe.value,
+    hasTranscriptForAnalysis: !!activeTranscriptIdForAnalysis.value,
+  });
+  if (!action) {
     return;
   }
 
-  if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
-    event.preventDefault();
-    if (phase.value === "capture" && canTranscribe.value) {
-      void transcribeRecording();
-      return;
-    }
-    if (phase.value === "quick_clean" && !!activeTranscriptIdForAnalysis.value) {
-      phase.value = "analyze_export";
-      return;
-    }
-    if (phase.value === "analyze_export") {
-      requestAnalyze();
-    }
+  event.preventDefault();
+  if (action === "capture_primary") {
+    void handleCapturePrimaryAction();
+    return;
+  }
+  if (action === "transcribe") {
+    void transcribeRecording();
+    return;
+  }
+  if (action === "continue_to_analyze_export") {
+    phase.value = "analyze_export";
+    return;
+  }
+  if (action === "analyze") {
+    requestAnalyze();
+    return;
   }
 }
 
@@ -1079,6 +1088,13 @@ watch(
       class="app-link text-xs underline"
     >
       {{ t("audio.error_model_missing_action") }}
+    </RouterLink>
+    <RouterLink
+      v-if="(errorCode === 'sidecar_missing' || transcribeBlockedCode === 'sidecar_missing') && phase === 'quick_clean'"
+      to="/help"
+      class="app-link text-xs underline"
+    >
+      {{ t("audio.error_sidecar_missing_action") }}
     </RouterLink>
     <span class="sr-only" aria-live="polite">{{ announcement }}</span>
   </div>

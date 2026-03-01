@@ -1,5 +1,12 @@
 export type RecorderPhase = "capture" | "quick_clean" | "analyze_export";
 
+export type RecorderShortcutAction =
+  | "capture_primary"
+  | "transcribe"
+  | "continue_to_analyze_export"
+  | "analyze"
+  | null;
+
 export function resolveActiveTranscriptIdForAnalysis(
   baseTranscriptId: string | null,
   editedTranscriptId: string | null
@@ -30,4 +37,34 @@ export function recorderStopTransitionPlan(
     nextPhase: "quick_clean",
     shouldAutoTranscribe: autoTranscribeOnStop && canTranscribe,
   };
+}
+
+export function resolveRecorderShortcutAction(input: {
+  key: string;
+  ctrlOrMeta: boolean;
+  phase: RecorderPhase;
+  canTranscribe: boolean;
+  hasTranscriptForAnalysis: boolean;
+}): RecorderShortcutAction {
+  if (input.key === " ") {
+    return "capture_primary";
+  }
+
+  if (!(input.ctrlOrMeta && input.key === "Enter")) {
+    return null;
+  }
+
+  if (input.phase === "capture" && input.canTranscribe) {
+    return "transcribe";
+  }
+
+  if (input.phase === "quick_clean" && input.hasTranscriptForAnalysis) {
+    return "continue_to_analyze_export";
+  }
+
+  if (input.phase === "analyze_export") {
+    return "analyze";
+  }
+
+  return null;
 }
