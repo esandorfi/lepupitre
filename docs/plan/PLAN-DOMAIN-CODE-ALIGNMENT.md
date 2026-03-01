@@ -237,6 +237,11 @@ UI (`desktop/ui/src`)
   - Rust: `domain/run` and `domain/feedback` now consume feedback analysis via domain path imports.
   - Guard rails: legacy path checks now enforce removal of `core/analysis.rs`.
 
+- 2026-03-01: Topology reset continued (recorder signal processing).
+  - Rust: moved `dsp` and `vad` modules from `core/` to `domain/recorder/`.
+  - Rust: `commands/audio.rs` now imports recorder signal processing modules from `domain::recorder`.
+  - Guard rails: legacy path checks now enforce removal of `core/dsp.rs` and `core/vad.rs`.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.

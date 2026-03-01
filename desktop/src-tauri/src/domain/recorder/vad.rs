@@ -1,4 +1,4 @@
-use crate::core::dsp;
+use super::dsp;
 
 pub struct VadConfig {
     pub speech_start_ms: u32,

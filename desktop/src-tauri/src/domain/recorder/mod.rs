@@ -1,4 +1,6 @@
+pub mod dsp;
 pub mod recording;
+pub mod vad;
 
 use cpal::traits::{DeviceTrait, HostTrait};
 

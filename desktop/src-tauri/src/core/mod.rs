@@ -1,8 +1,6 @@
 pub mod artifacts;
-pub mod dsp;
 pub mod models;
 pub mod transcript;
-pub mod vad;
 
 pub mod coach {
     pub use crate::domain::coach::*;
@@ -38,6 +36,10 @@ pub mod db_helpers {
 
 pub mod feedback {
     pub use crate::domain::feedback::*;
+}
+
+pub mod dsp {
+    pub use crate::domain::recorder::dsp::*;
 }
 
 pub mod ids {
@@ -90,4 +92,8 @@ pub mod recording {
 
 pub mod workspace {
     pub use crate::domain::workspace::*;
+}
+
+pub mod vad {
+    pub use crate::domain::recorder::vad::*;
 }

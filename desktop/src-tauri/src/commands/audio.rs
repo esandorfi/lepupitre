@@ -9,13 +9,13 @@ use std::time::Duration;
 use tauri::{Emitter, Manager, State};
 
 use crate::core::artifacts;
-use crate::core::dsp;
 use crate::core::models;
-use crate::core::vad::{VadConfig, VadState};
 use crate::domain::asr;
 use crate::domain::asr::asr_live::LiveTranscriptState;
 use crate::domain::recorder;
+use crate::domain::recorder::dsp;
 use crate::domain::recorder::recording::{LinearResampler, RingBuffer, WavWriter};
+use crate::domain::recorder::vad::{VadConfig, VadState};
 use crate::platform::asr_sidecar;
 use crate::platform::db;
 
