@@ -131,6 +131,14 @@ function hasDuplicateName(nextName: string, exceptId?: string) {
   );
 }
 
+function toWorkspaceError(err: unknown) {
+  const message = err instanceof Error ? err.message : String(err);
+  if (message.includes("recording_active")) {
+    return t("profiles.switch_blocked_recording");
+  }
+  return message;
+}
+
 function closePanel() {
   open.value = false;
   error.value = null;
@@ -185,7 +193,7 @@ async function createProfileInline() {
     await router.push("/");
     closePanel();
   } catch (err) {
-    error.value = err instanceof Error ? err.message : String(err);
+    error.value = toWorkspaceError(err);
   } finally {
     isCreating.value = false;
   }
@@ -204,7 +212,7 @@ async function selectProfile(profileId: string) {
     await router.push("/");
     closePanel();
   } catch (err) {
-    error.value = err instanceof Error ? err.message : String(err);
+    error.value = toWorkspaceError(err);
   } finally {
     switchingId.value = null;
   }
@@ -251,7 +259,7 @@ async function confirmRename(profileId: string) {
   try {
     await appStore.renameProfile(profileId, nextName);
   } catch (err) {
-    error.value = err instanceof Error ? err.message : String(err);
+    error.value = toWorkspaceError(err);
   } finally {
     isRenaming.value = false;
   }
@@ -311,7 +319,7 @@ async function confirmDelete() {
     editingId.value = null;
     await router.push("/");
   } catch (err) {
-    error.value = err instanceof Error ? err.message : String(err);
+    error.value = toWorkspaceError(err);
   } finally {
     deletingId.value = null;
   }

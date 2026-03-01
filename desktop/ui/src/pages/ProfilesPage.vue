@@ -55,7 +55,11 @@ const deleteDialogBody = computed(() => {
 });
 
 function toError(err: unknown) {
-  return err instanceof Error ? err.message : String(err);
+  const message = err instanceof Error ? err.message : String(err);
+  if (message.includes("recording_active")) {
+    return t("profiles.switch_blocked_recording");
+  }
+  return message;
 }
 
 function formatBytes(bytes: number) {

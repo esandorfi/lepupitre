@@ -1,5 +1,6 @@
 use crate::core::{db, models::ProfileSummary, workspace};
 use serde::Serialize;
+use tauri::State;
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -19,7 +20,14 @@ pub fn profile_create(app: tauri::AppHandle, name: String) -> Result<String, Str
 }
 
 #[tauri::command]
-pub fn profile_switch(app: tauri::AppHandle, profile_id: String) -> Result<(), String> {
+pub fn profile_switch(
+    app: tauri::AppHandle,
+    profile_id: String,
+    recording_state: State<crate::commands::audio::RecordingManager>,
+) -> Result<(), String> {
+    if recording_state.has_active_session()? {
+        return Err("recording_active".to_string());
+    }
     workspace::profile_switch(&app, &profile_id)
 }
 
