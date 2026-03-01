@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   isTypingTargetElement,
   recorderStopTransitionPlan,
+  resolveRecorderShortcutAction,
   resolveActiveTranscriptIdForAnalysis,
 } from "./recorderFlow";
 
@@ -33,5 +34,69 @@ describe("recorderFlow", () => {
     expect(isTypingTargetElement(select)).toBe(true);
     expect(isTypingTargetElement(editable)).toBe(true);
     expect(isTypingTargetElement(div)).toBe(false);
+  });
+
+  it("maps keyboard shortcuts to context-aware recorder actions", () => {
+    expect(
+      resolveRecorderShortcutAction({
+        key: " ",
+        ctrlOrMeta: false,
+        phase: "capture",
+        canTranscribe: false,
+        hasTranscriptForAnalysis: false,
+      })
+    ).toBe("capture_primary");
+
+    expect(
+      resolveRecorderShortcutAction({
+        key: "Enter",
+        ctrlOrMeta: true,
+        phase: "capture",
+        canTranscribe: true,
+        hasTranscriptForAnalysis: false,
+      })
+    ).toBe("transcribe");
+
+    expect(
+      resolveRecorderShortcutAction({
+        key: "Enter",
+        ctrlOrMeta: true,
+        phase: "quick_clean",
+        canTranscribe: false,
+        hasTranscriptForAnalysis: true,
+      })
+    ).toBe("continue_to_analyze_export");
+
+    expect(
+      resolveRecorderShortcutAction({
+        key: "Enter",
+        ctrlOrMeta: true,
+        phase: "analyze_export",
+        canTranscribe: false,
+        hasTranscriptForAnalysis: true,
+      })
+    ).toBe("analyze");
+  });
+
+  it("returns null when shortcuts are not applicable for current context", () => {
+    expect(
+      resolveRecorderShortcutAction({
+        key: "Enter",
+        ctrlOrMeta: true,
+        phase: "capture",
+        canTranscribe: false,
+        hasTranscriptForAnalysis: false,
+      })
+    ).toBeNull();
+
+    expect(
+      resolveRecorderShortcutAction({
+        key: "a",
+        ctrlOrMeta: false,
+        phase: "quick_clean",
+        canTranscribe: true,
+        hasTranscriptForAnalysis: true,
+      })
+    ).toBeNull();
   });
 });

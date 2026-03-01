@@ -3,7 +3,7 @@
 Status: in_progress  
 Parent: [PLAN-RECORDER-VOICE-MEMO-UX.md](PLAN-RECORDER-VOICE-MEMO-UX.md)
 
-## Execution checkpoint (2026-02-28)
+## Execution checkpoint (2026-03-01)
 
 Delivered in this pass:
 
@@ -25,6 +25,14 @@ Delivered in this pass:
   - recorder quality hint transitions now use stabilization hysteresis in UI
   - danger states escalate immediately; de-escalation uses hold windows to reduce flicker
   - focused unit tests added for transition timing behavior
+- B.1 keyboard shortcut parity check implemented:
+  - shortcut routing extracted into `resolveRecorderShortcutAction(...)`
+  - recorder component now consumes centralized shortcut decisions
+  - focused unit tests added for phase-aware `Space` and `Ctrl/Cmd+Enter` behavior
+- B.3 empty/error-state guidance implemented:
+  - recorder now exposes explicit sidecar-missing recovery CTA from quick-clean entrypoint
+  - model-missing path remains routed to Settings; sidecar-missing path routes to Help
+  - missing prerequisites are now actionable from both blocked-message and diagnostics context
 
 ## Goal
 
