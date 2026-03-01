@@ -1,5 +1,196 @@
 # Changelog
 
+## v0.2.9 - 2026-03-01
+Summary: 41 features, 15 fixes, 15 docs, 68 refactors, 10 chores, 1 perf, 4 tests, 8 ci, 1 style, 4 other.
+Comparing from v0.2.8 to HEAD.
+
+### Features
+- feat(domain): split recorder and asr ui ipc boundaries
+- feat(asr): add checksum manifest verification and release publication
+- feat(asr): add diagnostics bundle export command
+- feat(asr): add sidecar doctor contract and compatibility gate
+- feat(recorder): add telemetry budget diagnostics and smoke gates
+- feat(recorder): add input device selection and calibration guidance
+- feat(ui): add waveform style presets with persisted preference
+- feat(recorder): add waveform telemetry and inline audio preview
+- feat(recorder): decouple recording success from ASR blockers
+- feat(ui): add quick record route and primary nav entrypoint
+- feat(recorder): finalize shortcut parity and recovery guidance
+- feat(recorder): stabilize quality hint transitions
+- feat(recorder): add non-destructive trim apply flow
+- feat(recorder): complete voice-memo workflow and dev-home tooling
+- feat(recorder): add quick-clean trim preview skeleton
+- feat(ui): add contextual markdown help and topic mapping
+- feat(site): add Astro website and GitHub Pages pipeline
+- feat(oss): switch to Apache-2.0 and add SignPath policy artifacts
+- feat(security): enforce local SQL secret boundary and close ws7
+- feat(db): add corruption recovery and diagnostics IPC
+- feat(db): add pre-migration snapshots and diagnostics helpers
+- feat(db): enforce aggregate transaction boundaries for peer import
+- feat(db): enforce profile foreign keys in migration 0007
+- feat(db): add ordered migration tracking and continuity checks
+- feat(db): enforce sqlite pragma posture on open
+- feat(preferences): add tauri-backed global/profile storage with fallback
+- feat(ui): centralize preferences storage and add migration plan
+- feat(feedback): add reviewed state and unread inbox filter
+- feat(talk-define): add readiness checklist and completion score
+- feat(builder): add framework challenge prompts and template apply
+- feat(feedback): add direct practice actions from recommendations
+- feat(training): add milestone achievement celebration card
+- feat(feedback): add focused delta insight and next action
+- feat(training): add daily loop mission checklist
+- feat(feedback): route analysis results to focused timeline
+- feat(training): add reward board tied to streak and credits
+- feat(training): make quest map checkpoints open filtered quests
+- feat(training): add weekly quest map progression panel
+- feat(talks): add backend-driven mission blueprint panel
+- feat(feedback): add timeline screen and primary nav flow
+- feat(voiceup): add contextual mascot and adaptive gamification UX
+
+### Fixes
+- fix: ci
+- fix(api): security domain
+- fix(rust): remove clippy too-many-arguments in talk project repo writes
+- fix(workspace): block profile switch during active recording
+- fix(ui): remove duplicate AnalyzeResponseSchema import
+- fix(site): handle custom-domain base links for downloads
+- fix(ci): resolve UI typecheck duplicate import and Rust clippy ASCII-case lint
+- fix(ui): import analyze response schema in app store
+- fix(db): clean exported pack file on artifact insert failure
+- fix(db): clean artifact files on row insert failure
+- fix(db): compensate feedback artifact writes on link failures
+- fix(db): compensate artifact writes on peer import failure
+- fix(db): prevent partial feedback links on missing subjects
+- fix(ui): resolve review findings for build, timeline races, and storage hygiene
+- fix(about): remove unsafe html rendering and update storage review plan
+
+### Docs
+- docs(asr): add PowerShell VsDevCmd helper for sidecar build
+- docs(plan): add recorder waveform strategy and creative presets
+- docs(recorder): close waveform polish plan after validation
+- docs(asr): add worktree checks and ops verification roadmap
+- docs: record help-content and website rollout decisions
+- docs(plan): mark tauri sql hardening as completed
+- docs(ops): add db recovery runbook and close workstream 5
+- docs(plan): add SQL hardening resume playbook
+- docs(db): close Workstream 3 and define write contracts
+- docs: image
+- docs(migrations): document runtime DB migration and upgrade flow clearly
+- docs(db): adopt rusqlite repo-query layering strategy
+- docs(testing): make test matrix the single source of truth
+- docs(plan): add SOTA Tauri/SQLite hardening track and execution plan
+- docs(spec): add generic qa branch verification prompt
+
+### Refactors
+- refactor(talk): split project service reads and writes
+- refactor(training): split quest service reads and submissions
+- refactor(run): split domain service by use case
+- refactor(coach): split repository progress and blueprint reads
+- refactor(run): split repository lookups and writes
+- refactor(feedback): split repository queries and mutations
+- refactor(feedback): split timeline analyze context note modules
+- refactor(asr): split model catalog and integrity modules
+- refactor(coach): split mascot route message builders
+- refactor(coach): split blueprint framework and steps modules
+- refactor(exchange): split pack repository internals
+- refactor(asr): split transcript punctuation rules module
+- refactor(talk): split project repository read/write modules
+- refactor(training): split quest repository read/write modules
+- refactor(recorder): split recording runtime modules
+- refactor(workspace): split repository queries and mutations
+- refactor(exchange): isolate pack import flow
+- refactor(exchange): isolate pack inspect flow
+- refactor(exchange): split pack types and content helpers
+- refactor(exchange): extract pack archive helpers
+- refactor(exchange): split pack repository module
+- refactor(asr): split transcript module by concern
+- refactor(asr): extract live decoder strategy module
+- refactor(asr): extract model downloader module
+- refactor(asr): extract diagnostics module
+- refactor(asr): extract settings normalization module
+- refactor(coach): split domain logic into progress mascot blueprint
+- refactor(feedback): split domain module into repo and types
+- refactor(talk): split project domain into mod repo types
+- refactor(workspace): split profile persistence into repo module
+- refactor(training): split quest domain into mod repo types
+- refactor(architecture): remove legacy core layer and direct imports
+- refactor(core): reduce core to compatibility facade only
+- refactor(asr): move transcript helpers to asr domain module
+- refactor(recorder): move dsp and vad modules to domain layer
+- refactor(feedback): move analysis engine into feedback domain
+- refactor(platform): move db and asr sidecar infrastructure out of core
+- refactor(asr): move asr runtime modules to domain layer
+- refactor(kernel): move ids and time primitives out of core
+- refactor(recorder): move recorder runtime modules to domain layer
+- refactor(exchange): move pack and peer review to domain layer
+- refactor(training): move quest services to domain layer
+- refactor(feedback): move feedback services to domain layer
+- refactor(talk): move project outline services to domain layer
+- refactor(workspace): move profile workspace logic to domain layer
+- refactor(architecture): make domain platform kernel primary topology
+- refactor(asr): move live decoder strategy to core
+- refactor(recorder): move input device services to core
+- refactor(asr): move diagnostics bundle assembly to core
+- refactor(audio): move recorder asr runtime config to core
+- refactor(transcript): move edit metadata builder to core
+- refactor(asr): move model download flow to core service
+- refactor(recorder): move wav trim utilities into core domain
+- refactor(asr): extract transcription runtime into core domain
+- refactor(audio): remove deprecated audio_save_wav command
+- refactor(ipc): enforce strict ASR payload contracts
+- refactor(db): standardize coach module boundaries
+- refactor(db): standardize run and preferences module boundaries
+- refactor(db): extract coach read-model out of command layer
+- refactor(db): extract preferences data access out of command layer
+- refactor(db): extract run data access out of command layer
+- refactor(db): centralize external file artifact registration
+- refactor(db): unify artifact compensation across import flows
+- refactor(domain): extract pack boundaries in rust and ui
+- refactor(domain): extract talk boundaries in rust and ui
+- refactor(domain): extract feedback boundaries in rust and ui
+- refactor(domain): extract quest boundaries in rust and ui
+- refactor(domain): extract workspace boundaries in rust and ui
+
+### Chores
+- chore(docs): update spec
+- chore(core): remove migrated legacy run coach preferences modules
+- chore(docs): asr update
+- chore(docs): update readme
+- chore(docs): add audio recorder images
+- chore: sync main updates for ui validation and docs
+- chore(site): ignore generated Astro metadata
+- chore(docs): asset image
+- chore(docs): fix readme markdownlint eof newline
+- chore(domain): enforce structure guard rails in ci
+
+### Tests
+- test(db): add workspace transaction rollback coverage
+- test(db): add migration upgrade-path fixtures
+- test(guardrails): simplify domain matrix and centralize flow harness
+- test(guardrails): add test matrix, CI obligations, and flow specs
+
+### CI
+- ci(asr): enforce sidecar doctor contract in release workflow
+- ci(pages): standardize github-pages actions deploy and pnpm version
+- ci(docs): enforce signpath oss compliance artifacts
+- ci(release): support signpath or self-managed windows trust mode
+- ci(release): add optional signing and notarization trust gates
+- ci(db): enforce reliability thresholds and move sql hardening to ws7
+- ci(db): add reliability gates for migrations and query plans
+- ci: update release
+
+### Perf
+- perf: offload transcription work to blocking runtime and reduce recorder hot-path allocation
+
+### Style
+- style(rust): apply rustfmt for preference key normalization
+
+### Other
+-  fix: harden recorder/session lifecycle, artifact path boundaries, sidecar cleanup, and query limits
+- Fix formatting in dependabot.yml comments
+- Merge branch 'main' of github.com:esandorfi/lepupitre
+- +
+
 ## v0.2.8 - 2026-02-28
 Summary: 1 fixes, 8 docs, 1 chores.
 Comparing from v0.2.7 to HEAD.
