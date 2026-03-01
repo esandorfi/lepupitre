@@ -12,6 +12,11 @@ import { classifyAsrError } from "../lib/asrErrors";
 import { useI18n } from "../lib/i18n";
 import { readPreference, writePreference } from "../lib/preferencesStorage";
 import {
+  createRecorderQualityHintStabilizer,
+  normalizeRecorderQualityHint,
+  updateRecorderQualityHint,
+} from "../lib/recorderQualityHint";
+import {
   isTypingTargetElement,
   recorderStopTransitionPlan,
   resolveActiveTranscriptIdForAnalysis,
@@ -111,6 +116,7 @@ const lastDurationSec = ref<number | null>(null);
 const liveDurationSec = ref<number>(0);
 const liveLevel = ref<number>(0);
 const qualityHintKey = ref("good_level");
+const qualityHintStabilizer = ref(createRecorderQualityHintStabilizer("good_level"));
 const isRevealing = ref(false);
 const isApplyingTrim = ref(false);
 const isTranscribing = ref(false);
@@ -285,6 +291,20 @@ function resetLiveTranscript() {
   livePartial.value = null;
 }
 
+function resetQualityHintState() {
+  qualityHintStabilizer.value = createRecorderQualityHintStabilizer("good_level");
+  qualityHintKey.value = "good_level";
+}
+
+function applyQualityHint(rawHint: string | null | undefined) {
+  const normalized = normalizeRecorderQualityHint(rawHint);
+  qualityHintKey.value = updateRecorderQualityHint(
+    qualityHintStabilizer.value,
+    normalized,
+    Date.now()
+  );
+}
+
 function resetTranscriptionState() {
   isTranscribing.value = false;
   transcribeProgress.value = 0;
@@ -375,7 +395,7 @@ async function refreshStatus() {
     liveDurationSec.value = status.durationMs / 1000;
     liveLevel.value = status.level;
     isPaused.value = status.isPaused ?? false;
-    qualityHintKey.value = status.qualityHintKey ?? "good_level";
+    applyQualityHint(status.qualityHintKey);
   } catch (err) {
     if (recordingId.value !== currentRecordingId) {
       return;
@@ -437,7 +457,7 @@ async function startRecording() {
   lastDurationSec.value = null;
   liveDurationSec.value = 0;
   liveLevel.value = 0;
-  qualityHintKey.value = "good_level";
+  resetQualityHintState();
   statusKey.value = "audio.status_requesting";
   phase.value = "capture";
   resetTranscriptionState();
@@ -877,7 +897,7 @@ onMounted(async () => {
     clearStatusTimer();
     liveDurationSec.value = parsed.data.durationMs / 1000;
     liveLevel.value = parsed.data.level;
-    qualityHintKey.value = parsed.data.qualityHintKey;
+    applyQualityHint(parsed.data.qualityHintKey);
   });
 
   unlistenAsrPartial = await listen("asr/partial/v1", (event) => {
