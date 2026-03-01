@@ -192,6 +192,11 @@ UI (`desktop/ui/src`)
   - Rust: `commands/profile.rs` now imports `domain::workspace` and `platform::db`.
   - Guard rails: legacy path checks now enforce removal of `core/workspace.rs`.
 
+- 2026-03-01: Topology reset continued (talk context).
+  - Rust: moved `project` and `outline` contexts from `core/` to `domain/talk/`.
+  - Rust: `commands/project.rs` and `commands/outline.rs` now import `domain::talk::*`.
+  - Guard rails: legacy path checks now enforce removal of `core/project.rs` and `core/outline.rs`.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.

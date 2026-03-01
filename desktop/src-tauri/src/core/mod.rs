@@ -10,10 +10,8 @@ pub mod dsp;
 pub mod feedback;
 pub mod ids;
 pub mod models;
-pub mod outline;
 pub mod pack;
 pub mod peer_review;
-pub mod project;
 pub mod quest;
 pub mod recorder;
 pub mod recording;
@@ -32,6 +30,14 @@ pub mod preferences {
 
 pub mod run {
     pub use crate::domain::run::*;
+}
+
+pub mod outline {
+    pub use crate::domain::talk::outline::*;
+}
+
+pub mod project {
+    pub use crate::domain::talk::project::*;
 }
 
 pub mod workspace {

@@ -1,7 +1,8 @@
 use crate::core::{
-    db, ids, models::ProjectCreatePayload, models::ProjectSummary, models::ProjectUpdatePayload,
-    time,
+    models::ProjectCreatePayload, models::ProjectSummary, models::ProjectUpdatePayload,
 };
+use crate::kernel::{ids, time};
+use crate::platform::db;
 use rusqlite::{params, OptionalExtension};
 use serde::Serialize;
 

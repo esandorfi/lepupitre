@@ -1,4 +1,5 @@
-use crate::core::{models, project as project_core};
+use crate::core::models;
+use crate::domain::talk::project as project_core;
 
 pub use project_core::ProjectListItem;
 
