@@ -70,7 +70,6 @@ import {
   Quest,
   QuestAttemptSummary,
   QuestReportItem,
-  AnalyzeResponseSchema,
   FeedbackV1,
   FeedbackContext,
   FeedbackTimelineItem,
