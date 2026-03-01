@@ -1,5 +1,5 @@
-use crate::core::{asr_models, asr_sidecar, models};
-use serde::Deserialize;
+use crate::core::{asr_models, asr_sidecar, models, time};
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::fs::File;
 use std::io::{Read, Write};
@@ -13,6 +13,49 @@ const SIDECAR_MODEL_ENV_PATH: &str = "LEPUPITRE_ASR_MODEL_PATH";
 const FINAL_SLOW_DECODE_RATIO: f64 = 1.5;
 const MAX_FINAL_SEGMENTS_PER_CHUNK: usize = 200;
 const MAX_FINAL_SEGMENTS_TOTAL: usize = 10_000;
+const ASR_DIAGNOSTICS_SCHEMA_VERSION: &str = "1.0.0";
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AsrDiagnosticsBundle {
+    pub schema_version: String,
+    pub generated_at: String,
+    pub app_version: String,
+    pub platform: AsrDiagnosticsPlatform,
+    pub sidecar: AsrDiagnosticsSidecar,
+    pub models: Vec<AsrDiagnosticsModel>,
+    pub known_error_signatures: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AsrDiagnosticsPlatform {
+    pub os: String,
+    pub arch: String,
+    pub family: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AsrDiagnosticsSidecar {
+    pub status: String,
+    pub path_hint: Option<String>,
+    pub status_error: Option<String>,
+    pub details: Option<asr_sidecar::SidecarStatus>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AsrDiagnosticsModel {
+    pub id: String,
+    pub installed: bool,
+    pub checksum_ok: Option<bool>,
+    pub size_bytes: Option<u64>,
+    pub expected_bytes: u64,
+    pub expected_sha256: String,
+    pub source_url: String,
+    pub path_hint: Option<String>,
+}
 
 #[derive(Debug, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
@@ -269,6 +312,62 @@ pub fn spawn_sidecar_decoder(
     asr_sidecar::SidecarDecoder::spawn(&sidecar_path, &model_path, language)
 }
 
+pub fn build_diagnostics_bundle(
+    app: &AppHandle,
+    known_error_signatures: &[&str],
+) -> Result<AsrDiagnosticsBundle, String> {
+    let sidecar = match asr_sidecar::resolve_sidecar_status(app) {
+        Ok(status) => AsrDiagnosticsSidecar {
+            status: "ok".to_string(),
+            path_hint: redact_path_hint(Some(status.path.as_str())),
+            status_error: None,
+            details: Some(status),
+        },
+        Err(code) => {
+            let path_hint = asr_sidecar::resolve_sidecar_path(app)
+                .ok()
+                .and_then(|path| redact_path_hint(path.to_str()));
+            AsrDiagnosticsSidecar {
+                status: "error".to_string(),
+                path_hint,
+                status_error: Some(code),
+                details: None,
+            }
+        }
+    };
+
+    let models = asr_models::list_models(app)?
+        .into_iter()
+        .map(|model| AsrDiagnosticsModel {
+            id: model.id,
+            installed: model.installed,
+            checksum_ok: model.checksum_ok,
+            size_bytes: model.size_bytes,
+            expected_bytes: model.expected_bytes,
+            expected_sha256: model.expected_sha256,
+            source_url: model.source_url,
+            path_hint: redact_path_hint(model.path.as_deref()),
+        })
+        .collect();
+
+    Ok(AsrDiagnosticsBundle {
+        schema_version: ASR_DIAGNOSTICS_SCHEMA_VERSION.to_string(),
+        generated_at: time::now_rfc3339(),
+        app_version: env!("CARGO_PKG_VERSION").to_string(),
+        platform: AsrDiagnosticsPlatform {
+            os: std::env::consts::OS.to_string(),
+            arch: std::env::consts::ARCH.to_string(),
+            family: std::env::consts::FAMILY.to_string(),
+        },
+        sidecar,
+        models,
+        known_error_signatures: known_error_signatures
+            .iter()
+            .map(|value| (*value).to_string())
+            .collect(),
+    })
+}
+
 pub fn download_model_blocking<F>(
     app: &AppHandle,
     model_id: &str,
@@ -382,4 +481,59 @@ fn to_hex(bytes: &[u8]) -> String {
         out.push_str(&format!("{:02x}", byte));
     }
     out
+}
+
+fn redact_path_hint(path: Option<&str>) -> Option<String> {
+    let raw = path?.trim();
+    if raw.is_empty() {
+        return None;
+    }
+    let filename = std::path::Path::new(raw)
+        .file_name()
+        .and_then(|value| value.to_str())
+        .map(|value| value.to_string());
+    filename.or_else(|| Some("<redacted>".to_string()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn normalize_recording_settings_enables_auto_benchmark_for_tiny_auto() {
+        let settings = normalize_recording_settings(Some(RecordingAsrSettingsPayload {
+            model: Some("tiny".to_string()),
+            mode: Some("auto".to_string()),
+            language: Some("en".to_string()),
+        }));
+        assert_eq!(settings.model_id, "tiny");
+        assert_eq!(settings.language, "en");
+        assert!(settings.live_enabled);
+        assert!(settings.auto_benchmark);
+    }
+
+    #[test]
+    fn normalize_recording_settings_disables_live_for_final_only() {
+        let settings = normalize_recording_settings(Some(RecordingAsrSettingsPayload {
+            model: Some("base".to_string()),
+            mode: Some("final-only".to_string()),
+            language: Some("fr".to_string()),
+        }));
+        assert_eq!(settings.model_id, "base");
+        assert_eq!(settings.language, "fr");
+        assert!(!settings.live_enabled);
+        assert!(!settings.auto_benchmark);
+    }
+
+    #[test]
+    fn redact_path_hint_keeps_filename_only() {
+        let redacted = redact_path_hint(Some("C:/Users/name/AppData/models/ggml-tiny.bin"));
+        assert_eq!(redacted.as_deref(), Some("ggml-tiny.bin"));
+    }
+
+    #[test]
+    fn redact_path_hint_handles_missing_values() {
+        assert_eq!(redact_path_hint(None), None);
+        assert_eq!(redact_path_hint(Some("   ")), None);
+    }
 }

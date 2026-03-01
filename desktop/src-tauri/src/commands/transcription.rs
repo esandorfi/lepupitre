@@ -1,6 +1,5 @@
-use crate::core::{artifacts, asr, asr_models, asr_sidecar, db, ids, models, time, transcript};
+use crate::core::{artifacts, asr, asr_models, asr_sidecar, db, ids, models, transcript};
 use serde::{Deserialize, Serialize};
-use std::path::Path;
 use tauri::Emitter;
 use tauri::Manager;
 
@@ -11,7 +10,6 @@ const EVENT_ASR_FINAL_PROGRESS: &str = "asr/final_progress/v1";
 const EVENT_ASR_FINAL_RESULT: &str = "asr/final_result/v1";
 const EVENT_MODEL_DOWNLOAD_PROGRESS: &str = "asr/model_download_progress/v1";
 
-const ASR_DIAGNOSTICS_SCHEMA_VERSION: &str = "1.0.0";
 const KNOWN_ASR_ERROR_SIGNATURES: [&str; 8] = [
     "sidecar_missing",
     "sidecar_doctor_failed",
@@ -40,48 +38,6 @@ pub struct TranscriptEditSaveResponse {
 #[serde(rename_all = "camelCase")]
 pub struct AsrDiagnosticsExportResponse {
     pub path: String,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct AsrDiagnosticsBundle {
-    schema_version: String,
-    generated_at: String,
-    app_version: String,
-    platform: AsrDiagnosticsPlatform,
-    sidecar: AsrDiagnosticsSidecar,
-    models: Vec<AsrDiagnosticsModel>,
-    known_error_signatures: Vec<String>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct AsrDiagnosticsPlatform {
-    os: String,
-    arch: String,
-    family: String,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct AsrDiagnosticsSidecar {
-    status: String,
-    path_hint: Option<String>,
-    status_error: Option<String>,
-    details: Option<asr_sidecar::SidecarStatus>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct AsrDiagnosticsModel {
-    id: String,
-    installed: bool,
-    checksum_ok: Option<bool>,
-    size_bytes: Option<u64>,
-    expected_bytes: u64,
-    expected_sha256: String,
-    source_url: String,
-    path_hint: Option<String>,
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -326,7 +282,7 @@ pub fn asr_sidecar_status(app: tauri::AppHandle) -> Result<asr_sidecar::SidecarS
 pub fn asr_diagnostics_export(
     app: tauri::AppHandle,
 ) -> Result<AsrDiagnosticsExportResponse, String> {
-    let bundle = build_asr_diagnostics_bundle(&app)?;
+    let bundle = asr::build_diagnostics_bundle(&app, &KNOWN_ASR_ERROR_SIGNATURES)?;
     let app_data_dir = app
         .path()
         .app_data_dir()
@@ -400,71 +356,6 @@ pub fn transcript_export(
     Ok(models::ExportResult {
         path: export_path.to_string_lossy().to_string(),
     })
-}
-
-fn build_asr_diagnostics_bundle(app: &tauri::AppHandle) -> Result<AsrDiagnosticsBundle, String> {
-    let sidecar = match asr_sidecar::resolve_sidecar_status(app) {
-        Ok(status) => AsrDiagnosticsSidecar {
-            status: "ok".to_string(),
-            path_hint: redact_path_hint(Some(status.path.as_str())),
-            status_error: None,
-            details: Some(status),
-        },
-        Err(code) => {
-            let path_hint = asr_sidecar::resolve_sidecar_path(app)
-                .ok()
-                .and_then(|path| redact_path_hint(path.to_str()));
-            AsrDiagnosticsSidecar {
-                status: "error".to_string(),
-                path_hint,
-                status_error: Some(code),
-                details: None,
-            }
-        }
-    };
-
-    let models = asr_models::list_models(app)?
-        .into_iter()
-        .map(|model| AsrDiagnosticsModel {
-            id: model.id,
-            installed: model.installed,
-            checksum_ok: model.checksum_ok,
-            size_bytes: model.size_bytes,
-            expected_bytes: model.expected_bytes,
-            expected_sha256: model.expected_sha256,
-            source_url: model.source_url,
-            path_hint: redact_path_hint(model.path.as_deref()),
-        })
-        .collect();
-
-    Ok(AsrDiagnosticsBundle {
-        schema_version: ASR_DIAGNOSTICS_SCHEMA_VERSION.to_string(),
-        generated_at: time::now_rfc3339(),
-        app_version: env!("CARGO_PKG_VERSION").to_string(),
-        platform: AsrDiagnosticsPlatform {
-            os: std::env::consts::OS.to_string(),
-            arch: std::env::consts::ARCH.to_string(),
-            family: std::env::consts::FAMILY.to_string(),
-        },
-        sidecar,
-        models,
-        known_error_signatures: KNOWN_ASR_ERROR_SIGNATURES
-            .iter()
-            .map(|value| (*value).to_string())
-            .collect(),
-    })
-}
-
-fn redact_path_hint(path: Option<&str>) -> Option<String> {
-    let raw = path?.trim();
-    if raw.is_empty() {
-        return None;
-    }
-    let filename = Path::new(raw)
-        .file_name()
-        .and_then(|value| value.to_str())
-        .map(|value| value.to_string());
-    filename.or_else(|| Some("<redacted>".to_string()))
 }
 
 fn emit_progress(
@@ -663,17 +554,5 @@ mod transcription_tests {
             .get("edited_at")
             .and_then(|value| value.as_str())
             .is_some());
-    }
-
-    #[test]
-    fn redact_path_hint_keeps_filename_only() {
-        let redacted = redact_path_hint(Some("C:/Users/name/AppData/models/ggml-tiny.bin"));
-        assert_eq!(redacted.as_deref(), Some("ggml-tiny.bin"));
-    }
-
-    #[test]
-    fn redact_path_hint_handles_missing_values() {
-        assert_eq!(redact_path_hint(None), None);
-        assert_eq!(redact_path_hint(Some("   ")), None);
     }
 }
