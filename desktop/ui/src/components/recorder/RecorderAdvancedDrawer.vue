@@ -12,6 +12,7 @@ const props = defineProps<{
   selectedInputDeviceId: string | null;
   isLoadingInputDevices: boolean;
   qualityGuidanceMessages: string[];
+  telemetryBudgetSummary: string | null;
   diagnosticsCode: string | null;
 }>();
 
@@ -138,6 +139,10 @@ const { t } = useI18n();
           </li>
         </ul>
       </div>
+
+      <p v-if="props.telemetryBudgetSummary" class="app-muted app-text-meta md:col-span-2">
+        {{ t("audio.telemetry_budget_title") }}: {{ props.telemetryBudgetSummary }}
+      </p>
     </div>
     <p v-if="props.open && props.diagnosticsCode" class="app-muted mt-2 text-xs">
       {{ t("audio.diagnostic") }}: {{ props.diagnosticsCode }}

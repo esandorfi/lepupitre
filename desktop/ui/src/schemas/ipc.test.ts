@@ -6,6 +6,7 @@ import {
   PreferenceKeySchema,
   PreferenceProfileGetPayloadSchema,
   RecordingInputDevicesResponseSchema,
+  RecordingTelemetryBudgetResponseSchema,
   RecordingTelemetryEventSchema,
   RecordingStatusResponseSchema,
   TranscriptEditSavePayloadSchema,
@@ -148,6 +149,17 @@ describe("ipc schemas", () => {
       { id: "mic-0-Built-in", label: "Built-in", isDefault: true },
       { id: "mic-1-USB", label: "USB", isDefault: false },
     ]);
+    expect(parsed.success).toBe(true);
+  });
+
+  it("accepts recorder telemetry budget payload", () => {
+    const parsed = RecordingTelemetryBudgetResponseSchema.safeParse({
+      eventIntervalMs: 200,
+      maxEventRateHz: 8,
+      maxPayloadBytes: 4096,
+      waveformBins: 48,
+      estimatedPayloadBytes: 1024,
+    });
     expect(parsed.success).toBe(true);
   });
 

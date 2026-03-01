@@ -46,6 +46,8 @@ const ASR_PARTIAL_EVENT: &str = "asr/partial/v1";
 const ASR_COMMIT_EVENT: &str = "asr/commit/v1";
 const RECORDING_TELEMETRY_EVENT: &str = "recording/telemetry/v1";
 const RECORDING_TELEMETRY_STEP_MS: u64 = 200;
+const RECORDING_TELEMETRY_MAX_EVENT_RATE_HZ: f32 = 8.0;
+const RECORDING_TELEMETRY_MAX_PAYLOAD_BYTES: usize = 4096;
 const RECORDING_WAVEFORM_WINDOW_SAMPLES: usize = TARGET_SAMPLE_RATE as usize;
 const RECORDING_WAVEFORM_BINS: usize = 48;
 
@@ -157,6 +159,16 @@ pub struct RecordingInputDevice {
     pub id: String,
     pub label: String,
     pub is_default: bool,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RecordingTelemetryBudgetResult {
+    pub event_interval_ms: u64,
+    pub max_event_rate_hz: f32,
+    pub max_payload_bytes: usize,
+    pub waveform_bins: usize,
+    pub estimated_payload_bytes: usize,
 }
 
 #[derive(Debug, Serialize)]
@@ -518,6 +530,19 @@ pub fn recording_input_devices() -> Result<Vec<RecordingInputDevice>, String> {
     list_recording_input_devices()
 }
 
+#[tauri::command]
+pub fn recording_telemetry_budget() -> RecordingTelemetryBudgetResult {
+    RecordingTelemetryBudgetResult {
+        event_interval_ms: RECORDING_TELEMETRY_STEP_MS,
+        max_event_rate_hz: RECORDING_TELEMETRY_MAX_EVENT_RATE_HZ,
+        max_payload_bytes: RECORDING_TELEMETRY_MAX_PAYLOAD_BYTES,
+        waveform_bins: RECORDING_WAVEFORM_BINS,
+        estimated_payload_bytes: estimate_recording_telemetry_payload_bytes(
+            RECORDING_WAVEFORM_BINS,
+        ),
+    }
+}
+
 fn run_recording_thread(
     draft_path: PathBuf,
     state: Arc<Mutex<RecordingState>>,
@@ -793,6 +818,21 @@ fn run_recording_telemetry(
 
 fn build_recording_input_device_id(index: usize, name: &str) -> String {
     format!("mic-{}-{}", index, name.replace(' ', "_"))
+}
+
+fn estimate_recording_telemetry_payload_bytes(waveform_bins: usize) -> usize {
+    let payload = RecordingTelemetryEvent {
+        schema_version: "1.0.0",
+        duration_ms: i64::MAX,
+        level: 1.0,
+        is_clipping: true,
+        signal_present: true,
+        quality_hint_key: "noisy_room",
+        waveform_peaks: vec![1.0; waveform_bins],
+    };
+    serde_json::to_vec(&payload)
+        .map(|encoded| encoded.len())
+        .unwrap_or(usize::MAX)
 }
 
 fn list_recording_input_devices() -> Result<Vec<RecordingInputDevice>, String> {
@@ -1562,5 +1602,13 @@ mod audio_tests {
         let id_a = build_recording_input_device_id(2, "USB Mic");
         let id_b = build_recording_input_device_id(2, "USB Mic");
         assert_eq!(id_a, id_b);
+    }
+
+    #[test]
+    fn telemetry_budget_stays_within_declared_limits() {
+        let budget = recording_telemetry_budget();
+        let computed_rate = 1000.0 / budget.event_interval_ms as f32;
+        assert!(computed_rate <= budget.max_event_rate_hz);
+        assert!(budget.estimated_payload_bytes <= budget.max_payload_bytes);
     }
 }

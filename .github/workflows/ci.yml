@@ -237,3 +237,50 @@ jobs:
         run: |
           chmod +x scripts/check-db-reliability.sh
           ./scripts/check-db-reliability.sh
+
+  recorder-smoke:
+    name: Recorder smoke (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    needs: changes
+    if: needs.changes.outputs.full_run == 'true' || needs.changes.outputs.rust == 'true' || needs.changes.outputs.ci == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Ensure sidecar placeholder (macOS)
+        if: matrix.os == 'macos-latest'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p desktop/src-tauri/sidecar
+          if [ ! -f desktop/src-tauri/sidecar/lepupitre-asr ]; then
+            printf "CI placeholder sidecar for recorder smoke\n" > desktop/src-tauri/sidecar/lepupitre-asr
+            chmod +x desktop/src-tauri/sidecar/lepupitre-asr
+          fi
+          if [ ! -f desktop/src-tauri/sidecar/lepupitre-asr.exe ]; then
+            cp desktop/src-tauri/sidecar/lepupitre-asr desktop/src-tauri/sidecar/lepupitre-asr.exe
+          fi
+
+      - name: Ensure sidecar placeholder (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "desktop/src-tauri/sidecar" | Out-Null
+          $unixPath = "desktop/src-tauri/sidecar/lepupitre-asr"
+          $exePath = "desktop/src-tauri/sidecar/lepupitre-asr.exe"
+          if (-not (Test-Path $unixPath)) {
+            "CI placeholder sidecar for recorder smoke" | Out-File -FilePath $unixPath -Encoding utf8
+          }
+          if (-not (Test-Path $exePath)) {
+            Copy-Item -Path $unixPath -Destination $exePath -Force
+          }
+
+      - name: Recorder contract smoke
+        run: cargo test --manifest-path desktop/src-tauri/Cargo.toml --test recording_pipeline recorder_transport_trim_playback_contract

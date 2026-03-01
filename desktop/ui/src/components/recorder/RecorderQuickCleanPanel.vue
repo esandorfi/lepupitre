@@ -18,6 +18,8 @@ const props = defineProps<{
   canOpenOriginal: boolean;
   isRevealing: boolean;
   isApplyingTrim: boolean;
+  canApplyTrim: boolean;
+  canPlayback: boolean;
   audioPreviewSrc: string | null;
   waveformPeaks: number[];
   waveformStyle: "classic" | "pulse-bars" | "ribbon" | "spark";
@@ -115,7 +117,7 @@ watch(
       <div class="space-y-2">
         <RecorderWaveform :peaks="props.waveformPeaks" :style-mode="props.waveformStyle" />
         <audio
-          v-if="props.audioPreviewSrc"
+          v-if="props.audioPreviewSrc && props.canPlayback"
           class="w-full"
           controls
           preload="metadata"
@@ -175,7 +177,7 @@ watch(
         <button
           class="app-button-secondary app-focus-ring app-button-lg inline-flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
           type="button"
-          :disabled="!trimDirty || props.isApplyingTrim"
+          :disabled="!props.canApplyTrim || !trimDirty || props.isApplyingTrim"
           @click="applyTrim"
         >
           {{ props.isApplyingTrim ? t("audio.quick_clean_trim_applying") : t("audio.quick_clean_trim_apply") }}

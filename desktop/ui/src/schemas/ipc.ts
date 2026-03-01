@@ -476,6 +476,14 @@ export const RecordingInputDeviceSchema = z.object({
 
 export const RecordingInputDevicesResponseSchema = z.array(RecordingInputDeviceSchema);
 
+export const RecordingTelemetryBudgetResponseSchema = z.object({
+  eventIntervalMs: z.number().int().positive(),
+  maxEventRateHz: z.number().positive(),
+  maxPayloadBytes: z.number().int().positive(),
+  waveformBins: z.number().int().positive(),
+  estimatedPayloadBytes: z.number().int().positive(),
+});
+
 export const RecordingStatusPayloadSchema = z.object({
   recordingId: IdSchema,
 });
@@ -730,6 +738,7 @@ export type AsrFinalProgressEvent = z.infer<typeof AsrFinalProgressEventSchema>;
 export type AsrFinalResultEvent = z.infer<typeof AsrFinalResultEventSchema>;
 export type RecordingTelemetryEvent = z.infer<typeof RecordingTelemetryEventSchema>;
 export type RecordingInputDevice = z.infer<typeof RecordingInputDeviceSchema>;
+export type RecordingTelemetryBudget = z.infer<typeof RecordingTelemetryBudgetResponseSchema>;
 
 export type RecordingStartResponse = z.infer<typeof RecordingStartResponseSchema>;
 export type RecordingStatusResponse = z.infer<typeof RecordingStatusResponseSchema>;

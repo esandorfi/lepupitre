@@ -22,6 +22,14 @@ import {
   qualityGuidanceMessageKeys,
 } from "../lib/recorderCalibration";
 import {
+  applyRecorderTransportAction,
+  resolveRecorderMediaActions,
+} from "../lib/recorderSession";
+import {
+  estimateTelemetryPayloadBytes,
+  evaluateRecorderTelemetryBudget,
+} from "../lib/recorderTelemetryBudget";
+import {
   isTypingTargetElement,
   recorderStopTransitionPlan,
   resolveRecorderTranscribeReadiness,
@@ -53,6 +61,8 @@ import {
   RecordingStartResponseSchema,
   RecordingInputDevicesResponseSchema,
   type RecordingInputDevice,
+  RecordingTelemetryBudgetResponseSchema,
+  type RecordingTelemetryBudget,
   RecordingTelemetryEventSchema,
   RecordingStatusPayloadSchema,
   RecordingStatusResponseSchema,
@@ -150,6 +160,10 @@ const lastWaveformPeaks = ref<number[]>([]);
 const inputDevices = ref<RecordingInputDevice[]>([]);
 const selectedInputDeviceId = ref<string | null>(null);
 const isLoadingInputDevices = ref(false);
+const telemetryBudget = ref<RecordingTelemetryBudget | null>(null);
+const telemetryWindowStartMs = ref<number | null>(null);
+const telemetryEventCount = ref(0);
+const telemetryMaxPayloadBytes = ref(0);
 const advancedOpen = ref(readPreference(ADVANCED_DRAWER_PREF_KEY) === "1");
 const telemetryReceived = ref(false);
 
@@ -206,9 +220,33 @@ const transcribeReadiness = computed(() =>
 );
 const canTranscribe = computed(() => transcribeReadiness.value.canTranscribe);
 const canOpenOriginal = computed(() => !!lastSavedPath.value);
+const recorderMediaActions = computed(() =>
+  resolveRecorderMediaActions({
+    hasAudioArtifact: !!lastArtifactId.value,
+    isApplyingTrim: isApplyingTrim.value,
+  })
+);
 const audioPreviewSrc = computed(() =>
   lastSavedPath.value ? convertFileSrc(lastSavedPath.value) : null
 );
+const telemetryBudgetSummary = computed(() => {
+  const report = evaluateRecorderTelemetryBudget(telemetryBudget.value, {
+    eventCount: telemetryEventCount.value,
+    windowMs:
+      telemetryWindowStartMs.value === null
+        ? 0
+        : Math.max(1, Date.now() - telemetryWindowStartMs.value),
+    maxPayloadBytes: telemetryMaxPayloadBytes.value,
+  });
+  if (report.status === "unknown" || !telemetryBudget.value) {
+    return null;
+  }
+  const statusLabel =
+    report.status === "ok"
+      ? t("audio.telemetry_budget_ok")
+      : t("audio.telemetry_budget_warn");
+  return `${statusLabel}: ${report.eventsPerSecond.toFixed(1)} evt/s, ${report.maxPayloadBytes} B`;
+});
 const livePreview = computed(() => {
   const committed = liveSegments.value
     .slice(-2)
@@ -279,6 +317,15 @@ function setAdvancedOpen(next: boolean) {
 
 function setSelectedInputDeviceId(next: string | null) {
   selectedInputDeviceId.value = next;
+}
+
+function applyTransport(action: "start" | "pause" | "resume" | "stop") {
+  const next = applyRecorderTransportAction(
+    { isRecording: isRecording.value, isPaused: isPaused.value },
+    action
+  );
+  isRecording.value = next.isRecording;
+  isPaused.value = next.isPaused;
 }
 
 function clearError() {
@@ -503,6 +550,36 @@ async function refreshInputDevices() {
   }
 }
 
+async function refreshTelemetryBudget() {
+  try {
+    telemetryBudget.value = await invokeChecked(
+      "recording_telemetry_budget",
+      EmptyPayloadSchema,
+      RecordingTelemetryBudgetResponseSchema,
+      {}
+    );
+  } catch {
+    telemetryBudget.value = null;
+  }
+}
+
+function resetTelemetryObservation() {
+  telemetryWindowStartMs.value = null;
+  telemetryEventCount.value = 0;
+  telemetryMaxPayloadBytes.value = 0;
+}
+
+function registerTelemetryObservation(payload: unknown) {
+  if (telemetryWindowStartMs.value === null) {
+    telemetryWindowStartMs.value = Date.now();
+  }
+  telemetryEventCount.value += 1;
+  telemetryMaxPayloadBytes.value = Math.max(
+    telemetryMaxPayloadBytes.value,
+    estimateTelemetryPayloadBytes(payload)
+  );
+}
+
 async function startRecording() {
   clearError();
   if (!activeProfileId.value) {
@@ -521,6 +598,7 @@ async function startRecording() {
   resetLiveTranscript();
   liveWaveformPeaks.value = [];
   lastWaveformPeaks.value = [];
+  resetTelemetryObservation();
 
   try {
     const result = await invokeChecked(
@@ -534,8 +612,7 @@ async function startRecording() {
       )
     );
     recordingId.value = result.recordingId;
-    isRecording.value = true;
-    isPaused.value = false;
+    applyTransport("start");
     telemetryReceived.value = false;
     statusKey.value = "audio.status_recording";
     clearStatusTimer();
@@ -555,8 +632,7 @@ async function pauseRecording() {
     await invokeChecked("recording_pause", RecordingPausePayloadSchema, VoidResponseSchema, {
       recordingId: recordingId.value,
     });
-    isRecording.value = false;
-    isPaused.value = true;
+    applyTransport("pause");
     statusKey.value = "audio.status_recording";
     announce(t("audio.announcement_paused"));
   } catch (err) {
@@ -572,8 +648,7 @@ async function resumeRecording() {
     await invokeChecked("recording_resume", RecordingResumePayloadSchema, VoidResponseSchema, {
       recordingId: recordingId.value,
     });
-    isRecording.value = true;
-    isPaused.value = false;
+    applyTransport("resume");
     statusKey.value = "audio.status_recording";
     announce(t("audio.announcement_resumed"));
   } catch (err) {
@@ -585,8 +660,7 @@ async function stopRecording() {
   if (!recordingId.value || !activeProfileId.value) {
     return;
   }
-  isRecording.value = false;
-  isPaused.value = false;
+  applyTransport("stop");
   statusKey.value = "audio.status_encoding";
   clearStatusTimer();
   clearTelemetryFallbackTimer();
@@ -931,6 +1005,7 @@ function handleShortcut(event: KeyboardEvent) {
 onMounted(async () => {
   void refreshTranscribeReadiness();
   void refreshInputDevices();
+  void refreshTelemetryBudget();
   window.addEventListener("keydown", handleShortcut);
 
   unlistenProgress = await listen<JobProgressEvent>("job:progress", (event) => {
@@ -970,6 +1045,7 @@ onMounted(async () => {
     liveLevel.value = parsed.data.level;
     liveWaveformPeaks.value = parsed.data.waveformPeaks.slice();
     applyQualityHint(parsed.data.qualityHintKey);
+    registerTelemetryObservation(parsed.data);
   });
 
   unlistenAsrPartial = await listen("asr/partial/v1", (event) => {
@@ -1103,6 +1179,8 @@ watch(
       :can-open-original="canOpenOriginal"
       :is-revealing="isRevealing"
       :is-applying-trim="isApplyingTrim"
+      :can-apply-trim="recorderMediaActions.canTrim"
+      :can-playback="recorderMediaActions.canPlayback"
       :audio-preview-src="audioPreviewSrc"
       :waveform-peaks="lastWaveformPeaks"
       :waveform-style="waveformStyle"
@@ -1140,6 +1218,7 @@ watch(
       :selected-input-device-id="selectedInputDeviceId"
       :is-loading-input-devices="isLoadingInputDevices"
       :quality-guidance-messages="qualityGuidanceMessages"
+      :telemetry-budget-summary="telemetryBudgetSummary"
       :diagnostics-code="errorCode ?? transcribeBlockedCode"
       @toggle="setAdvancedOpen(!advancedOpen)"
       @update:model="(value) => updateTranscriptionSettings({ model: value })"

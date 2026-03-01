@@ -1,6 +1,6 @@
 # Plan: Recorder Audio SOTA Hardening (Rust + Tauri + TS)
 
-Status: proposed  
+Status: implemented (2026-03-01)  
 Parent: [docs/IMPLEMENTATION_PLAN.md](../IMPLEMENTATION_PLAN.md)
 
 ## Goal
@@ -55,6 +55,15 @@ Recommended policy for current product stage:
   - keep canonical analysis artifact as WAV.
 
 ## Execution plan
+
+Execution status (2026-03-01):
+
+- Phase 1 completed: quick-record primary entrypoint shipped.
+- Phase 2 completed: record-only success path decoupled from ASR availability.
+- Phase 3 completed: waveform telemetry + inline playback shipped.
+- Phase 3b completed: style presets shipped with persisted preference.
+- Phase 4 completed: input device selection + guided calibration shipped.
+- Phase 5 completed: telemetry budget diagnostics + recorder smoke CI gates shipped.
 
 ### Phase 1: Recorder-first UX entrypoint
 

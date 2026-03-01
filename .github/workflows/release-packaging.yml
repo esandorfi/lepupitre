@@ -113,6 +113,19 @@ jobs:
       - name: Verify ASR sidecar binary
         run: node scripts/verify-asr-sidecar.mjs
 
+      - name: Recorder smoke test (macOS)
+        if: matrix.os == 'macos-latest'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --manifest-path desktop/src-tauri/Cargo.toml --test recording_pipeline recorder_transport_trim_playback_contract
+
+      - name: Recorder smoke test (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          cargo test --manifest-path desktop/src-tauri/Cargo.toml --test recording_pipeline recorder_transport_trim_playback_contract
+
       - name: Cache whisper tiny model (macOS)
         if: matrix.os == 'macos-latest'
         uses: actions/cache@v4
