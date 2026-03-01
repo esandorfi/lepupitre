@@ -949,15 +949,22 @@ where
 
     guard.last_level = dsp::rms(&scratch);
 
-    let resampled = guard.resampler.process(&scratch);
+    let mut processed = guard.resampler.process(&scratch);
     guard.scratch = scratch;
-    if resampled.is_empty() {
+    if processed.is_empty() {
         return;
     }
 
-    guard.total_samples += resampled.len() as u64;
+    guard.total_samples += processed.len() as u64;
 
-    let mut processed = resampled.clone();
+    if let Some(writer) = guard.writer.as_mut() {
+        if let Err(err) = writer.write_samples(&processed) {
+            guard.last_error = Some(err);
+            guard.is_stopping = true;
+            return;
+        }
+    }
+
     guard.agc.process(&mut processed);
 
     let frame_ms = ((processed.len() as f32 / TARGET_SAMPLE_RATE as f32) * 1000.0).round() as u32;
@@ -1008,12 +1015,6 @@ where
     }
     guard.ring.push(&processed);
 
-    if let Some(writer) = guard.writer.as_mut() {
-        if let Err(err) = writer.write_samples(&resampled) {
-            guard.last_error = Some(err);
-            guard.is_stopping = true;
-        }
-    }
 }
 
 #[tauri::command]

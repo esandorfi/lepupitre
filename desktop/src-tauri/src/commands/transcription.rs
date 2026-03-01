@@ -103,7 +103,7 @@ pub enum TranscriptExportFormat {
 }
 
 #[tauri::command]
-pub fn transcribe_audio(
+pub async fn transcribe_audio(
     app: tauri::AppHandle,
     profile_id: String,
     audio_artifact_id: String,
@@ -119,91 +119,25 @@ pub fn transcribe_audio(
     let job_id = ids::new_id("job");
     emit_progress(&app, &job_id, "transcribe", 5, Some("queued".to_string()))?;
 
-    let result = (|| -> Result<TranscribeResponse, String> {
-        let profile_dir = db::profile_dir(&app, &profile_id)?;
-        let audio_path = profile_dir.join(&artifact.relpath);
-        let audio_bytes = std::fs::read(&audio_path).map_err(|e| format!("audio_read: {e}"))?;
+    let app_handle = app.clone();
+    let profile_id_for_job = profile_id.clone();
+    let audio_artifact_id_for_job = audio_artifact_id.clone();
+    let audio_relpath_for_job = artifact.relpath;
+    let asr_settings_for_job = asr_settings.clone();
+    let job_id_for_job = job_id.clone();
 
-        emit_progress(
-            &app,
-            &job_id,
-            "transcribe",
-            35,
-            Some("analyze_audio".to_string()),
-        )?;
-
-        let (samples, duration_ms) = asr::decode_wav_mono_16k(&audio_bytes)?;
-        let total_ms = duration_ms;
-        let segments = asr::decode_with_sidecar(
-            &app,
-            &asr_settings,
-            &samples,
-            total_ms,
-            |processed, total| {
-                let _ = emit_final_progress(&app, processed, total);
-            },
-        )?;
-        let segments = if asr_settings.spoken_punctuation {
-            transcript::apply_spoken_punctuation(&segments, &asr_settings.language)
-        } else {
-            segments
-        };
-        let transcript = models::TranscriptV1 {
-            schema_version: "1.0.0".to_string(),
-            language: asr_settings.language.clone(),
-            model_id: Some(asr_settings.model_id.clone()),
-            duration_ms: Some(duration_ms),
-            segments,
-        };
-
-        emit_progress(
-            &app,
-            &job_id,
-            "transcribe",
-            70,
-            Some("serialize".to_string()),
-        )?;
-
-        let transcript_bytes =
-            serde_json::to_vec(&transcript).map_err(|e| format!("transcript_json: {e}"))?;
-        let metadata = serde_json::json!({
-            "source_audio_artifact_id": audio_artifact_id,
-            "provider": "sidecar",
-            "job_id": job_id,
-        });
-        let record = artifacts::store_bytes(
-            &app,
-            &profile_id,
-            "transcript",
-            "json",
-            &transcript_bytes,
-            &metadata,
-        )?;
-
-        let text = transcript::transcript_text(&transcript).unwrap_or_else(|_| {
-            transcript
-                .segments
-                .iter()
-                .map(|segment| segment.text.trim())
-                .filter(|segment| !segment.is_empty())
-                .collect::<Vec<&str>>()
-                .join(" ")
-        });
-        let final_text = if text.is_empty() {
-            "Transcription terminée.".to_string()
-        } else {
-            text
-        };
-        emit_final_result(&app, final_text, transcript.segments.clone())?;
-
-        emit_progress(&app, &job_id, "transcribe", 100, Some("done".to_string()))?;
-        emit_completed(&app, &job_id, &record.id)?;
-
-        Ok(TranscribeResponse {
-            transcript_id: record.id,
-            job_id: job_id.clone(),
-        })
-    })();
+    let result = tauri::async_runtime::spawn_blocking(move || {
+        transcribe_audio_blocking(
+            &app_handle,
+            &profile_id_for_job,
+            &audio_artifact_id_for_job,
+            &audio_relpath_for_job,
+            asr_settings_for_job,
+            &job_id_for_job,
+        )
+    })
+    .await
+    .map_err(|e| format!("transcribe_join: {e}"))?;
 
     if let Err(err) = result {
         let _ = emit_failed(&app, &job_id, "transcription_failed", &err);
@@ -211,6 +145,92 @@ pub fn transcribe_audio(
     }
 
     result
+}
+
+fn transcribe_audio_blocking(
+    app: &tauri::AppHandle,
+    profile_id: &str,
+    audio_artifact_id: &str,
+    audio_relpath: &str,
+    asr_settings: asr::AsrRuntimeSettings,
+    job_id: &str,
+) -> Result<TranscribeResponse, String> {
+    let audio_path = artifacts::resolve_profile_relpath_for_read(app, profile_id, audio_relpath)?;
+    let audio_bytes = std::fs::read(&audio_path).map_err(|e| format!("audio_read: {e}"))?;
+
+    emit_progress(
+        app,
+        job_id,
+        "transcribe",
+        35,
+        Some("analyze_audio".to_string()),
+    )?;
+
+    let (samples, duration_ms) = asr::decode_wav_mono_16k(&audio_bytes)?;
+    let total_ms = duration_ms;
+    let segments = asr::decode_with_sidecar(app, &asr_settings, &samples, total_ms, |processed, total| {
+        let _ = emit_final_progress(app, processed, total);
+    })?;
+    let segments = if asr_settings.spoken_punctuation {
+        transcript::apply_spoken_punctuation(&segments, &asr_settings.language)
+    } else {
+        segments
+    };
+    let transcript = models::TranscriptV1 {
+        schema_version: "1.0.0".to_string(),
+        language: asr_settings.language.clone(),
+        model_id: Some(asr_settings.model_id.clone()),
+        duration_ms: Some(duration_ms),
+        segments,
+    };
+
+    emit_progress(
+        app,
+        job_id,
+        "transcribe",
+        70,
+        Some("serialize".to_string()),
+    )?;
+
+    let transcript_bytes =
+        serde_json::to_vec(&transcript).map_err(|e| format!("transcript_json: {e}"))?;
+    let metadata = serde_json::json!({
+        "source_audio_artifact_id": audio_artifact_id,
+        "provider": "sidecar",
+        "job_id": job_id,
+    });
+    let record = artifacts::store_bytes(
+        app,
+        profile_id,
+        "transcript",
+        "json",
+        &transcript_bytes,
+        &metadata,
+    )?;
+
+    let text = transcript::transcript_text(&transcript).unwrap_or_else(|_| {
+        transcript
+            .segments
+            .iter()
+            .map(|segment| segment.text.trim())
+            .filter(|segment| !segment.is_empty())
+            .collect::<Vec<&str>>()
+            .join(" ")
+    });
+    let final_text = if text.is_empty() {
+        "Transcription terminée.".to_string()
+    } else {
+        text
+    };
+    emit_final_result(app, final_text, transcript.segments.clone())?;
+
+    emit_progress(app, job_id, "transcribe", 100, Some("done".to_string()))?;
+    emit_completed(app, job_id, &record.id)?;
+
+    Ok(TranscribeResponse {
+        transcript_id: record.id,
+        job_id: job_id.to_string(),
+    })
 }
 
 #[tauri::command]
