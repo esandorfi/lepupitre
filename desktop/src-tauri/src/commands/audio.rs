@@ -1,4 +1,3 @@
-use base64::Engine;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{Sample, SampleFormat};
 use serde::{Deserialize, Serialize};
@@ -104,15 +103,6 @@ fn normalize_asr_settings(payload: Option<AsrSettingsPayload>) -> AsrRuntimeSett
         live_enabled,
         auto_benchmark,
     }
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct AudioSaveResult {
-    pub path: String,
-    pub artifact_id: String,
-    pub bytes: u64,
-    pub sha256: String,
 }
 
 fn try_spawn_sidecar(
@@ -1225,33 +1215,6 @@ where
             guard.is_stopping = true;
         }
     }
-}
-
-#[tauri::command]
-pub fn audio_save_wav(
-    app: tauri::AppHandle,
-    profile_id: String,
-    base64: String,
-) -> Result<AudioSaveResult, String> {
-    let bytes = base64::engine::general_purpose::STANDARD
-        .decode(base64.as_bytes())
-        .map_err(|e| format!("decode_base64: {e}"))?;
-
-    db::ensure_profile_exists(&app, &profile_id)?;
-
-    let metadata = serde_json::json!({
-        "format": "wav",
-        "sample_rate_hz": 16000,
-        "channels": 1
-    });
-    let record = artifacts::store_bytes(&app, &profile_id, "audio", "wav", &bytes, &metadata)?;
-
-    Ok(AudioSaveResult {
-        path: record.abspath.to_string_lossy().to_string(),
-        artifact_id: record.id,
-        bytes: record.bytes,
-        sha256: record.sha256,
-    })
 }
 
 #[tauri::command]

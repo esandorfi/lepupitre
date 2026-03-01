@@ -421,11 +421,6 @@ export const QuestReportItemSchema = z.object({
 
 export const QuestReportResponseSchema = z.array(QuestReportItemSchema);
 
-export const AudioSavePayloadSchema = z.object({
-  profileId: IdSchema,
-  base64: z.string().min(1),
-});
-
 export const AudioSaveResponseSchema = z.object({
   path: z.string().min(1),
   artifactId: z.string().min(1),
