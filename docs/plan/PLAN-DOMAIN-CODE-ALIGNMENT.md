@@ -365,6 +365,11 @@ UI (`desktop/ui/src`)
   - Structure: artifact/outline/talk-number lookup helpers live in `lookups.rs`; peer-review import transactional write graph (with rollback tests) lives in `import_persistence.rs`.
   - Goal: keep exchange repository internals role-focused and easier to evolve without growing a single SQL-heavy file.
 
+- 2026-03-01: Domain decomposition continued (coach blueprint split).
+  - Rust: replaced `domain/coach/blueprint.rs` with `domain/coach/blueprint/{mod.rs,framework.rs,steps.rs}`.
+  - Structure: `mod.rs` now keeps blueprint orchestration and completion math, `framework.rs` owns framework selection heuristics, and `steps.rs` owns localized step construction.
+  - Goal: keep coach blueprint logic small and intention-revealing for future feature evolution.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
