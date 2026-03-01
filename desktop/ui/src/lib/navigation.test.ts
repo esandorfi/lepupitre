@@ -45,6 +45,20 @@ function baseContext(overrides: Partial<ShellNavigationContext> = {}): ShellNavi
 }
 
 describe("resolvePrimaryNavItems", () => {
+  it("includes quick record entrypoint and marks it active on quick-record route", () => {
+    const context = baseContext({
+      routeName: "quick-record",
+    });
+
+    const items = resolvePrimaryNavItems(context, (key) => key);
+    const quickRecord = items.find((item) => item.id === "quick-record");
+
+    expect(quickRecord).toBeDefined();
+    expect(quickRecord?.to).toBe("/record");
+    expect(quickRecord?.active).toBe(true);
+    expect(quickRecord?.disabled).toBe(false);
+  });
+
   it("marks current talk as disabled when no active project exists", () => {
     const items = resolvePrimaryNavItems(baseContext(), (key) => key);
     const currentTalk = items.find((item) => item.id === "current-talk");

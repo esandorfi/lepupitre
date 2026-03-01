@@ -13,6 +13,8 @@ function iconPath(icon: PrimaryNavIcon): string {
   switch (icon) {
     case "training":
       return "M3 11.5 12 4l9 7.5M5.5 10.5V20h13v-9.5";
+    case "quick-record":
+      return "M12 8a4 4 0 1 0 0 8a4 4 0 0 0 0-8Zm0 10v3m-3 0h6";
     case "talks":
       return "M4 6h16M4 12h16M4 18h16";
     case "feedback":

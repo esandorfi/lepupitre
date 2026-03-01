@@ -1,5 +1,6 @@
 export const CANONICAL_ROUTE_TOPIC_MAP = {
   training: "help.training.daily-loop",
+  "quick-record": "help.training.quest-run",
   quest: "help.training.quest-run",
   feedback: "help.training.feedback-priorities",
   "boss-run": "help.training.boss-run",

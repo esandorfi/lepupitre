@@ -1,6 +1,7 @@
 import type { RouteRecordRaw } from "vue-router";
 
 import HomePage from "../pages/HomePage.vue";
+import QuickRecordPage from "../pages/QuickRecordPage.vue";
 import ProfilesPage from "../pages/ProfilesPage.vue";
 import TalksPage from "../pages/TalksPage.vue";
 import TalkDefinePage from "../pages/TalkDefinePage.vue";
@@ -22,6 +23,7 @@ import HelpPage from "../pages/HelpPage.vue";
 export const routes: RouteRecordRaw[] = [
   { path: "/", redirect: "/training" },
   { path: "/training", name: "training", component: HomePage },
+  { path: "/record", name: "quick-record", component: QuickRecordPage },
   { path: "/profiles", name: "profiles", component: ProfilesPage },
   { path: "/talks", name: "talks", component: TalksPage },
   { path: "/talks/:projectId/define", name: "talk-define", component: TalkDefinePage },

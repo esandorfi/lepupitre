@@ -1,9 +1,14 @@
 import type { FeedbackContext, ProjectListItem, ProjectSummary } from "../schemas/ipc";
 
-export type PrimaryNavIcon = "training" | "talks" | "feedback" | "current-talk";
+export type PrimaryNavIcon =
+  | "training"
+  | "quick-record"
+  | "talks"
+  | "feedback"
+  | "current-talk";
 
 export type PrimaryNavItem = {
-  id: "training" | "talks" | "feedback" | "current-talk";
+  id: "training" | "quick-record" | "talks" | "feedback" | "current-talk";
   labelKey: string;
   icon: PrimaryNavIcon;
   to: (context: ShellNavigationContext) => string;
@@ -29,6 +34,7 @@ export type ContextBreadcrumb = {
 
 type RouteName =
   | "training"
+  | "quick-record"
   | "talks"
   | "talk-define"
   | "talk-builder"
@@ -79,6 +85,13 @@ const PRIMARY_NAV_ITEMS: PrimaryNavItem[] = [
     icon: "training",
     to: () => "/training",
     active: (context) => context.routeName === "training",
+  },
+  {
+    id: "quick-record",
+    labelKey: "nav.quick_record",
+    icon: "quick-record",
+    to: () => "/record",
+    active: (context) => context.routeName === "quick-record",
   },
   {
     id: "talks",
