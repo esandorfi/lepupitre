@@ -122,6 +122,11 @@ UI (`desktop/ui/src`)
   - UI: `AudioRecorder.vue` now consumes recorder/ASR domain APIs instead of direct IPC command calls.
   - Guard rails: domain-structure size budgets updated for recorder/ASR hotspot files.
 
+- 2026-03-01: ASR backend extraction (transcription runtime) completed.
+  - Rust: extracted transcription ASR settings normalization and final decode pipeline from `commands/transcription.rs` into `core/asr.rs`.
+  - Rust: `commands/transcription.rs` now delegates WAV decode + sidecar decode orchestration to `core/asr`.
+  - Tests: existing transcription decode contract tests remain green against `core/asr` implementation.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.

@@ -285,7 +285,10 @@ impl Default for RecordingManager {
 
 impl RecordingManager {
     pub fn has_active_session(&self) -> Result<bool, String> {
-        let guard = self.session.lock().map_err(|_| "recording_lock".to_string())?;
+        let guard = self
+            .session
+            .lock()
+            .map_err(|_| "recording_lock".to_string())?;
         Ok(guard.is_some())
     }
 }

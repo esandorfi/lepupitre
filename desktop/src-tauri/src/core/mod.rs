@@ -1,5 +1,6 @@
 pub mod analysis;
 pub mod artifacts;
+pub mod asr;
 pub mod asr_live;
 pub mod asr_models;
 pub mod asr_sidecar;
