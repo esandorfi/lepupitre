@@ -295,6 +295,11 @@ UI (`desktop/ui/src`)
   - Structure: diagnostics API is re-exported from `domain/asr/mod.rs`; callers remain unchanged.
   - Goal: isolate diagnostics concerns from core ASR decode/download runtime.
 
+- 2026-03-01: Domain decomposition continued (ASR downloader split).
+  - Rust: extracted model download/checksum/finalize flow from `domain/asr/mod.rs` into `domain/asr/downloader.rs`.
+  - Structure: `download_model_blocking` is re-exported from `domain/asr/mod.rs`; command call sites remain unchanged.
+  - Goal: isolate external I/O heavy download logic from ASR decode/runtime core.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
