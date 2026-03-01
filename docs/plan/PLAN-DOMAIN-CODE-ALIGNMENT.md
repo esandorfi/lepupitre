@@ -380,6 +380,11 @@ UI (`desktop/ui/src`)
   - Structure: `mod.rs` keeps high-level model status/list/verify orchestration; `specs.rs` owns model catalog definitions and lookup helpers; `integrity.rs` owns manifest serialization and checksum routines.
   - Goal: isolate static model catalog data and integrity internals from orchestration logic to keep ASR model management easier to evolve.
 
+- 2026-03-01: Domain decomposition continued (feedback service split).
+  - Rust: replaced monolithic `domain/feedback/mod.rs` internals with `domain/feedback/{mod.rs,timeline.rs,analyze.rs,context.rs,notes.rs}`.
+  - Structure: timeline listing, analyze flow, feedback context/file loading, and notes upsert/get/delete are now isolated into dedicated modules while `mod.rs` stays a small API facade.
+  - Goal: keep feedback domain use-cases small and feature-oriented with stable command-facing API.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
