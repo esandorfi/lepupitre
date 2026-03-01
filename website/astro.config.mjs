@@ -1,7 +1,7 @@
 import { defineConfig } from "astro/config";
 
 export default defineConfig({
-  site: "https://esandorfi.github.io",
-  base: "/lepupitre",
+  site: "https://lepupitre.app",
+  base: "/",
   output: "static",
 });

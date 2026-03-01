@@ -1,6 +1,14 @@
 ---
 const { title = "Le Pupitre" } = Astro.props;
 const base = import.meta.env.BASE_URL;
+const withBase = (path: string) => {
+  const normalizedBase = base.endsWith("/") ? base.slice(0, -1) : base;
+  const normalizedPath = path.startsWith("/") ? path.slice(1) : path;
+  if (!normalizedBase) {
+    return `/${normalizedPath}`;
+  }
+  return `${normalizedBase}/${normalizedPath}`;
+};
 ---
 
 <!doctype html>
@@ -142,8 +150,8 @@ const base = import.meta.env.BASE_URL;
     <div class="site">
       <div class="shell">
         <nav>
-          <a href={base}>Home</a>
-          <a href={`${base}downloads/`}>Downloads</a>
+          <a href={withBase("")}>Home</a>
+          <a href={withBase("downloads/")}>Downloads</a>
           <a href="https://github.com/esandorfi/lepupitre">GitHub</a>
         </nav>
         <main>
