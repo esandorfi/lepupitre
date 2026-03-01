@@ -410,6 +410,11 @@ UI (`desktop/ui/src`)
   - Structure: quest daily/detail/list/report reads now live in `reads.rs`; text/audio attempt submission and artifact-kind guards now live in `submissions.rs`.
   - Goal: keep training quest domain flows small and clearly separated between read and write paths.
 
+- 2026-03-01: Domain decomposition continued (talk project service split).
+  - Rust: split `domain/talk/project/mod.rs` use-cases into `domain/talk/project/{reads.rs,writes.rs}` while keeping `mod.rs` as a compact API facade.
+  - Structure: active/list retrieval flows now live in `reads.rs`; create/update/activate/training-bootstrap writes and validation now live in `writes.rs`.
+  - Goal: keep talk project domain behavior separated by read/write responsibilities with smaller files.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
