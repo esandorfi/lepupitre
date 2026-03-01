@@ -11,6 +11,46 @@ use tauri::Manager;
 
 const INIT_TIMEOUT: Duration = Duration::from_secs(10);
 const DECODE_TIMEOUT: Duration = Duration::from_secs(30);
+pub const SIDECAR_PROTOCOL_VERSION: &str = "1.0.0";
+const REQUIRED_SIDECAR_CAPABILITIES: [&str; 3] =
+    ["decode_window_f32le", "progress_events", "mode_live_final"];
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SidecarDependencies {
+    pub whisper_rs: String,
+    pub whisper_cpp: String,
+    pub whisper_runtime: String,
+    pub ggml: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SidecarDoctorInfo {
+    pub schema_version: String,
+    pub sidecar_version: String,
+    pub protocol_version: String,
+    pub target_triple: String,
+    pub build_timestamp: Option<String>,
+    pub git_commit: Option<String>,
+    pub capabilities: Vec<String>,
+    pub dependencies: SidecarDependencies,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SidecarStatus {
+    pub path: String,
+    pub schema_version: String,
+    pub sidecar_version: String,
+    pub protocol_version: String,
+    pub app_protocol_version: String,
+    pub target_triple: String,
+    pub build_timestamp: Option<String>,
+    pub git_commit: Option<String>,
+    pub capabilities: Vec<String>,
+    pub dependencies: SidecarDependencies,
+}
 
 fn sidecar_basename() -> &'static str {
     if cfg!(target_os = "windows") {
@@ -69,6 +109,76 @@ pub fn resolve_sidecar_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
         );
     }
     Err("sidecar_missing".to_string())
+}
+
+pub fn resolve_sidecar_status(app: &tauri::AppHandle) -> Result<SidecarStatus, String> {
+    let sidecar_path = resolve_sidecar_path(app)?;
+    let doctor = run_sidecar_doctor(&sidecar_path)?;
+    assert_sidecar_compatibility(&doctor)?;
+    Ok(SidecarStatus {
+        path: sidecar_path.to_string_lossy().to_string(),
+        schema_version: doctor.schema_version.clone(),
+        sidecar_version: doctor.sidecar_version.clone(),
+        protocol_version: doctor.protocol_version.clone(),
+        app_protocol_version: SIDECAR_PROTOCOL_VERSION.to_string(),
+        target_triple: doctor.target_triple.clone(),
+        build_timestamp: doctor.build_timestamp.clone(),
+        git_commit: doctor.git_commit.clone(),
+        capabilities: doctor.capabilities.clone(),
+        dependencies: doctor.dependencies,
+    })
+}
+
+fn run_sidecar_doctor(path: &Path) -> Result<SidecarDoctorInfo, String> {
+    let output = Command::new(path)
+        .arg("doctor")
+        .arg("--json")
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .map_err(|err| {
+            eprintln!("asr sidecar doctor spawn failed: {err}");
+            "sidecar_doctor_failed".to_string()
+        })?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        eprintln!(
+            "asr sidecar doctor failed with status {:?}: {}",
+            output.status.code(),
+            stderr.trim()
+        );
+        return Err("sidecar_doctor_failed".to_string());
+    }
+
+    serde_json::from_slice::<SidecarDoctorInfo>(&output.stdout).map_err(|err| {
+        eprintln!("asr sidecar doctor invalid json: {err}");
+        "sidecar_doctor_invalid".to_string()
+    })
+}
+
+fn assert_sidecar_compatibility(doctor: &SidecarDoctorInfo) -> Result<(), String> {
+    if doctor.protocol_version != SIDECAR_PROTOCOL_VERSION {
+        eprintln!(
+            "asr sidecar protocol mismatch: sidecar={} app={}",
+            doctor.protocol_version, SIDECAR_PROTOCOL_VERSION
+        );
+        return Err("sidecar_protocol_incompatible".to_string());
+    }
+
+    for required in REQUIRED_SIDECAR_CAPABILITIES {
+        if !doctor
+            .capabilities
+            .iter()
+            .any(|capability| capability == required)
+        {
+            eprintln!("asr sidecar missing required capability: {required}");
+            return Err("sidecar_unsupported_runtime_capability".to_string());
+        }
+    }
+
+    Ok(())
 }
 
 #[derive(Debug, Serialize)]
@@ -318,6 +428,27 @@ mod tests {
     use super::*;
     use std::path::PathBuf;
 
+    fn doctor_payload(protocol_version: &str, capabilities: &[&str]) -> SidecarDoctorInfo {
+        SidecarDoctorInfo {
+            schema_version: "1.0.0".to_string(),
+            sidecar_version: "0.1.0".to_string(),
+            protocol_version: protocol_version.to_string(),
+            target_triple: "x86_64-pc-windows-msvc".to_string(),
+            build_timestamp: Some("unix:1".to_string()),
+            git_commit: Some("abc123".to_string()),
+            capabilities: capabilities
+                .iter()
+                .map(|value| (*value).to_string())
+                .collect(),
+            dependencies: SidecarDependencies {
+                whisper_rs: "0.15".to_string(),
+                whisper_cpp: "1.7.6".to_string(),
+                whisper_runtime: "1.7.6".to_string(),
+                ggml: "bundled_with_whisper_cpp".to_string(),
+            },
+        }
+    }
+
     #[test]
     fn sidecar_candidates_prioritize_packaged_resource_subdir() {
         let resource_dir = PathBuf::from("app").join("resources");
@@ -350,5 +481,29 @@ mod tests {
                     .join(sidecar_basename()),
             ]
         );
+    }
+
+    #[test]
+    fn sidecar_compatibility_accepts_matching_protocol_and_capabilities() {
+        let payload = doctor_payload(SIDECAR_PROTOCOL_VERSION, &REQUIRED_SIDECAR_CAPABILITIES);
+        let result = assert_sidecar_compatibility(&payload);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn sidecar_compatibility_rejects_protocol_mismatch() {
+        let payload = doctor_payload("9.9.9", &REQUIRED_SIDECAR_CAPABILITIES);
+        let err = assert_sidecar_compatibility(&payload).expect_err("must fail");
+        assert_eq!(err, "sidecar_protocol_incompatible");
+    }
+
+    #[test]
+    fn sidecar_compatibility_rejects_missing_capability() {
+        let payload = doctor_payload(
+            SIDECAR_PROTOCOL_VERSION,
+            &["decode_window_f32le", "progress_events"],
+        );
+        let err = assert_sidecar_compatibility(&payload).expect_err("must fail");
+        assert_eq!(err, "sidecar_unsupported_runtime_capability");
     }
 }

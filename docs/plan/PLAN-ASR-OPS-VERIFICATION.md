@@ -1,6 +1,6 @@
 # Plan: ASR Ops Verification (Cross-Platform)
 
-Status: proposed  
+Status: in_progress  
 Owner: ASR maintainers  
 Last update: 2026-03-01
 
@@ -72,6 +72,9 @@ Current checks are split across scripts and smoke tests, but support/onboarding 
 - Full remote telemetry/phone-home diagnostics.
 
 ## Phased rollout
+
+Execution status (2026-03-01):
+- Phase 1 completed: sidecar `--version`, `doctor --json`, and app-side compatibility gate shipped.
 
 ## Phase 1 (MVP: operator visibility)
 1. Implement `--version`.

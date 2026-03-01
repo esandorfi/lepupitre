@@ -6,6 +6,35 @@ use whisper_rs::{
     WhisperState,
 };
 
+const SIDECAR_PROTOCOL_VERSION: &str = "1.0.0";
+const SIDECAR_DOCTOR_SCHEMA_VERSION: &str = "1.0.0";
+const WHISPER_RS_DEP_VERSION: &str = "0.15";
+const REQUIRED_CAPABILITY_DECODE_F32LE: &str = "decode_window_f32le";
+const REQUIRED_CAPABILITY_PROGRESS_EVENTS: &str = "progress_events";
+const REQUIRED_CAPABILITY_MODE_SWITCH: &str = "mode_live_final";
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct SidecarDoctorOutput {
+    schema_version: String,
+    sidecar_version: String,
+    protocol_version: String,
+    target_triple: String,
+    build_timestamp: Option<String>,
+    git_commit: Option<String>,
+    capabilities: Vec<String>,
+    dependencies: SidecarDoctorDependencies,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct SidecarDoctorDependencies {
+    whisper_rs: String,
+    whisper_cpp: String,
+    whisper_runtime: String,
+    ggml: String,
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 enum SidecarRequest {
@@ -31,9 +60,19 @@ enum SidecarRequest {
 #[serde(tag = "type", rename_all = "snake_case")]
 enum SidecarResponse {
     Ready,
-    Segments { seq: u64, segments: Vec<SidecarSegment> },
-    Progress { seq: u64, processed_ms: i64, total_ms: i64 },
-    Error { seq: Option<u64>, message: String },
+    Segments {
+        seq: u64,
+        segments: Vec<SidecarSegment>,
+    },
+    Progress {
+        seq: u64,
+        processed_ms: i64,
+        total_ms: i64,
+    },
+    Error {
+        seq: Option<u64>,
+        message: String,
+    },
 }
 
 #[derive(Debug, Serialize)]
@@ -93,10 +132,7 @@ impl SidecarState {
             return Err("not_initialized".to_string());
         }
         if request.sample_rate != self.sample_rate {
-            return Err(format!(
-                "unsupported_sample_rate:{:?}",
-                request.sample_rate
-            ));
+            return Err(format!("unsupported_sample_rate:{:?}", request.sample_rate));
         }
         if request.encoding != "f32le" {
             return Err(format!("unsupported_encoding:{}", request.encoding));
@@ -107,7 +143,12 @@ impl SidecarState {
             return Ok(Vec::new());
         }
 
-        let total_ms = total_ms(request.window_start_ms, request.window_end_ms, &samples, request.sample_rate);
+        let total_ms = total_ms(
+            request.window_start_ms,
+            request.window_end_ms,
+            &samples,
+            request.sample_rate,
+        );
         if total_ms > 0 {
             let mut stdout = io::stdout();
             emit(
@@ -120,7 +161,12 @@ impl SidecarState {
             );
         }
 
-        let params = build_params(request.mode, self.language.as_deref(), total_ms, request.seq);
+        let params = build_params(
+            request.mode,
+            self.language.as_deref(),
+            total_ms,
+            request.seq,
+        );
         let state = self
             .state
             .as_mut()
@@ -189,6 +235,102 @@ struct DecodeRequest {
 fn main() {
     install_logging_hooks();
 
+    let args: Vec<String> = std::env::args().collect();
+    match parse_cli_mode(&args) {
+        CliMode::RunServer => {}
+        CliMode::ShowVersion => {
+            println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
+            return;
+        }
+        CliMode::DoctorJson => {
+            if let Err(err) = print_doctor_json(&mut io::stdout()) {
+                eprintln!("{err}");
+                std::process::exit(2);
+            }
+            return;
+        }
+        CliMode::ShowHelp => {
+            println!("{}", usage_text());
+            return;
+        }
+    }
+
+    run_server_loop();
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum CliMode {
+    RunServer,
+    ShowVersion,
+    DoctorJson,
+    ShowHelp,
+}
+
+fn parse_cli_mode(args: &[String]) -> CliMode {
+    match args.get(1).map(|value| value.as_str()) {
+        None => CliMode::RunServer,
+        Some("--version" | "-V") => CliMode::ShowVersion,
+        Some("--help" | "-h" | "help") => CliMode::ShowHelp,
+        Some("doctor") => {
+            if args.iter().any(|arg| arg == "--json") {
+                CliMode::DoctorJson
+            } else {
+                CliMode::ShowHelp
+            }
+        }
+        Some(_) => CliMode::ShowHelp,
+    }
+}
+
+fn usage_text() -> &'static str {
+    "Usage: lepupitre-asr [--version | doctor --json]"
+}
+
+fn print_doctor_json(stdout: &mut io::Stdout) -> Result<(), String> {
+    let payload = build_doctor_output();
+    let json = serde_json::to_string(&payload).map_err(|e| format!("doctor_json: {e}"))?;
+    writeln!(stdout, "{json}").map_err(|e| format!("doctor_write: {e}"))?;
+    stdout.flush().map_err(|e| format!("doctor_flush: {e}"))?;
+    Ok(())
+}
+
+fn build_doctor_output() -> SidecarDoctorOutput {
+    SidecarDoctorOutput {
+        schema_version: SIDECAR_DOCTOR_SCHEMA_VERSION.to_string(),
+        sidecar_version: env!("CARGO_PKG_VERSION").to_string(),
+        protocol_version: SIDECAR_PROTOCOL_VERSION.to_string(),
+        target_triple: target_triple(),
+        build_timestamp: option_env!("LEPUPITRE_ASR_BUILD_UNIX_EPOCH")
+            .map(|value| format!("unix:{value}")),
+        git_commit: option_env!("LEPUPITRE_ASR_GIT_COMMIT").map(|value| value.to_string()),
+        capabilities: vec![
+            REQUIRED_CAPABILITY_DECODE_F32LE.to_string(),
+            REQUIRED_CAPABILITY_PROGRESS_EVENTS.to_string(),
+            REQUIRED_CAPABILITY_MODE_SWITCH.to_string(),
+        ],
+        dependencies: SidecarDoctorDependencies {
+            whisper_rs: WHISPER_RS_DEP_VERSION.to_string(),
+            whisper_cpp: whisper_rs::WHISPER_CPP_VERSION.to_string(),
+            whisper_runtime: whisper_rs::get_whisper_version().to_string(),
+            ggml: "bundled_with_whisper_cpp".to_string(),
+        },
+    }
+}
+
+fn target_triple() -> String {
+    option_env!("TARGET")
+        .map(|value| value.to_string())
+        .unwrap_or_else(|| {
+            format!(
+                "{}-{}-{}",
+                std::env::consts::ARCH,
+                std::env::consts::OS,
+                std::env::consts::FAMILY
+            )
+        })
+}
+
+fn run_server_loop() {
     let stdin = io::stdin();
     let mut stdout = io::stdout();
     let mut state = SidecarState::new();
@@ -234,13 +376,9 @@ fn main() {
             } => {
                 match state.init(&model_path, sample_rate, &language) {
                     Ok(()) => emit(&mut stdout, SidecarResponse::Ready),
-                    Err(message) => emit(
-                        &mut stdout,
-                        SidecarResponse::Error {
-                            seq: None,
-                            message,
-                        },
-                    ),
+                    Err(message) => {
+                        emit(&mut stdout, SidecarResponse::Error { seq: None, message })
+                    }
                 };
             }
             SidecarRequest::Decode {
@@ -388,6 +526,41 @@ fn emit(stdout: &mut io::Stdout, response: SidecarResponse) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn args(values: &[&str]) -> Vec<String> {
+        values.iter().map(|value| (*value).to_string()).collect()
+    }
+
+    #[test]
+    fn cli_mode_defaults_to_server() {
+        let parsed = parse_cli_mode(&args(&["lepupitre-asr"]));
+        assert_eq!(parsed, CliMode::RunServer);
+    }
+
+    #[test]
+    fn cli_mode_supports_version_and_doctor_json() {
+        assert_eq!(
+            parse_cli_mode(&args(&["lepupitre-asr", "--version"])),
+            CliMode::ShowVersion
+        );
+        assert_eq!(
+            parse_cli_mode(&args(&["lepupitre-asr", "doctor", "--json"])),
+            CliMode::DoctorJson
+        );
+    }
+
+    #[test]
+    fn doctor_output_contains_required_contract_fields() {
+        let doctor = build_doctor_output();
+        assert_eq!(doctor.schema_version, SIDECAR_DOCTOR_SCHEMA_VERSION);
+        assert_eq!(doctor.protocol_version, SIDECAR_PROTOCOL_VERSION);
+        assert!(doctor
+            .capabilities
+            .iter()
+            .any(|capability| capability == REQUIRED_CAPABILITY_DECODE_F32LE));
+        assert!(!doctor.sidecar_version.trim().is_empty());
+        assert!(!doctor.target_triple.trim().is_empty());
+    }
 
     #[test]
     fn decode_audio_round_trip() {

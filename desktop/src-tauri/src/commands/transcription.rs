@@ -318,9 +318,8 @@ pub fn asr_model_remove(app: tauri::AppHandle, model_id: String) -> Result<(), S
 }
 
 #[tauri::command]
-pub fn asr_sidecar_status(app: tauri::AppHandle) -> Result<(), String> {
-    let _ = asr_sidecar::resolve_sidecar_path(&app)?;
-    Ok(())
+pub fn asr_sidecar_status(app: tauri::AppHandle) -> Result<asr_sidecar::SidecarStatus, String> {
+    asr_sidecar::resolve_sidecar_status(&app)
 }
 
 #[tauri::command]

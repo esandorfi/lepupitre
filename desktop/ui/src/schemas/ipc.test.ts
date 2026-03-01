@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   AudioTrimPayloadSchema,
   AsrFinalProgressEventSchema,
+  AsrSidecarStatusResponseSchema,
   FeedbackContextSchema,
   PreferenceKeySchema,
   PreferenceProfileGetPayloadSchema,
@@ -94,6 +95,27 @@ describe("ipc schemas", () => {
       schemaVersion: "1.0.0",
       processedMs: 500,
       totalMs: 1000,
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  it("accepts ASR sidecar doctor status payload", () => {
+    const parsed = AsrSidecarStatusResponseSchema.safeParse({
+      path: "C:/Program Files/LePupitre/resources/sidecar/lepupitre-asr.exe",
+      schemaVersion: "1.0.0",
+      sidecarVersion: "0.1.0",
+      protocolVersion: "1.0.0",
+      appProtocolVersion: "1.0.0",
+      targetTriple: "x86_64-pc-windows-msvc",
+      buildTimestamp: "unix:123",
+      gitCommit: "abcdef",
+      capabilities: ["decode_window_f32le", "progress_events", "mode_live_final"],
+      dependencies: {
+        whisperRs: "0.15",
+        whisperCpp: "1.7.6",
+        whisperRuntime: "1.7.6",
+        ggml: "bundled_with_whisper_cpp",
+      },
     });
     expect(parsed.success).toBe(true);
   });

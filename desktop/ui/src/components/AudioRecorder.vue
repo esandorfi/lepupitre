@@ -499,6 +499,11 @@ async function refreshTranscribeReadiness() {
       transcribeBlockedMessage.value = t("audio.error_sidecar_missing");
       return;
     }
+    if (code === "sidecar_incompatible") {
+      transcribeBlockedCode.value = code;
+      transcribeBlockedMessage.value = t("audio.error_sidecar_incompatible");
+      return;
+    }
   }
 
   try {
@@ -789,6 +794,10 @@ async function transcribeRecording() {
     if (code === "sidecar_missing") {
       transcribeBlockedCode.value = code;
       transcribeBlockedMessage.value = t("audio.error_sidecar_missing");
+      setError(transcribeBlockedMessage.value, code);
+    } else if (code === "sidecar_incompatible") {
+      transcribeBlockedCode.value = code;
+      transcribeBlockedMessage.value = t("audio.error_sidecar_incompatible");
       setError(transcribeBlockedMessage.value, code);
     } else if (code === "model_missing") {
       transcribeBlockedCode.value = code;
@@ -1246,11 +1255,15 @@ watch(
       {{ t("audio.error_model_missing_action") }}
     </RouterLink>
     <RouterLink
-      v-if="(errorCode === 'sidecar_missing' || transcribeBlockedCode === 'sidecar_missing') && phase === 'quick_clean'"
+      v-if="(errorCode === 'sidecar_missing'
+        || transcribeBlockedCode === 'sidecar_missing'
+        || errorCode === 'sidecar_incompatible'
+        || transcribeBlockedCode === 'sidecar_incompatible')
+        && phase === 'quick_clean'"
       to="/help"
       class="app-link text-xs underline"
     >
-      {{ t("audio.error_sidecar_missing_action") }}
+      {{ t("audio.error_sidecar_incompatible_action") }}
     </RouterLink>
     <span class="sr-only" aria-live="polite">{{ announcement }}</span>
   </div>

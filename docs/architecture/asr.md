@@ -105,10 +105,27 @@ Then run:
 ## Validation and smoke
 - Verify sidecar artifact is not placeholder:
   - `node scripts/verify-asr-sidecar.mjs`
+- Verify sidecar identity/protocol quickly:
+  - `<path-to-sidecar> --version`
+  - `<path-to-sidecar> doctor --json`
+  - `doctor --json` returns a stable payload (version/protocol/target/capabilities/dependencies).
 - Optional smoke test:
   - `./scripts/asr-smoke.sh /path/to/lepupitre-asr /path/to/ggml-*.bin`
   - `just asr-smoke-dev /path/to/ggml-*.bin`
   - or `cargo test --manifest-path desktop/src-tauri/Cargo.toml asr_sidecar_smoke_decode` with `LEPUPITRE_ASR_SMOKE=1`.
+
+### App compatibility gate
+- `asr_sidecar_status` now verifies:
+  - sidecar file exists
+  - sidecar `doctor --json` executes and parses
+  - protocol version matches app expectation
+  - required runtime capabilities are present
+- deterministic status errors:
+  - `sidecar_missing`
+  - `sidecar_doctor_failed`
+  - `sidecar_doctor_invalid`
+  - `sidecar_protocol_incompatible`
+  - `sidecar_unsupported_runtime_capability`
 
 ## Error-state mapping
 Expected deterministic UI states:

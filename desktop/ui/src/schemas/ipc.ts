@@ -5,7 +5,29 @@ const OptionalString = z.string().min(1).optional().nullable();
 export const EmptyPayloadSchema = z.object({});
 export const IdSchema = z.string().min(1);
 export const VoidResponseSchema = z.union([z.null(), z.undefined()]);
-export const AsrSidecarStatusResponseSchema = z.union([z.null(), z.undefined()]);
+export const AsrSidecarDependenciesSchema = z
+  .object({
+    whisperRs: z.string().min(1),
+    whisperCpp: z.string().min(1),
+    whisperRuntime: z.string().min(1),
+    ggml: z.string().min(1),
+  })
+  .strict();
+
+export const AsrSidecarStatusResponseSchema = z
+  .object({
+    path: z.string().min(1),
+    schemaVersion: z.string().min(1),
+    sidecarVersion: z.string().min(1),
+    protocolVersion: z.string().min(1),
+    appProtocolVersion: z.string().min(1),
+    targetTriple: z.string().min(1),
+    buildTimestamp: z.string().min(1).optional().nullable(),
+    gitCommit: z.string().min(1).optional().nullable(),
+    capabilities: z.array(z.string().min(1)),
+    dependencies: AsrSidecarDependenciesSchema,
+  })
+  .strict();
 const sensitivePreferenceKeyFragments = [
   "token",
   "secret",

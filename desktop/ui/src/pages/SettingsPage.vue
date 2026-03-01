@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-shell";
 import { useI18n } from "../lib/i18n";
+import { classifyAsrError } from "../lib/asrErrors";
 import { useNavMetrics } from "../lib/navMetrics";
 import { useTranscriptionSettings } from "../lib/transcriptionSettings";
 import type {
@@ -40,7 +41,7 @@ const { metrics: navMetrics, resetNavMetrics } = useNavMetrics();
 const models = ref<AsrModelStatus[]>([]);
 const isLoadingModels = ref(false);
 const downloadingModelId = ref<string | null>(null);
-const sidecarStatus = ref<"ready" | "missing" | "unknown">("unknown");
+const sidecarStatus = ref<"ready" | "missing" | "incompatible" | "unknown">("unknown");
 const sidecarMessage = ref<string | null>(null);
 
 const verifyingModelId = ref<string | null>(null);
@@ -188,10 +189,13 @@ async function refreshSidecarStatus() {
     sidecarStatus.value = "ready";
     sidecarMessage.value = null;
   } catch (err) {
-    const raw = err instanceof Error ? err.message : String(err);
-    if (raw.includes("sidecar_missing")) {
+    const code = classifyAsrError(err instanceof Error ? err.message : String(err));
+    if (code === "sidecar_missing") {
       sidecarStatus.value = "missing";
       sidecarMessage.value = t("settings.transcription.sidecar_missing");
+    } else if (code === "sidecar_incompatible") {
+      sidecarStatus.value = "incompatible";
+      sidecarMessage.value = t("settings.transcription.sidecar_incompatible");
     } else {
       sidecarStatus.value = "unknown";
       sidecarMessage.value = t("settings.transcription.sidecar_unknown");
@@ -490,9 +494,19 @@ onBeforeUnmount(() => {
             <span class="app-muted">{{ t("settings.transcription.sidecar_label") }}</span>
             <span
               class="app-text-caption rounded-full px-2 py-0.5 font-semibold"
-              :class="sidecarStatus === 'ready' ? 'app-badge-success' : sidecarStatus === 'missing' ? 'app-badge-danger' : 'app-badge-neutral'"
+              :class="sidecarStatus === 'ready'
+                ? 'app-badge-success'
+                : sidecarStatus === 'missing' || sidecarStatus === 'incompatible'
+                  ? 'app-badge-danger'
+                  : 'app-badge-neutral'"
             >
-              {{ sidecarStatus === "ready" ? t("settings.transcription.sidecar_ready") : sidecarStatus === "missing" ? t("settings.transcription.sidecar_missing_label") : t("settings.transcription.sidecar_unknown_label") }}
+              {{ sidecarStatus === "ready"
+                ? t("settings.transcription.sidecar_ready")
+                : sidecarStatus === "missing"
+                  ? t("settings.transcription.sidecar_missing_label")
+                  : sidecarStatus === "incompatible"
+                    ? t("settings.transcription.sidecar_incompatible_label")
+                    : t("settings.transcription.sidecar_unknown_label") }}
             </span>
           </div>
           <p class="app-muted text-xs">
