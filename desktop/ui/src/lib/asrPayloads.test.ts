@@ -23,6 +23,12 @@ describe("asrPayloads", () => {
     expect(parsed.asrSettings).toEqual(SETTINGS);
   });
 
+  it("includes selected input device id when provided", () => {
+    const payload = buildRecordingStartPayload("profile-1", SETTINGS, "mic-1-USB");
+    const parsed = RecordingStartPayloadSchema.parse(payload);
+    expect(parsed.inputDeviceId).toBe("mic-1-USB");
+  });
+
   it("builds transcribe_audio payload with asr settings intact", () => {
     const payload = buildTranscribeAudioPayload("profile-1", "audio-1", SETTINGS);
     const parsed = TranscribeAudioPayloadSchema.parse(payload);

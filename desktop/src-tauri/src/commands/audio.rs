@@ -153,6 +153,14 @@ pub struct RecordingStartResult {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct RecordingInputDevice {
+    pub id: String,
+    pub label: String,
+    pub is_default: bool,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RecordingStatusResult {
     pub duration_ms: i64,
     pub level: f32,
@@ -278,6 +286,7 @@ pub fn recording_start(
     state: State<RecordingManager>,
     profile_id: String,
     asr_settings: Option<AsrSettingsPayload>,
+    input_device_id: Option<String>,
 ) -> Result<RecordingStartResult, String> {
     db::ensure_profile_exists(&app, &profile_id)?;
     let asr_settings = normalize_asr_settings(asr_settings);
@@ -316,8 +325,15 @@ pub fn recording_start(
     }));
 
     let state_clone = state.clone();
+    let selected_input_device_id = input_device_id.clone();
     let thread = thread::spawn(move || {
-        if let Err(err) = run_recording_thread(draft_path, state_clone, cmd_rx, start_tx) {
+        if let Err(err) = run_recording_thread(
+            draft_path,
+            state_clone,
+            cmd_rx,
+            start_tx,
+            selected_input_device_id,
+        ) {
             eprintln!("recording thread error: {err}");
         }
     });
@@ -497,16 +513,19 @@ pub fn recording_stop(
     })
 }
 
+#[tauri::command]
+pub fn recording_input_devices() -> Result<Vec<RecordingInputDevice>, String> {
+    list_recording_input_devices()
+}
+
 fn run_recording_thread(
     draft_path: PathBuf,
     state: Arc<Mutex<RecordingState>>,
     command_rx: mpsc::Receiver<RecordingCommand>,
     start_tx: mpsc::Sender<Result<RecordingStartInfo, String>>,
+    selected_input_device_id: Option<String>,
 ) -> Result<(), String> {
-    let host = cpal::default_host();
-    let device = host
-        .default_input_device()
-        .ok_or_else(|| "recording_no_input".to_string())?;
+    let device = resolve_recording_input_device(selected_input_device_id.as_deref())?;
     let config = device
         .default_input_config()
         .map_err(|e| format!("recording_config: {e}"))?;
@@ -770,6 +789,53 @@ fn run_recording_telemetry(
         let _ = app.emit(RECORDING_TELEMETRY_EVENT, payload);
         thread::sleep(Duration::from_millis(RECORDING_TELEMETRY_STEP_MS));
     }
+}
+
+fn build_recording_input_device_id(index: usize, name: &str) -> String {
+    format!("mic-{}-{}", index, name.replace(' ', "_"))
+}
+
+fn list_recording_input_devices() -> Result<Vec<RecordingInputDevice>, String> {
+    let host = cpal::default_host();
+    let default_name = host
+        .default_input_device()
+        .and_then(|device| device.name().ok());
+    let devices = host
+        .input_devices()
+        .map_err(|e| format!("recording_input_devices: {e}"))?;
+
+    let mut listed = Vec::new();
+    for (index, device) in devices.enumerate() {
+        let name = device
+            .name()
+            .unwrap_or_else(|_| format!("Microphone {}", index + 1));
+        listed.push(RecordingInputDevice {
+            id: build_recording_input_device_id(index, &name),
+            label: name.clone(),
+            is_default: default_name.as_deref() == Some(name.as_str()),
+        });
+    }
+    Ok(listed)
+}
+
+fn resolve_recording_input_device(selected_id: Option<&str>) -> Result<cpal::Device, String> {
+    let host = cpal::default_host();
+    if let Some(selected_id) = selected_id {
+        let devices = host
+            .input_devices()
+            .map_err(|e| format!("recording_input_devices: {e}"))?;
+        for (index, device) in devices.enumerate() {
+            let name = device
+                .name()
+                .unwrap_or_else(|_| format!("Microphone {}", index + 1));
+            if build_recording_input_device_id(index, &name) == selected_id {
+                return Ok(device);
+            }
+        }
+    }
+
+    host.default_input_device()
+        .ok_or_else(|| "recording_no_input".to_string())
 }
 
 trait LiveDecoder {
@@ -1489,5 +1555,12 @@ mod audio_tests {
         assert!((peaks[0] - 0.2).abs() < 1e-6);
         assert!((peaks[1] - 0.9).abs() < 1e-6);
         assert!((peaks[2] - 0.4).abs() < 1e-6);
+    }
+
+    #[test]
+    fn recording_input_device_id_is_stable_for_same_name_and_index() {
+        let id_a = build_recording_input_device_id(2, "USB Mic");
+        let id_b = build_recording_input_device_id(2, "USB Mic");
+        assert_eq!(id_a, id_b);
     }
 }

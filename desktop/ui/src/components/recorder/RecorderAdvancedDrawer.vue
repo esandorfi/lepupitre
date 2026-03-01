@@ -8,6 +8,10 @@ const props = defineProps<{
   language: "auto" | "en" | "fr";
   spokenPunctuation: boolean;
   waveformStyle: "classic" | "pulse-bars" | "ribbon" | "spark";
+  inputDevices: Array<{ id: string; label: string; isDefault: boolean }>;
+  selectedInputDeviceId: string | null;
+  isLoadingInputDevices: boolean;
+  qualityGuidanceMessages: string[];
   diagnosticsCode: string | null;
 }>();
 
@@ -18,6 +22,8 @@ const emit = defineEmits<{
   (event: "update:language", value: "auto" | "en" | "fr"): void;
   (event: "update:spokenPunctuation", value: boolean): void;
   (event: "update:waveformStyle", value: "classic" | "pulse-bars" | "ribbon" | "spark"): void;
+  (event: "update:selectedInputDeviceId", value: string | null): void;
+  (event: "refreshInputDevices"): void;
 }>();
 
 const { t } = useI18n();
@@ -93,6 +99,45 @@ const { t } = useI18n();
           <option value="spark">{{ t("settings.recorder.waveform_style_spark") }}</option>
         </select>
       </label>
+
+      <label class="space-y-1 app-text-meta md:col-span-2">
+        <span class="app-subtle">{{ t("settings.recorder.input_device_label") }}</span>
+        <div class="flex flex-wrap items-center gap-2">
+          <select
+            class="app-input min-w-[220px] flex-1 rounded-lg border px-3 py-2"
+            :value="props.selectedInputDeviceId ?? ''"
+            :disabled="props.isLoadingInputDevices || props.inputDevices.length === 0"
+            @change="emit('update:selectedInputDeviceId', ($event.target as HTMLSelectElement).value || null)"
+          >
+            <option v-if="props.inputDevices.length === 0" value="">
+              {{ t("settings.recorder.input_device_none") }}
+            </option>
+            <option
+              v-for="device in props.inputDevices"
+              :key="device.id"
+              :value="device.id"
+            >
+              {{ device.isDefault ? `${device.label} (${t("settings.recorder.input_device_default")})` : device.label }}
+            </option>
+          </select>
+          <button
+            class="app-button-secondary app-focus-ring inline-flex items-center cursor-pointer"
+            type="button"
+            @click="emit('refreshInputDevices')"
+          >
+            {{ t("settings.recorder.input_device_refresh") }}
+          </button>
+        </div>
+      </label>
+
+      <div class="space-y-2 app-text-meta md:col-span-2">
+        <span class="app-subtle">{{ t("audio.calibration_title") }}</span>
+        <ul class="list-disc space-y-1 pl-5">
+          <li v-for="(message, index) in props.qualityGuidanceMessages" :key="index">
+            {{ message }}
+          </li>
+        </ul>
+      </div>
     </div>
     <p v-if="props.open && props.diagnosticsCode" class="app-muted mt-2 text-xs">
       {{ t("audio.diagnostic") }}: {{ props.diagnosticsCode }}

@@ -5,6 +5,7 @@ import {
   FeedbackContextSchema,
   PreferenceKeySchema,
   PreferenceProfileGetPayloadSchema,
+  RecordingInputDevicesResponseSchema,
   RecordingTelemetryEventSchema,
   RecordingStatusResponseSchema,
   TranscriptEditSavePayloadSchema,
@@ -139,6 +140,14 @@ describe("ipc schemas", () => {
       qualityHintKey: "good_level",
       waveformPeaks: [0.1, 0.2, 0.15],
     });
+    expect(parsed.success).toBe(true);
+  });
+
+  it("accepts recording input device list payload", () => {
+    const parsed = RecordingInputDevicesResponseSchema.safeParse([
+      { id: "mic-0-Built-in", label: "Built-in", isDefault: true },
+      { id: "mic-1-USB", label: "USB", isDefault: false },
+    ]);
     expect(parsed.success).toBe(true);
   });
 

@@ -10,6 +10,7 @@ type AsrSettingsPayload = {
 type RecordingStartPayload = {
   profileId: string;
   asrSettings: AsrSettingsPayload;
+  inputDeviceId?: string;
 };
 
 type TranscribeAudioPayload = {
@@ -29,12 +30,17 @@ function toAsrSettingsPayload(settings: TranscriptionSettings): AsrSettingsPaylo
 
 export function buildRecordingStartPayload(
   profileId: string,
-  settings: TranscriptionSettings
+  settings: TranscriptionSettings,
+  inputDeviceId?: string | null
 ): RecordingStartPayload {
-  return {
+  const payload: RecordingStartPayload = {
     profileId,
     asrSettings: toAsrSettingsPayload(settings),
   };
+  if (inputDeviceId) {
+    payload.inputDeviceId = inputDeviceId;
+  }
+  return payload;
 }
 
 export function buildTranscribeAudioPayload(

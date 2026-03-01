@@ -459,6 +459,7 @@ export const AsrSettingsSchema = z.object({
 export const RecordingStartPayloadSchema = z.object({
   profileId: IdSchema,
   asrSettings: AsrSettingsSchema.optional(),
+  inputDeviceId: z.string().min(1).optional().nullable(),
 });
 
 export const RecordingStartResponseSchema = z.object({
@@ -466,6 +467,14 @@ export const RecordingStartResponseSchema = z.object({
   inputSampleRate: z.number().int().positive(),
   inputChannels: z.number().int().positive(),
 });
+
+export const RecordingInputDeviceSchema = z.object({
+  id: z.string().min(1),
+  label: z.string().min(1),
+  isDefault: z.boolean(),
+});
+
+export const RecordingInputDevicesResponseSchema = z.array(RecordingInputDeviceSchema);
 
 export const RecordingStatusPayloadSchema = z.object({
   recordingId: IdSchema,
@@ -720,6 +729,7 @@ export type AsrCommitEvent = z.infer<typeof AsrCommitEventSchema>;
 export type AsrFinalProgressEvent = z.infer<typeof AsrFinalProgressEventSchema>;
 export type AsrFinalResultEvent = z.infer<typeof AsrFinalResultEventSchema>;
 export type RecordingTelemetryEvent = z.infer<typeof RecordingTelemetryEventSchema>;
+export type RecordingInputDevice = z.infer<typeof RecordingInputDeviceSchema>;
 
 export type RecordingStartResponse = z.infer<typeof RecordingStartResponseSchema>;
 export type RecordingStatusResponse = z.infer<typeof RecordingStatusResponseSchema>;

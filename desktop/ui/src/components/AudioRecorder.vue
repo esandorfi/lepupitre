@@ -18,6 +18,10 @@ import {
   updateRecorderQualityHint,
 } from "../lib/recorderQualityHint";
 import {
+  normalizeRecorderQualityHintKey,
+  qualityGuidanceMessageKeys,
+} from "../lib/recorderCalibration";
+import {
   isTypingTargetElement,
   recorderStopTransitionPlan,
   resolveRecorderTranscribeReadiness,
@@ -47,6 +51,8 @@ import {
   RecordingResumePayloadSchema,
   RecordingStartPayloadSchema,
   RecordingStartResponseSchema,
+  RecordingInputDevicesResponseSchema,
+  type RecordingInputDevice,
   RecordingTelemetryEventSchema,
   RecordingStatusPayloadSchema,
   RecordingStatusResponseSchema,
@@ -141,6 +147,9 @@ const liveSegments = ref<TranscriptSegment[]>([]);
 const livePartial = ref<string | null>(null);
 const liveWaveformPeaks = ref<number[]>([]);
 const lastWaveformPeaks = ref<number[]>([]);
+const inputDevices = ref<RecordingInputDevice[]>([]);
+const selectedInputDeviceId = ref<string | null>(null);
+const isLoadingInputDevices = ref(false);
 const advancedOpen = ref(readPreference(ADVANCED_DRAWER_PREF_KEY) === "1");
 const telemetryReceived = ref(false);
 
@@ -181,6 +190,10 @@ const canAnalyzeRecorder = computed(
   () => !!activeTranscriptIdForAnalysis.value && !!props.canAnalyze
 );
 const waveformStyle = computed(() => uiSettings.value.waveformStyle);
+const qualityGuidanceMessages = computed(() => {
+  const hint = normalizeRecorderQualityHintKey(qualityHintKey.value);
+  return qualityGuidanceMessageKeys(hint).map((key) => t(key));
+});
 
 const canExport = computed(() => !!activeTranscriptIdForAnalysis.value);
 const transcribeReadiness = computed(() =>
@@ -262,6 +275,10 @@ const captureCanStop = computed(() => !!recordingId.value && !statusKey.value.in
 function setAdvancedOpen(next: boolean) {
   advancedOpen.value = next;
   writePreference(ADVANCED_DRAWER_PREF_KEY, next ? "1" : "0");
+}
+
+function setSelectedInputDeviceId(next: string | null) {
+  selectedInputDeviceId.value = next;
 }
 
 function clearError() {
@@ -458,6 +475,34 @@ async function refreshTranscribeReadiness() {
   }
 }
 
+async function refreshInputDevices() {
+  isLoadingInputDevices.value = true;
+  try {
+    const devices = await invokeChecked(
+      "recording_input_devices",
+      EmptyPayloadSchema,
+      RecordingInputDevicesResponseSchema,
+      {}
+    );
+    inputDevices.value = devices;
+    if (devices.length === 0) {
+      selectedInputDeviceId.value = null;
+      return;
+    }
+    const existing = selectedInputDeviceId.value;
+    if (existing && devices.some((device) => device.id === existing)) {
+      return;
+    }
+    selectedInputDeviceId.value =
+      devices.find((device) => device.isDefault)?.id ?? devices[0]?.id ?? null;
+  } catch {
+    inputDevices.value = [];
+    selectedInputDeviceId.value = null;
+  } finally {
+    isLoadingInputDevices.value = false;
+  }
+}
+
 async function startRecording() {
   clearError();
   if (!activeProfileId.value) {
@@ -482,7 +527,11 @@ async function startRecording() {
       "recording_start",
       RecordingStartPayloadSchema,
       RecordingStartResponseSchema,
-      buildRecordingStartPayload(activeProfileId.value, transcriptionSettings.value)
+      buildRecordingStartPayload(
+        activeProfileId.value,
+        transcriptionSettings.value,
+        selectedInputDeviceId.value
+      )
     );
     recordingId.value = result.recordingId;
     isRecording.value = true;
@@ -881,6 +930,7 @@ function handleShortcut(event: KeyboardEvent) {
 
 onMounted(async () => {
   void refreshTranscribeReadiness();
+  void refreshInputDevices();
   window.addEventListener("keydown", handleShortcut);
 
   unlistenProgress = await listen<JobProgressEvent>("job:progress", (event) => {
@@ -1086,6 +1136,10 @@ watch(
       :language="transcriptionSettings.language"
       :spoken-punctuation="transcriptionSettings.spokenPunctuation"
       :waveform-style="waveformStyle"
+      :input-devices="inputDevices"
+      :selected-input-device-id="selectedInputDeviceId"
+      :is-loading-input-devices="isLoadingInputDevices"
+      :quality-guidance-messages="qualityGuidanceMessages"
       :diagnostics-code="errorCode ?? transcribeBlockedCode"
       @toggle="setAdvancedOpen(!advancedOpen)"
       @update:model="(value) => updateTranscriptionSettings({ model: value })"
@@ -1093,6 +1147,8 @@ watch(
       @update:language="(value) => updateTranscriptionSettings({ language: value })"
       @update:spoken-punctuation="(value) => updateTranscriptionSettings({ spokenPunctuation: value })"
       @update:waveform-style="(value) => setWaveformStyle(value)"
+      @update:selected-input-device-id="setSelectedInputDeviceId"
+      @refresh-input-devices="refreshInputDevices"
     />
 
     <div v-if="lastSavedPath" class="flex flex-wrap items-center gap-2 text-xs">
