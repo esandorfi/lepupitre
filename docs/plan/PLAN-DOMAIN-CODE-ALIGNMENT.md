@@ -395,6 +395,11 @@ UI (`desktop/ui/src`)
   - Structure: run/project lookup/list/state reads and row mapping now live in `lookups.rs`; run insert/update and run-feedback transaction persistence now live in `writes.rs`.
   - Goal: keep run persistence internals compact and role-oriented while preserving command-facing domain APIs.
 
+- 2026-03-01: Domain decomposition continued (coach repository split).
+  - Rust: split `domain/coach/repo.rs` internals into `domain/coach/repo/{progress.rs,blueprint.rs}` with a small facade preserving current exports.
+  - Structure: project resolution and progress stats/streak DB reads now live in `progress.rs`; talks blueprint source aggregation reads now live in `blueprint.rs`.
+  - Goal: keep coach persistence reads use-case oriented and easier to evolve in small files.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
