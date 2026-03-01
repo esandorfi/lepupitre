@@ -280,6 +280,11 @@ UI (`desktop/ui/src`)
   - Structure: feedback orchestration/artifact handling remains in `mod.rs`; SQL lookups and transactions are isolated in `repo.rs`.
   - Goal: keep feedback context readable with small, role-focused files and explicit boundaries.
 
+- 2026-03-01: Domain decomposition continued (coach split by use-case modules).
+  - Rust: replaced monolithic `domain/coach/mod.rs` internals with `domain/coach/{mod.rs,progress.rs,blueprint.rs,mascot.rs}`.
+  - Structure: `mod.rs` now exposes thin entrypoints; progress math, blueprint generation, and mascot message logic live in dedicated files.
+  - Goal: make coach behavior easier to evolve with feature-oriented, small files.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
