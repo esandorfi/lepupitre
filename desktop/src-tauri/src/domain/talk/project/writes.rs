@@ -16,13 +16,15 @@ pub fn project_create(
 
     repo::insert_project(
         &conn,
-        &id,
-        &payload.title,
-        payload.audience.as_deref(),
-        payload.goal.as_deref(),
-        payload.duration_target_sec,
-        talk_number,
-        &now,
+        &repo::InsertProjectParams {
+            id: &id,
+            title: &payload.title,
+            audience: payload.audience.as_deref(),
+            goal: payload.goal.as_deref(),
+            duration_target_sec: payload.duration_target_sec,
+            talk_number,
+            now: &now,
+        },
     )?;
     repo::set_active_project_id(&conn, &id)?;
 
@@ -68,13 +70,15 @@ pub fn project_update(
 
     let updated = repo::update_project(
         &conn,
-        project_id,
-        title,
-        audience.as_deref(),
-        goal.as_deref(),
-        duration_target_sec,
-        stage,
-        &now,
+        &repo::UpdateProjectParams {
+            project_id,
+            title,
+            audience: audience.as_deref(),
+            goal: goal.as_deref(),
+            duration_target_sec,
+            stage,
+            now: &now,
+        },
     )?;
     if updated == 0 {
         return Err("project_not_found".to_string());

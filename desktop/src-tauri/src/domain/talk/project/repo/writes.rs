@@ -1,43 +1,51 @@
 use rusqlite::params;
 
+pub struct InsertProjectParams<'a> {
+    pub id: &'a str,
+    pub title: &'a str,
+    pub audience: Option<&'a str>,
+    pub goal: Option<&'a str>,
+    pub duration_target_sec: Option<i64>,
+    pub talk_number: i64,
+    pub now: &'a str,
+}
+
 pub fn insert_project(
     conn: &rusqlite::Connection,
-    id: &str,
-    title: &str,
-    audience: Option<&str>,
-    goal: Option<&str>,
-    duration_target_sec: Option<i64>,
-    talk_number: i64,
-    now: &str,
+    params: &InsertProjectParams<'_>,
 ) -> Result<(), String> {
     conn.execute(
         "INSERT INTO talk_projects (id, title, audience, goal, duration_target_sec, talk_number, stage, created_at, updated_at)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
         params![
-            id,
-            title,
-            audience,
-            goal,
-            duration_target_sec,
-            talk_number,
+            params.id,
+            params.title,
+            params.audience,
+            params.goal,
+            params.duration_target_sec,
+            params.talk_number,
             "draft",
-            now,
-            now
+            params.now,
+            params.now
         ],
     )
     .map_err(|e| format!("insert: {e}"))?;
     Ok(())
 }
 
+pub struct UpdateProjectParams<'a> {
+    pub project_id: &'a str,
+    pub title: &'a str,
+    pub audience: Option<&'a str>,
+    pub goal: Option<&'a str>,
+    pub duration_target_sec: Option<i64>,
+    pub stage: &'a str,
+    pub now: &'a str,
+}
+
 pub fn update_project(
     conn: &rusqlite::Connection,
-    project_id: &str,
-    title: &str,
-    audience: Option<&str>,
-    goal: Option<&str>,
-    duration_target_sec: Option<i64>,
-    stage: &str,
-    now: &str,
+    params: &UpdateProjectParams<'_>,
 ) -> Result<usize, String> {
     conn.execute(
         "UPDATE talk_projects
@@ -49,13 +57,13 @@ pub fn update_project(
              updated_at = ?7
          WHERE id = ?1",
         params![
-            project_id,
-            title,
-            audience,
-            goal,
-            duration_target_sec,
-            stage,
-            now
+            params.project_id,
+            params.title,
+            params.audience,
+            params.goal,
+            params.duration_target_sec,
+            params.stage,
+            params.now
         ],
     )
     .map_err(|e| format!("project_update: {e}"))
