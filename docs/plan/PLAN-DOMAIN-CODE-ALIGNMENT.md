@@ -260,6 +260,11 @@ UI (`desktop/ui/src`)
   - Rust: replaced all remaining `crate::core::*` imports with direct `kernel`/`domain`/`platform` imports.
   - Guard rails: `scripts/check-domain-structure.sh` now forbids legacy `crate::core::*` imports and enforces absence of `desktop/src-tauri/src/core`.
 
+- 2026-03-01: Domain decomposition continued (training/quest split into smaller files).
+  - Rust: replaced `domain/training/quest.rs` with `domain/training/quest/{mod.rs,repo.rs,types.rs}`.
+  - Structure: public API stays unchanged while SQL-heavy persistence logic is isolated in `repo.rs`.
+  - Goal: keep domain files small and easier to navigate for humans and AI coding agents.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
