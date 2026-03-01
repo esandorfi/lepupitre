@@ -1,6 +1,5 @@
 pub mod artifacts;
 pub mod models;
-pub mod transcript;
 
 pub mod coach {
     pub use crate::domain::coach::*;
@@ -68,6 +67,10 @@ pub mod seed {
 
 pub mod time {
     pub use crate::kernel::time::*;
+}
+
+pub mod transcript {
+    pub use crate::domain::asr::transcript::*;
 }
 
 pub mod outline {

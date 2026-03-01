@@ -1,4 +1,6 @@
-use crate::core::{artifacts, db, models, time};
+use crate::core::{artifacts, models};
+use crate::kernel::time;
+use crate::platform::db;
 
 pub fn load_transcript(
     app: &tauri::AppHandle,

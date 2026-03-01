@@ -1,5 +1,6 @@
 pub mod asr_live;
 pub mod asr_models;
+pub mod transcript;
 
 use crate::core::models;
 use crate::kernel::time;

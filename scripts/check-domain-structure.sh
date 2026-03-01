@@ -64,11 +64,12 @@ check_path_absent "desktop/src-tauri/src/core/seed.rs"
 check_path_absent "desktop/src-tauri/src/core/analysis.rs"
 check_path_absent "desktop/src-tauri/src/core/dsp.rs"
 check_path_absent "desktop/src-tauri/src/core/vad.rs"
+check_path_absent "desktop/src-tauri/src/core/transcript.rs"
 
 # Command wrappers for migrated contexts must import new layer paths.
 check_forbidden_match \
   "Migrated command wrappers still import legacy core contexts." \
-  'crate::core::(run|coach|preferences|workspace|project|outline|feedback|quest|pack|peer_review|recorder|recording|asr|asr_live|asr_models|asr_sidecar|db|db_helpers|seed|dsp|vad)' \
+  'crate::core::(run|coach|preferences|workspace|project|outline|feedback|quest|pack|peer_review|recorder|recording|asr|asr_live|asr_models|asr_sidecar|db|db_helpers|seed|dsp|vad|transcript)' \
   desktop/src-tauri/src/commands/run.rs \
   desktop/src-tauri/src/commands/coach.rs \
   desktop/src-tauri/src/commands/preferences.rs \

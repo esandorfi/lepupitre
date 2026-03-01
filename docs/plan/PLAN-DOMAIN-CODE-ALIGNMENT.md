@@ -242,6 +242,11 @@ UI (`desktop/ui/src`)
   - Rust: `commands/audio.rs` now imports recorder signal processing modules from `domain::recorder`.
   - Guard rails: legacy path checks now enforce removal of `core/dsp.rs` and `core/vad.rs`.
 
+- 2026-03-01: Topology reset continued (transcript module).
+  - Rust: moved transcript processing/export/edit helpers from `core/transcript.rs` to `domain/asr/transcript.rs`.
+  - Rust: `commands/transcription.rs`, `domain/feedback`, `domain/run`, and `domain/exchange` now import transcript helpers from `domain::asr::transcript`.
+  - Guard rails: legacy path checks now enforce removal of `core/transcript.rs`.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
