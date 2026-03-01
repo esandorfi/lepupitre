@@ -340,6 +340,11 @@ UI (`desktop/ui/src`)
   - Structure: profile listing/read counters live in `queries.rs`; profile create/switch/delete/rename transactional writes (and rollback tests) live in `mutations.rs`.
   - Goal: keep workspace persistence code small and role-focused while preserving existing domain call sites.
 
+- 2026-03-01: Domain decomposition continued (recorder recording runtime split).
+  - Rust: split `domain/recorder/recording.rs` internals into `domain/recorder/recording/{ring_buffer.rs,resampler.rs,wav_writer.rs}` with a small facade re-exporting the same types.
+  - Structure: circular sample buffering, linear resampling, and WAV stream writing are now isolated in dedicated modules with focused tests per concern.
+  - Goal: keep recorder runtime internals easier to navigate and safer to evolve in small slices.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
