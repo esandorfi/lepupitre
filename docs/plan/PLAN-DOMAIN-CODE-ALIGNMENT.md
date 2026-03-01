@@ -315,6 +315,11 @@ UI (`desktop/ui/src`)
   - Structure: `pack.rs` keeps export/inspect/import orchestration and zip validation, while `pack/repo.rs` owns artifact/outline lookups and peer-review import transaction writes.
   - Goal: isolate DB responsibilities behind a dedicated submodule and keep pack orchestration easier to navigate.
 
+- 2026-03-01: Domain decomposition continued (exchange pack archive split).
+  - Rust: extracted zip/hash/file I/O helpers from `domain/exchange/pack.rs` into `domain/exchange/pack/archive.rs`.
+  - Structure: `pack.rs` now keeps high-level export/inspect/import flow, while `pack/archive.rs` centralizes zip entry validation, content reads, artifact writes, and SHA checks.
+  - Goal: isolate archive-specific mechanics from domain orchestration to keep small, purpose-focused files.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.

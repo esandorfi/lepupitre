@@ -5,18 +5,16 @@ use crate::platform::artifacts;
 use crate::platform::db;
 use rusqlite::params;
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::{Read, Write};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use zip::write::FileOptions;
 use zip::{CompressionMethod, ZipArchive, ZipWriter};
 
+mod archive;
 mod repo;
 
 const RUBRIC_JSON: &str = include_str!("../../../../../seed/rubric.tech_talk_internal.v1.json");
-const MAX_ZIP_ENTRY_BYTES: u64 = 64 * 1024 * 1024;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct PackManifestV1 {
@@ -106,28 +104,28 @@ pub fn pack_export(
         PackFileEntry {
             path: "run/outline.md".to_string(),
             role: "outline".to_string(),
-            sha256: sha256_hex(&outline_bytes),
+            sha256: archive::sha256_hex(&outline_bytes),
             bytes: outline_bytes.len() as u64,
             mime: "text/markdown".to_string(),
         },
         PackFileEntry {
             path: "rubric/rubric.json".to_string(),
             role: "rubric".to_string(),
-            sha256: sha256_hex(&rubric_bytes),
+            sha256: archive::sha256_hex(&rubric_bytes),
             bytes: rubric_bytes.len() as u64,
             mime: "application/json".to_string(),
         },
         PackFileEntry {
             path: "review/review_template.json".to_string(),
             role: "review_template".to_string(),
-            sha256: sha256_hex(&review_bytes),
+            sha256: archive::sha256_hex(&review_bytes),
             bytes: review_bytes.len() as u64,
             mime: "application/json".to_string(),
         },
         PackFileEntry {
             path: "viewer/index.html".to_string(),
             role: "viewer".to_string(),
-            sha256: sha256_hex(&viewer_bytes),
+            sha256: archive::sha256_hex(&viewer_bytes),
             bytes: viewer_bytes.len() as u64,
             mime: "text/html".to_string(),
         },
@@ -162,23 +160,23 @@ pub fn pack_export(
     let stored = FileOptions::default().compression_method(CompressionMethod::Stored);
     let deflated = FileOptions::default().compression_method(CompressionMethod::Deflated);
 
-    write_file_from_disk(
+    archive::write_file_from_disk(
         &mut zip,
         "run/audio.wav",
         &artifact_path(&app, &profile_id, &audio.relpath)?,
         stored,
     )?;
-    write_file_from_disk(&mut zip, "run/transcript.json", &transcript_path, deflated)?;
-    write_bytes(&mut zip, "run/outline.md", &outline_bytes, deflated)?;
-    write_bytes(&mut zip, "rubric/rubric.json", &rubric_bytes, deflated)?;
-    write_bytes(
+    archive::write_file_from_disk(&mut zip, "run/transcript.json", &transcript_path, deflated)?;
+    archive::write_bytes(&mut zip, "run/outline.md", &outline_bytes, deflated)?;
+    archive::write_bytes(&mut zip, "rubric/rubric.json", &rubric_bytes, deflated)?;
+    archive::write_bytes(
         &mut zip,
         "review/review_template.json",
         &review_bytes,
         deflated,
     )?;
-    write_bytes(&mut zip, "viewer/index.html", &viewer_bytes, deflated)?;
-    write_bytes(&mut zip, "manifest.json", &manifest_json, deflated)?;
+    archive::write_bytes(&mut zip, "viewer/index.html", &viewer_bytes, deflated)?;
+    archive::write_bytes(&mut zip, "manifest.json", &manifest_json, deflated)?;
 
     zip.finish().map_err(|e| format!("pack_finish: {e}"))?;
 
@@ -256,16 +254,16 @@ pub fn pack_inspect(
     let archive_file = File::open(&archive_path).map_err(|e| format!("pack_open: {e}"))?;
     let mut archive = ZipArchive::new(archive_file).map_err(|e| format!("pack_zip: {e}"))?;
 
-    validate_zip_entries(&mut archive)?;
+    archive::validate_zip_entries(&mut archive)?;
 
-    let manifest_bytes = read_zip_file(&mut archive, "manifest.json")?;
+    let manifest_bytes = archive::read_zip_file(&mut archive, "manifest.json")?;
     let manifest: PackManifestV1 =
         serde_json::from_slice(&manifest_bytes).map_err(|e| format!("manifest_parse: {e}"))?;
     if manifest.schema_version != "1.0.0" {
         return Err("manifest_schema_mismatch".to_string());
     }
 
-    let files_by_role = files_by_role(&manifest.files)?;
+    let files_by_role = archive::files_by_role(&manifest.files)?;
     let _audio_entry = files_by_role
         .get("audio")
         .ok_or_else(|| "manifest_missing_audio".to_string())?;
@@ -282,11 +280,12 @@ pub fn pack_inspect(
         .get("review_template")
         .ok_or_else(|| "manifest_missing_review".to_string())?;
 
-    let audio_bytes = read_zip_entry_checked(&mut archive, _audio_entry, true, true)?;
-    let transcript_bytes = read_zip_entry_checked(&mut archive, _transcript_entry, true, true)?;
-    let outline_bytes = read_zip_entry_checked(&mut archive, _outline_entry, true, true)?;
-    let rubric_bytes = read_zip_entry_checked(&mut archive, _rubric_entry, true, true)?;
-    let review_bytes = read_zip_entry_checked(&mut archive, review_entry, false, false)?;
+    let audio_bytes = archive::read_zip_entry_checked(&mut archive, _audio_entry, true, true)?;
+    let transcript_bytes =
+        archive::read_zip_entry_checked(&mut archive, _transcript_entry, true, true)?;
+    let outline_bytes = archive::read_zip_entry_checked(&mut archive, _outline_entry, true, true)?;
+    let rubric_bytes = archive::read_zip_entry_checked(&mut archive, _rubric_entry, true, true)?;
+    let review_bytes = archive::read_zip_entry_checked(&mut archive, review_entry, false, false)?;
     let review_json: serde_json::Value =
         serde_json::from_slice(&review_bytes).map_err(|e| format!("review_parse: {e}"))?;
     let reviewer_tag = review_json
@@ -343,16 +342,16 @@ pub fn peer_review_import(
     let archive_file = File::open(&archive_path).map_err(|e| format!("pack_open: {e}"))?;
     let mut archive = ZipArchive::new(archive_file).map_err(|e| format!("pack_zip: {e}"))?;
 
-    validate_zip_entries(&mut archive)?;
+    archive::validate_zip_entries(&mut archive)?;
 
-    let manifest_bytes = read_zip_file(&mut archive, "manifest.json")?;
+    let manifest_bytes = archive::read_zip_file(&mut archive, "manifest.json")?;
     let manifest: PackManifestV1 =
         serde_json::from_slice(&manifest_bytes).map_err(|e| format!("manifest_parse: {e}"))?;
     if manifest.schema_version != "1.0.0" {
         return Err("manifest_schema_mismatch".to_string());
     }
 
-    let files_by_role = files_by_role(&manifest.files)?;
+    let files_by_role = archive::files_by_role(&manifest.files)?;
     let audio_entry = files_by_role
         .get("audio")
         .ok_or_else(|| "manifest_missing_audio".to_string())?;
@@ -369,11 +368,12 @@ pub fn peer_review_import(
         .get("review_template")
         .ok_or_else(|| "manifest_missing_review".to_string())?;
 
-    let audio_bytes = read_zip_entry_checked(&mut archive, audio_entry, true, true)?;
-    let transcript_bytes = read_zip_entry_checked(&mut archive, transcript_entry, true, true)?;
-    let outline_bytes = read_zip_entry_checked(&mut archive, outline_entry, true, true)?;
-    let rubric_bytes = read_zip_entry_checked(&mut archive, rubric_entry, true, true)?;
-    let review_bytes = read_zip_entry_checked(&mut archive, review_entry, false, false)?;
+    let audio_bytes = archive::read_zip_entry_checked(&mut archive, audio_entry, true, true)?;
+    let transcript_bytes =
+        archive::read_zip_entry_checked(&mut archive, transcript_entry, true, true)?;
+    let outline_bytes = archive::read_zip_entry_checked(&mut archive, outline_entry, true, true)?;
+    let rubric_bytes = archive::read_zip_entry_checked(&mut archive, rubric_entry, true, true)?;
+    let review_bytes = archive::read_zip_entry_checked(&mut archive, review_entry, false, false)?;
 
     let review_json: serde_json::Value =
         serde_json::from_slice(&review_bytes).map_err(|e| format!("review_parse: {e}"))?;
@@ -555,124 +555,6 @@ fn build_viewer_html(title: &str) -> String {
     format!(
         "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\" />\n<title>{escaped}</title>\n</head>\n<body>\n<h1>{escaped}</h1>\n<p>Open audio.wav and transcript.json from the pack.</p>\n</body>\n</html>\n"
     )
-}
-
-fn write_file_from_disk(
-    zip: &mut ZipWriter<File>,
-    path: &str,
-    source: &Path,
-    options: FileOptions,
-) -> Result<(), String> {
-    zip.start_file(path, options)
-        .map_err(|e| format!("zip_start: {e}"))?;
-    let mut file = File::open(source).map_err(|e| format!("zip_source: {e}"))?;
-    std::io::copy(&mut file, zip).map_err(|e| format!("zip_copy: {e}"))?;
-    Ok(())
-}
-
-fn write_bytes(
-    zip: &mut ZipWriter<File>,
-    path: &str,
-    bytes: &[u8],
-    options: FileOptions,
-) -> Result<(), String> {
-    zip.start_file(path, options)
-        .map_err(|e| format!("zip_start: {e}"))?;
-    zip.write_all(bytes)
-        .map_err(|e| format!("zip_write: {e}"))?;
-    Ok(())
-}
-
-fn sha256_hex(bytes: &[u8]) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(bytes);
-    let digest = hasher.finalize();
-    let mut out = String::with_capacity(digest.len() * 2);
-    for byte in digest {
-        out.push_str(&format!("{:02x}", byte));
-    }
-    out
-}
-
-fn validate_zip_entries(archive: &mut ZipArchive<File>) -> Result<(), String> {
-    for i in 0..archive.len() {
-        let file = archive
-            .by_index(i)
-            .map_err(|e| format!("pack_entry: {e}"))?;
-        let name = file.name();
-        if name.contains('\\') {
-            return Err("pack_invalid_path".to_string());
-        }
-        let path = Path::new(name);
-        if path.is_absolute() {
-            return Err("pack_invalid_path".to_string());
-        }
-        for component in path.components() {
-            if matches!(
-                component,
-                std::path::Component::ParentDir | std::path::Component::RootDir
-            ) {
-                return Err("pack_invalid_path".to_string());
-            }
-        }
-        if is_symlink(&file) {
-            return Err("pack_symlink_rejected".to_string());
-        }
-        if file.size() > MAX_ZIP_ENTRY_BYTES {
-            return Err("pack_entry_too_large".to_string());
-        }
-    }
-    Ok(())
-}
-
-fn is_symlink(file: &zip::read::ZipFile<'_>) -> bool {
-    file.unix_mode()
-        .map(|mode| mode & 0o170000 == 0o120000)
-        .unwrap_or(false)
-}
-
-fn read_zip_file(archive: &mut ZipArchive<File>, name: &str) -> Result<Vec<u8>, String> {
-    let mut file = archive
-        .by_name(name)
-        .map_err(|e| format!("pack_missing_file: {e}"))?;
-    let mut bytes = Vec::new();
-    file.read_to_end(&mut bytes)
-        .map_err(|e| format!("pack_read: {e}"))?;
-    Ok(bytes)
-}
-
-fn files_by_role(files: &[PackFileEntry]) -> Result<HashMap<String, PackFileEntry>, String> {
-    let mut map = HashMap::new();
-    for entry in files {
-        if map.contains_key(&entry.role) {
-            return Err("manifest_duplicate_role".to_string());
-        }
-        map.insert(entry.role.clone(), entry.clone());
-    }
-    Ok(map)
-}
-
-fn ensure_sha_match(expected: &str, bytes: &[u8]) -> Result<(), String> {
-    if sha256_hex(bytes) != expected {
-        return Err("pack_sha_mismatch".to_string());
-    }
-    Ok(())
-}
-
-fn read_zip_entry_checked(
-    archive: &mut ZipArchive<File>,
-    entry: &PackFileEntry,
-    validate_sha: bool,
-    validate_size: bool,
-) -> Result<Vec<u8>, String> {
-    let bytes = read_zip_file(archive, &entry.path)?;
-    if validate_size && bytes.len() as u64 != entry.bytes {
-        return Err("pack_size_mismatch".to_string());
-    }
-    if validate_sha {
-        ensure_sha_match(&entry.sha256, &bytes)?;
-    }
-    Ok(bytes)
 }
 
 fn escape_html(input: &str) -> String {
