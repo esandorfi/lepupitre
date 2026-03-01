@@ -1,3 +1,59 @@
+use cpal::traits::{DeviceTrait, HostTrait};
+
+#[derive(Debug, Clone)]
+pub struct RecordingInputDeviceInfo {
+    pub id: String,
+    pub label: String,
+    pub is_default: bool,
+}
+
+pub fn list_input_devices() -> Result<Vec<RecordingInputDeviceInfo>, String> {
+    let host = cpal::default_host();
+    let default_name = host
+        .default_input_device()
+        .and_then(|device| device.name().ok());
+    let devices = host
+        .input_devices()
+        .map_err(|e| format!("recording_input_devices: {e}"))?;
+
+    let mut listed = Vec::new();
+    for (index, device) in devices.enumerate() {
+        let name = device
+            .name()
+            .unwrap_or_else(|_| format!("Microphone {}", index + 1));
+        listed.push(RecordingInputDeviceInfo {
+            id: build_recording_input_device_id(index, &name),
+            label: name.clone(),
+            is_default: default_name.as_deref() == Some(name.as_str()),
+        });
+    }
+    Ok(listed)
+}
+
+pub fn resolve_input_device(selected_id: Option<&str>) -> Result<cpal::Device, String> {
+    let host = cpal::default_host();
+    if let Some(selected_id) = selected_id {
+        let devices = host
+            .input_devices()
+            .map_err(|e| format!("recording_input_devices: {e}"))?;
+        for (index, device) in devices.enumerate() {
+            let name = device
+                .name()
+                .unwrap_or_else(|_| format!("Microphone {}", index + 1));
+            if build_recording_input_device_id(index, &name) == selected_id {
+                return Ok(device);
+            }
+        }
+    }
+
+    host.default_input_device()
+        .ok_or_else(|| "recording_no_input".to_string())
+}
+
+pub fn build_recording_input_device_id(index: usize, name: &str) -> String {
+    format!("mic-{}-{}", index, name.replace(' ', "_"))
+}
+
 pub fn decode_wav_pcm16_mono_16k(bytes: &[u8]) -> Result<Vec<i16>, String> {
     if bytes.len() < 44 {
         return Err("wav_header".to_string());
@@ -150,5 +206,12 @@ mod tests {
     fn resolve_trim_sample_range_rejects_invalid_windows() {
         let err = resolve_trim_sample_range(16_000, 500, 500, 16_000).expect_err("should fail");
         assert_eq!(err, "trim_range_invalid");
+    }
+
+    #[test]
+    fn recording_input_device_id_is_stable_for_same_name_and_index() {
+        let id_a = build_recording_input_device_id(2, "USB Mic");
+        let id_b = build_recording_input_device_id(2, "USB Mic");
+        assert_eq!(id_a, id_b);
     }
 }

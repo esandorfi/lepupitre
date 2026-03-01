@@ -1,4 +1,4 @@
-use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use cpal::traits::{DeviceTrait, StreamTrait};
 use cpal::{Sample, SampleFormat};
 use serde::Serialize;
 use std::path::{Path, PathBuf};
@@ -443,7 +443,14 @@ pub fn recording_stop(
 
 #[tauri::command]
 pub fn recording_input_devices() -> Result<Vec<RecordingInputDevice>, String> {
-    list_recording_input_devices()
+    Ok(recorder::list_input_devices()?
+        .into_iter()
+        .map(|device| RecordingInputDevice {
+            id: device.id,
+            label: device.label,
+            is_default: device.is_default,
+        })
+        .collect())
 }
 
 #[tauri::command]
@@ -466,7 +473,7 @@ fn run_recording_thread(
     start_tx: mpsc::Sender<Result<RecordingStartInfo, String>>,
     selected_input_device_id: Option<String>,
 ) -> Result<(), String> {
-    let device = resolve_recording_input_device(selected_input_device_id.as_deref())?;
+    let device = recorder::resolve_input_device(selected_input_device_id.as_deref())?;
     let config = device
         .default_input_config()
         .map_err(|e| format!("recording_config: {e}"))?;
@@ -732,10 +739,6 @@ fn run_recording_telemetry(
     }
 }
 
-fn build_recording_input_device_id(index: usize, name: &str) -> String {
-    format!("mic-{}-{}", index, name.replace(' ', "_"))
-}
-
 fn estimate_recording_telemetry_payload_bytes(waveform_bins: usize) -> usize {
     let payload = RecordingTelemetryEvent {
         schema_version: "1.0.0",
@@ -749,49 +752,6 @@ fn estimate_recording_telemetry_payload_bytes(waveform_bins: usize) -> usize {
     serde_json::to_vec(&payload)
         .map(|encoded| encoded.len())
         .unwrap_or(usize::MAX)
-}
-
-fn list_recording_input_devices() -> Result<Vec<RecordingInputDevice>, String> {
-    let host = cpal::default_host();
-    let default_name = host
-        .default_input_device()
-        .and_then(|device| device.name().ok());
-    let devices = host
-        .input_devices()
-        .map_err(|e| format!("recording_input_devices: {e}"))?;
-
-    let mut listed = Vec::new();
-    for (index, device) in devices.enumerate() {
-        let name = device
-            .name()
-            .unwrap_or_else(|_| format!("Microphone {}", index + 1));
-        listed.push(RecordingInputDevice {
-            id: build_recording_input_device_id(index, &name),
-            label: name.clone(),
-            is_default: default_name.as_deref() == Some(name.as_str()),
-        });
-    }
-    Ok(listed)
-}
-
-fn resolve_recording_input_device(selected_id: Option<&str>) -> Result<cpal::Device, String> {
-    let host = cpal::default_host();
-    if let Some(selected_id) = selected_id {
-        let devices = host
-            .input_devices()
-            .map_err(|e| format!("recording_input_devices: {e}"))?;
-        for (index, device) in devices.enumerate() {
-            let name = device
-                .name()
-                .unwrap_or_else(|_| format!("Microphone {}", index + 1));
-            if build_recording_input_device_id(index, &name) == selected_id {
-                return Ok(device);
-            }
-        }
-    }
-
-    host.default_input_device()
-        .ok_or_else(|| "recording_no_input".to_string())
 }
 
 trait LiveDecoder {
@@ -1339,13 +1299,6 @@ mod audio_tests {
         assert!((peaks[0] - 0.2).abs() < 1e-6);
         assert!((peaks[1] - 0.9).abs() < 1e-6);
         assert!((peaks[2] - 0.4).abs() < 1e-6);
-    }
-
-    #[test]
-    fn recording_input_device_id_is_stable_for_same_name_and_index() {
-        let id_a = build_recording_input_device_id(2, "USB Mic");
-        let id_b = build_recording_input_device_id(2, "USB Mic");
-        assert_eq!(id_a, id_b);
     }
 
     #[test]
