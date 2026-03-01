@@ -345,6 +345,11 @@ UI (`desktop/ui/src`)
   - Structure: circular sample buffering, linear resampling, and WAV stream writing are now isolated in dedicated modules with focused tests per concern.
   - Goal: keep recorder runtime internals easier to navigate and safer to evolve in small slices.
 
+- 2026-03-01: Domain decomposition continued (training quest repository split).
+  - Rust: split `domain/training/quest/repo.rs` internals into `domain/training/quest/repo/{queries.rs,writes.rs}` with a small facade preserving current exports.
+  - Structure: read-side quest/attempt/report queries and row mapping live in `queries.rs`; attempt insert/update and quest existence checks live in `writes.rs`.
+  - Goal: keep quest persistence logic role-oriented and easier to evolve without growing one SQL monolith file.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
