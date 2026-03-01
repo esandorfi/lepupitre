@@ -335,6 +335,11 @@ UI (`desktop/ui/src`)
   - Structure: `pack.rs` now re-exports import API and keeps export orchestration plus shared artifact-path helper; import-side zip parsing, artifact writes, and transactional persistence orchestration are isolated.
   - Goal: separate import and export use-cases into dedicated modules for cleaner bounded-context navigation.
 
+- 2026-03-01: Domain decomposition continued (workspace repository split).
+  - Rust: split `domain/workspace/repo.rs` internals into `domain/workspace/repo/{queries.rs,mutations.rs}` with a small `repo.rs` facade re-exporting the same API.
+  - Structure: profile listing/read counters live in `queries.rs`; profile create/switch/delete/rename transactional writes (and rollback tests) live in `mutations.rs`.
+  - Goal: keep workspace persistence code small and role-focused while preserving existing domain call sites.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
