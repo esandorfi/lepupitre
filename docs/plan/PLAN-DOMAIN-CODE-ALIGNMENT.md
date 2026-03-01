@@ -305,6 +305,11 @@ UI (`desktop/ui/src`)
   - Structure: `LiveDecoder`, `SidecarLiveDecoder`, `MockAsrDecoder`, and `benchmark_live_sidecar` are re-exported from `domain/asr/mod.rs`.
   - Goal: isolate live ASR strategy behavior from core ASR orchestration.
 
+- 2026-03-01: Domain decomposition continued (ASR transcript split).
+  - Rust: replaced monolithic `domain/asr/transcript.rs` with `domain/asr/transcript/{mod.rs,io.rs,edit.rs,format.rs,punctuation.rs}`.
+  - Structure: transcript I/O, edit metadata/rewrite, export formatting, and spoken punctuation rules are now isolated by concern and re-exported from `transcript/mod.rs`.
+  - Goal: keep transcript-domain files small and navigable while preserving existing command/domain call sites.
+
 ## Acceptance criteria
 
 - New code lands in context modules by default.
