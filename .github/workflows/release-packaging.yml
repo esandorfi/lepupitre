@@ -97,7 +97,8 @@ jobs:
         shell: bash
         run: ./scripts/build-asr-sidecar.sh --copy
 
-      - name: Ensure sidecar resource filenames
+      - name: Ensure sidecar resource filenames (macOS)
+        if: matrix.os == 'macos-latest'
         shell: bash
         run: |
           set -euo pipefail
@@ -110,6 +111,26 @@ jobs:
             cp desktop/src-tauri/sidecar/lepupitre-asr desktop/src-tauri/sidecar/lepupitre-asr.exe
           fi
 
+      - name: Ensure sidecar resource filenames (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          $sidecarDir = "desktop/src-tauri/sidecar"
+          New-Item -ItemType Directory -Force -Path $sidecarDir | Out-Null
+          $unixPath = Join-Path $sidecarDir "lepupitre-asr"
+          $exePath = Join-Path $sidecarDir "lepupitre-asr.exe"
+          if (-not (Test-Path $unixPath) -and (Test-Path $exePath)) {
+            Copy-Item -LiteralPath $exePath -Destination $unixPath -Force
+          }
+          if (-not (Test-Path $exePath) -and (Test-Path $unixPath)) {
+            Copy-Item -LiteralPath $unixPath -Destination $exePath -Force
+          }
+          if (-not (Test-Path $unixPath) -or -not (Test-Path $exePath)) {
+            Write-Host "Current sidecar directory contents:"
+            Get-ChildItem -LiteralPath $sidecarDir | Format-Table -AutoSize
+            throw "Missing Tauri sidecar resources; expected both lepupitre-asr and lepupitre-asr.exe"
+          }
+
       - name: Verify ASR sidecar binary
         run: node scripts/verify-asr-sidecar.mjs
 
@@ -120,6 +141,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          ls -la desktop/src-tauri/sidecar
           MANIFEST_PATH="${RUNNER_TEMP}/asr-sidecar-checksums-${RUNNER_OS}.json"
           node scripts/asr-sidecar-checksum-manifest.mjs generate --output="${MANIFEST_PATH}"
           node scripts/asr-sidecar-checksum-manifest.mjs verify --manifest="${MANIFEST_PATH}"
