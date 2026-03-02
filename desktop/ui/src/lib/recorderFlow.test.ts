@@ -5,6 +5,8 @@ import {
   resolveRecorderTranscribeReadiness,
   resolveRecorderShortcutAction,
   resolveActiveTranscriptIdForAnalysis,
+  resolveReviewState,
+  resolveReviewCta,
 } from "./recorderFlow";
 
 describe("recorderFlow", () => {
@@ -119,5 +121,100 @@ describe("recorderFlow", () => {
         hasTranscriptForAnalysis: true,
       })
     ).toBeNull();
+  });
+
+  it("resolves review state with priority: analysis > transcript > transcribing > none", () => {
+    expect(
+      resolveReviewState({ hasTranscript: false, isTranscribing: false, hasAnalysisResult: false })
+    ).toBe("review_no_transcript");
+
+    expect(
+      resolveReviewState({ hasTranscript: false, isTranscribing: true, hasAnalysisResult: false })
+    ).toBe("review_transcribing");
+
+    expect(
+      resolveReviewState({ hasTranscript: true, isTranscribing: false, hasAnalysisResult: false })
+    ).toBe("review_transcript_ready");
+
+    expect(
+      resolveReviewState({ hasTranscript: true, isTranscribing: false, hasAnalysisResult: true })
+    ).toBe("review_analysis_ready");
+  });
+
+  it("resolves review state edge: transcript arriving during transcription wins", () => {
+    expect(
+      resolveReviewState({ hasTranscript: true, isTranscribing: true, hasAnalysisResult: false })
+    ).toBe("review_transcript_ready");
+  });
+
+  it("resolves review state edge: analysis without transcript is impossible (stays no_transcript)", () => {
+    expect(
+      resolveReviewState({ hasTranscript: false, isTranscribing: false, hasAnalysisResult: true })
+    ).toBe("review_no_transcript");
+  });
+
+  it("resolves review CTA for no-transcript state", () => {
+    const enabled = resolveReviewCta({
+      reviewState: "review_no_transcript",
+      canTranscribe: true,
+      canAnalyze: false,
+      transcribeProgress: 0,
+    });
+    expect(enabled.actionName).toBe("transcribe");
+    expect(enabled.disabled).toBe(false);
+
+    const disabled = resolveReviewCta({
+      reviewState: "review_no_transcript",
+      canTranscribe: false,
+      canAnalyze: false,
+      transcribeProgress: 0,
+    });
+    expect(disabled.actionName).toBe("transcribe");
+    expect(disabled.disabled).toBe(true);
+  });
+
+  it("resolves review CTA for transcribing state with progress", () => {
+    const cta = resolveReviewCta({
+      reviewState: "review_transcribing",
+      canTranscribe: false,
+      canAnalyze: false,
+      transcribeProgress: 42,
+    });
+    expect(cta.actionName).toBe("transcribe");
+    expect(cta.disabled).toBe(true);
+    expect(cta.progressPercent).toBe(42);
+  });
+
+  it("resolves review CTA for transcript-ready state with analyze available", () => {
+    const cta = resolveReviewCta({
+      reviewState: "review_transcript_ready",
+      canTranscribe: true,
+      canAnalyze: true,
+      transcribeProgress: 100,
+    });
+    expect(cta.actionName).toBe("analyze");
+    expect(cta.disabled).toBe(false);
+  });
+
+  it("resolves review CTA for transcript-ready state with export fallback when canAnalyze=false", () => {
+    const cta = resolveReviewCta({
+      reviewState: "review_transcript_ready",
+      canTranscribe: true,
+      canAnalyze: false,
+      transcribeProgress: 100,
+    });
+    expect(cta.actionName).toBe("export_fallback");
+    expect(cta.disabled).toBe(false);
+  });
+
+  it("resolves review CTA for analysis-ready state", () => {
+    const cta = resolveReviewCta({
+      reviewState: "review_analysis_ready",
+      canTranscribe: true,
+      canAnalyze: true,
+      transcribeProgress: 100,
+    });
+    expect(cta.actionName).toBe("view_feedback");
+    expect(cta.disabled).toBe(false);
   });
 });
