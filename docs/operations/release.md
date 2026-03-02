@@ -4,7 +4,9 @@
 - CI checks: `.github/workflows/ci.yml`
 - Release packaging: `.github/workflows/release-packaging.yml`
 - Website deploy: `.github/workflows/pages.yml`
-- CI is path-aware: docs, UI, and Rust jobs run only when relevant files change (full run on `v*` tags).
+- CI is path-aware:
+  - docs/UI/Rust and recorder smoke jobs run only when relevant files change (full run on `v*` tags),
+  - website checks run only when `website/**` changes.
 - Release packaging uses explicit trust toggles:
   - `LEPUPITRE_REQUIRE_WINDOWS_SIGNING`
   - `LEPUPITRE_WINDOWS_SIGNING_PROVIDER` (`signpath` or `self-managed`)
