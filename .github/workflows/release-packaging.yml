@@ -239,8 +239,23 @@ jobs:
           path: |
             desktop/src-tauri/target/release/bundle/**
 
-      - name: Build and attach to GitHub release
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Build and attach to GitHub release (unsigned or non-macOS)
+        if: startsWith(github.ref, 'refs/tags/') && (matrix.os != 'macos-latest' || env.LEPUPITRE_REQUIRE_MACOS_NOTARIZATION != 'true')
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: desktop
+          releaseName: "LePupitre ${{ github.ref_name }}"
+          tagName: ${{ github.ref_name }}
+          releaseBody: |
+            ## Code signing policy
+            See [Code signing policy](https://github.com/${{ github.repository }}/blob/main/docs/operations/CODE_SIGNING_POLICY.md).
+          releaseDraft: false
+          prerelease: false
+
+      - name: Build and attach to GitHub release (macOS signed/notarized)
+        if: startsWith(github.ref, 'refs/tags/') && matrix.os == 'macos-latest' && env.LEPUPITRE_REQUIRE_MACOS_NOTARIZATION == 'true'
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -259,6 +274,13 @@ jobs:
             See [Code signing policy](https://github.com/${{ github.repository }}/blob/main/docs/operations/CODE_SIGNING_POLICY.md).
           releaseDraft: false
           prerelease: false
+
+      - name: Reminder: macOS signing disabled for this release
+        if: startsWith(github.ref, 'refs/tags/') && matrix.os == 'macos-latest' && env.LEPUPITRE_REQUIRE_MACOS_NOTARIZATION != 'true'
+        shell: bash
+        run: |
+          echo "::warning::macOS signing/notarization is disabled (LEPUPITRE_REQUIRE_MACOS_NOTARIZATION != true)."
+          echo "::warning::Release artifacts were generated unsigned for macOS. Enable the toggle and configure APPLE_* secrets when ready."
 
       - name: Attach ASR sidecar checksum manifest to GitHub release
         if: startsWith(github.ref, 'refs/tags/')

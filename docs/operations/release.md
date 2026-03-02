@@ -36,6 +36,10 @@
   - upload as workflow artifact and attach to tagged GitHub releases
 - Release signing preflight:
   - `scripts/check-release-signing.sh` validates required secrets when trust toggles are enabled.
+  - On macOS-required runs, it also validates `APPLE_CERTIFICATE` as base64 PKCS#12 and confirms `APPLE_CERTIFICATE_PASSWORD` can decrypt it.
+- macOS signing toggle behavior:
+  - if `LEPUPITRE_REQUIRE_MACOS_NOTARIZATION=true`, release CI performs signed/notarized macOS packaging and verification gates,
+  - otherwise macOS artifacts are still generated unsigned, and CI emits a release reminder warning.
 - Release trust verification:
   - Windows (when required): Authenticode signature must be valid on MSI/NSIS installers.
   - macOS (when required): codesign, Gatekeeper assessment, and stapler validation must pass.

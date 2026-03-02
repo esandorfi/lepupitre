@@ -27,6 +27,29 @@ require_vars() {
   fi
 }
 
+validate_macos_certificate() {
+  local tmp_cert
+  tmp_cert="$(mktemp)"
+  trap 'rm -f "${tmp_cert}"' RETURN
+
+  if ! printf '%s' "${APPLE_CERTIFICATE}" | base64 --decode >"${tmp_cert}" 2>/dev/null; then
+    if ! printf '%s' "${APPLE_CERTIFICATE}" | base64 -D >"${tmp_cert}" 2>/dev/null; then
+      echo "::error title=macOS signing certificate invalid::APPLE_CERTIFICATE must be base64-encoded PKCS#12 (.p12)."
+      exit 1
+    fi
+  fi
+
+  if [[ ! -s "${tmp_cert}" ]]; then
+    echo "::error title=macOS signing certificate invalid::Decoded APPLE_CERTIFICATE is empty."
+    exit 1
+  fi
+
+  if ! openssl pkcs12 -in "${tmp_cert}" -passin "pass:${APPLE_CERTIFICATE_PASSWORD}" -nokeys -noout >/dev/null 2>&1; then
+    echo "::error title=macOS signing certificate/password invalid::Unable to parse APPLE_CERTIFICATE as PKCS#12 with APPLE_CERTIFICATE_PASSWORD."
+    exit 1
+  fi
+}
+
 runner_os="${RUNNER_OS:-}"
 require_windows="${LEPUPITRE_REQUIRE_WINDOWS_SIGNING:-false}"
 require_macos="${LEPUPITRE_REQUIRE_MACOS_NOTARIZATION:-false}"
@@ -67,6 +90,7 @@ if [[ "${runner_os}" == "macOS" ]] && to_bool "${require_macos}"; then
     APPLE_ID \
     APPLE_PASSWORD \
     APPLE_TEAM_ID
+  validate_macos_certificate
 fi
 
 echo "Release signing preflight checks passed."

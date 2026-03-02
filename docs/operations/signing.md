@@ -35,12 +35,15 @@
 - Notarization should be treated as a release gate once configured.
 - CI gate toggle: repository variable `LEPUPITRE_REQUIRE_MACOS_NOTARIZATION=true`.
 - Required secrets when enabled:
-  - `APPLE_CERTIFICATE`
+  - `APPLE_CERTIFICATE` (base64-encoded PKCS#12 `.p12` certificate payload)
   - `APPLE_CERTIFICATE_PASSWORD`
   - `APPLE_SIGNING_IDENTITY`
   - `APPLE_ID`
   - `APPLE_PASSWORD`
   - `APPLE_TEAM_ID`
+- Preflight validation now checks that:
+  - `APPLE_CERTIFICATE` decodes as non-empty PKCS#12 data,
+  - `APPLE_CERTIFICATE_PASSWORD` can open that PKCS#12 payload.
 - Verification gate when enabled:
   - `codesign --verify --deep --strict` on `.app`,
   - `spctl --assess` on `.app`,
