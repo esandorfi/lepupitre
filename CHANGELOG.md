@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.2.11 - 2026-03-02
+Summary: 1 fixes.
+Comparing from v0.2.10 to HEAD.
+
+### Fixes
+- fix(ci): harden Windows sidecar filename normalization before ASR checksum manifest
+
 ## v0.2.10 - 2026-03-02
 Summary: 1 fixes, 1 ci.
 Comparing from v0.2.9 to HEAD.
