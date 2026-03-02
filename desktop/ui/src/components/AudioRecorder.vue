@@ -35,6 +35,8 @@ import {
   resolveRecorderTranscribeReadiness,
   resolveRecorderShortcutAction,
   resolveActiveTranscriptIdForAnalysis,
+  resolveReviewState,
+  resolveReviewCta,
 } from "../lib/recorderFlow";
 import { useTranscriptionSettings } from "../lib/transcriptionSettings";
 import {
@@ -95,6 +97,7 @@ const props = withDefaults(
     showPassLabel?: boolean;
     canAnalyze?: boolean;
     isAnalyzing?: boolean;
+    hasAnalysisResult?: boolean;
   }>(),
   {
     titleKey: "audio.title",
@@ -103,6 +106,7 @@ const props = withDefaults(
     showPassLabel: true,
     canAnalyze: true,
     isAnalyzing: false,
+    hasAnalysisResult: false,
   }
 );
 
@@ -117,6 +121,11 @@ const emit = defineEmits<{
     payload: { transcriptId: string; isEdited?: boolean; baseTranscriptId?: string }
   ): void;
   (event: "analyze", payload: { transcriptId: string }): void;
+  (event: "viewFeedback"): void;
+  (
+    event: "onboardingContext",
+    payload: { audience: string; audienceCustom: string; goal: string; targetMinutes: number | null }
+  ): void;
 }>();
 
 const activeProfileId = computed(() => appStore.state.activeProfileId);
@@ -204,6 +213,21 @@ const activeTranscriptIdForAnalysis = computed(
 
 const canAnalyzeRecorder = computed(
   () => !!activeTranscriptIdForAnalysis.value && !!props.canAnalyze
+);
+const reviewState = computed(() =>
+  resolveReviewState({
+    hasTranscript: !!baseTranscriptId.value,
+    isTranscribing: isTranscribing.value,
+    hasAnalysisResult: props.hasAnalysisResult,
+  })
+);
+const reviewCta = computed(() =>
+  resolveReviewCta({
+    reviewState: reviewState.value,
+    canTranscribe: canTranscribe.value,
+    canAnalyze: canAnalyzeRecorder.value,
+    transcribeProgress: transcribeProgress.value,
+  })
 );
 const waveformStyle = computed(() => uiSettings.value.waveformStyle);
 const qualityGuidanceMessages = computed(() => {
@@ -926,8 +950,10 @@ async function saveEditedTranscript() {
 
 function autoCleanFillers() {
   const next = transcriptDraftText.value
-    .replace(/\b(uh|um|erm|eh|like|you know)\b/gi, "")
-    .replace(/\b(euh|heu|ben)\b/gi, "")
+    // English fillers
+    .replace(/\b(uh|um|erm|eh|ah|oh|like|you know|i mean|sort of|kind of|basically|actually|literally)\b/gi, "")
+    // French fillers
+    .replace(/\b(euh|heu|hein|ben|bah|beh|bon ben|enfin|genre|voila|quoi|du coup|en fait|tu vois|tu sais|c'est-a-dire|disons)\b/gi, "")
     .replace(/\s{2,}/g, " ")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
@@ -936,11 +962,16 @@ function autoCleanFillers() {
 
 function fixPunctuation() {
   let next = transcriptDraftText.value
-    .replace(/\s+([,.;!?])/g, "$1")
-    .replace(/([,.;!?])([^\s\n])/g, "$1 $2")
+    // Remove space before punctuation
+    .replace(/\s+([,.;!?:])/g, "$1")
+    // Add space after punctuation when missing
+    .replace(/([,.;!?:])([^\s\n\d])/g, "$1 $2")
+    // Capitalize after sentence-ending punctuation
+    .replace(/([.!?])\s+([a-zA-ZÀ-ÿ])/g, (_match, punct, letter) => `${punct} ${letter.toUpperCase()}`)
     .replace(/\s{2,}/g, " ")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+  // Capitalize first character
   if (next.length > 0) {
     next = next[0].toUpperCase() + next.slice(1);
   }
@@ -963,6 +994,19 @@ function requestAnalyze() {
     return;
   }
   emit("analyze", { transcriptId: activeTranscriptIdForAnalysis.value });
+}
+
+function handleViewFeedback() {
+  emit("viewFeedback");
+}
+
+function handleOnboardingContext(payload: {
+  audience: string;
+  audienceCustom: string;
+  goal: string;
+  targetMinutes: number | null;
+}) {
+  emit("onboardingContext", payload);
 }
 
 async function exportTranscript(format: TranscriptExportFormat) {
@@ -1293,6 +1337,10 @@ watch(
       :audio-preview-sources="audioPreviewSources"
       :waveform-peaks="lastWaveformPeaks"
       :waveform-style="waveformStyle"
+      :review-state="reviewState"
+      :review-cta="reviewCta"
+      :can-analyze="canAnalyzeRecorder"
+      :has-analysis-result="props.hasAnalysisResult"
       @transcribe="transcribeRecording"
       @apply-trim="applyTrim"
       @save-edited="saveEditedTranscript"
@@ -1300,6 +1348,9 @@ watch(
       @fix-punctuation="fixPunctuation"
       @open-original="revealRecording"
       @continue="goAnalyzeExport"
+      @view-feedback="handleViewFeedback"
+      @analyze="requestAnalyze"
+      @onboarding-context="handleOnboardingContext"
     />
 
     <RecorderExportPanel

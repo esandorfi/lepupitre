@@ -145,6 +145,14 @@ function handleRecorderAnalyze() {
   void requestFeedback();
 }
 
+const hasAnalysisResult = computed(() => !!run.value?.feedback_id);
+
+function handleViewFeedback() {
+  if (run.value?.feedback_id) {
+    void router.push(`/feedback/${run.value.feedback_id}`);
+  }
+}
+
 onMounted(async () => {
   await appStore.bootstrap();
   await loadLatest();
@@ -197,9 +205,11 @@ watch(
         :can-analyze="!!run?.transcript_id"
         :is-analyzing="isAnalyzing || isSaving"
         :show-pass-label="false"
+        :has-analysis-result="hasAnalysisResult"
         @saved="handleAudioSaved"
         @transcribed="handleTranscribed"
         @analyze="handleRecorderAnalyze"
+        @view-feedback="handleViewFeedback"
       />
 
       <div class="flex flex-wrap items-center gap-3">
