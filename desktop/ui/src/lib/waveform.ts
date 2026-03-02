@@ -1,4 +1,4 @@
-export const WAVEFORM_STYLES = ["classic", "pulse-bars", "ribbon", "spark"] as const;
+export const WAVEFORM_STYLES = ["classic", "pulse-bars", "ribbon", "spark", "timeline"] as const;
 
 export type WaveformStyle = (typeof WAVEFORM_STYLES)[number];
 

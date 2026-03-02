@@ -2,6 +2,7 @@
 import { computed, ref, watch } from "vue";
 import { useI18n } from "../../lib/i18n";
 import { formatTrimClock, normalizeTrimWindow } from "../../lib/recorderTrim";
+import type { WaveformStyle } from "../../lib/waveform";
 import RecorderWaveform from "./RecorderWaveform.vue";
 
 const props = defineProps<{
@@ -22,7 +23,7 @@ const props = defineProps<{
   canPlayback: boolean;
   audioPreviewSrc: string | null;
   waveformPeaks: number[];
-  waveformStyle: "classic" | "pulse-bars" | "ribbon" | "spark";
+  waveformStyle: WaveformStyle;
 }>();
 
 const emit = defineEmits<{
@@ -118,6 +119,7 @@ watch(
         <RecorderWaveform :peaks="props.waveformPeaks" :style-mode="props.waveformStyle" />
         <audio
           v-if="props.audioPreviewSrc && props.canPlayback"
+          :key="props.audioPreviewSrc"
           class="w-full"
           controls
           preload="metadata"

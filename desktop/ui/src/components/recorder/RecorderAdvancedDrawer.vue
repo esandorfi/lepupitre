@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from "../../lib/i18n";
+import type { WaveformStyle } from "../../lib/waveform";
 
 const props = defineProps<{
   open: boolean;
@@ -7,7 +8,7 @@ const props = defineProps<{
   mode: "auto" | "live+final" | "final-only";
   language: "auto" | "en" | "fr";
   spokenPunctuation: boolean;
-  waveformStyle: "classic" | "pulse-bars" | "ribbon" | "spark";
+  waveformStyle: WaveformStyle;
   inputDevices: Array<{ id: string; label: string; isDefault: boolean }>;
   selectedInputDeviceId: string | null;
   isLoadingInputDevices: boolean;
@@ -22,7 +23,7 @@ const emit = defineEmits<{
   (event: "update:mode", value: "auto" | "live+final" | "final-only"): void;
   (event: "update:language", value: "auto" | "en" | "fr"): void;
   (event: "update:spokenPunctuation", value: boolean): void;
-  (event: "update:waveformStyle", value: "classic" | "pulse-bars" | "ribbon" | "spark"): void;
+  (event: "update:waveformStyle", value: WaveformStyle): void;
   (event: "update:selectedInputDeviceId", value: string | null): void;
   (event: "refreshInputDevices"): void;
 }>();
@@ -92,12 +93,13 @@ const { t } = useI18n();
         <select
           class="app-input w-full rounded-lg border px-3 py-2"
           :value="props.waveformStyle"
-          @change="emit('update:waveformStyle', ($event.target as HTMLSelectElement).value as 'classic' | 'pulse-bars' | 'ribbon' | 'spark')"
+          @change="emit('update:waveformStyle', ($event.target as HTMLSelectElement).value as WaveformStyle)"
         >
           <option value="classic">{{ t("settings.recorder.waveform_style_classic") }}</option>
           <option value="pulse-bars">{{ t("settings.recorder.waveform_style_pulse_bars") }}</option>
           <option value="ribbon">{{ t("settings.recorder.waveform_style_ribbon") }}</option>
           <option value="spark">{{ t("settings.recorder.waveform_style_spark") }}</option>
+          <option value="timeline">{{ t("settings.recorder.waveform_style_timeline") }}</option>
         </select>
       </label>
 

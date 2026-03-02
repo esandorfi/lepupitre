@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import RecorderWaveform from "./RecorderWaveform.vue";
+import type { WaveformStyle } from "../../lib/waveform";
 
 const props = defineProps<{
   primaryLabel: string;
@@ -14,7 +15,7 @@ const props = defineProps<{
   showRecBadge: boolean;
   livePreview: string | null;
   waveformPeaks: number[];
-  waveformStyle: "classic" | "pulse-bars" | "ribbon" | "spark";
+  waveformStyle: WaveformStyle;
 }>();
 
 const emit = defineEmits<{

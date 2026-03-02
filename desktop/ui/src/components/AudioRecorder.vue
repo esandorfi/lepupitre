@@ -82,6 +82,8 @@ type AudioStatusKey =
 
 const ADVANCED_DRAWER_PREF_KEY = "lepupitre.recorder.advanced.open.v1";
 const AUTO_TRANSCRIBE_ON_STOP = true;
+const STATUS_POLLING_INTERVAL_MS = 350;
+const MAX_LIVE_SEGMENTS_PREVIEW = 48;
 
 const props = withDefaults(
   defineProps<{
@@ -404,6 +406,18 @@ function transcriptToEditorText(value: TranscriptV1): string {
   return value.segments.map((segment) => segment.text.trim()).join("\n").trim();
 }
 
+function peaksChanged(next: number[], current: number[], epsilon = 0.01): boolean {
+  if (next.length !== current.length) {
+    return true;
+  }
+  for (let index = 0; index < next.length; index += 1) {
+    if (Math.abs((next[index] ?? 0) - (current[index] ?? 0)) > epsilon) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function announce(message: string) {
   announcement.value = "";
   requestAnimationFrame(() => {
@@ -432,7 +446,7 @@ function startStatusPollingFallback() {
   void refreshStatus();
   statusTimer = window.setInterval(() => {
     void refreshStatus();
-  }, 200);
+  }, STATUS_POLLING_INTERVAL_MS);
 }
 
 function armStatusPollingFallback(sessionRecordingId: string) {
@@ -974,7 +988,9 @@ onMounted(async () => {
     clearStatusTimer();
     liveDurationSec.value = parsed.data.durationMs / 1000;
     liveLevel.value = parsed.data.level;
-    liveWaveformPeaks.value = parsed.data.waveformPeaks.slice();
+    if (peaksChanged(parsed.data.waveformPeaks, liveWaveformPeaks.value)) {
+      liveWaveformPeaks.value = parsed.data.waveformPeaks.slice();
+    }
     applyQualityHint(parsed.data.qualityHintKey);
     registerTelemetryObservation(parsed.data);
   });
@@ -995,7 +1011,8 @@ onMounted(async () => {
     if (!parsed.success) {
       return;
     }
-    liveSegments.value = [...liveSegments.value, ...parsed.data.segments];
+    const merged = [...liveSegments.value, ...parsed.data.segments];
+    liveSegments.value = merged.slice(-MAX_LIVE_SEGMENTS_PREVIEW);
     livePartial.value = null;
   });
 
