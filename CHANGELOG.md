@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.2.14 - 2026-03-02
+Summary: 3 features, 4 fixes.
+Comparing from v0.2.13 to HEAD.
+
+### Features
+- feat(recorder-ui): simplify capture controls, add no-signal auto-stop, and improve transcript UX
+- feat(recorder): add caret-based time jump and JSON anchor-map export
+- feat(settings): add local recorder health insights with operational metrics and 7-day view
+
+### Fixes
+- fix(dev-asr): auto-refresh sidecar, remove recorder double-scroll, and harden local audio playback
+- fix(recorder): improve recording UX/perf, add timeline waveform, and fix saved-audio playback
+- fix(asr): reduce setup-model-download UI freezes via progress throttling and batching
+- fix(ui): debounce sidebar nav metrics persistence and stop sticky sidebar hint tooltip
+
 ## v0.2.13 - 2026-03-02
 Summary: 1 ci.
 Comparing from v0.2.12 to HEAD.
