@@ -124,11 +124,26 @@ function summarize(groups) {
   return summary.length ? summary.join(", ") : "no changes";
 }
 
+function sanitizeListItem(item) {
+  const text = String(item ?? "").trim().replace(/\s+/g, " ");
+  if (!text) {
+    return "no subject";
+  }
+
+  // Prevent accidental nested-list marker rendering (e.g. "+" commit subject).
+  if (/^[+*-]$/.test(text)) {
+    return `\`${text}\``;
+  }
+
+  // Normalize subjects that already start with a list marker.
+  return text.replace(/^[-+*]\s+/, "");
+}
+
 function formatSection(title, items) {
   if (!items || items.length === 0) {
     return "";
   }
-  const lines = items.map((item) => `- ${item}`);
+  const lines = items.map((item) => `- ${sanitizeListItem(item)}`);
   return `### ${title}\n${lines.join("\n")}\n\n`;
 }
 

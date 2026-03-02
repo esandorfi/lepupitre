@@ -130,16 +130,6 @@ jobs:
           name: asr-sidecar-checksums-${{ matrix.os }}
           path: ${{ runner.temp }}/asr-sidecar-checksums-${{ runner.os }}.json
 
-      - name: Attach ASR sidecar checksum manifest to GitHub release
-        if: startsWith(github.ref, 'refs/tags/')
-        shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          MANIFEST_PATH="${RUNNER_TEMP}/asr-sidecar-checksums-${RUNNER_OS}.json"
-          gh release upload "${GITHUB_REF_NAME}" "${MANIFEST_PATH}" --clobber
-
       - name: Recorder smoke test (macOS)
         if: matrix.os == 'macos-latest'
         shell: bash
@@ -247,6 +237,26 @@ jobs:
             See [Code signing policy](https://github.com/${{ github.repository }}/blob/main/docs/operations/CODE_SIGNING_POLICY.md).
           releaseDraft: false
           prerelease: false
+
+      - name: Attach ASR sidecar checksum manifest to GitHub release
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          MANIFEST_PATH="${RUNNER_TEMP}/asr-sidecar-checksums-${RUNNER_OS}.json"
+          for ATTEMPT in $(seq 1 10); do
+            if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+              gh release upload "${GITHUB_REF_NAME}" "${MANIFEST_PATH}" --clobber
+              exit 0
+            fi
+            if [ "${ATTEMPT}" -lt 10 ]; then
+              sleep 6
+            fi
+          done
+          echo "::error::Release ${GITHUB_REF_NAME} not found after waiting."
+          exit 1
 
       - name: Verify Windows installer signatures when required
         if: matrix.os == 'windows-latest' && (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/'))

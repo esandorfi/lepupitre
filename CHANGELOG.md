@@ -186,10 +186,9 @@ Comparing from v0.2.8 to HEAD.
 - style(rust): apply rustfmt for preference key normalization
 
 ### Other
--  fix: harden recorder/session lifecycle, artifact path boundaries, sidecar cleanup, and query limits
+- fix: harden recorder/session lifecycle, artifact path boundaries, sidecar cleanup, and query limits
 - Fix formatting in dependabot.yml comments
 - Merge branch 'main' of github.com:esandorfi/lepupitre
-- +
 
 ## v0.2.8 - 2026-02-28
 Summary: 1 fixes, 8 docs, 1 chores.
@@ -421,4 +420,3 @@ Initial release notes.
 - Add starter kit documentation
 - Initial spec
 - Initial commit
-
