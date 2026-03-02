@@ -84,6 +84,8 @@ const AUTO_TRANSCRIBE_ON_STOP = true;
 const STATUS_POLLING_INTERVAL_MS = 350;
 const MAX_LIVE_SEGMENTS_PREVIEW = 48;
 const DEFERRED_BACKGROUND_CHECK_MS = 1200;
+const NO_SIGNAL_AUTO_STOP_DELAY_MS = 5000;
+const NO_SIGNAL_AUTO_STOP_MIN_DURATION_MS = 6000;
 
 const props = withDefaults(
   defineProps<{
@@ -163,6 +165,8 @@ const telemetryEventCount = ref(0);
 const telemetryMaxPayloadBytes = ref(0);
 const advancedOpen = ref(false);
 const telemetryReceived = ref(false);
+const noSignalSinceMs = ref<number | null>(null);
+const isAutoStoppingNoSignal = ref(false);
 
 let statusTimer: number | null = null;
 let telemetryFallbackTimer: number | null = null;
@@ -259,21 +263,21 @@ const telemetryBudgetSummary = computed(() => {
       : t("audio.telemetry_budget_warn");
   return `${statusLabel}: ${report.eventsPerSecond.toFixed(1)} evt/s, ${report.maxPayloadBytes} B`;
 });
-const livePreview = computed(() => {
+const livePreviewLines = computed(() => {
   const committed = liveSegments.value
-    .slice(-2)
     .map((segment) => segment.text.trim())
-    .filter((segment) => segment.length > 0)
-    .join(" ");
+    .filter((segment) => segment.length > 0);
   const partial = livePartial.value?.trim() ?? "";
-  if (committed && partial) {
-    return `${committed} ${partial}`.trim();
-  }
-  return committed || partial || null;
+  const previous = committed.length >= 2 ? committed[committed.length - 2] : null;
+  const latestCommitted = committed.length > 0 ? committed[committed.length - 1] : null;
+  const current =
+    latestCommitted && partial
+      ? `${latestCommitted} ${partial}`.trim()
+      : latestCommitted || partial || null;
+  return { previous, current };
 });
-const recBadgeLabel = computed(() =>
-  isRecording.value && !isPaused.value ? t("audio.rec_badge") : t("audio.paused_badge")
-);
+const recBadgeLabel = computed(() => t("audio.rec_badge"));
+const showRecBadge = computed(() => isRecording.value && !isPaused.value);
 const qualityLabel = computed(() => {
   if (qualityHintKey.value === "no_signal") {
     return t("audio.quality_no_signal");
@@ -293,19 +297,32 @@ const qualityTone = computed<"good" | "warn" | "danger" | "muted">(() => {
   if (qualityHintKey.value === "good_level") {
     return "good";
   }
-  if (qualityHintKey.value === "too_loud" || qualityHintKey.value === "no_signal") {
+  if (qualityHintKey.value === "too_loud") {
     return "danger";
   }
-  if (qualityHintKey.value === "too_quiet" || qualityHintKey.value === "noisy_room") {
+  if (
+    qualityHintKey.value === "too_quiet" ||
+    qualityHintKey.value === "noisy_room" ||
+    qualityHintKey.value === "no_signal"
+  ) {
     return "warn";
   }
   return "muted";
 });
-const capturePrimaryLabel = computed(() => {
+const capturePrimaryAction = computed<"start" | "pause" | "resume">(() => {
   if (isRecording.value) {
-    return t("audio.pause");
+    return "pause";
   }
   if (recordingId.value && isPaused.value) {
+    return "resume";
+  }
+  return "start";
+});
+const capturePrimaryLabel = computed(() => {
+  if (capturePrimaryAction.value === "pause") {
+    return t("audio.pause");
+  }
+  if (capturePrimaryAction.value === "resume") {
     return t("audio.resume");
   }
   return t("audio.start");
@@ -392,6 +409,40 @@ function applyQualityHint(rawHint: string | null | undefined) {
     normalized,
     Date.now()
   );
+}
+
+function updateNoSignalAutoStop() {
+  if (!isRecording.value || isPaused.value || statusKey.value !== "audio.status_recording") {
+    noSignalSinceMs.value = null;
+    return;
+  }
+  if (qualityHintKey.value !== "no_signal") {
+    noSignalSinceMs.value = null;
+    return;
+  }
+  const now = Date.now();
+  if (noSignalSinceMs.value === null) {
+    noSignalSinceMs.value = now;
+    return;
+  }
+  if (isAutoStoppingNoSignal.value) {
+    return;
+  }
+  if (liveDurationSec.value * 1000 < NO_SIGNAL_AUTO_STOP_MIN_DURATION_MS) {
+    return;
+  }
+  if (now - noSignalSinceMs.value < NO_SIGNAL_AUTO_STOP_DELAY_MS) {
+    return;
+  }
+  if (!recordingId.value) {
+    return;
+  }
+  isAutoStoppingNoSignal.value = true;
+  announce(t("audio.announcement_auto_stop_no_signal"));
+  void stopRecording().finally(() => {
+    isAutoStoppingNoSignal.value = false;
+    noSignalSinceMs.value = null;
+  });
 }
 
 function resetTranscriptionState() {
@@ -509,6 +560,7 @@ async function refreshStatus() {
     liveLevel.value = status.level;
     isPaused.value = status.isPaused ?? false;
     applyQualityHint(status.qualityHintKey);
+    updateNoSignalAutoStop();
   } catch (err) {
     if (recordingId.value !== currentRecordingId) {
       return;
@@ -684,7 +736,7 @@ async function resumeRecording() {
 }
 
 async function stopRecording() {
-  if (!recordingId.value || !activeProfileId.value) {
+  if (!recordingId.value || !activeProfileId.value || statusKey.value === "audio.status_encoding") {
     return;
   }
   let stopCompleted = false;
@@ -728,6 +780,8 @@ async function stopRecording() {
   } finally {
     recordingId.value = null;
     telemetryReceived.value = false;
+    noSignalSinceMs.value = null;
+    isAutoStoppingNoSignal.value = false;
   }
 }
 
@@ -1069,6 +1123,7 @@ onMounted(async () => {
       liveWaveformPeaks.value = parsed.data.waveformPeaks.slice();
     }
     applyQualityHint(parsed.data.qualityHintKey);
+    updateNoSignalAutoStop();
     registerTelemetryObservation(parsed.data);
   });
 
@@ -1200,6 +1255,7 @@ watch(
     <RecorderCapturePanel
       v-if="phase === 'capture'"
       :primary-label="capturePrimaryLabel"
+      :primary-action="capturePrimaryAction"
       :stop-label="captureStopLabel"
       :can-primary="captureCanPrimary"
       :can-stop="captureCanStop"
@@ -1208,8 +1264,9 @@ watch(
       :quality-label="qualityLabel"
       :quality-tone="qualityTone"
       :rec-badge-label="recBadgeLabel"
-      :show-rec-badge="isRecording || isPaused"
-      :live-preview="livePreview"
+      :show-rec-badge="showRecBadge"
+      :live-preview-previous="livePreviewLines.previous"
+      :live-preview-current="livePreviewLines.current"
       :waveform-peaks="liveWaveformPeaks"
       :waveform-style="waveformStyle"
       @primary="handleCapturePrimaryAction"

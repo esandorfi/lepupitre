@@ -418,6 +418,7 @@ watch(
         ></textarea>
         <details class="space-y-2">
           <summary class="cursor-pointer app-text-meta app-link">
+            <span class="collapse-chevron mr-1" aria-hidden="true">></span>
             {{ t("audio.quick_clean_clean_anchors_title") }}
           </summary>
           <p class="app-muted app-text-meta">{{ t("audio.quick_clean_clean_anchors_hint") }}</p>
@@ -480,6 +481,7 @@ watch(
 
       <details class="app-panel app-panel-compact space-y-3">
         <summary class="cursor-pointer app-text font-semibold">
+          <span class="collapse-chevron mr-1" aria-hidden="true">></span>
           {{ t("audio.quick_clean_raw_chunks_title") }}
         </summary>
         <p class="app-muted app-text-meta">{{ t("audio.quick_clean_raw_chunks_hint") }}</p>
@@ -524,6 +526,7 @@ watch(
 
     <details class="app-panel app-panel-compact space-y-3">
       <summary class="cursor-pointer app-text font-semibold">
+        <span class="collapse-chevron mr-1" aria-hidden="true">></span>
         {{ t("audio.quick_clean_trim_advanced_title") }}
       </summary>
       <p class="app-muted app-text-meta">{{ t("audio.quick_clean_trim_hint") }}</p>
@@ -587,3 +590,22 @@ watch(
     </details>
   </div>
 </template>
+
+<style scoped>
+summary {
+  list-style: none;
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+.collapse-chevron {
+  display: inline-block;
+  transition: transform 120ms ease-out;
+}
+
+details[open] > summary .collapse-chevron {
+  transform: rotate(90deg);
+}
+</style>

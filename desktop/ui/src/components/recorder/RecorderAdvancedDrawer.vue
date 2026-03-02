@@ -34,10 +34,11 @@ const { t } = useI18n();
 <template>
   <div class="app-card rounded-xl border p-3">
     <button
-      class="app-link app-focus-ring text-xs font-semibold uppercase tracking-[0.16em] cursor-pointer"
+      class="app-link app-focus-ring inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.16em] cursor-pointer"
       type="button"
       @click="emit('toggle')"
     >
+      <span aria-hidden="true">{{ props.open ? "v" : ">" }}</span>
       {{ t("audio.advanced") }}
     </button>
     <div v-if="props.open" class="mt-3 grid gap-3 md:grid-cols-2">

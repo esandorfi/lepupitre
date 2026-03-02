@@ -4,6 +4,7 @@ import type { WaveformStyle } from "../../lib/waveform";
 
 const props = defineProps<{
   primaryLabel: string;
+  primaryAction: "start" | "pause" | "resume";
   stopLabel: string;
   canPrimary: boolean;
   canStop: boolean;
@@ -13,7 +14,8 @@ const props = defineProps<{
   qualityTone: "good" | "warn" | "danger" | "muted";
   recBadgeLabel: string;
   showRecBadge: boolean;
-  livePreview: string | null;
+  livePreviewPrevious: string | null;
+  livePreviewCurrent: string | null;
   waveformPeaks: number[];
   waveformStyle: WaveformStyle;
 }>();
@@ -35,6 +37,13 @@ function qualityClass() {
   }
   return "app-badge-neutral";
 }
+
+function primaryIcon() {
+  if (props.primaryAction === "pause") {
+    return "||";
+  }
+  return ">";
+}
 </script>
 
 <template>
@@ -46,6 +55,7 @@ function qualityClass() {
         :disabled="!props.canPrimary"
         @click="emit('primary')"
       >
+        <span aria-hidden="true" class="mr-2 text-xs font-bold">{{ primaryIcon() }}</span>
         {{ props.primaryLabel }}
       </button>
       <button
@@ -54,6 +64,7 @@ function qualityClass() {
         :disabled="!props.canStop"
         @click="emit('stop')"
       >
+        <span aria-hidden="true" class="mr-2 text-xs font-bold">[]</span>
         {{ props.stopLabel }}
       </button>
       <span
@@ -82,9 +93,14 @@ function qualityClass() {
           :style="{ width: `${props.levelPercent}%` }"
         ></div>
       </div>
-      <p v-if="props.livePreview" class="app-muted app-text-meta">
-        {{ props.livePreview }}
-      </p>
+      <div v-if="props.livePreviewPrevious || props.livePreviewCurrent" class="space-y-1">
+        <p v-if="props.livePreviewPrevious" class="app-subtle app-text-meta">
+          {{ props.livePreviewPrevious }}
+        </p>
+        <p v-if="props.livePreviewCurrent" class="app-muted app-text-meta">
+          {{ props.livePreviewCurrent }}
+        </p>
+      </div>
     </div>
   </div>
 </template>
