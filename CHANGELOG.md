@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.2.10 - 2026-03-02
+Summary: 1 fixes, 1 ci.
+Comparing from v0.2.9 to HEAD.
+
+### Fixes
+- fix(ci): upload ASR checksum manifest after release creation
+
+### CI
+- ci(workflows): narrow recorder smoke trigger paths and stop unrelated website CI runs
+
 ## v0.2.9 - 2026-03-01
 Summary: 41 features, 15 fixes, 15 docs, 68 refactors, 10 chores, 1 perf, 4 tests, 8 ci, 1 style, 4 other.
 Comparing from v0.2.8 to HEAD.
