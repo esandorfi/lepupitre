@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.2.13 - 2026-03-02
+Summary: 1 ci.
+Comparing from v0.2.12 to HEAD.
+
+### CI
+- ci(release): enforce release packaging provenance from main
+
 ## v0.2.12 - 2026-03-02
 Summary: 1 ci.
 Comparing from v0.2.11 to HEAD.
