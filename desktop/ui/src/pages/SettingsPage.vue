@@ -47,8 +47,48 @@ const sidecarMessage = ref<string | null>(null);
 const verifyingModelId = ref<string | null>(null);
 const downloadError = ref<string | null>(null);
 const downloadProgress = ref<Record<string, { downloadedBytes: number; totalBytes: number }>>({});
+const DOWNLOAD_PROGRESS_UI_FLUSH_MS = 80;
 
 let unlistenDownloadProgress: (() => void) | null = null;
+let downloadProgressFlushTimer: ReturnType<typeof setTimeout> | null = null;
+const pendingDownloadProgress: Record<string, { downloadedBytes: number; totalBytes: number }> =
+  {};
+
+function flushPendingDownloadProgress() {
+  const updates = Object.entries(pendingDownloadProgress);
+  if (updates.length === 0) {
+    return;
+  }
+  const next = { ...downloadProgress.value };
+  let changed = false;
+  for (const [modelId, progress] of updates) {
+    delete pendingDownloadProgress[modelId];
+    const current = next[modelId];
+    if (
+      current &&
+      current.downloadedBytes === progress.downloadedBytes &&
+      current.totalBytes === progress.totalBytes
+    ) {
+      continue;
+    }
+    next[modelId] = progress;
+    changed = true;
+  }
+  if (changed) {
+    downloadProgress.value = next;
+  }
+}
+
+function queueDownloadProgress(modelId: string, downloadedBytes: number, totalBytes: number) {
+  pendingDownloadProgress[modelId] = { downloadedBytes, totalBytes };
+  if (downloadProgressFlushTimer !== null) {
+    return;
+  }
+  downloadProgressFlushTimer = setTimeout(() => {
+    downloadProgressFlushTimer = null;
+    flushPendingDownloadProgress();
+  }, DOWNLOAD_PROGRESS_UI_FLUSH_MS);
+}
 
 const modelOptions = computed(() =>
   models.value.map((model) => {
@@ -309,6 +349,7 @@ async function downloadModel(modelId: string) {
     downloadError.value = err instanceof Error ? err.message : String(err);
   } finally {
     downloadingModelId.value = null;
+    delete pendingDownloadProgress[modelId];
     const next = { ...downloadProgress.value };
     delete next[modelId];
     downloadProgress.value = next;
@@ -323,17 +364,22 @@ onMounted(async () => {
     if (!parsed.success) {
       return;
     }
-    downloadProgress.value = {
-      ...downloadProgress.value,
-      [parsed.data.modelId]: {
-        downloadedBytes: parsed.data.downloadedBytes,
-        totalBytes: parsed.data.totalBytes,
-      },
-    };
+    queueDownloadProgress(
+      parsed.data.modelId,
+      parsed.data.downloadedBytes,
+      parsed.data.totalBytes
+    );
   });
 });
 
 onBeforeUnmount(() => {
+  if (downloadProgressFlushTimer !== null) {
+    clearTimeout(downloadProgressFlushTimer);
+    downloadProgressFlushTimer = null;
+  }
+  for (const key of Object.keys(pendingDownloadProgress)) {
+    delete pendingDownloadProgress[key];
+  }
   unlistenDownloadProgress?.();
 });
 </script>

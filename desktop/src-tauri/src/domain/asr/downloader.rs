@@ -6,6 +6,9 @@ use std::io::{Read, Write};
 use std::time::{Duration, Instant};
 use tauri::AppHandle;
 
+const PROGRESS_EMIT_BYTES_STEP: u64 = 4 * 1024 * 1024;
+const PROGRESS_EMIT_INTERVAL: Duration = Duration::from_millis(500);
+
 pub fn download_model_blocking<F>(
     app: &AppHandle,
     model_id: &str,
@@ -74,8 +77,8 @@ where
             hasher.update(&buffer[..read]);
             downloaded += read as u64;
 
-            if downloaded.saturating_sub(last_emit_bytes) >= 1_048_576
-                || last_emit_at.elapsed() >= Duration::from_millis(250)
+            if downloaded.saturating_sub(last_emit_bytes) >= PROGRESS_EMIT_BYTES_STEP
+                || last_emit_at.elapsed() >= PROGRESS_EMIT_INTERVAL
             {
                 on_progress(downloaded, total_bytes);
                 last_emit_bytes = downloaded;
