@@ -10,7 +10,6 @@ import RecorderExportPanel from "./recorder/RecorderExportPanel.vue";
 import RecorderQuickCleanPanel from "./recorder/RecorderQuickCleanPanel.vue";
 import { classifyAsrError } from "../lib/asrErrors";
 import { useI18n } from "../lib/i18n";
-import { readPreference, writePreference } from "../lib/preferencesStorage";
 import { recordRecorderHealthEvent } from "../lib/recorderHealthMetrics";
 import { useUiPreferences } from "../lib/uiPreferences";
 import {
@@ -81,10 +80,10 @@ type AudioStatusKey =
   | "audio.status_recording"
   | "audio.status_encoding";
 
-const ADVANCED_DRAWER_PREF_KEY = "lepupitre.recorder.advanced.open.v1";
 const AUTO_TRANSCRIBE_ON_STOP = true;
 const STATUS_POLLING_INTERVAL_MS = 350;
 const MAX_LIVE_SEGMENTS_PREVIEW = 48;
+const DEFERRED_BACKGROUND_CHECK_MS = 1200;
 
 const props = withDefaults(
   defineProps<{
@@ -122,6 +121,7 @@ const activeProfileId = computed(() => appStore.state.activeProfileId);
 const phase = ref<"capture" | "quick_clean" | "analyze_export">("capture");
 const isRecording = ref(false);
 const isPaused = ref(false);
+const isStarting = ref(false);
 const statusKey = ref<AudioStatusKey>("audio.status_idle");
 const error = ref<string | null>(null);
 const errorCode = ref<string | null>(null);
@@ -142,6 +142,7 @@ const transcribeJobId = ref<string | null>(null);
 const transcribeBlockedCode = ref<string | null>(null);
 const transcribeBlockedMessage = ref<string | null>(null);
 const transcript = ref<TranscriptV1 | null>(null);
+const sourceTranscript = ref<TranscriptV1 | null>(null);
 const baseTranscriptId = ref<string | null>(null);
 const editedTranscriptId = ref<string | null>(null);
 const transcriptDraftText = ref("");
@@ -160,11 +161,12 @@ const telemetryBudget = ref<RecordingTelemetryBudget | null>(null);
 const telemetryWindowStartMs = ref<number | null>(null);
 const telemetryEventCount = ref(0);
 const telemetryMaxPayloadBytes = ref(0);
-const advancedOpen = ref(readPreference(ADVANCED_DRAWER_PREF_KEY) === "1");
+const advancedOpen = ref(false);
 const telemetryReceived = ref(false);
 
 let statusTimer: number | null = null;
 let telemetryFallbackTimer: number | null = null;
+let deferredBackgroundCheckTimer: number | null = null;
 let unlistenProgress: (() => void) | null = null;
 let unlistenCompleted: (() => void) | null = null;
 let unlistenFailed: (() => void) | null = null;
@@ -313,16 +315,17 @@ const captureCanPrimary = computed(() => {
   if (!activeProfileId.value) {
     return false;
   }
-  if (!recordingId.value) {
-    return true;
+  if (isStarting.value || statusKey.value.includes("encoding")) {
+    return false;
   }
   return true;
 });
-const captureCanStop = computed(() => !!recordingId.value && !statusKey.value.includes("encoding"));
+const captureCanStop = computed(
+  () => !!recordingId.value && !statusKey.value.includes("encoding") && !isStarting.value
+);
 
 function setAdvancedOpen(next: boolean) {
   advancedOpen.value = next;
-  writePreference(ADVANCED_DRAWER_PREF_KEY, next ? "1" : "0");
 }
 
 function setSelectedInputDeviceId(next: string | null) {
@@ -397,6 +400,7 @@ function resetTranscriptionState() {
   transcribeStageLabel.value = null;
   transcribeJobId.value = null;
   transcript.value = null;
+  sourceTranscript.value = null;
   baseTranscriptId.value = null;
   editedTranscriptId.value = null;
   transcriptDraftText.value = "";
@@ -460,6 +464,13 @@ function clearTelemetryFallbackTimer() {
   if (telemetryFallbackTimer) {
     window.clearTimeout(telemetryFallbackTimer);
     telemetryFallbackTimer = null;
+  }
+}
+
+function clearDeferredBackgroundCheckTimer() {
+  if (deferredBackgroundCheckTimer !== null) {
+    window.clearTimeout(deferredBackgroundCheckTimer);
+    deferredBackgroundCheckTimer = null;
   }
 }
 
@@ -592,9 +603,14 @@ function registerTelemetryObservation(payload: unknown) {
 }
 
 async function startRecording() {
+  if (isStarting.value) {
+    return;
+  }
+  isStarting.value = true;
   clearError();
   if (!activeProfileId.value) {
     setError(t("audio.profile_required"));
+    isStarting.value = false;
     return;
   }
   lastSavedPath.value = null;
@@ -634,6 +650,8 @@ async function startRecording() {
       errorCode: resolveRecorderHealthErrorCode(raw),
     });
     statusKey.value = "audio.status_idle";
+  } finally {
+    isStarting.value = false;
   }
 }
 
@@ -762,7 +780,6 @@ async function transcribeRecording() {
   transcribeBlockedCode.value = null;
   transcribeBlockedMessage.value = null;
   isTranscribing.value = true;
-  transcript.value = null;
   transcribeProgress.value = 0;
   transcribeStageLabel.value = null;
 
@@ -781,6 +798,7 @@ async function transcribeRecording() {
 
     const loaded = await transcriptGet(activeProfileId.value, response.transcriptId);
     transcript.value = loaded;
+    sourceTranscript.value = loaded;
     transcriptDraftText.value = transcriptToEditorText(loaded);
     emit("transcribed", {
       transcriptId: response.transcriptId,
@@ -952,6 +970,9 @@ async function revealRecording() {
 }
 
 async function handleCapturePrimaryAction() {
+  if (isStarting.value) {
+    return;
+  }
   if (isRecording.value) {
     await pauseRecording();
     return;
@@ -999,9 +1020,14 @@ function handleShortcut(event: KeyboardEvent) {
 }
 
 onMounted(async () => {
-  void refreshTranscribeReadiness();
-  void refreshInputDevices();
-  void refreshTelemetryBudget();
+  clearDeferredBackgroundCheckTimer();
+  deferredBackgroundCheckTimer = window.setTimeout(() => {
+    deferredBackgroundCheckTimer = null;
+    if (advancedOpen.value) {
+      void refreshInputDevices();
+      void refreshTelemetryBudget();
+    }
+  }, DEFERRED_BACKGROUND_CHECK_MS);
   window.addEventListener("keydown", handleShortcut);
 
   unlistenProgress = await listen<JobProgressEvent>("job:progress", (event) => {
@@ -1107,6 +1133,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   clearStatusTimer();
   clearTelemetryFallbackTimer();
+  clearDeferredBackgroundCheckTimer();
   window.removeEventListener("keydown", handleShortcut);
   unlistenProgress?.();
   unlistenCompleted?.();
@@ -1121,7 +1148,33 @@ onBeforeUnmount(() => {
 watch(
   () => transcriptionSettings.value.model,
   () => {
-    void refreshTranscribeReadiness();
+    if (phase.value !== "capture") {
+      void refreshTranscribeReadiness();
+    }
+  }
+);
+
+watch(
+  () => advancedOpen.value,
+  (isOpen) => {
+    if (!isOpen) {
+      return;
+    }
+    if (inputDevices.value.length === 0 && !isLoadingInputDevices.value) {
+      void refreshInputDevices();
+    }
+    if (!telemetryBudget.value) {
+      void refreshTelemetryBudget();
+    }
+  }
+);
+
+watch(
+  () => phase.value,
+  (nextPhase) => {
+    if (nextPhase === "quick_clean") {
+      void refreshTranscribeReadiness();
+    }
   }
 );
 </script>
@@ -1168,6 +1221,7 @@ watch(
       v-model:transcript-text="transcriptDraftText"
       :source-duration-sec="lastDurationSec"
       :has-transcript="!!baseTranscriptId"
+      :raw-transcript-segments="sourceTranscript?.segments ?? transcript?.segments ?? []"
       :is-transcribing="isTranscribing"
       :transcribe-progress="transcribeProgress"
       :transcribe-stage-label="transcribeStageLabel"
@@ -1179,7 +1233,6 @@ watch(
       :is-revealing="isRevealing"
       :is-applying-trim="isApplyingTrim"
       :can-apply-trim="recorderMediaActions.canTrim"
-      :can-playback="recorderMediaActions.canPlayback"
       :audio-preview-sources="audioPreviewSources"
       :waveform-peaks="lastWaveformPeaks"
       :waveform-style="waveformStyle"
