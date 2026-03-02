@@ -222,9 +222,23 @@ const recorderMediaActions = computed(() =>
     isApplyingTrim: isApplyingTrim.value,
   })
 );
-const audioPreviewSrc = computed(() =>
-  lastSavedPath.value ? convertFileSrc(lastSavedPath.value) : null
-);
+function pathToFileUrl(pathValue: string): string {
+  const normalized = pathValue.replace(/\\/g, "/");
+  if (/^[a-zA-Z]:\//.test(normalized)) {
+    return `file:///${encodeURI(normalized)}`;
+  }
+  if (normalized.startsWith("/")) {
+    return `file://${encodeURI(normalized)}`;
+  }
+  return `file://${encodeURI(normalized)}`;
+}
+const audioPreviewSources = computed(() => {
+  if (!lastSavedPath.value) {
+    return [] as string[];
+  }
+  const filePath = lastSavedPath.value;
+  return [convertFileSrc(filePath), pathToFileUrl(filePath)];
+});
 const telemetryBudgetSummary = computed(() => {
   const report = evaluateRecorderTelemetryBudget(telemetryBudget.value, {
     eventCount: telemetryEventCount.value,
@@ -676,10 +690,14 @@ async function stopRecording() {
     phase.value = stopPlan.nextPhase;
     announce(t("audio.announcement_stopped"));
 
-    await refreshTranscribeReadiness();
-    if (recorderStopTransitionPlan(AUTO_TRANSCRIBE_ON_STOP, canTranscribe.value).shouldAutoTranscribe) {
-      await transcribeRecording();
-    }
+    void refreshTranscribeReadiness().then(() => {
+      if (
+        recorderStopTransitionPlan(AUTO_TRANSCRIBE_ON_STOP, canTranscribe.value)
+          .shouldAutoTranscribe
+      ) {
+        void transcribeRecording();
+      }
+    });
   } catch (err) {
     const raw = err instanceof Error ? err.message : String(err);
     setError(raw);
@@ -1162,7 +1180,7 @@ watch(
       :is-applying-trim="isApplyingTrim"
       :can-apply-trim="recorderMediaActions.canTrim"
       :can-playback="recorderMediaActions.canPlayback"
-      :audio-preview-src="audioPreviewSrc"
+      :audio-preview-sources="audioPreviewSources"
       :waveform-peaks="lastWaveformPeaks"
       :waveform-style="waveformStyle"
       @transcribe="transcribeRecording"

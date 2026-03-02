@@ -34,7 +34,7 @@ function iconPath(icon: PrimaryNavIcon): string {
           <div class="group relative flex w-full justify-center">
             <RouterLink
               v-if="!item.disabled"
-              class="app-sidebar-nav-button app-focus-ring inline-flex h-11 w-11 items-center justify-center rounded-xl border transition"
+              class="app-sidebar-nav-button app-focus-ring inline-flex items-center justify-center border transition"
               :class="{ 'app-sidebar-nav-button-active': item.active }"
               :to="item.to"
               :aria-label="item.label"
@@ -62,7 +62,7 @@ function iconPath(icon: PrimaryNavIcon): string {
             </RouterLink>
             <button
               v-else
-              class="app-sidebar-nav-button app-sidebar-nav-button-disabled inline-flex h-11 w-11 items-center justify-center rounded-xl border"
+              class="app-sidebar-nav-button app-sidebar-nav-button-disabled inline-flex items-center justify-center border"
               type="button"
               :aria-label="item.label"
               disabled

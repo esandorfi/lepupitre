@@ -6,7 +6,7 @@
   "type": "module",
   "packageManager": "pnpm@10.19.0",
   "scripts": {
-    "dev": "pnpm tauri dev",
+    "dev": "node ../scripts/ensure-dev-asr-sidecar.mjs && pnpm tauri dev",
     "build": "pnpm asr:verify && pnpm tauri build",
     "tauri": "tauri",
     "asr:verify": "node ../scripts/verify-asr-sidecar.mjs",

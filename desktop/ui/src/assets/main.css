@@ -265,6 +265,9 @@
   border-color: transparent;
   color: var(--color-text-muted);
   background-color: transparent;
+  width: var(--control-h-xl);
+  height: var(--control-h-xl);
+  border-radius: var(--radius-card);
 }
 
 .app-sidebar-nav-button:hover {

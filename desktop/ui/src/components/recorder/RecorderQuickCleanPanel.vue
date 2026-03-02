@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import { useI18n } from "../../lib/i18n";
 import { formatTrimClock, normalizeTrimWindow } from "../../lib/recorderTrim";
 import type { WaveformStyle } from "../../lib/waveform";
@@ -21,7 +21,7 @@ const props = defineProps<{
   isApplyingTrim: boolean;
   canApplyTrim: boolean;
   canPlayback: boolean;
-  audioPreviewSrc: string | null;
+  audioPreviewSources: string[];
   waveformPeaks: number[];
   waveformStyle: WaveformStyle;
 }>();
@@ -40,6 +40,7 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const trimStartSec = ref(0);
 const trimEndSec = ref(0);
+const transcriptTextareaRef = ref<HTMLTextAreaElement | null>(null);
 const trimDurationSec = computed(() => Math.max(0, trimEndSec.value - trimStartSec.value));
 const hasTrimSourceDuration = computed(
   () => typeof props.sourceDurationSec === "number" && props.sourceDurationSec > 0
@@ -93,6 +94,15 @@ function resetTrimWindow() {
   applyTrimWindow(0, trimMaxSec.value);
 }
 
+function syncTranscriptTextareaHeight() {
+  const textarea = transcriptTextareaRef.value;
+  if (!textarea) {
+    return;
+  }
+  textarea.style.height = "auto";
+  textarea.style.height = `${textarea.scrollHeight}px`;
+}
+
 watch(
   () => props.sourceDurationSec,
   (nextDuration) => {
@@ -104,6 +114,13 @@ watch(
     applyTrimWindow(0, nextDuration);
   },
   { immediate: true }
+);
+
+watch(
+  () => props.transcriptText,
+  () => {
+    void nextTick(syncTranscriptTextareaHeight);
+  }
 );
 </script>
 
@@ -118,13 +135,19 @@ watch(
       <div class="space-y-2">
         <RecorderWaveform :peaks="props.waveformPeaks" :style-mode="props.waveformStyle" />
         <audio
-          v-if="props.audioPreviewSrc && props.canPlayback"
-          :key="props.audioPreviewSrc"
+          v-if="props.audioPreviewSources.length > 0 && props.canPlayback"
+          :key="props.audioPreviewSources.join('|')"
           class="w-full"
           controls
           preload="metadata"
-          :src="props.audioPreviewSrc"
-        ></audio>
+        >
+          <source
+            v-for="source in props.audioPreviewSources"
+            :key="source"
+            :src="source"
+            type="audio/wav"
+          />
+        </audio>
       </div>
 
       <div class="flex items-center justify-between gap-2">
@@ -207,9 +230,11 @@ watch(
 
     <div v-else class="space-y-3">
       <textarea
+        ref="transcriptTextareaRef"
         :value="props.transcriptText"
-        rows="10"
+        rows="1"
         class="app-input app-focus-ring app-radius-control w-full border px-3 py-2 app-text-body"
+        style="resize: none; overflow-y: hidden;"
         :placeholder="t('audio.quick_clean_placeholder')"
         @input="emit('update:transcriptText', ($event.target as HTMLTextAreaElement).value)"
       ></textarea>
