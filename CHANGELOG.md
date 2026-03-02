@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.2.12 - 2026-03-02
+Summary: 1 ci.
+Comparing from v0.2.11 to HEAD.
+
+### CI
+- ci(release): allow macOS release build without Apple certificate and warn until enabled
+
 ## v0.2.11 - 2026-03-02
 Summary: 1 fixes.
 Comparing from v0.2.10 to HEAD.
