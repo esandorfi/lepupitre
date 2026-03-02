@@ -11,6 +11,7 @@ import RecorderQuickCleanPanel from "./recorder/RecorderQuickCleanPanel.vue";
 import { classifyAsrError } from "../lib/asrErrors";
 import { useI18n } from "../lib/i18n";
 import { readPreference, writePreference } from "../lib/preferencesStorage";
+import { recordRecorderHealthEvent } from "../lib/recorderHealthMetrics";
 import { useUiPreferences } from "../lib/uiPreferences";
 import {
   createRecorderQualityHintStabilizer,
@@ -406,6 +407,15 @@ function transcriptToEditorText(value: TranscriptV1): string {
   return value.segments.map((segment) => segment.text.trim()).join("\n").trim();
 }
 
+function resolveRecorderHealthErrorCode(raw: string): string | null {
+  const asrCode = classifyAsrError(raw);
+  if (asrCode) {
+    return asrCode;
+  }
+  const match = raw.toLowerCase().match(/\b[a-z]+(?:_[a-z0-9]+){1,}\b/);
+  return match?.[0] ?? null;
+}
+
 function peaksChanged(next: number[], current: number[], epsilon = 0.01): boolean {
   if (next.length !== current.length) {
     return true;
@@ -602,8 +612,13 @@ async function startRecording() {
     clearStatusTimer();
     armStatusPollingFallback(result.recordingId);
     announce(t("audio.announcement_started"));
+    recordRecorderHealthEvent("start_success");
   } catch (err) {
-    setError(err instanceof Error ? err.message : String(err));
+    const raw = err instanceof Error ? err.message : String(err);
+    setError(raw);
+    recordRecorderHealthEvent("start_failure", {
+      errorCode: resolveRecorderHealthErrorCode(raw),
+    });
     statusKey.value = "audio.status_idle";
   }
 }
@@ -640,6 +655,7 @@ async function stopRecording() {
   if (!recordingId.value || !activeProfileId.value) {
     return;
   }
+  let stopCompleted = false;
   applyTransport("stop");
   statusKey.value = "audio.status_encoding";
   clearStatusTimer();
@@ -652,6 +668,8 @@ async function stopRecording() {
     lastDurationSec.value = result.durationMs / 1000;
     lastWaveformPeaks.value = liveWaveformPeaks.value.slice();
     emit("saved", { artifactId: result.artifactId, path: result.path });
+    stopCompleted = true;
+    recordRecorderHealthEvent("stop_success");
     liveLevel.value = 0;
     statusKey.value = "audio.status_idle";
     const stopPlan = recorderStopTransitionPlan(AUTO_TRANSCRIBE_ON_STOP, false);
@@ -663,7 +681,13 @@ async function stopRecording() {
       await transcribeRecording();
     }
   } catch (err) {
-    setError(err instanceof Error ? err.message : String(err));
+    const raw = err instanceof Error ? err.message : String(err);
+    setError(raw);
+    if (!stopCompleted) {
+      recordRecorderHealthEvent("stop_failure", {
+        errorCode: resolveRecorderHealthErrorCode(raw),
+      });
+    }
     statusKey.value = "audio.status_idle";
   } finally {
     recordingId.value = null;
@@ -696,8 +720,13 @@ async function applyTrim(payload: { startMs: number; endMs: number }) {
     emit("saved", { artifactId: result.artifactId, path: result.path });
     announce(t("audio.quick_clean_trim_applied"));
     await refreshTranscribeReadiness();
+    recordRecorderHealthEvent("trim_success");
   } catch (err) {
-    setError(err instanceof Error ? err.message : String(err));
+    const raw = err instanceof Error ? err.message : String(err);
+    setError(raw);
+    recordRecorderHealthEvent("trim_failure", {
+      errorCode: resolveRecorderHealthErrorCode(raw),
+    });
   } finally {
     isApplyingTrim.value = false;
   }
@@ -742,9 +771,13 @@ async function transcribeRecording() {
     });
     transcribeProgress.value = 100;
     transcribeStageLabel.value = t("audio.stage_done");
+    recordRecorderHealthEvent("transcribe_success");
   } catch (err) {
     const raw = err instanceof Error ? err.message : String(err);
     const code = classifyAsrError(raw);
+    recordRecorderHealthEvent("transcribe_failure", {
+      errorCode: code ?? resolveRecorderHealthErrorCode(raw),
+    });
     if (code === "sidecar_missing") {
       transcribeBlockedCode.value = code;
       transcribeBlockedMessage.value = t("audio.error_sidecar_missing");

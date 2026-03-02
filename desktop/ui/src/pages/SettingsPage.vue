@@ -5,6 +5,7 @@ import { open } from "@tauri-apps/plugin-shell";
 import { useI18n } from "../lib/i18n";
 import { classifyAsrError } from "../lib/asrErrors";
 import { useNavMetrics } from "../lib/navMetrics";
+import { useRecorderHealthMetrics } from "../lib/recorderHealthMetrics";
 import { useTranscriptionSettings } from "../lib/transcriptionSettings";
 import type {
   GamificationMode,
@@ -37,6 +38,7 @@ const {
   setMascotIntensity,
 } = useUiPreferences();
 const { metrics: navMetrics, resetNavMetrics } = useNavMetrics();
+const { metrics: recorderHealthMetrics, resetRecorderHealthMetrics } = useRecorderHealthMetrics();
 
 const models = ref<AsrModelStatus[]>([]);
 const isLoadingModels = ref(false);
@@ -208,6 +210,70 @@ const selectedMascotIntensity = computed({
 });
 
 const averageNavLatencyMs = computed(() => Math.round(navMetrics.value.avgLatencyMs));
+const recorderStartAttempts = computed(
+  () => recorderHealthMetrics.value.startSuccessCount + recorderHealthMetrics.value.startFailureCount
+);
+const recorderStartSuccessRate = computed(() => {
+  if (recorderStartAttempts.value <= 0) {
+    return 0;
+  }
+  return Math.round((recorderHealthMetrics.value.startSuccessCount / recorderStartAttempts.value) * 100);
+});
+const transcribeAttempts = computed(
+  () =>
+    recorderHealthMetrics.value.transcribeSuccessCount +
+    recorderHealthMetrics.value.transcribeFailureCount
+);
+const transcribeSuccessRate = computed(() => {
+  if (transcribeAttempts.value <= 0) {
+    return 0;
+  }
+  return Math.round((recorderHealthMetrics.value.transcribeSuccessCount / transcribeAttempts.value) * 100);
+});
+const topRecorderHealthErrors = computed(() =>
+  Object.entries(recorderHealthMetrics.value.errorsByCode)
+    .sort((left, right) => right[1] - left[1])
+    .slice(0, 5)
+);
+
+function formatUtcDayLabel(dayKey: string): string {
+  const parsed = new Date(`${dayKey}T00:00:00.000Z`);
+  if (Number.isNaN(parsed.valueOf())) {
+    return dayKey;
+  }
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "2-digit",
+    timeZone: "UTC",
+  }).format(parsed);
+}
+
+const recorderHealthDailyRows = computed(() => {
+  const rows: Array<{
+    key: string;
+    label: string;
+    startSuccessCount: number;
+    stopFailureCount: number;
+    transcribeFailureCount: number;
+    trimFailureCount: number;
+  }> = [];
+  for (let offset = 6; offset >= 0; offset -= 1) {
+    const day = new Date();
+    day.setUTCHours(0, 0, 0, 0);
+    day.setUTCDate(day.getUTCDate() - offset);
+    const key = day.toISOString().slice(0, 10);
+    const daily = recorderHealthMetrics.value.daily[key];
+    rows.push({
+      key,
+      label: formatUtcDayLabel(key),
+      startSuccessCount: daily?.startSuccessCount ?? 0,
+      stopFailureCount: daily?.stopFailureCount ?? 0,
+      transcribeFailureCount: daily?.transcribeFailureCount ?? 0,
+      trimFailureCount: daily?.trimFailureCount ?? 0,
+    });
+  }
+  return rows;
+});
 
 function formatBytes(value?: number | null) {
   if (!value || value <= 0) {
@@ -446,6 +512,102 @@ onBeforeUnmount(() => {
             </button>
           </div>
         </div>
+      </div>
+    </div>
+
+    <div class="app-card app-radius-panel-lg border p-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="app-nav-text text-lg font-semibold">
+            {{ t("settings.insights.health_title") }}
+          </h2>
+          <p class="app-muted text-xs">
+            {{ t("settings.insights.health_subtitle") }}
+          </p>
+        </div>
+        <div class="app-muted text-xs">
+          {{ t("settings.insights.health_scope") }}
+        </div>
+      </div>
+
+      <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div class="app-surface rounded-xl border px-3 py-3">
+          <div class="app-muted text-xs">{{ t("settings.insights.health_recordings_started") }}</div>
+          <div class="app-nav-text mt-1 text-xl font-semibold">{{ recorderHealthMetrics.startSuccessCount }}</div>
+        </div>
+        <div class="app-surface rounded-xl border px-3 py-3">
+          <div class="app-muted text-xs">{{ t("settings.insights.health_start_success_rate") }}</div>
+          <div class="app-nav-text mt-1 text-xl font-semibold">{{ recorderStartSuccessRate }}%</div>
+        </div>
+        <div class="app-surface rounded-xl border px-3 py-3">
+          <div class="app-muted text-xs">{{ t("settings.insights.health_stop_failures") }}</div>
+          <div class="app-nav-text mt-1 text-xl font-semibold">{{ recorderHealthMetrics.stopFailureCount }}</div>
+        </div>
+        <div class="app-surface rounded-xl border px-3 py-3">
+          <div class="app-muted text-xs">{{ t("settings.insights.health_transcribe_success_rate") }}</div>
+          <div class="app-nav-text mt-1 text-xl font-semibold">{{ transcribeSuccessRate }}%</div>
+        </div>
+        <div class="app-surface rounded-xl border px-3 py-3">
+          <div class="app-muted text-xs">{{ t("settings.insights.health_trim_failures") }}</div>
+          <div class="app-nav-text mt-1 text-xl font-semibold">{{ recorderHealthMetrics.trimFailureCount }}</div>
+        </div>
+        <div class="app-surface rounded-xl border px-3 py-3">
+          <div class="app-muted text-xs">{{ t("settings.insights.health_last_error") }}</div>
+          <div class="app-nav-text mt-1 text-sm font-semibold break-all">
+            {{ recorderHealthMetrics.lastErrorCode ?? t("settings.insights.health_none") }}
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 grid gap-4 lg:grid-cols-2">
+        <div class="app-surface rounded-xl border px-3 py-3">
+          <div class="app-nav-text text-sm font-semibold">
+            {{ t("settings.insights.health_daily_title") }}
+          </div>
+          <div class="mt-2 grid grid-cols-[70px_repeat(4,minmax(0,1fr))] gap-2 text-xs">
+            <div class="app-muted">{{ t("settings.insights.health_day") }}</div>
+            <div class="app-muted text-right">{{ t("settings.insights.health_daily_recordings") }}</div>
+            <div class="app-muted text-right">{{ t("settings.insights.health_daily_stop_fail") }}</div>
+            <div class="app-muted text-right">{{ t("settings.insights.health_daily_transcribe_fail") }}</div>
+            <div class="app-muted text-right">{{ t("settings.insights.health_daily_trim_fail") }}</div>
+            <template v-for="row in recorderHealthDailyRows" :key="row.key">
+              <div class="app-text">{{ row.label }}</div>
+              <div class="app-text text-right font-semibold">{{ row.startSuccessCount }}</div>
+              <div class="app-text text-right font-semibold">{{ row.stopFailureCount }}</div>
+              <div class="app-text text-right font-semibold">{{ row.transcribeFailureCount }}</div>
+              <div class="app-text text-right font-semibold">{{ row.trimFailureCount }}</div>
+            </template>
+          </div>
+        </div>
+
+        <div class="app-surface rounded-xl border px-3 py-3">
+          <div class="app-nav-text text-sm font-semibold">
+            {{ t("settings.insights.health_top_errors_title") }}
+          </div>
+          <div v-if="topRecorderHealthErrors.length === 0" class="app-muted mt-2 text-xs">
+            {{ t("settings.insights.health_none") }}
+          </div>
+          <div v-else class="mt-2 space-y-2">
+            <div
+              v-for="[code, count] in topRecorderHealthErrors"
+              :key="code"
+              class="flex items-center justify-between gap-2 text-xs"
+            >
+              <span class="app-text break-all">{{ code }}</span>
+              <span class="app-text font-semibold">{{ count }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-3 flex justify-end">
+        <button
+          class="app-button-secondary app-focus-ring cursor-pointer rounded-full px-3 py-1.5 text-xs font-semibold"
+          type="button"
+          @click="resetRecorderHealthMetrics"
+        >
+          {{ t("settings.insights.health_reset") }}
+        </button>
       </div>
     </div>
 

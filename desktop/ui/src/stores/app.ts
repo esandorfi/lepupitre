@@ -99,6 +99,7 @@ const GLOBAL_PREFERENCE_KEYS = [
   "lepupitre_transcription_settings",
   "lepupitre_locale",
   "lepupitre_nav_metrics_v1",
+  "lepupitre_recorder_health_metrics_v1",
   "lepupitre_workspace_toolbar_colors_v1",
 ] as const;
 
