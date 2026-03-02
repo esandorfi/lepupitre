@@ -36,6 +36,7 @@ This file tracks what is canonical, proposal-only, and archived.
 | [docs/plan/PLAN-SQL-TEST-AUDIT.md](plan/PLAN-SQL-TEST-AUDIT.md) | SQL placement and test-boundary audit plan | in_progress | Maintainers | Execute post-freeze queue: fix reliability test selectors, enforce strict SQL-boundary CI checks, and complete repo/queries/types pattern migration for remaining modules |
 | [docs/plan/PLAN-UI-PREFERENCES-STORAGE.md](plan/PLAN-UI-PREFERENCES-STORAGE.md) | UI preference persistence migration | in_progress | Maintainers | Complete Tauri-native backend migration after boundary enforcement |
 | [docs/plan/PLAN-DOMAIN-CODE-ALIGNMENT.md](plan/PLAN-DOMAIN-CODE-ALIGNMENT.md) | Bounded-context code organization migration | in_progress | Maintainers | Continue topology reset from legacy `core/` to `domain/` + `platform/` + `kernel/` and remove compatibility re-exports |
+| [docs/plan/PLAN-WINDOWS-UPDATES.md](plan/PLAN-WINDOWS-UPDATES.md) | Windows installer/update reliability and in-app update rollout plan | proposed | Maintainers | Decide primary Windows installer channel and implement phase 1 release asset policy |
 
 ## Active spec docs (`spec/active/`)
 

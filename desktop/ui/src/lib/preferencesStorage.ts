@@ -256,6 +256,10 @@ export function writePreference(
   });
 }
 
+export function writePreferenceLocal(key: string, value: string): void {
+  writeLocal(key, value);
+}
+
 export function removePreference(key: string, options: PreferenceOptions = {}): void {
   removeLocal(key);
   const resolved = normalizeOptions(options);

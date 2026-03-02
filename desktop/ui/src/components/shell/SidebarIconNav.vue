@@ -80,7 +80,7 @@ function iconPath(icon: PrimaryNavIcon): string {
               </svg>
             </button>
             <span
-              class="app-sidebar-tooltip pointer-events-none absolute left-[calc(100%+0.65rem)] top-1/2 z-30 -translate-y-1/2 whitespace-nowrap rounded-md px-2 py-1 text-xs font-semibold opacity-0 shadow-md transition group-hover:opacity-100 group-focus-within:opacity-100"
+              class="app-sidebar-tooltip pointer-events-none absolute left-[calc(100%+0.65rem)] top-1/2 z-30 -translate-y-1/2 whitespace-nowrap rounded-md px-2 py-1 text-xs font-semibold opacity-0 shadow-md transition group-hover:opacity-100"
             >
               {{ item.label }}
             </span>

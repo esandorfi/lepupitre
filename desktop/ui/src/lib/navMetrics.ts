@@ -1,6 +1,11 @@
 import { ref } from "vue";
 import type { PrimaryNavMode } from "./uiPreferences";
-import { hydratePreference, readPreference, writePreference } from "./preferencesStorage";
+import {
+  hydratePreference,
+  readPreference,
+  writePreference,
+  writePreferenceLocal,
+} from "./preferencesStorage";
 
 type NavMetricsSnapshot = {
   switchCount: number;
@@ -20,6 +25,7 @@ type NavIntent = {
 
 const STORAGE_KEY = "lepupitre_nav_metrics_v1";
 const LEGACY_STORAGE_KEYS = ["lepupitre_nav_metrics"] as const;
+const BACKEND_FLUSH_DEBOUNCE_MS = 1200;
 
 const defaultMetrics: NavMetricsSnapshot = {
   switchCount: 0,
@@ -60,6 +66,8 @@ void hydratePreference(STORAGE_KEY, { legacyKeys: LEGACY_STORAGE_KEYS }).then((r
 
 let pendingIntent: NavIntent | null = null;
 let sidebarSessionMarked = false;
+let backendFlushTimer: ReturnType<typeof setTimeout> | null = null;
+let pendingBackendSnapshot: NavMetricsSnapshot | null = null;
 
 function parseMetrics(raw: string): NavMetricsSnapshot {
   try {
@@ -83,9 +91,39 @@ function parseMetrics(raw: string): NavMetricsSnapshot {
   }
 }
 
-function persist(next: NavMetricsSnapshot) {
+function flushBackendSnapshot() {
+  if (!pendingBackendSnapshot) {
+    return;
+  }
+  writePreference(STORAGE_KEY, JSON.stringify(pendingBackendSnapshot));
+  pendingBackendSnapshot = null;
+}
+
+function scheduleBackendFlush(next: NavMetricsSnapshot) {
+  pendingBackendSnapshot = next;
+  if (backendFlushTimer !== null) {
+    return;
+  }
+  backendFlushTimer = setTimeout(() => {
+    backendFlushTimer = null;
+    flushBackendSnapshot();
+  }, BACKEND_FLUSH_DEBOUNCE_MS);
+}
+
+function persist(next: NavMetricsSnapshot, immediateBackend = false) {
   metrics.value = next;
-  writePreference(STORAGE_KEY, JSON.stringify(next));
+  const encoded = JSON.stringify(next);
+  writePreferenceLocal(STORAGE_KEY, encoded);
+  if (immediateBackend) {
+    if (backendFlushTimer !== null) {
+      clearTimeout(backendFlushTimer);
+      backendFlushTimer = null;
+    }
+    pendingBackendSnapshot = next;
+    flushBackendSnapshot();
+    return;
+  }
+  scheduleBackendFlush(next);
 }
 
 function updateMetrics(mutator: (current: NavMetricsSnapshot) => NavMetricsSnapshot) {
@@ -139,7 +177,7 @@ export function markSidebarSession() {
 export function resetNavMetrics() {
   pendingIntent = null;
   sidebarSessionMarked = false;
-  persist({ ...defaultMetrics });
+  persist({ ...defaultMetrics }, true);
 }
 
 export function useNavMetrics() {
