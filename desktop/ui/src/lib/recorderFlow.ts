@@ -1,5 +1,81 @@
 export type RecorderPhase = "capture" | "quick_clean" | "analyze_export";
 
+export type ReviewState =
+  | "review_no_transcript"
+  | "review_transcribing"
+  | "review_transcript_ready"
+  | "review_analysis_ready";
+
+export type ReviewCtaConfig = {
+  labelKey: string;
+  actionName: "transcribe" | "analyze" | "view_feedback" | "export_fallback";
+  disabled: boolean;
+  progressPercent: number | null;
+};
+
+export function resolveReviewState(input: {
+  hasTranscript: boolean;
+  isTranscribing: boolean;
+  hasAnalysisResult: boolean;
+}): ReviewState {
+  if (input.hasTranscript && input.hasAnalysisResult) {
+    return "review_analysis_ready";
+  }
+  if (input.hasTranscript) {
+    return "review_transcript_ready";
+  }
+  if (input.isTranscribing) {
+    return "review_transcribing";
+  }
+  return "review_no_transcript";
+}
+
+export function resolveReviewCta(input: {
+  reviewState: ReviewState;
+  canTranscribe: boolean;
+  canAnalyze: boolean;
+  transcribeProgress: number;
+}): ReviewCtaConfig {
+  switch (input.reviewState) {
+    case "review_no_transcript":
+      return {
+        labelKey: "audio.review_cta_transcribe",
+        actionName: "transcribe",
+        disabled: !input.canTranscribe,
+        progressPercent: null,
+      };
+    case "review_transcribing":
+      return {
+        labelKey: "audio.review_cta_transcribing",
+        actionName: "transcribe",
+        disabled: true,
+        progressPercent: input.transcribeProgress,
+      };
+    case "review_transcript_ready":
+      if (input.canAnalyze) {
+        return {
+          labelKey: "audio.review_cta_analyze",
+          actionName: "analyze",
+          disabled: false,
+          progressPercent: null,
+        };
+      }
+      return {
+        labelKey: "audio.review_cta_export",
+        actionName: "export_fallback",
+        disabled: false,
+        progressPercent: null,
+      };
+    case "review_analysis_ready":
+      return {
+        labelKey: "audio.review_cta_view_feedback",
+        actionName: "view_feedback",
+        disabled: false,
+        progressPercent: null,
+      };
+  }
+}
+
 export type RecorderShortcutAction =
   | "capture_primary"
   | "transcribe"

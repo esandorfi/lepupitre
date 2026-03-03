@@ -1,0 +1,95 @@
+name: Dependabot lockfile sync
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  desktop-lockfile:
+    name: Refresh desktop pnpm lockfile
+    if: github.actor == 'dependabot[bot]' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Detect desktop dependency file changes
+        id: desktop_changes
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pull_number = context.payload.pull_request.number;
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner,
+              repo,
+              pull_number,
+              per_page: 100,
+            });
+
+            const relevant = files.some((file) =>
+              [
+                "desktop/package.json",
+                "desktop/ui/package.json",
+                "desktop/pnpm-workspace.yaml",
+                "desktop/pnpm-lock.yaml",
+              ].includes(file.filename)
+            );
+
+            core.setOutput("relevant", String(relevant));
+            core.info(`desktop dependency change detected: ${relevant}`);
+
+      - name: Checkout PR branch
+        if: steps.desktop_changes.outputs.relevant == 'true'
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        if: steps.desktop_changes.outputs.relevant == 'true'
+        uses: actions/setup-node@v6
+        with:
+          node-version: "20.19.0"
+
+      - name: Setup pnpm
+        if: steps.desktop_changes.outputs.relevant == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          version: "10"
+
+      - name: Update branch with base (best effort)
+        if: steps.desktop_changes.outputs.relevant == 'true'
+        uses: actions/github-script@v8
+        continue-on-error: true
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pull_number = context.payload.pull_request.number;
+            try {
+              await github.rest.pulls.updateBranch({ owner, repo, pull_number });
+              core.info("Requested PR branch update against base.");
+            } catch (error) {
+              core.warning(`Could not auto-update PR branch: ${error.message}`);
+            }
+
+      - name: Refresh lockfile
+        if: steps.desktop_changes.outputs.relevant == 'true'
+        run: pnpm -C desktop install --lockfile-only --merge-git-branch-lockfiles
+
+      - name: Commit refreshed lockfile
+        if: steps.desktop_changes.outputs.relevant == 'true'
+        run: |
+          if git diff --quiet -- desktop/pnpm-lock.yaml; then
+            echo "No lockfile changes to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add desktop/pnpm-lock.yaml
+          git commit -m "chore(dependabot): refresh desktop lockfile"
+          git push

@@ -4,7 +4,11 @@ import { useI18n } from "../../lib/i18n";
 import { formatTrimClock, normalizeTrimWindow } from "../../lib/recorderTrim";
 import type { WaveformStyle } from "../../lib/waveform";
 import type { TranscriptSegment } from "../../schemas/ipc";
+import type { ReviewState, ReviewCtaConfig } from "../../lib/recorderFlow";
 import RecorderWaveform from "./RecorderWaveform.vue";
+
+const AUDIENCE_OPTIONS = ["team", "conference", "client", "other"] as const;
+const GOAL_OPTIONS = ["inform", "persuade", "instruct", "inspire"] as const;
 
 const props = defineProps<{
   transcriptText: string;
@@ -25,6 +29,10 @@ const props = defineProps<{
   audioPreviewSources: string[];
   waveformPeaks: number[];
   waveformStyle: WaveformStyle;
+  reviewState: ReviewState;
+  reviewCta: ReviewCtaConfig;
+  canAnalyze: boolean;
+  hasAnalysisResult: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -36,6 +44,14 @@ const emit = defineEmits<{
   (event: "openOriginal"): void;
   (event: "applyTrim", value: { startMs: number; endMs: number }): void;
   (event: "continue"): void;
+  (event: "viewFeedback"): void;
+  (event: "analyze"): void;
+  (event: "onboardingContext", value: {
+    audience: string;
+    audienceCustom: string;
+    goal: string;
+    targetMinutes: number | null;
+  }): void;
 }>();
 
 const { t } = useI18n();
@@ -55,6 +71,59 @@ const trimDirty = computed(
     hasTrimSourceDuration.value &&
     (trimStartSec.value > 0.001 || Math.abs(trimEndSec.value - trimMaxSec.value) > 0.001)
 );
+
+const showOnboarding = ref(true);
+const onboardingAudience = ref("");
+const onboardingAudienceCustom = ref("");
+const onboardingGoal = ref("");
+const onboardingTargetMinutes = ref<number | null>(null);
+
+const showTranscriptWorkspace = computed(
+  () => props.reviewState === "review_transcript_ready" || props.reviewState === "review_analysis_ready"
+);
+
+function handlePrimaryCta() {
+  switch (props.reviewCta.actionName) {
+    case "transcribe":
+      emit("transcribe");
+      break;
+    case "analyze":
+      emit("analyze");
+      break;
+    case "view_feedback":
+      emit("viewFeedback");
+      break;
+    case "export_fallback":
+      emit("continue");
+      break;
+  }
+}
+
+function selectAudience(value: string) {
+  onboardingAudience.value = onboardingAudience.value === value ? "" : value;
+  if (onboardingAudience.value !== "other") {
+    onboardingAudienceCustom.value = "";
+  }
+  emitOnboardingContext();
+}
+
+function selectGoal(value: string) {
+  onboardingGoal.value = onboardingGoal.value === value ? "" : value;
+  emitOnboardingContext();
+}
+
+function emitOnboardingContext() {
+  emit("onboardingContext", {
+    audience: onboardingAudience.value,
+    audienceCustom: onboardingAudienceCustom.value,
+    goal: onboardingGoal.value,
+    targetMinutes: onboardingTargetMinutes.value,
+  });
+}
+
+function skipOnboarding() {
+  showOnboarding.value = false;
+}
 
 function applyTrim() {
   if (!trimDirty.value || props.isApplyingTrim) {
@@ -281,7 +350,9 @@ function seekToCaretAnchor(event: Event) {
   seekAudio(anchor.startMs);
 }
 
-function exportAnchorMapJson() {
+const anchorMapCopied = ref(false);
+
+async function exportAnchorMapJson() {
   if (!props.hasTranscript) {
     return;
   }
@@ -296,6 +367,17 @@ function exportAnchorMapJson() {
     cleanAnchors: cleanTextAnchors.value,
   };
   const json = JSON.stringify(payload, null, 2);
+
+  // Try clipboard first (reliable in Tauri webview)
+  try {
+    await navigator.clipboard.writeText(json);
+    anchorMapCopied.value = true;
+    setTimeout(() => { anchorMapCopied.value = false; }, 3000);
+    return;
+  } catch {
+    // Clipboard unavailable, fall back to blob download
+  }
+
   const blob = new Blob([json], { type: "application/json" });
   const blobUrl = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
@@ -335,176 +417,279 @@ watch(
 
 <template>
   <div class="space-y-4">
-    <div v-if="props.isTranscribing || (!props.hasTranscript && props.transcribeProgress > 0)" class="app-muted app-text-meta">
-      {{ props.transcribeProgress }}%
-      <span v-if="props.transcribeStageLabel">({{ props.transcribeStageLabel }})</span>
-    </div>
-
-    <section class="app-panel app-panel-compact space-y-3">
-      <div class="flex items-center justify-between gap-2">
-        <h3 class="app-text font-semibold">{{ t("audio.quick_clean_playback_title") }}</h3>
-      </div>
-      <p class="app-muted app-text-meta">{{ t("audio.quick_clean_playback_hint") }}</p>
-      <div class="space-y-2">
-        <RecorderWaveform :peaks="props.waveformPeaks" :style-mode="props.waveformStyle" />
-        <audio
-          v-if="props.audioPreviewSources.length > 0"
-          ref="audioPreviewRef"
-          :key="props.audioPreviewSources.join('|')"
-          class="w-full"
-          controls
-          preload="metadata"
-        >
-          <source
-            v-for="source in props.audioPreviewSources"
-            :key="source"
-            :src="source"
-            type="audio/wav"
-          />
-        </audio>
-      </div>
-    </section>
-
-    <div v-if="!props.hasTranscript" class="space-y-3">
-      <p class="app-muted app-text-body">{{ t("audio.quick_clean_transcribe_optional") }}</p>
+    <!-- Primary CTA bar -->
+    <div class="flex items-center gap-3">
+      <button
+        class="app-button-info app-focus-ring app-button-lg inline-flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+        type="button"
+        :disabled="props.reviewCta.disabled"
+        @click="handlePrimaryCta"
+      >
+        {{ t(props.reviewCta.labelKey) }}
+        <span v-if="props.reviewCta.progressPercent !== null" class="ml-2 app-text-meta">
+          {{ props.reviewCta.progressPercent }}%
+        </span>
+      </button>
+      <span
+        v-if="props.reviewCta.progressPercent !== null && props.transcribeStageLabel"
+        class="app-muted app-text-meta"
+      >
+        ({{ props.transcribeStageLabel }})
+      </span>
       <p
         v-if="props.showTranscribeBlockedHint && props.transcribeBlockedMessage"
         class="app-muted app-text-meta"
       >
         {{ props.transcribeBlockedMessage }}
       </p>
-      <button
-        class="app-button-info app-focus-ring app-button-lg inline-flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-        type="button"
-        :disabled="!props.canTranscribe"
-        @click="emit('transcribe')"
-      >
-        {{ t("audio.quick_clean_transcribe_now") }}
-      </button>
     </div>
 
-    <div v-else class="space-y-3">
-      <section class="app-panel app-panel-compact space-y-3">
-        <h3 class="app-text font-semibold">{{ t("audio.quick_clean_timeline_title") }}</h3>
-        <p class="app-muted app-text-meta">{{ t("audio.quick_clean_timeline_hint") }}</p>
-        <div v-if="timelineMarkers.length > 0" class="max-h-44 space-y-2 overflow-y-auto pr-1">
-          <button
-            v-for="marker in timelineMarkers"
-            :key="marker.atMs"
-            class="app-menu-item app-focus-ring flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left"
-            type="button"
-            @click="seekAudio(marker.atMs)"
-          >
-            <span class="app-pill-active-neutral inline-flex min-w-[3.5rem] justify-center rounded-full px-2 py-1 text-xs">
-              {{ marker.label }}
-            </span>
-            <span class="app-text-body line-clamp-2">{{ marker.preview }}</span>
-          </button>
-        </div>
-        <p v-else class="app-muted app-text-meta">{{ t("audio.quick_clean_timeline_empty") }}</p>
-      </section>
+    <!-- Responsive grid: 2-col on md+ when transcript exists, 1-col otherwise -->
+    <div
+      class="grid gap-4"
+      :class="showTranscriptWorkspace ? 'md:grid-cols-2' : 'md:grid-cols-1'"
+    >
+      <!-- LEFT column: Playback + onboarding + transcription progress -->
+      <div class="space-y-4">
+        <section class="app-panel app-panel-compact space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <h3 class="app-text font-semibold">{{ t("audio.quick_clean_playback_title") }}</h3>
+          </div>
+          <p class="app-muted app-text-meta">{{ t("audio.quick_clean_playback_hint") }}</p>
+          <div class="space-y-2">
+            <RecorderWaveform :peaks="props.waveformPeaks" :style-mode="props.waveformStyle" />
+            <audio
+              v-if="props.audioPreviewSources.length > 0"
+              ref="audioPreviewRef"
+              :key="props.audioPreviewSources.join('|')"
+              class="w-full"
+              controls
+              preload="metadata"
+            >
+              <source
+                v-for="source in props.audioPreviewSources"
+                :key="source"
+                :src="source"
+                type="audio/wav"
+              />
+            </audio>
+          </div>
+        </section>
 
-      <section class="app-panel app-panel-compact space-y-3">
-        <h3 class="app-text font-semibold">{{ t("audio.quick_clean_clean_text_title") }}</h3>
-        <textarea
-          ref="transcriptTextareaRef"
-          :value="props.transcriptText"
-          rows="12"
-          class="app-input app-focus-ring app-radius-control min-h-56 max-h-[56vh] w-full overflow-y-auto border px-3 py-2 app-text-body"
-          style="resize: vertical;"
-          :placeholder="t('audio.quick_clean_placeholder')"
-          @input="emit('update:transcriptText', ($event.target as HTMLTextAreaElement).value)"
-          @click="seekToCaretAnchor"
-        ></textarea>
-        <details class="space-y-2">
-          <summary class="cursor-pointer app-text-meta app-link">
-            <span class="collapse-chevron mr-1" aria-hidden="true">></span>
-            {{ t("audio.quick_clean_clean_anchors_title") }}
-          </summary>
-          <p class="app-muted app-text-meta">{{ t("audio.quick_clean_clean_anchors_hint") }}</p>
-          <div v-if="cleanTextAnchors.length > 0" class="max-h-44 space-y-2 overflow-y-auto pr-1">
+        <!-- Onboarding card: shown when no transcript exists yet (including during transcribing) -->
+        <section
+          v-if="!props.hasTranscript && showOnboarding"
+          class="app-panel app-panel-compact space-y-3"
+        >
+          <h3 class="app-text font-semibold">{{ t("audio.review_onboarding_title") }}</h3>
+          <p class="app-muted app-text-meta">{{ t("audio.review_onboarding_hint") }}</p>
+
+          <div class="space-y-2">
+            <label class="app-text app-text-meta font-medium">{{ t("audio.review_onboarding_audience") }}</label>
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-for="option in AUDIENCE_OPTIONS"
+                :key="option"
+                class="app-focus-ring rounded-full px-3 py-1 text-xs cursor-pointer transition-colors"
+                :class="onboardingAudience === option ? 'app-pill-active-neutral font-semibold' : 'app-button-secondary'"
+                type="button"
+                @click="selectAudience(option)"
+              >
+                {{ t(`audio.review_onboarding_audience_${option}`) }}
+              </button>
+            </div>
+            <input
+              v-if="onboardingAudience === 'other'"
+              v-model="onboardingAudienceCustom"
+              class="app-input app-focus-ring app-radius-control w-full border px-3 py-1 app-text-body text-sm"
+              type="text"
+              :placeholder="t('audio.review_onboarding_audience_other')"
+              @input="emitOnboardingContext"
+            />
+          </div>
+
+          <div class="space-y-2">
+            <label class="app-text app-text-meta font-medium">{{ t("audio.review_onboarding_goal") }}</label>
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-for="option in GOAL_OPTIONS"
+                :key="option"
+                class="app-focus-ring rounded-full px-3 py-1 text-xs cursor-pointer transition-colors"
+                :class="onboardingGoal === option ? 'app-pill-active-neutral font-semibold' : 'app-button-secondary'"
+                type="button"
+                @click="selectGoal(option)"
+              >
+                {{ t(`audio.review_onboarding_goal_${option}`) }}
+              </button>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <label class="app-text app-text-meta font-medium">{{ t("audio.review_onboarding_duration") }}</label>
+            <input
+              v-model.number="onboardingTargetMinutes"
+              class="app-input app-focus-ring app-radius-control w-32 border px-3 py-1 app-text-body text-sm"
+              type="number"
+              min="1"
+              max="120"
+              @input="emitOnboardingContext"
+            />
+          </div>
+
+          <button
+            class="app-button-secondary app-focus-ring inline-flex items-center cursor-pointer text-xs"
+            type="button"
+            @click="skipOnboarding"
+          >
+            {{ t("audio.review_onboarding_skip") }}
+          </button>
+        </section>
+
+        <!-- Transcription progress (transcribing state, inline in left col) -->
+        <div
+          v-if="props.reviewState === 'review_transcribing'"
+          class="app-muted app-text-meta"
+        >
+          <p class="app-muted app-text-body">
+            {{ props.transcribeProgress }}%
+            <span v-if="props.transcribeStageLabel">({{ props.transcribeStageLabel }})</span>
+          </p>
+        </div>
+
+        <!-- No-transcript hint (when onboarding dismissed and not yet transcribing) -->
+        <div
+          v-if="!props.hasTranscript && !showOnboarding && props.reviewState !== 'review_transcribing'"
+          class="space-y-3"
+        >
+          <p class="app-muted app-text-body">{{ t("audio.quick_clean_transcribe_optional") }}</p>
+        </div>
+      </div>
+
+      <!-- RIGHT column: Transcript workspace (only when transcript exists) -->
+      <div v-if="showTranscriptWorkspace" class="space-y-3">
+        <section class="app-panel app-panel-compact space-y-3">
+          <h3 class="app-text font-semibold">{{ t("audio.quick_clean_timeline_title") }}</h3>
+          <p class="app-muted app-text-meta">{{ t("audio.quick_clean_timeline_hint") }}</p>
+          <div v-if="timelineMarkers.length > 0" class="max-h-44 space-y-2 overflow-y-auto pr-1">
             <button
-              v-for="(anchor, index) in cleanTextAnchors"
-              :key="`${anchor.startMs}-${anchor.endMs}-${index}`"
-              class="app-menu-item app-focus-ring flex w-full cursor-pointer items-start gap-3 rounded-lg px-3 py-2 text-left"
+              v-for="marker in timelineMarkers"
+              :key="marker.atMs"
+              class="app-menu-item app-focus-ring flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left"
               type="button"
-              @click="seekAudio(anchor.startMs)"
+              @click="seekAudio(marker.atMs)"
             >
               <span class="app-pill-active-neutral inline-flex min-w-[3.5rem] justify-center rounded-full px-2 py-1 text-xs">
-                {{ formatTimelineClock(anchor.startMs) }}
+                {{ marker.label }}
               </span>
-              <span class="app-text-body line-clamp-2">{{ anchor.line }}</span>
+              <span class="app-text-body line-clamp-2">{{ marker.preview }}</span>
             </button>
           </div>
           <p v-else class="app-muted app-text-meta">{{ t("audio.quick_clean_timeline_empty") }}</p>
-        </details>
-        <div class="flex flex-wrap items-center gap-2">
-          <button
-            class="app-button-secondary app-focus-ring inline-flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-            type="button"
-            :disabled="cleanTextAnchors.length === 0"
-            @click="exportAnchorMapJson"
-          >
-            {{ t("audio.quick_clean_export_anchor_map") }}
-          </button>
-          <span class="app-muted app-text-meta">
-            {{ t("audio.quick_clean_export_anchor_map_hint") }}
-          </span>
-        </div>
-        <div class="flex flex-wrap items-center gap-2">
-          <button
-            class="app-button-primary app-focus-ring app-button-lg inline-flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-            type="button"
-            :disabled="props.isSavingEdited || props.isApplyingTrim || !props.transcriptText.trim()"
-            @click="emit('saveEdited')"
-          >
-            {{ t("audio.quick_clean_save_edited") }}
-          </button>
-          <button
-            class="app-button-secondary app-focus-ring app-button-lg inline-flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-            type="button"
-            :disabled="props.isSavingEdited || props.isApplyingTrim || !props.transcriptText.trim()"
-            @click="emit('autoCleanFillers')"
-          >
-            {{ t("audio.quick_clean_auto_clean") }}
-          </button>
-          <button
-            class="app-button-secondary app-focus-ring app-button-lg inline-flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-            type="button"
-            :disabled="props.isSavingEdited || props.isApplyingTrim || !props.transcriptText.trim()"
-            @click="emit('fixPunctuation')"
-          >
-            {{ t("audio.quick_clean_fix_punctuation") }}
-          </button>
-        </div>
-      </section>
+        </section>
 
-      <details class="app-panel app-panel-compact space-y-3">
-        <summary class="cursor-pointer app-text font-semibold">
-          <span class="collapse-chevron mr-1" aria-hidden="true">></span>
-          {{ t("audio.quick_clean_raw_chunks_title") }}
-        </summary>
-        <p class="app-muted app-text-meta">{{ t("audio.quick_clean_raw_chunks_hint") }}</p>
-        <div v-if="rawTimelineChunks.length > 0" class="max-h-56 space-y-2 overflow-y-auto pr-1">
-          <div
-            v-for="chunk in rawTimelineChunks"
-            :key="`${chunk.startMs}-${chunk.endMs}`"
-            class="app-surface rounded-lg border border-[var(--color-border-muted)] px-3 py-2"
-          >
+        <section class="app-panel app-panel-compact space-y-3">
+          <h3 class="app-text font-semibold">{{ t("audio.quick_clean_clean_text_title") }}</h3>
+          <textarea
+            ref="transcriptTextareaRef"
+            :value="props.transcriptText"
+            rows="12"
+            class="app-input app-focus-ring app-radius-control min-h-56 max-h-[56vh] w-full overflow-y-auto border px-3 py-2 app-text-body"
+            style="resize: vertical;"
+            :placeholder="t('audio.quick_clean_placeholder')"
+            @input="emit('update:transcriptText', ($event.target as HTMLTextAreaElement).value)"
+            @click="seekToCaretAnchor"
+          ></textarea>
+          <details class="space-y-2">
+            <summary class="cursor-pointer app-text-meta app-link">
+              <span class="collapse-chevron mr-1" aria-hidden="true">></span>
+              {{ t("audio.quick_clean_clean_anchors_title") }}
+            </summary>
+            <p class="app-muted app-text-meta">{{ t("audio.quick_clean_clean_anchors_hint") }}</p>
+            <div v-if="cleanTextAnchors.length > 0" class="max-h-44 space-y-2 overflow-y-auto pr-1">
+              <button
+                v-for="(anchor, index) in cleanTextAnchors"
+                :key="`${anchor.startMs}-${anchor.endMs}-${index}`"
+                class="app-menu-item app-focus-ring flex w-full cursor-pointer items-start gap-3 rounded-lg px-3 py-2 text-left"
+                type="button"
+                @click="seekAudio(anchor.startMs)"
+              >
+                <span class="app-pill-active-neutral inline-flex min-w-[3.5rem] justify-center rounded-full px-2 py-1 text-xs">
+                  {{ formatTimelineClock(anchor.startMs) }}
+                </span>
+                <span class="app-text-body line-clamp-2">{{ anchor.line }}</span>
+              </button>
+            </div>
+            <p v-else class="app-muted app-text-meta">{{ t("audio.quick_clean_timeline_empty") }}</p>
+          </details>
+          <div class="flex flex-wrap items-center gap-2">
             <button
-              class="app-link app-focus-ring inline-flex cursor-pointer text-xs underline"
+              class="app-button-secondary app-focus-ring inline-flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
               type="button"
-              @click="seekAudio(chunk.startMs)"
+              :disabled="cleanTextAnchors.length === 0"
+              @click="exportAnchorMapJson"
             >
-              {{ formatTimelineClock(chunk.startMs) }} - {{ formatTimelineClock(chunk.endMs) }}
+              {{ anchorMapCopied ? t("audio.quick_clean_export_anchor_map_copied") : t("audio.quick_clean_export_anchor_map") }}
             </button>
-            <p class="mt-1 app-text-body">{{ chunk.text }}</p>
+            <span class="app-muted app-text-meta">
+              {{ t("audio.quick_clean_export_anchor_map_hint") }}
+            </span>
           </div>
-        </div>
-        <p v-else class="app-muted app-text-meta">{{ t("audio.quick_clean_timeline_empty") }}</p>
-      </details>
+          <div class="flex flex-wrap items-center gap-2">
+            <button
+              class="app-button-primary app-focus-ring app-button-lg inline-flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+              type="button"
+              :disabled="props.isSavingEdited || props.isApplyingTrim || !props.transcriptText.trim()"
+              @click="emit('saveEdited')"
+            >
+              {{ t("audio.quick_clean_save_edited") }}
+            </button>
+            <button
+              class="app-button-secondary app-focus-ring app-button-lg inline-flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+              type="button"
+              :disabled="props.isSavingEdited || props.isApplyingTrim || !props.transcriptText.trim()"
+              @click="emit('autoCleanFillers')"
+            >
+              {{ t("audio.quick_clean_auto_clean") }}
+            </button>
+            <button
+              class="app-button-secondary app-focus-ring app-button-lg inline-flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+              type="button"
+              :disabled="props.isSavingEdited || props.isApplyingTrim || !props.transcriptText.trim()"
+              @click="emit('fixPunctuation')"
+            >
+              {{ t("audio.quick_clean_fix_punctuation") }}
+            </button>
+          </div>
+        </section>
+
+        <details class="app-panel app-panel-compact space-y-3">
+          <summary class="cursor-pointer app-text font-semibold">
+            <span class="collapse-chevron mr-1" aria-hidden="true">></span>
+            {{ t("audio.quick_clean_raw_chunks_title") }}
+          </summary>
+          <p class="app-muted app-text-meta">{{ t("audio.quick_clean_raw_chunks_hint") }}</p>
+          <div v-if="rawTimelineChunks.length > 0" class="max-h-56 space-y-2 overflow-y-auto pr-1">
+            <div
+              v-for="chunk in rawTimelineChunks"
+              :key="`${chunk.startMs}-${chunk.endMs}`"
+              class="app-surface rounded-lg border border-[var(--color-border-muted)] px-3 py-2"
+            >
+              <button
+                class="app-link app-focus-ring inline-flex cursor-pointer text-xs underline"
+                type="button"
+                @click="seekAudio(chunk.startMs)"
+              >
+                {{ formatTimelineClock(chunk.startMs) }} - {{ formatTimelineClock(chunk.endMs) }}
+              </button>
+              <p class="mt-1 app-text-body">{{ chunk.text }}</p>
+            </div>
+          </div>
+          <p v-else class="app-muted app-text-meta">{{ t("audio.quick_clean_timeline_empty") }}</p>
+        </details>
+      </div>
     </div>
 
+    <!-- Bottom: open original + continue secondary + trim panel -->
     <div class="flex flex-wrap items-center gap-2">
       <button
         class="app-button-secondary app-focus-ring app-button-lg inline-flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
@@ -515,7 +700,7 @@ watch(
         {{ t("audio.quick_clean_open_original") }}
       </button>
       <button
-        class="app-button-info app-focus-ring app-button-lg inline-flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+        class="app-button-secondary app-focus-ring app-button-lg inline-flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
         type="button"
         :disabled="!props.hasTranscript || props.isApplyingTrim"
         @click="emit('continue')"
