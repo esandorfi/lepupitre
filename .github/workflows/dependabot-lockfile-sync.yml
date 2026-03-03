@@ -43,7 +43,7 @@ jobs:
 
       - name: Checkout PR branch
         if: steps.desktop_changes.outputs.relevant == 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
