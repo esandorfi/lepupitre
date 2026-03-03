@@ -121,8 +121,10 @@ const messages: Record<Locale, Record<string, string>> = {
     "help.dev_subtitle": "Use browser mode for fast UI iterations, and Tauri mode for IPC and OS integration checks.",
     "help.dev_ui_only_title": "UI only (fastest)",
     "help.dev_ui_only_body": "Runs the Vue app in browser with hot reload and no native runtime.",
+    "help.dev_ui_only_command": "pnpm -C desktop ui:dev",
     "help.dev_tauri_title": "Full desktop mode",
     "help.dev_tauri_body": "Runs Tauri + Rust + UI for end-to-end validation.",
+    "help.dev_tauri_command": "pnpm -C desktop dev",
     "help.actions_title": "Actions",
     "help.action_restart_onboarding": "Restart onboarding",
     "help.action_settings": "Open settings",
@@ -941,8 +943,10 @@ const messages: Record<Locale, Record<string, string>> = {
     "help.dev_subtitle": "Le mode navigateur accélère l'UI; le mode Tauri valide IPC et intégration OS.",
     "help.dev_ui_only_title": "UI seule (plus rapide)",
     "help.dev_ui_only_body": "Lance l'application Vue en navigateur avec hot reload, sans runtime natif.",
+    "help.dev_ui_only_command": "pnpm -C desktop ui:dev",
     "help.dev_tauri_title": "Mode desktop complet",
     "help.dev_tauri_body": "Lance Tauri + Rust + UI pour validation end-to-end.",
+    "help.dev_tauri_command": "pnpm -C desktop dev",
     "help.actions_title": "Actions",
     "help.action_restart_onboarding": "Relancer l'onboarding",
     "help.action_settings": "Ouvrir les paramètres",
@@ -1680,4 +1684,3 @@ function t(key: string) {
 export function useI18n() {
   return { locale, setLocale, t };
 }
-
