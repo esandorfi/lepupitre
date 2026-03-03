@@ -16,7 +16,7 @@ jobs:
     steps:
       - name: Detect desktop dependency file changes
         id: desktop_changes
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const owner = context.repo.owner;
@@ -62,7 +62,7 @@ jobs:
 
       - name: Update branch with base (best effort)
         if: steps.desktop_changes.outputs.relevant == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         continue-on-error: true
         with:
           script: |
