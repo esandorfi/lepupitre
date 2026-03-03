@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
 import type { ComponentPublicInstance } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import AppBadge from "@/components/ui/AppBadge.vue";
@@ -22,10 +22,8 @@ const deletingId = ref<string | null>(null);
 const editingId = ref<string | null>(null);
 const renameValue = ref("");
 const renameOriginal = ref("");
-const openMenuId = ref<string | null>(null);
 const deleteTarget = ref<ProfileSummary | null>(null);
 const createSection = ref<HTMLElement | null>(null);
-const pageRef = ref<HTMLElement | null>(null);
 
 type InputRefTarget =
   | HTMLInputElement
@@ -174,7 +172,6 @@ async function switchProfile(profileId: string) {
 }
 
 function startRename(profileId: string, currentName: string) {
-  openMenuId.value = null;
   editingId.value = profileId;
   renameValue.value = currentName;
   renameOriginal.value = currentName;
@@ -215,13 +212,24 @@ async function confirmRename(profileId: string) {
   }
 }
 
-function toggleMenu(profileId: string) {
-  openMenuId.value = openMenuId.value === profileId ? null : profileId;
+function requestDelete(profile: ProfileSummary) {
+  deleteTarget.value = profile;
 }
 
-function requestDelete(profile: ProfileSummary) {
-  openMenuId.value = null;
-  deleteTarget.value = profile;
+function profileMenuItems(profile: ProfileSummary) {
+  return [
+    {
+      label: t("profiles.rename"),
+      disabled: isRenaming.value,
+      onSelect: () => startRename(profile.id, profile.name),
+    },
+    {
+      label: t("profiles.delete"),
+      color: "error" as const,
+      disabled: deletingId.value === profile.id,
+      onSelect: () => requestDelete(profile),
+    },
+  ];
 }
 
 function cancelDelete() {
@@ -249,23 +257,6 @@ async function confirmDelete() {
   }
 }
 
-function handleDocumentMouseDown(event: MouseEvent) {
-  if (!openMenuId.value) {
-    return;
-  }
-  const target = event.target;
-  if (!(target instanceof Node)) {
-    return;
-  }
-  if (pageRef.value?.contains(target)) {
-    const menuRoot = (target as HTMLElement).closest?.("[data-profile-menu-root='true']");
-    if (menuRoot) {
-      return;
-    }
-  }
-  openMenuId.value = null;
-}
-
 async function maybeFocusCreateFromRoute() {
   if (!route.query.create) {
     return;
@@ -281,9 +272,6 @@ watch(
 );
 
 onMounted(async () => {
-  if (typeof document !== "undefined") {
-    document.addEventListener("mousedown", handleDocumentMouseDown);
-  }
   try {
     await appStore.ensureBootstrapped();
   } catch (err) {
@@ -291,16 +279,10 @@ onMounted(async () => {
   }
   await maybeFocusCreateFromRoute();
 });
-
-onBeforeUnmount(() => {
-  if (typeof document !== "undefined") {
-    document.removeEventListener("mousedown", handleDocumentMouseDown);
-  }
-});
 </script>
 
 <template>
-  <section ref="pageRef" class="space-y-6">
+  <section class="space-y-6">
     <header class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
       <div>
         <h1 class="app-text text-2xl font-semibold tracking-tight">{{ t("profiles.title") }}</h1>
@@ -379,56 +361,36 @@ onBeforeUnmount(() => {
               {{ t("profiles.active") }}
             </AppBadge>
 
-            <div class="relative" data-profile-menu-root="true">
-              <AppButton
-                size="icon-xl"
-                tone="secondary"
-                :aria-label="`${t('profiles.row_actions')}: ${profile.name}`"
-                :aria-expanded="openMenuId === profile.id ? 'true' : 'false'"
-                aria-haspopup="menu"
-                :disabled="isRenaming || deletingId === profile.id"
-                @click="toggleMenu(profile.id)"
-              >
-                <svg
-                  class="h-4 w-4"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <circle cx="12" cy="12" r="1" />
-                  <circle cx="19" cy="12" r="1" />
-                  <circle cx="5" cy="12" r="1" />
-                </svg>
-              </AppButton>
-
-              <div
-                v-if="openMenuId === profile.id"
-                class="app-menu-panel absolute top-[calc(100%+0.4rem)] right-0 z-20 w-44 rounded-xl border p-1 shadow-lg"
-                role="menu"
-              >
+            <UDropdownMenu
+              :items="profileMenuItems(profile)"
+              :content="{ align: 'end', side: 'bottom', sideOffset: 6 }"
+              :portal="false"
+            >
+              <template #default="{ open: menuOpen }">
                 <AppButton
-                  class="app-menu-item min-h-10 w-full justify-start rounded-lg px-3 py-2 text-left text-sm"
-                  size="sm"
+                  size="icon-xl"
                   tone="secondary"
-                  :disabled="isRenaming"
-                  @click="startRename(profile.id, profile.name)"
+                  :aria-label="`${t('profiles.row_actions')}: ${profile.name}`"
+                  :aria-expanded="menuOpen ? 'true' : 'false'"
+                  aria-haspopup="menu"
+                  :disabled="isRenaming || deletingId === profile.id"
                 >
-                  {{ t("profiles.rename") }}
+                  <svg
+                    class="h-4 w-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="1" />
+                    <circle cx="19" cy="12" r="1" />
+                    <circle cx="5" cy="12" r="1" />
+                  </svg>
                 </AppButton>
-                <AppButton
-                  class="app-menu-item min-h-10 w-full justify-start rounded-lg px-3 py-2 text-left text-sm"
-                  size="sm"
-                  tone="danger-soft"
-                  :disabled="deletingId === profile.id"
-                  @click="requestDelete(profile)"
-                >
-                  {{ t("profiles.delete") }}
-                </AppButton>
-              </div>
-            </div>
+              </template>
+            </UDropdownMenu>
           </div>
         </div>
       </div>
