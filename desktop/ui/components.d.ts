@@ -11,7 +11,11 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AppBadge: typeof import('./src/components/ui/AppBadge.vue')['default']
+    AppButton: typeof import('./src/components/ui/AppButton.vue')['default']
+    AppDialog: typeof import('./src/components/ui/AppDialog.vue')['default']
     AppHeaderMenu: typeof import('./src/components/AppHeaderMenu.vue')['default']
+    AppPanel: typeof import('./src/components/ui/AppPanel.vue')['default']
     AudioRecorder: typeof import('./src/components/AudioRecorder.vue')['default']
     ConfirmDialog: typeof import('./src/components/ConfirmDialog.vue')['default']
     EntityRow: typeof import('./src/components/EntityRow.vue')['default']
@@ -31,7 +35,11 @@ declare module 'vue' {
     TalkStepPageShell: typeof import('./src/components/TalkStepPageShell.vue')['default']
     TalkStepTabs: typeof import('./src/components/TalkStepTabs.vue')['default']
     TopPrimaryNav: typeof import('./src/components/shell/TopPrimaryNav.vue')['default']
+    UBadge: typeof import('./../node_modules/.pnpm/@nuxt+ui@4.4.0_@tiptap+exte_de8bba3212ab9ac0762d9b96edb9e4e2/node_modules/@nuxt/ui/dist/runtime/components/Badge.vue')['default']
     UBreadcrumb: typeof import('./../node_modules/.pnpm/@nuxt+ui@4.4.0_@tiptap+exte_de8bba3212ab9ac0762d9b96edb9e4e2/node_modules/@nuxt/ui/dist/runtime/components/Breadcrumb.vue')['default']
+    UButton: typeof import('./../node_modules/.pnpm/@nuxt+ui@4.4.0_@tiptap+exte_de8bba3212ab9ac0762d9b96edb9e4e2/node_modules/@nuxt/ui/dist/runtime/components/Button.vue')['default']
+    UCard: typeof import('./../node_modules/.pnpm/@nuxt+ui@4.4.0_@tiptap+exte_de8bba3212ab9ac0762d9b96edb9e4e2/node_modules/@nuxt/ui/dist/runtime/components/Card.vue')['default']
+    UModal: typeof import('./../node_modules/.pnpm/@nuxt+ui@4.4.0_@tiptap+exte_de8bba3212ab9ac0762d9b96edb9e4e2/node_modules/@nuxt/ui/dist/runtime/components/Modal.vue')['default']
     WindowChrome: typeof import('./src/components/shell/WindowChrome.vue')['default']
     WorkspaceSwitcher: typeof import('./src/components/WorkspaceSwitcher.vue')['default']
   }

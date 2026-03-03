@@ -2,6 +2,8 @@
 /* eslint-disable vue/no-v-html */
 import { computed, nextTick, ref, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
+import AppButton from "../../../components/ui/AppButton.vue";
+import AppPanel from "../../../components/ui/AppPanel.vue";
 import {
   getHelpContentById,
   listHelpContentByAudience,
@@ -129,7 +131,7 @@ async function restartOnboarding() {
       <p class="app-muted mt-1 text-sm">{{ t("help.subtitle") }}</p>
     </header>
 
-    <div class="app-panel">
+    <AppPanel>
       <h2 class="app-text text-base font-semibold">{{ t("help.quickstart_title") }}</h2>
       <ol class="app-text mt-3 list-decimal space-y-2 pl-5 text-sm leading-6">
         <li>{{ t("help.quickstart_1") }}</li>
@@ -137,9 +139,9 @@ async function restartOnboarding() {
         <li>{{ t("help.quickstart_3") }}</li>
         <li>{{ t("help.quickstart_4") }}</li>
       </ol>
-    </div>
+    </AppPanel>
 
-    <div class="app-panel">
+    <AppPanel>
       <h2 class="app-text text-base font-semibold">{{ t("help.faq_title") }}</h2>
       <div class="mt-3 grid gap-3 lg:grid-cols-2">
         <article
@@ -151,9 +153,9 @@ async function restartOnboarding() {
           <p class="app-muted mt-2 text-sm leading-6">{{ item.a }}</p>
         </article>
       </div>
-    </div>
+    </AppPanel>
 
-    <div class="app-panel space-y-4">
+    <AppPanel class="space-y-4">
       <div>
         <h2 class="app-text text-base font-semibold">{{ t("help.playbook_title") }}</h2>
         <p class="app-muted mt-1 text-sm">{{ t("help.playbook_subtitle") }}</p>
@@ -170,9 +172,9 @@ async function restartOnboarding() {
           {{ option.label }}
         </button>
       </div>
-    </div>
+    </AppPanel>
 
-    <div class="app-panel space-y-4">
+    <AppPanel class="space-y-4">
       <div>
         <h2 class="app-text text-base font-semibold">{{ t("help.onboarding_tracks_title") }}</h2>
         <p class="app-muted mt-1 text-sm">{{ t("help.onboarding_tracks_subtitle") }}</p>
@@ -196,9 +198,9 @@ async function restartOnboarding() {
           </RouterLink>
         </article>
       </div>
-    </div>
+    </AppPanel>
 
-    <div class="app-panel space-y-4">
+    <AppPanel class="space-y-4">
       <div>
         <h2 class="app-text text-base font-semibold">{{ t("help.contextual_title") }}</h2>
         <p class="app-muted mt-1 text-sm">{{ t("help.contextual_subtitle") }}</p>
@@ -223,9 +225,9 @@ async function restartOnboarding() {
           </RouterLink>
         </article>
       </div>
-    </div>
+    </AppPanel>
 
-    <div class="app-panel">
+    <AppPanel>
       <h2 class="app-text text-base font-semibold">{{ t("help.dev_title") }}</h2>
       <p class="app-muted mt-2 text-sm leading-6">{{ t("help.dev_subtitle") }}</p>
       <div class="mt-3 grid gap-3 lg:grid-cols-2">
@@ -240,18 +242,14 @@ async function restartOnboarding() {
           <pre class="app-panel app-panel-compact mt-3 overflow-x-auto text-xs">pnpm -C desktop dev</pre>
         </article>
       </div>
-    </div>
+    </AppPanel>
 
-    <div class="app-panel app-panel-compact">
+    <AppPanel variant="compact">
       <h2 class="app-text text-base font-semibold">{{ t("help.actions_title") }}</h2>
       <div class="mt-3 flex flex-wrap items-center gap-3">
-        <button
-          class="app-button-secondary app-focus-ring app-button-md inline-flex cursor-pointer items-center"
-          type="button"
-          @click="restartOnboarding"
-        >
+        <AppButton size="md" tone="secondary" @click="restartOnboarding">
           {{ t("help.action_restart_onboarding") }}
-        </button>
+        </AppButton>
         <RouterLink class="app-link app-text-meta underline" to="/settings">
           {{ t("help.action_settings") }}
         </RouterLink>
@@ -259,7 +257,7 @@ async function restartOnboarding() {
           {{ t("help.action_about") }}
         </RouterLink>
       </div>
-    </div>
+    </AppPanel>
   </section>
 </template>
 

@@ -2,6 +2,9 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import type { ComponentPublicInstance } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import AppBadge from "../../../components/ui/AppBadge.vue";
+import AppButton from "../../../components/ui/AppButton.vue";
+import AppPanel from "../../../components/ui/AppPanel.vue";
 import ConfirmDialog from "../../../components/ConfirmDialog.vue";
 import { useI18n } from "../../../lib/i18n";
 import type { ProfileSummary } from "../../../schemas/ipc";
@@ -276,13 +279,9 @@ onBeforeUnmount(() => {
         <h1 class="app-text text-2xl font-semibold tracking-tight">{{ t("profiles.title") }}</h1>
         <p class="app-muted mt-1 text-sm">{{ t("profiles.subtitle") }}</p>
       </div>
-      <button
-        class="app-button-primary app-focus-ring app-button-lg inline-flex items-center cursor-pointer"
-        type="button"
-        @click="focusCreateForm"
-      >
+      <AppButton size="lg" tone="primary" @click="focusCreateForm">
         {{ t("profiles.create_action") }}
-      </button>
+      </AppButton>
     </header>
 
     <div v-if="profiles.length === 0" class="app-card rounded-2xl border px-5 py-8 text-center">
@@ -291,16 +290,12 @@ onBeforeUnmount(() => {
       </div>
       <h2 class="app-text text-lg font-semibold">{{ t("profiles.empty_title") }}</h2>
       <p class="app-muted mx-auto mt-2 max-w-xl text-sm">{{ t("profiles.empty_body") }}</p>
-      <button
-        class="app-button-primary app-focus-ring app-button-lg mt-4 inline-flex items-center cursor-pointer"
-        type="button"
-        @click="focusCreateForm"
-      >
+      <AppButton class="mt-4" size="lg" tone="primary" @click="focusCreateForm">
         {{ t("profiles.create_action") }}
-      </button>
+      </AppButton>
     </div>
 
-    <section v-else class="app-panel app-panel-compact">
+    <AppPanel v-else as="section" variant="compact">
       <div class="flex items-center justify-between gap-3">
         <h2 class="app-subtle text-xs font-semibold uppercase tracking-[0.2em]">
           {{ t("profiles.existing_title") }}
@@ -340,25 +335,27 @@ onBeforeUnmount(() => {
           </div>
 
           <div class="flex items-center gap-2">
-            <button
+            <AppButton
               v-if="profile.id !== activeProfileId"
-              class="app-button-secondary app-focus-ring app-button-lg inline-flex items-center cursor-pointer"
-              type="button"
+              size="lg"
+              tone="secondary"
               @click="switchProfile(profile.id)"
             >
               {{ t("profiles.switch") }}
-            </button>
-            <span
+            </AppButton>
+            <AppBadge
               v-else
-              class="app-badge-accent app-button-lg inline-flex items-center"
+              class="app-button-lg"
+              size="md"
+              tone="accent"
             >
               {{ t("profiles.active") }}
-            </span>
+            </AppBadge>
 
             <div class="relative" data-profile-menu-root="true">
-              <button
-                class="app-button-secondary app-focus-ring app-icon-button-xl inline-flex cursor-pointer items-center justify-center"
-                type="button"
+              <AppButton
+                size="icon-xl"
+                tone="secondary"
                 :aria-label="`${t('profiles.row_actions')}: ${profile.name}`"
                 :aria-expanded="openMenuId === profile.id ? 'true' : 'false'"
                 aria-haspopup="menu"
@@ -378,7 +375,7 @@ onBeforeUnmount(() => {
                   <circle cx="19" cy="12" r="1" />
                   <circle cx="5" cy="12" r="1" />
                 </svg>
-              </button>
+              </AppButton>
 
               <div
                 v-if="openMenuId === profile.id"
@@ -408,40 +405,42 @@ onBeforeUnmount(() => {
       </div>
 
       <p v-if="error" class="app-danger-text mt-3 text-xs">{{ error }}</p>
-    </section>
+    </AppPanel>
 
-    <section ref="createSection" class="app-card app-radius-panel-lg border p-4">
-      <h2 class="app-subtle text-xs font-semibold uppercase tracking-[0.2em]">
-        {{ t("profiles.add_title") }}
-      </h2>
-      <div class="mt-3 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
-        <div>
-          <label class="app-text text-sm font-medium" for="workspace-name-input">
-            {{ t("profiles.create_placeholder") }}
-          </label>
-          <input
-            id="workspace-name-input"
-            ref="createInput"
-            v-model="name"
-            type="text"
-            class="app-input app-focus-ring app-control-md mt-2 w-full rounded-lg border px-3 app-text-body"
-            :placeholder="t('profiles.create_placeholder')"
-            @keyup.enter="createProfile"
-            @keyup.escape="name = ''"
-          />
-          <p class="app-muted mt-2 text-xs">{{ t("profiles.create_helper") }}</p>
+    <AppPanel as="section" class="app-radius-panel-lg" variant="compact">
+      <div ref="createSection">
+        <h2 class="app-subtle text-xs font-semibold uppercase tracking-[0.2em]">
+          {{ t("profiles.add_title") }}
+        </h2>
+        <div class="mt-3 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
+          <div>
+            <label class="app-text text-sm font-medium" for="workspace-name-input">
+              {{ t("profiles.create_placeholder") }}
+            </label>
+            <input
+              id="workspace-name-input"
+              ref="createInput"
+              v-model="name"
+              type="text"
+              class="app-input app-focus-ring app-control-md mt-2 w-full rounded-lg border px-3 app-text-body"
+              :placeholder="t('profiles.create_placeholder')"
+              @keyup.enter="createProfile"
+              @keyup.escape="name = ''"
+            />
+            <p class="app-muted mt-2 text-xs">{{ t("profiles.create_helper") }}</p>
+          </div>
+          <AppButton
+            size="lg"
+            tone="primary"
+            :disabled="isSaving"
+            @click="createProfile"
+          >
+            {{ t("profiles.create_action") }}
+          </AppButton>
         </div>
-        <button
-          class="app-button-primary app-focus-ring app-button-lg inline-flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-          type="button"
-          :disabled="isSaving"
-          @click="createProfile"
-        >
-          {{ t("profiles.create_action") }}
-        </button>
       </div>
       <p v-if="error" class="app-danger-text mt-3 text-xs">{{ error }}</p>
-    </section>
+    </AppPanel>
 
     <ConfirmDialog
       :open="deleteTarget !== null"

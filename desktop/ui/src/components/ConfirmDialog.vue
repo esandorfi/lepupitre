@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, ref, watch } from "vue";
+import AppButton from "./ui/AppButton.vue";
+import AppDialog from "./ui/AppDialog.vue";
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     open: boolean;
     title: string;
@@ -23,91 +24,35 @@ const emit = defineEmits<{
   confirm: [];
 }>();
 
-const cancelButton = ref<HTMLButtonElement | null>(null);
-
-function onKeydown(event: KeyboardEvent) {
-  if (!props.open) {
-    return;
-  }
-  if (event.key === "Escape") {
-    event.preventDefault();
+function onOpenChange(nextOpen: boolean) {
+  if (!nextOpen) {
     emit("cancel");
   }
 }
-
-watch(
-  () => props.open,
-  async (open) => {
-    if (!open) {
-      return;
-    }
-    await nextTick();
-    cancelButton.value?.focus();
-  }
-);
-
-watch(
-  () => props.open,
-  (open) => {
-    if (typeof document === "undefined") {
-      return;
-    }
-    if (open) {
-      document.addEventListener("keydown", onKeydown);
-    } else {
-      document.removeEventListener("keydown", onKeydown);
-    }
-  }
-);
-
-onBeforeUnmount(() => {
-  document.removeEventListener("keydown", onKeydown);
-});
 </script>
 
 <template>
-  <Teleport to="body">
-    <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <button
-        class="app-dialog-overlay absolute inset-0"
-        type="button"
-        tabindex="-1"
-        aria-hidden="true"
-        @click="emit('cancel')"
-      ></button>
-      <div
-        class="app-dialog relative z-10 w-full max-w-md rounded-2xl border p-5 shadow-xl"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="confirm-dialog-title"
+  <AppDialog
+    :close="false"
+    :description="body || undefined"
+    :dismissible="!busy"
+    :open="open"
+    :title="title"
+    @update:open="onOpenChange"
+  >
+    <template #footer>
+      <AppButton autofocus :disabled="busy" size="md" tone="secondary" @click="emit('cancel')">
+        {{ cancelLabel }}
+      </AppButton>
+      <AppButton
+        :disabled="busy"
+        :loading="busy"
+        size="md"
+        :tone="confirmVariant === 'danger' ? 'danger' : 'primary'"
+        @click="emit('confirm')"
       >
-        <h2 id="confirm-dialog-title" class="app-text text-base font-semibold">
-          {{ title }}
-        </h2>
-        <p v-if="body" class="app-muted mt-2 text-sm">
-          {{ body }}
-        </p>
-        <div class="mt-5 flex flex-wrap justify-end gap-2">
-          <button
-            ref="cancelButton"
-            class="app-button-secondary cursor-pointer rounded-full px-4 py-2 text-sm font-semibold"
-            type="button"
-            :disabled="busy"
-            @click="emit('cancel')"
-          >
-            {{ cancelLabel }}
-          </button>
-          <button
-            class="cursor-pointer rounded-full px-4 py-2 text-sm font-semibold"
-            :class="confirmVariant === 'danger' ? 'app-button-danger' : 'app-button-primary'"
-            type="button"
-            :disabled="busy"
-            @click="emit('confirm')"
-          >
-            {{ confirmLabel }}
-          </button>
-        </div>
-      </div>
-    </div>
-  </Teleport>
+        {{ confirmLabel }}
+      </AppButton>
+    </template>
+  </AppDialog>
 </template>
