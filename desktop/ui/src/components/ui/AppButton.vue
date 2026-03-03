@@ -37,23 +37,29 @@ const props = withDefaults(
   }
 );
 
-const toneClassByTone: Record<AppButtonTone, string> = {
-  primary: "app-button-primary",
-  secondary: "app-button-secondary",
-  ghost: "app-button-ghost",
-  danger: "app-button-danger",
-  success: "app-button-success",
-  info: "app-button-info",
-  "danger-soft": "app-button-danger-soft",
-};
-
-const sizeClassBySize: Record<AppButtonSize, string> = {
-  sm: "app-button-sm",
-  md: "app-button-md",
-  lg: "app-button-lg",
-  "icon-sm": "app-icon-button-sm",
-  "icon-md": "app-icon-button-md",
-  "icon-xl": "app-icon-button-xl",
+const BUTTON_BASE_CLASS =
+  "app-focus-ring inline-flex items-center justify-center cursor-pointer font-semibold transition";
+const BUTTON_VARIANTS: {
+  tone: Record<AppButtonTone, string>;
+  size: Record<AppButtonSize, string>;
+} = {
+  tone: {
+    primary: "app-button-primary",
+    secondary: "app-button-secondary",
+    ghost: "app-button-ghost",
+    danger: "app-button-danger",
+    success: "app-button-success",
+    info: "app-button-info",
+    "danger-soft": "app-button-danger-soft",
+  },
+  size: {
+    sm: "app-button-sm",
+    md: "app-button-md",
+    lg: "app-button-lg",
+    "icon-sm": "app-icon-button-sm",
+    "icon-md": "app-icon-button-md",
+    "icon-xl": "app-icon-button-xl",
+  },
 };
 
 const nuxtSize = computed<"sm" | "md" | "lg">(() => {
@@ -68,9 +74,9 @@ const nuxtSize = computed<"sm" | "md" | "lg">(() => {
 
 const buttonClass = computed(() => {
   return [
-    "app-focus-ring inline-flex items-center justify-center cursor-pointer font-semibold transition",
-    toneClassByTone[props.tone],
-    sizeClassBySize[props.size],
+    BUTTON_BASE_CLASS,
+    BUTTON_VARIANTS.tone[props.tone],
+    BUTTON_VARIANTS.size[props.size],
     props.square || props.size.startsWith("icon-") ? "p-0" : "",
   ];
 });

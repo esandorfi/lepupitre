@@ -1,8 +1,8 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter, RouterLink } from "vue-router";
-import AudioRecorder from "../../../components/AudioRecorder.vue";
-import AppPanel from "../../../components/ui/AppPanel.vue";
+import AudioRecorder from "@/components/AudioRecorder.vue";
+import AppPanel from "@/components/ui/AppPanel.vue";
 import { useI18n } from "../../../lib/i18n";
 import { appStore } from "../../../stores/app";
 import type { RunSummary } from "../../../schemas/ipc";
@@ -26,7 +26,7 @@ const talkLabel = computed(() => {
     return "";
   }
   const number = appStore.getTalkNumber(activeProject.value.id);
-  const prefix = number ? `T${number} Â· ` : "";
+  const prefix = number ? `T${number} · ` : "";
   return `${prefix}${activeProject.value.title}`;
 });
 

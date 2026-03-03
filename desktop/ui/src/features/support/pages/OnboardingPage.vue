@@ -1,10 +1,10 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 /* eslint-disable vue/no-v-html */
 import { computed, ref, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
-import AppBadge from "../../../components/ui/AppBadge.vue";
-import AppButton from "../../../components/ui/AppButton.vue";
-import AppPanel from "../../../components/ui/AppPanel.vue";
+import AppBadge from "@/components/ui/AppBadge.vue";
+import AppButton from "@/components/ui/AppButton.vue";
+import AppPanel from "@/components/ui/AppPanel.vue";
 import {
   getOnboardingTrackByAudience,
   parseHelpAudience,

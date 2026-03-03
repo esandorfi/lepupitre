@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { PrimaryNavIcon, ResolvedPrimaryNavItem } from "../../lib/navigation";
+import AppBadge from "@/components/ui/AppBadge.vue";
+import type { PrimaryNavIcon, ResolvedPrimaryNavItem } from "@/lib/navigation";
 
 defineProps<{
   items: ResolvedPrimaryNavItem[];
@@ -52,12 +53,15 @@ function iconPath(icon: PrimaryNavIcon): string {
                 >
                   <path :d="iconPath(item.icon)" />
                 </svg>
-                <span
+                <AppBadge
                   v-if="item.badge !== null"
-                  class="app-badge-neutral app-text-caption absolute -top-2 -right-2 inline-flex min-w-4 items-center justify-center rounded-full px-1 py-0.5 leading-none"
+                  as="span"
+                  tone="neutral"
+                  size="sm"
+                  class="absolute -top-2 -right-2 min-w-4 justify-center px-1 py-0.5 leading-none"
                 >
                   {{ item.badge }}
-                </span>
+                </AppBadge>
               </span>
             </RouterLink>
             <button

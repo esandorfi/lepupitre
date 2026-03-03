@@ -1,6 +1,6 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed } from "vue";
-import AppPanel from "../../../components/ui/AppPanel.vue";
+import AppPanel from "@/components/ui/AppPanel.vue";
 import { useI18n } from "../../../lib/i18n";
 import packageJson from "../../../../package.json";
 import readmeRaw from "../../../../../../README.md?raw";

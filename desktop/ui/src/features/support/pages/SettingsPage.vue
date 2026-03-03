@@ -1,10 +1,10 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-shell";
-import AppBadge from "../../../components/ui/AppBadge.vue";
-import AppButton from "../../../components/ui/AppButton.vue";
-import AppPanel from "../../../components/ui/AppPanel.vue";
+import AppBadge from "@/components/ui/AppBadge.vue";
+import AppButton from "@/components/ui/AppButton.vue";
+import AppPanel from "@/components/ui/AppPanel.vue";
 import { useI18n } from "../../../lib/i18n";
 import { classifyAsrError } from "../../../lib/asrErrors";
 import { useNavMetrics } from "../../../lib/navMetrics";

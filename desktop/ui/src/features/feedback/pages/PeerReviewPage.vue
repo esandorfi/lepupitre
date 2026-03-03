@@ -1,7 +1,7 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { useRoute, RouterLink } from "vue-router";
-import AppPanel from "../../../components/ui/AppPanel.vue";
+import AppPanel from "@/components/ui/AppPanel.vue";
 import { useI18n } from "../../../lib/i18n";
 import { appStore } from "../../../stores/app";
 import type { PeerReviewDetail } from "../../../schemas/ipc";

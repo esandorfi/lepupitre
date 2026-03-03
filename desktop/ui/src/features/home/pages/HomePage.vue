@@ -1,9 +1,9 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
-import AppBadge from "../../../components/ui/AppBadge.vue";
-import AppButton from "../../../components/ui/AppButton.vue";
-import AppPanel from "../../../components/ui/AppPanel.vue";
+import AppBadge from "@/components/ui/AppBadge.vue";
+import AppButton from "@/components/ui/AppButton.vue";
+import AppPanel from "@/components/ui/AppPanel.vue";
 import { useI18n } from "../../../lib/i18n";
 import {
   readAchievementMemory,
@@ -1266,14 +1266,14 @@ watch(
             :tone="trainingActivityTab === 'feedback' ? 'secondary' : 'ghost'"
             @click="trainingActivityTab = 'feedback'"
           >
-            {{ t("training.feedback_title") }} Â· {{ feedbackAttempts.length }}
+            {{ t("training.feedback_title") }} · {{ feedbackAttempts.length }}
           </AppButton>
           <AppButton
             size="sm"
             :tone="trainingActivityTab === 'history' ? 'secondary' : 'ghost'"
             @click="trainingActivityTab = 'history'"
           >
-            {{ t("training.history_title") }} Â· {{ recentAttempts.length }}
+            {{ t("training.history_title") }} · {{ recentAttempts.length }}
           </AppButton>
         </div>
       </div>
@@ -1294,7 +1294,7 @@ watch(
               <div>
                 <div class="app-text text-sm">{{ attempt.quest_title }}</div>
                 <div class="app-muted app-text-meta">
-                  {{ formatDate(attempt.created_at) }} Â· {{ outputLabel(attempt.output_type) }} Â·
+                  {{ formatDate(attempt.created_at) }} · {{ outputLabel(attempt.output_type) }} ·
                   {{ questCodeLabel(attempt.quest_code) }}
                 </div>
               </div>
@@ -1328,7 +1328,7 @@ watch(
             <div>
               <div class="app-text text-sm">{{ attempt.quest_title }}</div>
               <div class="app-muted app-text-meta">
-                {{ formatDate(attempt.created_at) }} Â· {{ attemptStatus(attempt) }} Â·
+                {{ formatDate(attempt.created_at) }} · {{ attemptStatus(attempt) }} ·
                 {{ questCodeLabel(attempt.quest_code) }}
               </div>
             </div>

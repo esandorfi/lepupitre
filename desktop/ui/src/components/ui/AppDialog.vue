@@ -4,7 +4,7 @@ defineOptions({
   inheritAttrs: false,
 });
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     open: boolean;
     title?: string;
@@ -30,7 +30,7 @@ function onUpdateOpen(value: boolean) {
   emit("update:open", value);
 }
 
-const modalUi = {
+const DIALOG_UI = {
   body: "p-5",
   content: "app-dialog rounded-2xl border shadow-xl",
   description: "app-muted mt-2 text-sm",
@@ -43,13 +43,13 @@ const modalUi = {
 
 <template>
   <UModal
-    :close="close"
-    :description="description || undefined"
-    :dismissible="dismissible"
-    :fullscreen="fullscreen"
-    :open="open"
-    :title="title || undefined"
-    :ui="modalUi"
+    :close="props.close"
+    :description="props.description || undefined"
+    :dismissible="props.dismissible"
+    :fullscreen="props.fullscreen"
+    :open="props.open"
+    :title="props.title || undefined"
+    :ui="DIALOG_UI"
     v-bind="$attrs"
     @update:open="onUpdateOpen"
   >

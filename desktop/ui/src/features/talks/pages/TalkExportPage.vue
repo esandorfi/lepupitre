@@ -1,9 +1,9 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { RouterLink, useRoute } from "vue-router";
-import TalkStepPageShell from "../../../components/TalkStepPageShell.vue";
-import AppButton from "../../../components/ui/AppButton.vue";
-import AppPanel from "../../../components/ui/AppPanel.vue";
+import TalkStepPageShell from "@/components/TalkStepPageShell.vue";
+import AppButton from "@/components/ui/AppButton.vue";
+import AppPanel from "@/components/ui/AppPanel.vue";
 import { audioRevealWav } from "../../../domains/recorder/api";
 import { useI18n } from "../../../lib/i18n";
 import { appStore } from "../../../stores/app";
@@ -260,7 +260,7 @@ onMounted(loadData);
           <div>
             <div class="app-text text-sm">{{ t("talk_report.timeline_boss_run") }}</div>
             <div class="app-muted app-text-meta">
-              {{ formatDate(run.created_at) }} Â· {{ runStatus(run) }}
+              {{ formatDate(run.created_at) }} · {{ runStatus(run) }}
             </div>
           </div>
           <div class="flex items-center gap-2">
@@ -306,7 +306,7 @@ onMounted(loadData);
             <div class="app-text text-sm">{{ t("talk_report.timeline_peer_review") }}</div>
             <div class="app-muted app-text-meta">
               {{ formatDate(review.created_at) }}
-              <span v-if="review.reviewer_tag"> Â· {{ review.reviewer_tag }}</span>
+              <span v-if="review.reviewer_tag"> · {{ review.reviewer_tag }}</span>
             </div>
           </div>
           <RouterLink class="app-link app-text-meta underline" :to="`/peer-review/${review.id}?projectId=${projectId}`">
