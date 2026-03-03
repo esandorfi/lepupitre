@@ -1,11 +1,11 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import type { ComponentPublicInstance } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import ConfirmDialog from "../components/ConfirmDialog.vue";
-import { useI18n } from "../lib/i18n";
-import type { ProfileSummary } from "../schemas/ipc";
-import { appStore } from "../stores/app";
+import ConfirmDialog from "../../../components/ConfirmDialog.vue";
+import { useI18n } from "../../../lib/i18n";
+import type { ProfileSummary } from "../../../schemas/ipc";
+import { appStore } from "../../../stores/app";
 
 const { t } = useI18n();
 const router = useRouter();
@@ -76,7 +76,7 @@ function formatBytes(bytes: number) {
 
 function formatProfileMeta(profile: { talks_count: number; size_bytes: number }) {
   const talksLabel = profile.talks_count === 1 ? "talk" : "talks";
-  return `${profile.talks_count} ${talksLabel} · ${formatBytes(profile.size_bytes)}`;
+  return `${profile.talks_count} ${talksLabel} Â· ${formatBytes(profile.size_bytes)}`;
 }
 
 function initialsFor(nameValue: string) {
@@ -456,3 +456,4 @@ onBeforeUnmount(() => {
     />
   </section>
 </template>
+

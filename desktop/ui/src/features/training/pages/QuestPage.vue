@@ -1,16 +1,16 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import AudioRecorder from "../components/AudioRecorder.vue";
-import { useI18n } from "../lib/i18n";
+import AudioRecorder from "../../../components/AudioRecorder.vue";
+import { useI18n } from "../../../lib/i18n";
 import {
   canAnalyzeQuest,
   canLeaveQuestWithoutFeedback,
   canSubmitQuestText,
   questAnalysisHintKey,
-} from "../lib/questFlow";
-import { appStore } from "../stores/app";
-import type { Quest } from "../schemas/ipc";
+} from "../../../lib/questFlow";
+import { appStore } from "../../../stores/app";
+import type { Quest } from "../../../schemas/ipc";
 
 const { t } = useI18n();
 const route = useRoute();
@@ -360,3 +360,4 @@ watch(text, (nextValue) => {
     </div>
   </section>
 </template>
+

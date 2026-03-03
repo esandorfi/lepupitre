@@ -1,15 +1,15 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { RouterLink, useRoute } from "vue-router";
-import TalkStepPageShell from "../components/TalkStepPageShell.vue";
-import { useI18n } from "../lib/i18n";
-import { appStore } from "../stores/app";
+import TalkStepPageShell from "../../../components/TalkStepPageShell.vue";
+import { useI18n } from "../../../lib/i18n";
+import { appStore } from "../../../stores/app";
 import type {
   PeerReviewSummary,
   QuestAttemptSummary,
   QuestReportItem,
   RunSummary,
-} from "../schemas/ipc";
+} from "../../../schemas/ipc";
 
 const { t } = useI18n();
 const route = useRoute();
@@ -296,7 +296,7 @@ onMounted(loadData);
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
               <div class="app-text-eyebrow">
-                {{ t("talk_report.quest_label") }} {{ index + 1 }} · {{ questCodeLabel(quest.quest_code) }}
+                {{ t("talk_report.quest_label") }} {{ index + 1 }} Â· {{ questCodeLabel(quest.quest_code) }}
               </div>
               <div class="app-text mt-1 text-sm font-semibold">{{ quest.quest_title }}</div>
               <div class="app-muted mt-1 text-xs">{{ quest.quest_prompt }}</div>
@@ -339,8 +339,8 @@ onMounted(loadData);
           <div>
             <div class="app-text text-sm">{{ item.label }}</div>
             <div class="app-muted app-text-meta">
-              {{ formatDate(item.date) }} · {{ item.status }}
-              <span v-if="item.meta">· {{ item.meta }}</span>
+              {{ formatDate(item.date) }} Â· {{ item.status }}
+              <span v-if="item.meta">Â· {{ item.meta }}</span>
             </div>
           </div>
           <div class="flex items-center gap-2">
@@ -353,3 +353,4 @@ onMounted(loadData);
     </div>
   </TalkStepPageShell>
 </template>
+

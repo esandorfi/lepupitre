@@ -1,11 +1,11 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, RouterLink } from "vue-router";
-import TalkStepPageShell from "../components/TalkStepPageShell.vue";
-import { audioRevealWav } from "../domains/recorder/api";
-import { useI18n } from "../lib/i18n";
-import { appStore } from "../stores/app";
-import type { TalksBlueprint } from "../schemas/ipc";
+import TalkStepPageShell from "../../../components/TalkStepPageShell.vue";
+import { audioRevealWav } from "../../../domains/recorder/api";
+import { useI18n } from "../../../lib/i18n";
+import { appStore } from "../../../stores/app";
+import type { TalksBlueprint } from "../../../schemas/ipc";
 
 const { t } = useI18n();
 const route = useRoute();
@@ -49,7 +49,7 @@ const talkLabel = computed(() => {
     return "";
   }
   const number = appStore.getTalkNumber(selectedProject.value.id);
-  const prefix = number ? `T${number} · ` : "";
+  const prefix = number ? `T${number} Â· ` : "";
   return `${prefix}${selectedProject.value.title}`;
 });
 
@@ -341,3 +341,4 @@ watch(
     </div>
   </TalkStepPageShell>
 </template>
+

@@ -1,11 +1,16 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
-import { RouterLink, useRoute } from "vue-router";
-import TalkStepPageShell from "../components/TalkStepPageShell.vue";
-import { audioRevealWav } from "../domains/recorder/api";
-import { useI18n } from "../lib/i18n";
-import { appStore } from "../stores/app";
-import type { PeerReviewSummary, QuestReportItem, RunSummary } from "../schemas/ipc";
+import { useRoute, RouterLink } from "vue-router";
+import TalkStepPageShell from "../../../components/TalkStepPageShell.vue";
+import { audioRevealWav } from "../../../domains/recorder/api";
+import { useI18n } from "../../../lib/i18n";
+import { appStore } from "../../../stores/app";
+import type {
+  PeerReviewSummary,
+  QuestAttemptSummary,
+  QuestReportItem,
+  RunSummary,
+} from "../../../schemas/ipc";
 
 const { t } = useI18n();
 const route = useRoute();
@@ -13,13 +18,13 @@ const projectId = computed(() => String(route.params.projectId || ""));
 
 const error = ref<string | null>(null);
 const isLoading = ref(false);
-const isActivating = ref(false);
 const report = ref<QuestReportItem[]>([]);
+const attempts = ref<QuestAttemptSummary[]>([]);
 const runs = ref<RunSummary[]>([]);
 const peerReviews = ref<PeerReviewSummary[]>([]);
+const isActivating = ref(false);
 const exportPath = ref<string | null>(null);
 const exportingRunId = ref<string | null>(null);
-const isExportingOutline = ref(false);
 const isRevealing = ref(false);
 const exportError = ref<string | null>(null);
 
@@ -28,6 +33,12 @@ const project = computed(() =>
 );
 const isActive = computed(() => appStore.state.activeProject?.id === projectId.value);
 const talkNumber = computed(() => project.value?.talk_number ?? null);
+const activeStep = computed<"train" | "export">(() => {
+  if (route.name === "talk-export") {
+    return "export";
+  }
+  return "train";
+});
 
 function toError(err: unknown) {
   return err instanceof Error ? err.message : String(err);
@@ -44,6 +55,19 @@ function formatDate(value: string | null | undefined) {
   return date.toLocaleDateString();
 }
 
+function attemptStatus(item: { has_feedback: boolean; has_transcript: boolean; has_audio: boolean }) {
+  if (item.has_feedback) {
+    return t("quest.status_feedback");
+  }
+  if (item.has_transcript) {
+    return t("quest.status_transcribed");
+  }
+  if (item.has_audio) {
+    return t("quest.status_recorded");
+  }
+  return t("quest.status_not_started");
+}
+
 function runStatus(run: RunSummary) {
   if (run.feedback_id) {
     return t("talk_report.timeline_feedback");
@@ -57,59 +81,17 @@ function runStatus(run: RunSummary) {
   return t("talk_report.timeline_started");
 }
 
-async function markExportStage() {
-  if (!projectId.value) {
-    return;
-  }
-  try {
-    await appStore.ensureProjectStageAtLeast(projectId.value, "export");
-  } catch {
-    // keep export actions non-blocking
-  }
-}
-
-const summary = computed(() => {
-  const total = report.value.length;
-  const started = report.value.filter((item) => item.attempt_id).length;
-  const feedbackCount = report.value.filter((item) => item.has_feedback).length;
-  const last = report.value
-    .map((item) => item.attempt_created_at)
-    .filter((value): value is string => Boolean(value))
-    .sort()
-    .pop();
-  return { total, started, feedbackCount, last };
-});
-
 async function exportPack(runId: string) {
   exportPath.value = null;
   exportingRunId.value = runId;
   exportError.value = null;
   try {
-    await markExportStage();
     const result = await appStore.exportPack(runId);
     exportPath.value = result.path;
   } catch (err) {
     exportError.value = toError(err);
   } finally {
     exportingRunId.value = null;
-  }
-}
-
-async function exportOutline() {
-  if (!projectId.value) {
-    return;
-  }
-  exportPath.value = null;
-  isExportingOutline.value = true;
-  exportError.value = null;
-  try {
-    await markExportStage();
-    const result = await appStore.exportOutline(projectId.value);
-    exportPath.value = result.path;
-  } catch (err) {
-    exportError.value = toError(err);
-  } finally {
-    isExportingOutline.value = false;
   }
 }
 
@@ -128,7 +110,93 @@ async function revealExport() {
   }
 }
 
-async function loadData() {
+function outputLabel(outputType: string) {
+  const type = outputType.toLowerCase();
+  if (type === "audio") {
+    return t("quest.output_audio");
+  }
+  if (type === "text") {
+    return t("quest.output_text");
+  }
+  return outputType;
+}
+
+function questCodeLabel(code: string) {
+  return appStore.formatQuestCode(projectId.value, code);
+}
+
+const timeline = computed(() => {
+  const items: {
+    id: string;
+    label: string;
+    date: string;
+    status: string;
+    to?: string;
+    meta?: string;
+  }[] = [];
+
+  for (const attempt of attempts.value) {
+    items.push({
+      id: attempt.id,
+      label: attempt.quest_title,
+      date: attempt.created_at,
+      status: attemptStatus(attempt),
+      to: `/quest/${attempt.quest_code}?from=talk&projectId=${projectId.value}`,
+      meta: questCodeLabel(attempt.quest_code),
+    });
+  }
+
+  for (const run of runs.value) {
+    items.push({
+      id: run.id,
+      label: t("talk_report.timeline_boss_run"),
+      date: run.created_at,
+      status: runStatus(run),
+      to: `/boss-run?runId=${run.id}`,
+    });
+  }
+
+  for (const review of peerReviews.value) {
+    items.push({
+      id: review.id,
+      label: t("talk_report.timeline_peer_review"),
+      date: review.created_at,
+      status: t("talk_report.timeline_peer_review_status"),
+      to: `/peer-review/${review.id}?projectId=${projectId.value}`,
+      meta: review.reviewer_tag ?? undefined,
+    });
+  }
+
+  items.sort((a, b) => {
+    const aTime = new Date(a.date).getTime();
+    const bTime = new Date(b.date).getTime();
+    if (Number.isNaN(aTime) || Number.isNaN(bTime)) {
+      return 0;
+    }
+    return bTime - aTime;
+  });
+
+  return items;
+});
+
+const summary = computed(() => {
+  const total = report.value.length;
+  const started = report.value.filter((item) => item.attempt_id).length;
+  const feedbackCount = report.value.filter((item) => item.has_feedback).length;
+  const last = report.value
+    .map((item) => item.attempt_created_at)
+    .filter((value): value is string => Boolean(value))
+    .sort()
+    .pop();
+  return {
+    total,
+    started,
+    feedbackCount,
+    last,
+  };
+});
+
+async function loadReport() {
   error.value = null;
   isLoading.value = true;
   try {
@@ -138,6 +206,7 @@ async function loadData() {
       throw new Error("project_missing");
     }
     report.value = await appStore.getQuestReport(projectId.value);
+    attempts.value = await appStore.getQuestAttempts(projectId.value, 12);
     runs.value = await appStore.getRuns(projectId.value, 12);
     peerReviews.value = await appStore.getPeerReviews(projectId.value, 12);
   } catch (err) {
@@ -162,15 +231,16 @@ async function setActive() {
   }
 }
 
-onMounted(loadData);
+onMounted(loadReport);
 </script>
 
 <template>
   <TalkStepPageShell
     :project-id="projectId"
-    active="export"
-    :eyebrow="t('talk_steps.export')"
+    :active="activeStep"
+    :eyebrow="t('talk_report.title')"
     :title="project?.title || t('talk_report.unknown')"
+    :subtitle="t('talk_report.subtitle')"
   >
     <template #meta>
       <span v-if="talkNumber">T{{ talkNumber }}</span>
@@ -180,11 +250,14 @@ onMounted(loadData);
         {{ t("talk_report.minutes") }}
       </span>
       <RouterLink class="app-link underline" to="/talks">{{ t("talk_report.back") }}</RouterLink>
-      <RouterLink class="app-link underline" :to="`/talks/${projectId}/train`">
-        {{ t("talk_steps.train") }}
-      </RouterLink>
       <RouterLink class="app-link underline" :to="`/talks/${projectId}/builder`">
         {{ t("talk_report.builder") }}
+      </RouterLink>
+      <RouterLink class="app-link underline" to="/boss-run">
+        {{ t("talk_report.boss_run") }}
+      </RouterLink>
+      <RouterLink class="app-link underline" :to="`/talks/${projectId}/export`">
+        {{ t("talk_report.packs") }}
       </RouterLink>
     </template>
     <template #actions>
@@ -206,8 +279,12 @@ onMounted(loadData);
     </template>
 
     <div class="app-panel">
-      <div v-if="isLoading" class="app-muted app-text-meta">{{ t("talk_report.loading") }}</div>
-      <div v-else-if="error" class="app-danger-text app-text-meta">{{ error }}</div>
+      <div v-if="isLoading" class="app-muted app-text-meta">
+        {{ t("talk_report.loading") }}
+      </div>
+      <div v-else-if="error" class="app-danger-text app-text-meta">
+        {{ error }}
+      </div>
       <div v-else class="app-data-grid-4 app-text-meta">
         <div class="app-card rounded-xl border p-3">
           <div class="app-text-eyebrow">{{ t("talk_report.total") }}</div>
@@ -229,26 +306,54 @@ onMounted(loadData);
     </div>
 
     <div class="app-panel">
-      <div class="app-text-eyebrow">{{ t("builder.export") }}</div>
-      <p class="app-muted app-text-body mt-2">{{ t("builder.subtitle") }}</p>
-      <div class="mt-3 flex flex-wrap items-center gap-2">
-        <button
-          class="app-button-secondary app-focus-ring app-button-lg inline-flex items-center disabled:opacity-60"
-          type="button"
-          :disabled="isExportingOutline"
-          @click="exportOutline"
+      <div class="app-text-eyebrow">{{ t("talk_report.quest_library") }}</div>
+      <div v-if="report.length === 0" class="app-muted app-text-body mt-3">
+        {{ t("talk_report.no_quests") }}
+      </div>
+      <div v-else class="mt-3 space-y-3">
+        <div
+          v-for="(quest, index) in report"
+          :key="quest.quest_code"
+          class="app-card rounded-xl border p-3"
         >
-          {{ t("builder.export") }}
-        </button>
-        <RouterLink class="app-link app-text-meta underline" :to="`/talks/${projectId}/builder`">
-          {{ t("talk_report.builder") }}
-        </RouterLink>
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <div class="app-text-eyebrow">
+                {{ t("talk_report.quest_label") }} {{ index + 1 }} Â· {{ questCodeLabel(quest.quest_code) }}
+              </div>
+              <div class="app-text mt-1 text-sm font-semibold">{{ quest.quest_title }}</div>
+              <div class="app-muted app-text-meta mt-1">{{ quest.quest_prompt }}</div>
+            </div>
+            <div class="text-right app-text-meta">
+              <div class="app-text">{{ outputLabel(quest.output_type) }}</div>
+              <div class="app-muted mt-1">{{ attemptStatus(quest) }}</div>
+              <div class="app-muted mt-1">{{ formatDate(quest.attempt_created_at) }}</div>
+            </div>
+          </div>
+          <div class="mt-3 flex flex-wrap items-center gap-2">
+            <RouterLink
+              class="app-button-info app-focus-ring app-button-sm inline-flex items-center"
+              :to="`/quest/${quest.quest_code}?from=talk&projectId=${projectId}`"
+            >
+              {{ t("talk_report.open_quest") }}
+            </RouterLink>
+            <RouterLink
+              v-if="quest.feedback_id"
+              class="app-link app-text-meta underline"
+              :to="`/feedback/${quest.feedback_id}`"
+            >
+              {{ t("talk_report.view_feedback") }}
+            </RouterLink>
+          </div>
+        </div>
       </div>
     </div>
 
     <div class="app-panel">
       <div class="app-text-eyebrow">{{ t("talk_report.export_title") }}</div>
-      <div v-if="runs.length === 0" class="app-muted app-text-body mt-3">{{ t("boss_run.latest_empty") }}</div>
+      <div v-if="runs.length === 0" class="app-muted app-text-body mt-3">
+        {{ t("boss_run.latest_empty") }}
+      </div>
       <div v-else class="mt-3 space-y-2 app-text-meta">
         <div
           v-for="run in runs"
@@ -258,7 +363,7 @@ onMounted(loadData);
           <div>
             <div class="app-text text-sm">{{ t("talk_report.timeline_boss_run") }}</div>
             <div class="app-muted app-text-meta">
-              {{ formatDate(run.created_at) }} · {{ runStatus(run) }}
+              {{ formatDate(run.created_at) }} Â· {{ runStatus(run) }}
             </div>
           </div>
           <div class="flex items-center gap-2">
@@ -273,7 +378,7 @@ onMounted(loadData);
           </div>
         </div>
       </div>
-      <div v-if="exportPath" class="mt-3 flex flex-wrap items-center gap-2 text-xs">
+      <div v-if="exportPath" class="mt-3 flex flex-wrap items-center gap-2">
         <span class="app-muted app-text-meta">{{ t("packs.export_path") }}:</span>
         <span class="app-text max-w-[360px] truncate" style="direction: rtl; text-align: left;">
           {{ exportPath }}
@@ -288,39 +393,37 @@ onMounted(loadData);
         </button>
         <span class="app-subtle app-text-meta">{{ t("packs.export_ready") }}</span>
       </div>
-      <div v-if="exportError" class="app-danger-text app-text-meta mt-2">{{ exportError }}</div>
+      <div v-if="exportError" class="app-danger-text app-text-meta mt-2">
+        {{ exportError }}
+      </div>
     </div>
 
     <div class="app-panel">
-      <div class="app-text-eyebrow">{{ t("talk_report.packs") }}</div>
-      <div v-if="peerReviews.length === 0" class="app-muted app-text-body mt-3">{{ t("talk_report.timeline_empty") }}</div>
+      <div class="app-text-eyebrow">{{ t("talk_report.timeline") }}</div>
+      <div v-if="timeline.length === 0" class="app-muted app-text-body mt-3">
+        {{ t("talk_report.timeline_empty") }}
+      </div>
       <div v-else class="mt-3 space-y-2 app-text-meta">
         <div
-          v-for="review in peerReviews"
-          :key="review.id"
+          v-for="item in timeline"
+          :key="item.id"
           class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--app-border)] px-3 py-2"
         >
           <div>
-            <div class="app-text text-sm">{{ t("talk_report.timeline_peer_review") }}</div>
+            <div class="app-text text-sm">{{ item.label }}</div>
             <div class="app-muted app-text-meta">
-              {{ formatDate(review.created_at) }}
-              <span v-if="review.reviewer_tag"> · {{ review.reviewer_tag }}</span>
+              {{ formatDate(item.date) }} Â· {{ item.status }}
+              <span v-if="item.meta">Â· {{ item.meta }}</span>
             </div>
           </div>
-          <RouterLink class="app-link app-text-meta underline" :to="`/peer-review/${review.id}?projectId=${projectId}`">
-            {{ t("talk_report.view_item") }}
-          </RouterLink>
+          <div class="flex items-center gap-2">
+            <RouterLink v-if="item.to" class="app-link app-text-meta underline" :to="item.to">
+              {{ t("talk_report.view_item") }}
+            </RouterLink>
+          </div>
         </div>
-      </div>
-      <div class="mt-3">
-        <RouterLink
-          class="app-button-secondary app-focus-ring app-button-lg inline-flex items-center"
-          to="/packs"
-          @click="markExportStage"
-        >
-          {{ t("talk_report.packs") }}
-        </RouterLink>
       </div>
     </div>
   </TalkStepPageShell>
 </template>
+

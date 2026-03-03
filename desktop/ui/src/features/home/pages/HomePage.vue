@@ -1,23 +1,23 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
-import { useI18n } from "../lib/i18n";
+import { useI18n } from "../../../lib/i18n";
 import {
   readAchievementMemory,
   readStoredHeroQuestCode,
   writeAchievementMemory,
   writeStoredHeroQuestCode,
   type AchievementMemory,
-} from "../lib/trainingPreferences";
-import { useUiPreferences } from "../lib/uiPreferences";
-import { appStore } from "../stores/app";
+} from "../../../lib/trainingPreferences";
+import { useUiPreferences } from "../../../lib/uiPreferences";
+import { appStore } from "../../../stores/app";
 import type {
   MascotMessage,
   ProgressSnapshot,
   Quest,
   QuestAttemptSummary,
   QuestDaily,
-} from "../schemas/ipc";
+} from "../../../schemas/ipc";
 
 type QuestMapNode = {
   id: string;
@@ -1281,7 +1281,7 @@ watch(
             type="button"
             @click="trainingActivityTab = 'feedback'"
           >
-            {{ t("training.feedback_title") }} · {{ feedbackAttempts.length }}
+            {{ t("training.feedback_title") }} Â· {{ feedbackAttempts.length }}
           </button>
           <button
             class="app-focus-ring app-button-sm inline-flex items-center transition"
@@ -1289,7 +1289,7 @@ watch(
             type="button"
             @click="trainingActivityTab = 'history'"
           >
-            {{ t("training.history_title") }} · {{ recentAttempts.length }}
+            {{ t("training.history_title") }} Â· {{ recentAttempts.length }}
           </button>
         </div>
       </div>
@@ -1310,7 +1310,7 @@ watch(
               <div>
                 <div class="app-text text-sm">{{ attempt.quest_title }}</div>
                 <div class="app-muted app-text-meta">
-                  {{ formatDate(attempt.created_at) }} · {{ outputLabel(attempt.output_type) }} ·
+                  {{ formatDate(attempt.created_at) }} Â· {{ outputLabel(attempt.output_type) }} Â·
                   {{ questCodeLabel(attempt.quest_code) }}
                 </div>
               </div>
@@ -1344,7 +1344,7 @@ watch(
             <div>
               <div class="app-text text-sm">{{ attempt.quest_title }}</div>
               <div class="app-muted app-text-meta">
-                {{ formatDate(attempt.created_at) }} · {{ attemptStatus(attempt) }} ·
+                {{ formatDate(attempt.created_at) }} Â· {{ attemptStatus(attempt) }} Â·
                 {{ questCodeLabel(attempt.quest_code) }}
               </div>
             </div>
@@ -1370,3 +1370,4 @@ watch(
     </div>
   </section>
 </template>
+

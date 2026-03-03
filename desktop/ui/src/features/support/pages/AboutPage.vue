@@ -1,8 +1,8 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed } from "vue";
-import { useI18n } from "../lib/i18n";
-import packageJson from "../../package.json";
-import readmeRaw from "../../../../README.md?raw";
+import { useI18n } from "../../../lib/i18n";
+import packageJson from "../../../../package.json";
+import readmeRaw from "../../../../../../README.md?raw";
 
 const { t } = useI18n();
 const appVersion = packageJson.version as string;
@@ -38,3 +38,4 @@ const readmeIntro = computed(() => {
     </div>
   </section>
 </template>
+

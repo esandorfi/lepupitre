@@ -1,9 +1,9 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { useRoute, RouterLink } from "vue-router";
-import { useI18n } from "../lib/i18n";
-import { appStore } from "../stores/app";
-import type { PeerReviewDetail } from "../schemas/ipc";
+import { useI18n } from "../../../lib/i18n";
+import { appStore } from "../../../stores/app";
+import type { PeerReviewDetail } from "../../../schemas/ipc";
 
 const { t } = useI18n();
 const route = useRoute();
@@ -156,3 +156,4 @@ onMounted(async () => {
     </div>
   </section>
 </template>
+

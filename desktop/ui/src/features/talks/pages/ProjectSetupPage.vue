@@ -1,8 +1,8 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import { useI18n } from "../lib/i18n";
-import { appStore } from "../stores/app";
+import { useI18n } from "../../../lib/i18n";
+import { appStore } from "../../../stores/app";
 
 const { t } = useI18n();
 const title = ref("");
@@ -119,3 +119,4 @@ onMounted(bootstrap);
     </div>
   </section>
 </template>
+

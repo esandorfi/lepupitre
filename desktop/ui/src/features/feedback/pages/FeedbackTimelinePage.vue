@@ -1,15 +1,15 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
-import EntityRow from "../components/EntityRow.vue";
-import PageHeader from "../components/PageHeader.vue";
-import PageShell from "../components/PageShell.vue";
-import SectionPanel from "../components/SectionPanel.vue";
-import { readReviewedFeedbackIds } from "../lib/feedbackReviewState";
-import { useI18n } from "../lib/i18n";
-import { useUiPreferences } from "../lib/uiPreferences";
-import { appStore } from "../stores/app";
-import type { FeedbackTimelineItem, MascotMessage } from "../schemas/ipc";
+import EntityRow from "../../../components/EntityRow.vue";
+import PageHeader from "../../../components/PageHeader.vue";
+import PageShell from "../../../components/PageShell.vue";
+import SectionPanel from "../../../components/SectionPanel.vue";
+import { readReviewedFeedbackIds } from "../../../lib/feedbackReviewState";
+import { useI18n } from "../../../lib/i18n";
+import { useUiPreferences } from "../../../lib/uiPreferences";
+import { appStore } from "../../../stores/app";
+import type { FeedbackTimelineItem, MascotMessage } from "../../../schemas/ipc";
 
 const { t, locale } = useI18n();
 const route = useRoute();
@@ -362,7 +362,7 @@ watch(
             <div class="app-text-eyebrow">{{ t("feedback.timeline_focus_title") }}</div>
             <div class="app-text app-text-subheadline mt-1">{{ feedbackTitle(focusedEntry) }}</div>
             <div class="app-muted app-text-meta mt-1">
-              {{ t("feedback.timeline_focus_hint") }} · {{ formatDateTime(focusedEntry.created_at) }}
+              {{ t("feedback.timeline_focus_hint") }} Â· {{ formatDateTime(focusedEntry.created_at) }}
             </div>
             <div v-if="focusedDeltaLabel" class="app-text app-text-meta mt-1 font-semibold">
               {{ focusedDeltaLabel }}
@@ -449,7 +449,7 @@ watch(
               type="button"
               @click="showUnreadOnly = !showUnreadOnly"
             >
-              {{ t("feedback.timeline_filter_unread") }} · {{ unreadCount }}
+              {{ t("feedback.timeline_filter_unread") }} Â· {{ unreadCount }}
             </button>
           </div>
         </div>
@@ -509,3 +509,4 @@ watch(
     </template>
   </PageShell>
 </template>
+
