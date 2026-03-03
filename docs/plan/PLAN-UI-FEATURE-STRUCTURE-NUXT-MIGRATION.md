@@ -65,8 +65,8 @@ Restructure the desktop UI into feature-oriented directories and then migrate to
 5. Recorder/domain composite internals
 
 ### Checklist
-- [ ] Add minimal wrapper set under `src/components/ui/`
-- [ ] Refactor shared primitive components to use wrappers/Nuxt
+- [x] Add minimal wrapper set under `src/components/ui/`
+- [x] Refactor shared primitive components to use wrappers/Nuxt
 - [ ] Migrate support + workspace pages
 - [ ] Migrate Home feature as a full vertical slice
 - [ ] Migrate talks + feedback features
@@ -92,3 +92,9 @@ Restructure the desktop UI into feature-oriented directories and then migrate to
   - Step A started.
   - Pages moved from flat `src/pages` into `src/features/*/pages`.
   - Router split into feature modules and composed in `routes.ts`.
+  - Step B wave 1 started.
+  - Added `AppButton`, `AppPanel`, `AppDialog`, `AppBadge` wrappers under `src/components/ui`.
+  - Migrated `ConfirmDialog`, `PageHeader`, and `SectionPanel` to wrappers.
+  - Step B wave 2 (partial) continued.
+  - Migrated support pages `About`, `Help`, `Onboarding` and workspace page `Profiles` to wrapper-first panels/buttons/badges.
+  - Deferred `Settings` full field/menu migration to next wave (largest remaining support page).

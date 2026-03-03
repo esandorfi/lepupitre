@@ -2,6 +2,9 @@
 /* eslint-disable vue/no-v-html */
 import { computed, ref, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
+import AppBadge from "../../../components/ui/AppBadge.vue";
+import AppButton from "../../../components/ui/AppButton.vue";
+import AppPanel from "../../../components/ui/AppPanel.vue";
 import {
   getOnboardingTrackByAudience,
   parseHelpAudience,
@@ -101,21 +104,21 @@ async function finishOnboarding(target = nextPath.value) {
   <section class="space-y-6">
     <header class="space-y-3">
       <div class="flex flex-wrap items-center gap-2">
-        <span class="app-badge-neutral app-text-caption rounded-full px-2 py-1">
+        <AppBadge tone="neutral">
           {{ t("onboarding.badge_local") }}
-        </span>
-        <span class="app-badge-neutral app-text-caption rounded-full px-2 py-1">
+        </AppBadge>
+        <AppBadge tone="neutral">
           {{ t("onboarding.badge_offline") }}
-        </span>
-        <span class="app-badge-neutral app-text-caption rounded-full px-2 py-1">
+        </AppBadge>
+        <AppBadge tone="neutral">
           {{ t("onboarding.badge_private") }}
-        </span>
+        </AppBadge>
       </div>
       <h1 class="app-text text-2xl font-semibold tracking-tight">{{ t("onboarding.title") }}</h1>
       <p class="app-muted text-sm">{{ t("onboarding.subtitle") }}</p>
     </header>
 
-    <div class="app-panel">
+    <AppPanel>
       <div class="app-text-eyebrow">{{ t("onboarding.quickstart_title") }}</div>
       <div class="mt-4 grid gap-3 lg:grid-cols-3">
         <article
@@ -130,9 +133,9 @@ async function finishOnboarding(target = nextPath.value) {
           </RouterLink>
         </article>
       </div>
-    </div>
+    </AppPanel>
 
-    <div class="app-panel space-y-4">
+    <AppPanel class="space-y-4">
       <div>
         <h2 class="app-text text-base font-semibold">{{ t("onboarding.audience_title") }}</h2>
         <p class="app-muted mt-1 text-sm">{{ t("onboarding.audience_subtitle") }}</p>
@@ -159,9 +162,9 @@ async function finishOnboarding(target = nextPath.value) {
         <!-- eslint-disable-next-line vue/no-v-html -->
         <div class="app-markdown app-muted mt-2 text-sm leading-6" v-html="audiencePlan.html" />
       </article>
-    </div>
+    </AppPanel>
 
-    <div class="app-panel app-panel-compact space-y-3">
+    <AppPanel class="space-y-3" variant="compact">
       <h2 class="app-text text-base font-semibold">{{ t("onboarding.help_title") }}</h2>
       <p class="app-muted text-sm leading-6">{{ t("onboarding.help_body") }}</p>
       <div class="flex flex-wrap items-center gap-3">
@@ -172,23 +175,15 @@ async function finishOnboarding(target = nextPath.value) {
           {{ t("onboarding.action_about") }}
         </RouterLink>
       </div>
-    </div>
+    </AppPanel>
 
     <div class="flex flex-wrap items-center gap-3">
-      <button
-        class="app-button-primary app-focus-ring app-button-md inline-flex cursor-pointer items-center"
-        type="button"
-        @click="finishOnboarding('/profiles')"
-      >
+      <AppButton size="md" tone="primary" @click="finishOnboarding('/profiles')">
         {{ t("onboarding.action_setup") }}
-      </button>
-      <button
-        class="app-button-secondary app-focus-ring app-button-md inline-flex cursor-pointer items-center"
-        type="button"
-        @click="finishOnboarding()"
-      >
+      </AppButton>
+      <AppButton size="md" tone="secondary" @click="finishOnboarding()">
         {{ t("onboarding.action_continue") }}
-      </button>
+      </AppButton>
     </div>
   </section>
 </template>
