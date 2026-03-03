@@ -24,7 +24,6 @@ const switchingId = ref<string | null>(null);
 const createOpen = ref(false);
 const createName = ref("");
 const isCreating = ref(false);
-const openMenuId = ref<string | null>(null);
 const editingId = ref<string | null>(null);
 const renameValue = ref("");
 const renameOriginal = ref("");
@@ -32,11 +31,9 @@ const isRenaming = ref(false);
 const deletingId = ref<string | null>(null);
 const deleteTarget = ref<{ id: string; name: string } | null>(null);
 const toolbarColorTick = ref(0);
-const openMenuPosition = ref<{ top: number; left: number } | null>(null);
 type ButtonRefTarget = HTMLButtonElement | { $el?: Element | null } | null;
 const triggerRef = ref<ButtonRefTarget>(null);
 const panelRef = ref<HTMLDivElement | null>(null);
-const menuOverlayRef = ref<HTMLDivElement | null>(null);
 type InputRefTarget = HTMLInputElement | { $el?: Element | null; inputRef?: HTMLInputElement | null } | null;
 const searchInputRef = ref<InputRefTarget>(null);
 const createInputRef = ref<InputRefTarget>(null);
@@ -118,10 +115,6 @@ const deleteDialogBody = computed(() => {
   )}`;
 });
 
-const openMenuProfile = computed(
-  () => profiles.value.find((profile) => profile.id === openMenuId.value) ?? null
-);
-
 const currentToolbarColorStyle = computed(() => {
   void toolbarColorTick.value;
   return toolbarColorPreviewStyle(activeProfileId.value);
@@ -187,8 +180,6 @@ function closePanel() {
   search.value = "";
   createOpen.value = false;
   createName.value = "";
-  openMenuId.value = null;
-  openMenuPosition.value = null;
   editingId.value = null;
   renameValue.value = "";
   renameOriginal.value = "";
@@ -204,8 +195,6 @@ function togglePanel() {
 async function toggleCreate() {
   createOpen.value = !createOpen.value;
   error.value = null;
-  openMenuId.value = null;
-  openMenuPosition.value = null;
   if (!createOpen.value) {
     createName.value = "";
     return;
@@ -246,8 +235,6 @@ async function selectProfile(profileId: string) {
   if (profileId === activeProfileId.value || switchingId.value || editingId.value) {
     return;
   }
-  openMenuId.value = null;
-  openMenuPosition.value = null;
   switchingId.value = profileId;
   error.value = null;
   try {
@@ -262,8 +249,6 @@ async function selectProfile(profileId: string) {
 }
 
 function startRename(profileId: string, currentName: string) {
-  openMenuId.value = null;
-  openMenuPosition.value = null;
   editingId.value = profileId;
   renameValue.value = currentName;
   renameOriginal.value = currentName;
@@ -340,10 +325,24 @@ function onRenameEditorFocusOut(profileId: string, event: FocusEvent) {
 }
 
 function requestDelete(profileId: string, profileName: string) {
-  openMenuId.value = null;
-  openMenuPosition.value = null;
   deleteTarget.value = { id: profileId, name: profileName };
   error.value = null;
+}
+
+function rowMenuItems(profile: { id: string; name: string }) {
+  return [
+    {
+      label: t("profiles.rename"),
+      disabled: isRenaming.value,
+      onSelect: () => startRename(profile.id, profile.name),
+    },
+    {
+      label: t("profiles.delete"),
+      color: "error" as const,
+      disabled: deletingId.value === profile.id,
+      onSelect: () => requestDelete(profile.id, profile.name),
+    },
+  ];
 }
 
 function cancelDelete() {
@@ -370,8 +369,6 @@ async function confirmDelete() {
 }
 
 function cycleToolbarColor(profileId: string) {
-  openMenuId.value = null;
-  openMenuPosition.value = null;
   cycleWorkspaceToolbarColor(profileId);
   toolbarColorTick.value += 1;
   if (profileId === activeProfileId.value) {
@@ -388,34 +385,6 @@ function onProfileRowActivate(profileId: string) {
     return;
   }
   void selectProfile(profileId);
-}
-
-function toggleRowMenu(profileId: string, event?: MouseEvent) {
-  if (openMenuId.value === profileId) {
-    openMenuId.value = null;
-    openMenuPosition.value = null;
-    return;
-  }
-  openMenuId.value = profileId;
-  const target = event?.currentTarget;
-  if (!(target instanceof HTMLElement)) {
-    openMenuPosition.value = null;
-    return;
-  }
-  const rect = target.getBoundingClientRect();
-  const menuWidth = 160;
-  const gap = 6;
-  const viewportPadding = 8;
-  let left = rect.left - menuWidth - gap;
-  if (left < viewportPadding) {
-    left = Math.min(window.innerWidth - menuWidth - viewportPadding, rect.right + gap);
-  }
-  const estimatedHeight = 92;
-  const top = Math.min(
-    Math.max(viewportPadding, rect.top),
-    Math.max(viewportPadding, window.innerHeight - estimatedHeight - viewportPadding)
-  );
-  openMenuPosition.value = { top, left };
 }
 
 function rowMenuButtonAriaLabel(profileName: string) {
@@ -467,8 +436,7 @@ function onDocumentMouseDown(event: MouseEvent) {
   const triggerElement = resolveButtonElement(triggerRef.value);
   if (
     panelRef.value?.contains(target) ||
-    triggerElement?.contains(target) ||
-    menuOverlayRef.value?.contains(target)
+    triggerElement?.contains(target)
   ) {
     return;
   }
@@ -656,22 +624,29 @@ onBeforeUnmount(() => {
 
             <div v-if="editingId !== profile.id" class="flex shrink-0 items-center gap-1">
               <div class="relative">
-                <AppButton
-                  tone="secondary"
-                  size="icon-md"
-                  class="border app-border"
-                  :aria-label="rowMenuButtonAriaLabel(profile.name)"
-                  :aria-expanded="openMenuId === profile.id ? 'true' : 'false'"
-                  aria-haspopup="menu"
-                  :disabled="deletingId === profile.id || isRenaming"
-                  @click.stop="toggleRowMenu(profile.id, $event)"
+                <UDropdownMenu
+                  :items="rowMenuItems(profile)"
+                  :content="{ align: 'end', side: 'left', sideOffset: 6 }"
+                  :portal="false"
                 >
-                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="1" />
-                    <circle cx="19" cy="12" r="1" />
-                    <circle cx="5" cy="12" r="1" />
-                  </svg>
-                </AppButton>
+                  <template #default="{ open: menuOpen }">
+                    <AppButton
+                      tone="secondary"
+                      size="icon-md"
+                      class="border app-border"
+                      :aria-label="rowMenuButtonAriaLabel(profile.name)"
+                      :aria-expanded="menuOpen ? 'true' : 'false'"
+                      aria-haspopup="menu"
+                      :disabled="deletingId === profile.id || isRenaming"
+                    >
+                      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="1" />
+                        <circle cx="19" cy="12" r="1" />
+                        <circle cx="5" cy="12" r="1" />
+                      </svg>
+                    </AppButton>
+                  </template>
+                </UDropdownMenu>
               </div>
             </div>
             </div>
@@ -737,31 +712,5 @@ onBeforeUnmount(() => {
       @cancel="cancelDelete"
       @confirm="confirmDelete"
     />
-    <Teleport to="body">
-      <div
-        v-if="open && openMenuId && openMenuProfile && openMenuPosition && editingId !== openMenuId"
-        ref="menuOverlayRef"
-        class="app-menu-panel fixed z-[70] w-40 rounded-xl border p-1 shadow-lg"
-        :style="{ top: `${openMenuPosition.top}px`, left: `${openMenuPosition.left}px` }"
-        role="menu"
-      >
-        <AppButton
-          tone="secondary"
-          size="sm"
-          class="min-h-10 w-full justify-start rounded-lg px-3 py-2 text-left text-sm"
-          @click.stop="startRename(openMenuProfile.id, openMenuProfile.name)"
-        >
-          {{ t("profiles.rename") }}
-        </AppButton>
-        <AppButton
-          tone="danger-soft"
-          size="sm"
-          class="min-h-10 w-full justify-start rounded-lg px-3 py-2 text-left text-sm"
-          @click.stop="requestDelete(openMenuProfile.id, openMenuProfile.name)"
-        >
-          {{ t("profiles.delete") }}
-        </AppButton>
-      </div>
-    </Teleport>
   </div>
 </template>
