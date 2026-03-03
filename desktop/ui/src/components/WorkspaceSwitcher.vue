@@ -36,9 +36,10 @@ const openMenuPosition = ref<{ top: number; left: number } | null>(null);
 const triggerRef = ref<HTMLButtonElement | null>(null);
 const panelRef = ref<HTMLDivElement | null>(null);
 const menuOverlayRef = ref<HTMLDivElement | null>(null);
-const searchInputRef = ref<HTMLInputElement | null>(null);
-const createInputRef = ref<HTMLInputElement | null>(null);
-const renameInputRef = ref<HTMLInputElement | null>(null);
+type InputRefTarget = HTMLInputElement | { $el?: Element | null; inputRef?: HTMLInputElement | null } | null;
+const searchInputRef = ref<InputRefTarget>(null);
+const createInputRef = ref<InputRefTarget>(null);
+const renameInputRef = ref<InputRefTarget>(null);
 
 const profiles = computed(() => appStore.state.profiles);
 const activeProfileId = computed(() => appStore.state.activeProfileId);
@@ -125,6 +126,25 @@ const currentToolbarColorStyle = computed(() => {
   return toolbarColorPreviewStyle(activeProfileId.value);
 });
 
+function resolveInputElement(target: InputRefTarget): HTMLInputElement | null {
+  if (!target) {
+    return null;
+  }
+  if (target instanceof HTMLInputElement) {
+    return target;
+  }
+  if (target.inputRef instanceof HTMLInputElement) {
+    return target.inputRef;
+  }
+  if (target.$el instanceof HTMLElement) {
+    const input = target.$el.querySelector("input");
+    if (input instanceof HTMLInputElement) {
+      return input;
+    }
+  }
+  return null;
+}
+
 function hasDuplicateName(nextName: string, exceptId?: string) {
   return profiles.value.some(
     (profile) =>
@@ -171,8 +191,9 @@ async function toggleCreate() {
   }
   editingId.value = null;
   await nextTick();
-  createInputRef.value?.focus();
-  createInputRef.value?.select();
+  const input = resolveInputElement(createInputRef.value);
+  input?.focus();
+  input?.select();
 }
 
 async function createProfileInline() {
@@ -228,8 +249,9 @@ function startRename(profileId: string, currentName: string) {
   createOpen.value = false;
   error.value = null;
   void nextTick(() => {
-    renameInputRef.value?.focus();
-    renameInputRef.value?.select();
+    const input = resolveInputElement(renameInputRef.value);
+    input?.focus();
+    input?.select();
   });
 }
 
@@ -274,7 +296,7 @@ function onPanelMouseDownCapture(event: MouseEvent) {
   if (!(target instanceof Node)) {
     return;
   }
-  if (renameInputRef.value?.contains(target)) {
+  if (resolveInputElement(renameInputRef.value)?.contains(target)) {
     return;
   }
   void confirmRename(editingId.value);
@@ -418,7 +440,7 @@ function onDocumentMouseDown(event: MouseEvent) {
   if (!(target instanceof Node)) {
     return;
   }
-  if (editingId.value && !renameInputRef.value?.contains(target)) {
+  if (editingId.value && !resolveInputElement(renameInputRef.value)?.contains(target)) {
     void confirmRename(editingId.value);
   }
   if (
@@ -445,7 +467,7 @@ watch(open, async (nextOpen) => {
   if (nextOpen) {
     await nextTick();
     if (showSearch.value) {
-      searchInputRef.value?.focus();
+      resolveInputElement(searchInputRef.value)?.focus();
     }
   }
 });
@@ -518,12 +540,13 @@ onBeforeUnmount(() => {
           </svg>
         </AppButton>
       </div>
-      <input
+      <UInput
         v-if="showSearch"
         ref="searchInputRef"
         v-model="search"
         type="text"
-        class="app-input app-focus-ring app-control-md mb-3 w-full rounded-xl border px-3 app-text-body"
+        size="md"
+        class="mb-3 w-full app-text-body"
         :placeholder="t('shell.workspaces_search')"
       />
 
@@ -560,10 +583,11 @@ onBeforeUnmount(() => {
               class="flex min-w-0 flex-1 items-center"
               @focusout="onRenameEditorFocusOut(profile.id, $event)"
             >
-              <input
+              <UInput
                 ref="renameInputRef"
                 v-model="renameValue"
-                class="app-input app-focus-ring h-9 min-w-0 w-full flex-1 rounded-lg border px-3 text-sm"
+                size="sm"
+                class="h-9 min-w-0 w-full flex-1 text-sm"
                 type="text"
                 :disabled="isRenaming"
                 @keyup.enter="confirmRename(profile.id)"
@@ -647,11 +671,12 @@ onBeforeUnmount(() => {
           + {{ t("shell.workspaces_new") }}
         </AppButton>
         <div v-if="createOpen" class="app-card rounded-xl border p-2">
-          <input
+          <UInput
             ref="createInputRef"
             v-model="createName"
             type="text"
-            class="app-input app-focus-ring h-10 w-full rounded-lg border px-3 text-sm"
+            size="md"
+            class="h-10 w-full text-sm"
             :placeholder="t('profiles.create_placeholder')"
             :disabled="isCreating"
             @keyup.enter="createProfileInline"
