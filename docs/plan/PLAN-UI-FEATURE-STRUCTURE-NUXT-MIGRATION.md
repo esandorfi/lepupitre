@@ -108,3 +108,9 @@ Restructure the desktop UI into feature-oriented directories and then migrate to
   - Extended page migration pass for training + packs (`Quest`, `BossRun`, `QuickRecord`, `Packs`) to wrapper-first and Nuxt field controls.
   - Second-pass verification result: no remaining `app-panel/app-button/app-badge` classes and no native `input/select/textarea/button` in `src/features/**/pages`.
   - Remaining migration backlog is now concentrated in shared/components scope (not page scope), especially recorder composites and some shell/menu internals.
+  - Shared component wave advanced:
+    - migrated `AudioRecorder` container to `AppPanel`
+    - migrated `WorkspaceSwitcher` action controls to `AppButton`
+    - migrated `RecorderAdvancedDrawer` refresh action to `AppButton` and container to `AppPanel`
+    - migrated `RecorderQuickCleanPanel` major controls/sections to `AppButton` + `AppPanel` and Nuxt fields (`UInput`/`UTextarea`)
+  - Second-pass verification result (component scope): no `app-panel/app-button/app-badge` usages remain outside `src/components/ui/*` wrappers.
