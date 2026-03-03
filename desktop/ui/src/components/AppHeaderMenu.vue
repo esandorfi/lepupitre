@@ -92,7 +92,7 @@ onBeforeUnmount(() => {
   <div class="relative">
     <button
       ref="triggerRef"
-      class="app-icon-button app-icon-button-xl app-toolbar-button app-focus-ring inline-flex cursor-pointer items-center justify-center border"
+      class="app-icon-button app-icon-button-md app-toolbar-button app-focus-ring inline-flex cursor-pointer items-center justify-center border"
       type="button"
       :aria-label="t('shell.menu_toggle')"
       aria-haspopup="menu"
@@ -100,7 +100,7 @@ onBeforeUnmount(() => {
       @click="togglePanel"
     >
       <svg
-        class="h-5 w-5"
+        class="h-4 w-4"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"

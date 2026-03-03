@@ -233,21 +233,6 @@
   color: var(--color-toolbar-text);
 }
 
-.app-window-action {
-  border: 1px solid transparent;
-  color: var(--color-toolbar-text);
-}
-
-.app-window-action:hover {
-  background-color: color-mix(in srgb, var(--color-toolbar-button-bg) 80%, transparent);
-  border-color: color-mix(in srgb, var(--color-toolbar-border) 70%, transparent);
-}
-
-.app-window-action-danger:hover {
-  background-color: color-mix(in srgb, var(--color-danger) 35%, transparent);
-  border-color: color-mix(in srgb, var(--color-danger) 50%, transparent);
-}
-
 .app-top-nav-strip {
   background-color: var(--color-toolbar-bg);
   border-color: color-mix(in srgb, var(--color-toolbar-border) 74%, transparent);
