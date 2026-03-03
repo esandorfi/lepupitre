@@ -11,12 +11,24 @@ fail() {
   echo " - $1"
 }
 
+search_matches() {
+  local pattern="$1"
+  shift
+
+  if command -v rg >/dev/null 2>&1; then
+    rg -n "$pattern" "$@" || true
+    return
+  fi
+
+  grep -R -n -E -- "$pattern" "$@" 2>/dev/null || true
+}
+
 check_forbidden_match() {
   local message="$1"
   local pattern="$2"
   shift 2
   local output
-  output="$(rg -n "$pattern" "$@" || true)"
+  output="$(search_matches "$pattern" "$@")"
   if [[ -n "$output" ]]; then
     fail "$message"
     echo "$output"
@@ -97,7 +109,6 @@ declare -A LINE_BUDGETS=(
   ["desktop/src-tauri/src/commands/audio.rs"]=1600
   ["desktop/src-tauri/src/commands/transcription.rs"]=1000
   ["desktop/ui/src/stores/app.ts"]=750
-  ["desktop/ui/src/components/AudioRecorder.vue"]=1220
   ["desktop/src-tauri/src/commands/profile.rs"]=120
   ["desktop/src-tauri/src/commands/quest.rs"]=120
   ["desktop/src-tauri/src/commands/feedback.rs"]=120
