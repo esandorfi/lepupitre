@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, ref } from "vue";
+import { ref } from "vue";
 import { useRouter } from "vue-router";
 import AppButton from "@/components/ui/AppButton.vue";
 import { useI18n } from "@/lib/i18n";
@@ -10,39 +10,19 @@ const { theme, setTheme } = useTheme();
 const router = useRouter();
 
 const open = ref(false);
-type ButtonRefTarget = HTMLButtonElement | { $el?: Element | null } | null;
-const triggerRef = ref<ButtonRefTarget>(null);
-const panelRef = ref<HTMLDivElement | null>(null);
 
-function resolveButtonElement(target: ButtonRefTarget): HTMLButtonElement | null {
-  if (!target) {
-    return null;
-  }
-  if (target instanceof HTMLButtonElement) {
-    return target;
-  }
-  if (!(target.$el instanceof HTMLElement)) {
-    return null;
-  }
-  if (target.$el instanceof HTMLButtonElement) {
-    return target.$el;
-  }
-  const button = target.$el.querySelector("button");
-  if (button instanceof HTMLButtonElement) {
-    return button;
-  }
-  return null;
-}
+const MENU_POPOVER_CONTENT = {
+  align: "end",
+  side: "bottom",
+  sideOffset: 8,
+} as const;
+
+const MENU_POPOVER_UI = {
+  content: "app-menu-panel z-40 w-[min(22rem,calc(100vw-2rem))] rounded-2xl border p-3 shadow-xl",
+} as const;
 
 function closePanel() {
   open.value = false;
-  nextTick(() => {
-    resolveButtonElement(triggerRef.value)?.focus();
-  });
-}
-
-function togglePanel() {
-  open.value = !open.value;
 }
 
 async function goTo(path: string) {
@@ -72,77 +52,40 @@ function updateTheme(next: "orange" | "terminal") {
 function updateLocale(next: "fr" | "en") {
   setLocale(next);
 }
-
-function onDocumentMouseDown(event: MouseEvent) {
-  if (!open.value) {
-    return;
-  }
-  const target = event.target;
-  if (!(target instanceof Node)) {
-    return;
-  }
-  const triggerElement = resolveButtonElement(triggerRef.value);
-  if (panelRef.value?.contains(target) || triggerElement?.contains(target)) {
-    return;
-  }
-  closePanel();
-}
-
-function onDocumentKeydown(event: KeyboardEvent) {
-  if (!open.value) {
-    return;
-  }
-  if (event.key === "Escape") {
-    event.preventDefault();
-    closePanel();
-  }
-}
-
-if (typeof document !== "undefined") {
-  document.addEventListener("mousedown", onDocumentMouseDown);
-  document.addEventListener("keydown", onDocumentKeydown);
-}
-
-onBeforeUnmount(() => {
-  if (typeof document !== "undefined") {
-    document.removeEventListener("mousedown", onDocumentMouseDown);
-    document.removeEventListener("keydown", onDocumentKeydown);
-  }
-});
 </script>
 
 <template>
-  <div class="relative">
-    <AppButton
-      ref="triggerRef"
-      tone="secondary"
-      size="icon-md"
-      class="app-toolbar-button border"
-      :aria-label="t('shell.menu_toggle')"
-      aria-haspopup="menu"
-      :aria-expanded="open ? 'true' : 'false'"
-      @click="togglePanel"
-    >
-      <svg
-        class="h-4 w-4"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+  <UPopover
+    v-model:open="open"
+    :portal="false"
+    :content="MENU_POPOVER_CONTENT"
+    :ui="MENU_POPOVER_UI"
+  >
+    <template #default="{ open: menuOpen }">
+      <AppButton
+        tone="secondary"
+        size="icon-md"
+        class="app-toolbar-button border"
+        :aria-label="t('shell.menu_toggle')"
+        aria-haspopup="menu"
+        :aria-expanded="menuOpen ? 'true' : 'false'"
       >
-        <circle cx="12" cy="12" r="3" />
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01A1.65 1.65 0 0 0 9.93 3.1V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-      </svg>
-    </AppButton>
+        <svg
+          class="h-4 w-4"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <circle cx="12" cy="12" r="3" />
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01A1.65 1.65 0 0 0 9.93 3.1V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+        </svg>
+      </AppButton>
+    </template>
 
-    <div
-      v-if="open"
-      ref="panelRef"
-      class="app-menu-panel absolute top-[calc(100%+0.5rem)] right-0 z-40 w-[min(22rem,calc(100vw-2rem))] rounded-2xl border p-3 shadow-xl"
-      role="menu"
-    >
+    <template #content>
       <div>
         <div class="app-text-eyebrow">
           {{ t("shell.menu_theme") }}
@@ -216,6 +159,6 @@ onBeforeUnmount(() => {
           {{ t("shell.menu_about") }}
         </AppButton>
       </div>
-    </div>
-  </div>
+    </template>
+  </UPopover>
 </template>
