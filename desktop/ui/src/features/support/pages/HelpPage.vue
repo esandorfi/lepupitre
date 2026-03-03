@@ -1,9 +1,9 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 /* eslint-disable vue/no-v-html */
 import { computed, nextTick, ref, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
-import AppButton from "../../../components/ui/AppButton.vue";
-import AppPanel from "../../../components/ui/AppPanel.vue";
+import AppButton from "@/components/ui/AppButton.vue";
+import AppPanel from "@/components/ui/AppPanel.vue";
 import {
   getHelpContentById,
   listHelpContentByAudience,

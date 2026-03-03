@@ -19,14 +19,18 @@ const props = withDefaults(
   }
 );
 
+const PANEL_BASE_CLASS = "app-panel";
+const PANEL_VARIANTS: Record<AppPanelVariant, string> = {
+  default: "",
+  compact: "app-panel-compact",
+  hero: "app-panel-hero",
+  "dense-list": "app-panel-dense-list",
+};
+
 const panelClass = computed(() => {
   return [
-    "app-panel",
-    {
-      "app-panel-compact": props.variant === "compact",
-      "app-panel-hero": props.variant === "hero",
-      "app-panel-dense-list": props.variant === "dense-list",
-    },
+    PANEL_BASE_CLASS,
+    PANEL_VARIANTS[props.variant],
   ];
 });
 

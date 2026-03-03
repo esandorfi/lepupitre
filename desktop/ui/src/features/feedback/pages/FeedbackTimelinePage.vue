@@ -1,12 +1,12 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
-import AppBadge from "../../../components/ui/AppBadge.vue";
-import AppButton from "../../../components/ui/AppButton.vue";
-import EntityRow from "../../../components/EntityRow.vue";
-import PageHeader from "../../../components/PageHeader.vue";
-import PageShell from "../../../components/PageShell.vue";
-import SectionPanel from "../../../components/SectionPanel.vue";
+import AppBadge from "@/components/ui/AppBadge.vue";
+import AppButton from "@/components/ui/AppButton.vue";
+import EntityRow from "@/components/EntityRow.vue";
+import PageHeader from "@/components/PageHeader.vue";
+import PageShell from "@/components/PageShell.vue";
+import SectionPanel from "@/components/SectionPanel.vue";
 import { readReviewedFeedbackIds } from "../../../lib/feedbackReviewState";
 import { useI18n } from "../../../lib/i18n";
 import { useUiPreferences } from "../../../lib/uiPreferences";
@@ -365,7 +365,7 @@ watch(
             <div class="app-text-eyebrow">{{ t("feedback.timeline_focus_title") }}</div>
             <div class="app-text app-text-subheadline mt-1">{{ feedbackTitle(focusedEntry) }}</div>
             <div class="app-muted app-text-meta mt-1">
-              {{ t("feedback.timeline_focus_hint") }} Â· {{ formatDateTime(focusedEntry.created_at) }}
+              {{ t("feedback.timeline_focus_hint") }} · {{ formatDateTime(focusedEntry.created_at) }}
             </div>
             <div v-if="focusedDeltaLabel" class="app-text app-text-meta mt-1 font-semibold">
               {{ focusedDeltaLabel }}
@@ -446,7 +446,7 @@ watch(
               :tone="showUnreadOnly ? 'secondary' : 'ghost'"
               @click="showUnreadOnly = !showUnreadOnly"
             >
-              {{ t("feedback.timeline_filter_unread") }} Â· {{ unreadCount }}
+              {{ t("feedback.timeline_filter_unread") }} · {{ unreadCount }}
             </AppButton>
           </div>
         </div>

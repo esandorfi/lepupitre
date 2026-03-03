@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { securityPrepareAppdataFile, securityProbeFs } from "../domains/security/api";
-import { useI18n } from "../lib/i18n";
+import AppButton from "@/components/ui/AppButton.vue";
+import AppPanel from "@/components/ui/AppPanel.vue";
+import { securityPrepareAppdataFile, securityProbeFs } from "@/domains/security/api";
+import { useI18n } from "@/lib/i18n";
 
 const { t } = useI18n();
 const networkStatus = ref("idle");
@@ -71,7 +73,7 @@ async function testFsAllowed() {
 </script>
 
 <template>
-  <div class="app-panel app-panel-compact space-y-3">
+  <AppPanel variant="compact" class="space-y-3">
     <div class="flex items-center justify-between">
       <div>
         <h3 class="app-subtle text-sm font-semibold uppercase tracking-[0.2em]">
@@ -84,30 +86,30 @@ async function testFsAllowed() {
     </div>
 
     <div class="flex flex-wrap gap-2">
-      <button
-        class="app-button-secondary cursor-pointer rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
-        type="button"
+      <AppButton
+        tone="secondary"
+        size="md"
         :disabled="networkStatus === 'running'"
         @click="testNetwork"
       >
         {{ t("security.test_network") }}
-      </button>
-      <button
-        class="app-button-secondary cursor-pointer rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
-        type="button"
+      </AppButton>
+      <AppButton
+        tone="secondary"
+        size="md"
         :disabled="fsStatus === 'running'"
         @click="testFs"
       >
         {{ t("security.test_blocked") }}
-      </button>
-      <button
-        class="app-button-secondary cursor-pointer rounded-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
-        type="button"
+      </AppButton>
+      <AppButton
+        tone="secondary"
+        size="md"
         :disabled="fsAllowedStatus === 'running'"
         @click="testFsAllowed"
       >
         {{ t("security.test_appdata") }}
-      </button>
+      </AppButton>
     </div>
 
     <div class="app-muted grid gap-2 text-xs">
@@ -127,5 +129,5 @@ async function testFsAllowed() {
         <span v-if="fsAllowedDetail" class="app-subtle">({{ fsAllowedDetail }})</span>
       </div>
     </div>
-  </div>
+  </AppPanel>
 </template>

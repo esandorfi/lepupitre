@@ -1,8 +1,8 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed } from "vue";
 import { RouterLink } from "vue-router";
-import AudioRecorder from "../../../components/AudioRecorder.vue";
-import AppPanel from "../../../components/ui/AppPanel.vue";
+import AudioRecorder from "@/components/AudioRecorder.vue";
+import AppPanel from "@/components/ui/AppPanel.vue";
 import { useI18n } from "../../../lib/i18n";
 import { appStore } from "../../../stores/app";
 

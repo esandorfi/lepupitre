@@ -1,8 +1,8 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import AppButton from "../../../components/ui/AppButton.vue";
-import AppPanel from "../../../components/ui/AppPanel.vue";
+import AppButton from "@/components/ui/AppButton.vue";
+import AppPanel from "@/components/ui/AppPanel.vue";
 import { useI18n } from "../../../lib/i18n";
 import { appStore } from "../../../stores/app";
 

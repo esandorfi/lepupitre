@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import AppBadge from "@/components/ui/AppBadge.vue";
+import AppButton from "@/components/ui/AppButton.vue";
 import RecorderWaveform from "./RecorderWaveform.vue";
 import type { WaveformStyle } from "../../lib/waveform";
 
@@ -25,17 +27,14 @@ const emit = defineEmits<{
   (event: "stop"): void;
 }>();
 
-function qualityClass() {
+function qualityTone() {
   if (props.qualityTone === "good") {
-    return "app-badge-success";
-  }
-  if (props.qualityTone === "warn") {
-    return "app-badge-warning";
+    return "success";
   }
   if (props.qualityTone === "danger") {
-    return "app-badge-danger";
+    return "danger";
   }
-  return "app-badge-neutral";
+  return "neutral";
 }
 
 function primaryIcon() {
@@ -49,40 +48,40 @@ function primaryIcon() {
 <template>
   <div class="space-y-4">
     <div class="flex flex-wrap items-center gap-3">
-      <button
-        class="app-button-primary app-focus-ring app-button-lg inline-flex min-w-[180px] items-center justify-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-        type="button"
+      <AppButton
+        tone="primary"
+        size="lg"
+        class="min-w-[180px] justify-center"
         :disabled="!props.canPrimary"
         @click="emit('primary')"
       >
         <span aria-hidden="true" class="mr-2 text-xs font-bold">{{ primaryIcon() }}</span>
         {{ props.primaryLabel }}
-      </button>
-      <button
-        class="app-button-danger app-focus-ring app-button-lg inline-flex min-w-[140px] items-center justify-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-        type="button"
+      </AppButton>
+      <AppButton
+        tone="danger"
+        size="lg"
+        class="min-w-[140px] justify-center"
         :disabled="!props.canStop"
         @click="emit('stop')"
       >
         <span aria-hidden="true" class="mr-2 text-xs font-bold">[]</span>
         {{ props.stopLabel }}
-      </button>
-      <span
+      </AppButton>
+      <AppBadge
         v-if="props.showRecBadge"
-        class="app-badge-danger rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]"
+        tone="danger"
+        class="px-3 py-1 uppercase tracking-[0.2em]"
       >
         {{ props.recBadgeLabel }}
-      </span>
+      </AppBadge>
     </div>
 
     <div class="flex flex-wrap items-center gap-3">
       <div class="app-text text-2xl font-bold tabular-nums">{{ props.durationLabel }}</div>
-      <span
-        class="rounded-full px-3 py-1 text-xs font-semibold"
-        :class="qualityClass()"
-      >
+      <AppBadge :tone="qualityTone()" class="px-3 py-1">
         {{ props.qualityLabel }}
-      </span>
+      </AppBadge>
     </div>
 
     <div class="space-y-2">

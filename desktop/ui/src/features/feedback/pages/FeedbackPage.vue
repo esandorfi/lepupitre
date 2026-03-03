@@ -1,8 +1,8 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, RouterLink } from "vue-router";
-import AppButton from "../../../components/ui/AppButton.vue";
-import AppPanel from "../../../components/ui/AppPanel.vue";
+import AppButton from "@/components/ui/AppButton.vue";
+import AppPanel from "@/components/ui/AppPanel.vue";
 import { resolveFeedbackBackLink, resolveFeedbackContextLabel } from "../../../lib/feedbackContext";
 import { useI18n } from "../../../lib/i18n";
 import { useUiPreferences } from "../../../lib/uiPreferences";
