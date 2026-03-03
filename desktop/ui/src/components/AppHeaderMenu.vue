@@ -10,13 +10,34 @@ const { theme, setTheme } = useTheme();
 const router = useRouter();
 
 const open = ref(false);
-const triggerRef = ref<HTMLButtonElement | null>(null);
+type ButtonRefTarget = HTMLButtonElement | { $el?: Element | null } | null;
+const triggerRef = ref<ButtonRefTarget>(null);
 const panelRef = ref<HTMLDivElement | null>(null);
+
+function resolveButtonElement(target: ButtonRefTarget): HTMLButtonElement | null {
+  if (!target) {
+    return null;
+  }
+  if (target instanceof HTMLButtonElement) {
+    return target;
+  }
+  if (!(target.$el instanceof HTMLElement)) {
+    return null;
+  }
+  if (target.$el instanceof HTMLButtonElement) {
+    return target.$el;
+  }
+  const button = target.$el.querySelector("button");
+  if (button instanceof HTMLButtonElement) {
+    return button;
+  }
+  return null;
+}
 
 function closePanel() {
   open.value = false;
   nextTick(() => {
-    triggerRef.value?.focus();
+    resolveButtonElement(triggerRef.value)?.focus();
   });
 }
 
@@ -60,7 +81,8 @@ function onDocumentMouseDown(event: MouseEvent) {
   if (!(target instanceof Node)) {
     return;
   }
-  if (panelRef.value?.contains(target) || triggerRef.value?.contains(target)) {
+  const triggerElement = resolveButtonElement(triggerRef.value);
+  if (panelRef.value?.contains(target) || triggerElement?.contains(target)) {
     return;
   }
   closePanel();
@@ -91,10 +113,11 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="relative">
-    <button
+    <AppButton
       ref="triggerRef"
-      class="app-icon-button app-icon-button-md app-toolbar-button app-focus-ring inline-flex cursor-pointer items-center justify-center border"
-      type="button"
+      tone="secondary"
+      size="icon-md"
+      class="app-toolbar-button border"
       :aria-label="t('shell.menu_toggle')"
       aria-haspopup="menu"
       :aria-expanded="open ? 'true' : 'false'"
@@ -112,7 +135,7 @@ onBeforeUnmount(() => {
         <circle cx="12" cy="12" r="3" />
         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01A1.65 1.65 0 0 0 9.93 3.1V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
       </svg>
-    </button>
+    </AppButton>
 
     <div
       v-if="open"
