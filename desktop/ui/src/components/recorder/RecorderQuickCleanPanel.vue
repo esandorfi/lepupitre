@@ -150,20 +150,18 @@ function applyTrimWindow(startSec: number, endSec: number) {
   }
 }
 
-function onTrimStartInput(event: Event) {
-  const target = event.target as HTMLInputElement | null;
-  if (!target) {
+function onTrimStartInput(value: number) {
+  if (Number.isNaN(value)) {
     return;
   }
-  applyTrimWindow(Number(target.value), trimEndSec.value);
+  applyTrimWindow(value, trimEndSec.value);
 }
 
-function onTrimEndInput(event: Event) {
-  const target = event.target as HTMLInputElement | null;
-  if (!target) {
+function onTrimEndInput(value: number) {
+  if (Number.isNaN(value)) {
     return;
   }
-  applyTrimWindow(trimStartSec.value, Number(target.value));
+  applyTrimWindow(trimStartSec.value, value);
 }
 
 function resetTrimWindow() {
@@ -744,8 +742,8 @@ watch(
             min="0"
             :max="trimMaxSec"
             step="0.1"
-            :value="trimStartSec"
-            @input="onTrimStartInput"
+            :model-value="trimStartSec"
+            @update:model-value="onTrimStartInput"
           />
         </div>
         <div class="space-y-1">
@@ -757,8 +755,8 @@ watch(
             min="0"
             :max="trimMaxSec"
             step="0.1"
-            :value="trimEndSec"
-            @input="onTrimEndInput"
+            :model-value="trimEndSec"
+            @update:model-value="onTrimEndInput"
           />
         </div>
         <div class="app-muted app-text-meta">
