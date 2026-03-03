@@ -80,7 +80,6 @@ UI (`desktop/ui/src`)
 - Active hotspot budgets now include:
   - `desktop/src-tauri/src/commands/audio.rs`
   - `desktop/src-tauri/src/commands/transcription.rs`
-  - `desktop/ui/src/components/AudioRecorder.vue`
   - `desktop/ui/src/domains/recorder/api.ts`
   - `desktop/ui/src/domains/asr/api.ts`
 
