@@ -1,6 +1,9 @@
 ﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, RouterLink } from "vue-router";
+import AppBadge from "../../../components/ui/AppBadge.vue";
+import AppButton from "../../../components/ui/AppButton.vue";
+import AppPanel from "../../../components/ui/AppPanel.vue";
 import TalkStepPageShell from "../../../components/TalkStepPageShell.vue";
 import { audioRevealWav } from "../../../domains/recorder/api";
 import { useI18n } from "../../../lib/i18n";
@@ -241,74 +244,78 @@ watch(
       <span>{{ talkLabel }}</span>
     </template>
 
-    <div v-if="!activeProfileId" class="app-panel app-panel-compact">
+    <AppPanel v-if="!activeProfileId" variant="compact">
       <p class="app-muted app-text-body">{{ t("builder.no_profile") }}</p>
       <RouterLink class="app-link app-text-meta mt-3 inline-block underline" to="/profiles">
         {{ t("builder.setup_profile") }}
       </RouterLink>
-    </div>
+    </AppPanel>
 
-    <div v-else-if="!selectedProjectId" class="app-panel app-panel-compact">
+    <AppPanel v-else-if="!selectedProjectId" variant="compact">
       <p class="app-muted app-text-body">{{ t("builder.no_talk") }}</p>
       <RouterLink class="app-link app-text-meta mt-3 inline-block underline" to="/project/new">
         {{ t("builder.setup_talk") }}
       </RouterLink>
-    </div>
+    </AppPanel>
 
     <div v-else class="space-y-4">
-      <div v-if="blueprint" class="app-panel app-panel-compact border border-[var(--color-accent)] bg-[var(--color-surface-selected)]">
+      <AppPanel
+        v-if="blueprint"
+        class="border border-[var(--color-accent)] bg-[var(--color-surface-selected)]"
+        variant="compact"
+      >
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div class="min-w-0 flex-1">
             <div class="app-text-eyebrow">{{ t("builder.framework_title") }}</div>
             <div class="app-text app-text-section-title mt-1">{{ blueprint.framework_label }}</div>
             <div class="app-muted app-text-body mt-1">{{ blueprint.framework_summary }}</div>
           </div>
-          <button
-            class="app-button-secondary app-focus-ring app-button-md inline-flex items-center disabled:cursor-not-allowed disabled:opacity-60"
-            type="button"
+          <AppButton
+            size="md"
+            tone="secondary"
             :disabled="isApplyingTemplate || isSaving"
             @click="applyFrameworkTemplate"
           >
             {{ t("builder.framework_apply_template") }}
-          </button>
+          </AppButton>
         </div>
         <div class="mt-3 flex flex-wrap gap-2">
-          <span
+          <AppBadge
             v-for="(prompt, index) in activeFrameworkPrompts"
             :key="`framework-prompt-${index}`"
-            class="app-badge-neutral app-text-caption inline-flex items-center rounded-full px-2 py-1 font-semibold"
+            tone="neutral"
           >
             {{ prompt }}
-          </span>
+          </AppBadge>
         </div>
-      </div>
+      </AppPanel>
 
-      <div class="app-panel">
+      <AppPanel>
         <div class="app-text-eyebrow">
           {{ t("builder.outline_label") }}
         </div>
-        <textarea
+        <UTextarea
           v-model="outline"
           rows="12"
-          class="app-input app-focus-ring app-radius-control mt-3 w-full border px-3 py-2 app-text-body"
-        ></textarea>
+          class="mt-3 w-full"
+        />
         <div class="mt-3 flex flex-wrap items-center gap-3">
-          <button
-            class="app-button-primary app-focus-ring app-button-md inline-flex items-center disabled:cursor-not-allowed disabled:opacity-60"
-            type="button"
+          <AppButton
+            size="md"
+            tone="primary"
             :disabled="isSaving"
             @click="saveOutline"
           >
             {{ t("builder.save") }}
-          </button>
-          <button
-            class="app-button-secondary app-focus-ring app-button-md inline-flex items-center disabled:cursor-not-allowed disabled:opacity-60"
-            type="button"
+          </AppButton>
+          <AppButton
+            size="md"
+            tone="secondary"
             :disabled="isExporting"
             @click="exportOutline"
           >
             {{ t("builder.export") }}
-          </button>
+          </AppButton>
           <span v-if="saveStatus === 'saving'" class="app-muted app-text-meta">
             {{ t("builder.saving") }}
           </span>
@@ -321,14 +328,14 @@ watch(
           <span class="app-text max-w-[360px] truncate" style="direction: rtl; text-align: left;">
             {{ exportPath }}
           </span>
-          <button
-            class="app-link app-text-meta underline"
-            type="button"
+          <AppButton
+            tone="ghost"
+            size="sm"
             :disabled="isRevealing"
             @click="revealExport"
           >
             {{ t("builder.export_reveal") }}
-          </button>
+          </AppButton>
           <span class="app-subtle app-text-meta">{{ t("builder.export_ready") }}</span>
         </div>
         <div v-if="isLoading" class="app-muted app-text-meta mt-3">
@@ -337,7 +344,7 @@ watch(
         <div v-if="error" class="app-danger-text app-text-meta mt-3">
           {{ error }}
         </div>
-      </div>
+      </AppPanel>
     </div>
   </TalkStepPageShell>
 </template>

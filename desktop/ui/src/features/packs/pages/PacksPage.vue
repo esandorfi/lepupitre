@@ -5,6 +5,8 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { DragDropEvent } from "@tauri-apps/api/window";
 import type { UnlistenFn } from "@tauri-apps/api/event";
+import AppButton from "../../../components/ui/AppButton.vue";
+import AppPanel from "../../../components/ui/AppPanel.vue";
 import { useI18n } from "../../../lib/i18n";
 import { hasTauriRuntime } from "../../../lib/runtime";
 import { appStore } from "../../../stores/app";
@@ -152,22 +154,22 @@ onBeforeUnmount(() => {
 
 <template>
   <section class="space-y-6">
-    <div class="app-panel app-panel-compact">
+    <AppPanel variant="compact">
       <div class="app-subtle text-xs uppercase tracking-[0.2em]">
         {{ t("packs.title") }}
       </div>
       <div class="app-text mt-2 text-sm">{{ t("packs.subtitle") }}</div>
-    </div>
+    </AppPanel>
 
-    <div v-if="!activeProfileId" class="app-panel app-panel-compact">
+    <AppPanel v-if="!activeProfileId" variant="compact">
       <p class="app-muted text-sm">{{ t("packs.no_profile") }}</p>
       <RouterLink class="app-link mt-3 inline-block text-xs underline" to="/profiles">
         {{ t("packs.setup_profile") }}
       </RouterLink>
-    </div>
+    </AppPanel>
 
     <div v-else class="space-y-4">
-      <div class="app-panel app-panel-compact">
+      <AppPanel variant="compact">
         <div class="app-subtle text-xs uppercase tracking-[0.2em]">
           {{ t("packs.import_title") }}
         </div>
@@ -177,14 +179,15 @@ onBeforeUnmount(() => {
         >
           <div class="app-text text-sm">{{ t("packs.import_drop_title") }}</div>
           <div class="app-muted mt-1">{{ t("packs.import_drop_hint") }}</div>
-          <button
-            class="app-link mt-3 inline-flex items-center text-xs underline"
-            type="button"
+          <AppButton
+            tone="ghost"
+            size="sm"
+            class="mt-3"
             :disabled="isPicking"
             @click="pickPack"
           >
             {{ t("packs.import_pick") }}
-          </button>
+          </AppButton>
         </div>
         <div v-if="isInspecting" class="app-muted mt-3 text-xs">
           {{ t("packs.import_checking") }}
@@ -215,14 +218,14 @@ onBeforeUnmount(() => {
           </div>
         </div>
         <div class="mt-3 flex flex-wrap items-center gap-2">
-          <button
-            class="app-button-info cursor-pointer rounded-full px-4 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
-            type="button"
+          <AppButton
+            tone="info"
+            size="md"
             :disabled="importStatus === 'importing' || !importPath || !importDetails"
             @click="importReview"
           >
             {{ t("packs.import_action") }}
-          </button>
+          </AppButton>
         </div>
         <div v-if="importStatus === 'success'" class="app-subtle mt-2 text-xs">
           {{ t("packs.import_success") }}
@@ -234,7 +237,7 @@ onBeforeUnmount(() => {
         >
           {{ t("packs.import_view_talk") }}
         </RouterLink>
-      </div>
+      </AppPanel>
     </div>
 
     <div v-if="error" class="app-danger-text text-xs">

@@ -18,6 +18,15 @@
 ## Tooling & workflow
 - Use `pnpm` for JS tooling and scripts.
 - CI runs on GitHub Actions.
+- Nuxt UI quick LLM reference: `https://ui.nuxt.com/llms.txt`
+- Nuxt UI full LLM reference: `https://ui.nuxt.com/llms-full.txt`
+
+## UI migration verification
+- For Nuxt UI migrations, always run a second pass before commit.
+- Second pass must include a deep grep review for raw primitives and legacy classes in touched scope:
+  - native controls: `<input>`, `<select>`, `<textarea>`
+  - legacy classes/tags: `app-panel`, `app-button`, `app-badge`, and old `app-*` wrappers in pages
+- Capture remaining exceptions explicitly in the active plan/spec log.
 
 ## Documentation discipline
 - Update decision records in `spec/active/DECISIONS.md` when required by `docs/CONTRIBUTION_RULES.md`.

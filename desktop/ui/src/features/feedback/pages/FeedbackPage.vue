@@ -1,6 +1,8 @@
 ﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, RouterLink } from "vue-router";
+import AppButton from "../../../components/ui/AppButton.vue";
+import AppPanel from "../../../components/ui/AppPanel.vue";
 import { resolveFeedbackBackLink, resolveFeedbackContextLabel } from "../../../lib/feedbackContext";
 import { useI18n } from "../../../lib/i18n";
 import { useUiPreferences } from "../../../lib/uiPreferences";
@@ -168,10 +170,11 @@ watch(
       }}
     </p>
 
-    <div
+    <AppPanel
       v-if="showMascotCard && mascotMessage"
-      class="app-panel app-panel-compact border"
+      class="border"
       :class="mascotToneClass(mascotMessage.kind)"
+      variant="compact"
     >
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div class="min-w-0 flex-1">
@@ -179,17 +182,22 @@ watch(
           <div class="app-text app-text-subheadline mt-1">{{ mascotMessage.title }}</div>
           <div v-if="mascotBody" class="app-muted app-text-body mt-1">{{ mascotBody }}</div>
         </div>
-        <RouterLink
+        <AppButton
           v-if="mascotMessage.cta_route && mascotMessage.cta_label"
-          class="app-button-secondary app-focus-ring app-button-md inline-flex items-center"
+          size="md"
+          tone="secondary"
           :to="mascotMessage.cta_route"
         >
           {{ mascotMessage.cta_label }}
-        </RouterLink>
+        </AppButton>
       </div>
-    </div>
+    </AppPanel>
 
-    <div class="app-panel app-panel-compact text-sm" :class="isQuestWorldMode ? 'bg-[color-mix(in_srgb,var(--color-accent-soft)_20%,var(--color-surface))]' : ''">
+    <AppPanel
+      class="text-sm"
+      :class="isQuestWorldMode ? 'bg-[color-mix(in_srgb,var(--color-accent-soft)_20%,var(--color-surface))]' : ''"
+      variant="compact"
+    >
       <div class="app-subtle text-xs uppercase tracking-[0.2em]">
         {{ t("feedback.score") }}
       </div>
@@ -232,14 +240,15 @@ watch(
             {{ t("feedback.practice_next_subtitle") }}
           </div>
           <div class="mt-2 flex flex-wrap gap-2">
-            <RouterLink
+            <AppButton
               v-for="item in recommendedQuestLinks"
               :key="item.code"
-              class="app-button-secondary app-focus-ring app-button-sm inline-flex items-center"
+              size="sm"
+              tone="secondary"
               :to="item.to"
             >
               {{ item.label }}
-            </RouterLink>
+            </AppButton>
             <RouterLink
               class="app-link app-text-meta inline-flex items-center underline"
               to="/training"
@@ -293,13 +302,13 @@ watch(
           <div class="app-subtle text-xs uppercase tracking-[0.2em]">
             {{ t("feedback.notes_title") }}
           </div>
-          <textarea
+          <UTextarea
             v-model="note"
             rows="4"
-            class="app-input mt-2 w-full rounded-lg border px-3 py-2 text-sm"
+            class="mt-2 w-full"
             :placeholder="t('feedback.notes_placeholder')"
             @blur="saveNote"
-          ></textarea>
+          />
           <div v-if="noteStatus === 'saving'" class="app-muted mt-2 text-xs">
             {{ t("feedback.notes_saving") }}
           </div>
@@ -318,7 +327,7 @@ watch(
       <RouterLink class="app-link mt-4 inline-block text-xs underline" :to="backLink">
         {{ t("feedback.back_parent") }}
       </RouterLink>
-    </div>
+    </AppPanel>
   </section>
 </template>
 

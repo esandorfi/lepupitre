@@ -2,6 +2,7 @@
 import { computed } from "vue";
 import { RouterLink } from "vue-router";
 import AudioRecorder from "../../../components/AudioRecorder.vue";
+import AppPanel from "../../../components/ui/AppPanel.vue";
 import { useI18n } from "../../../lib/i18n";
 import { appStore } from "../../../stores/app";
 
@@ -20,12 +21,12 @@ const activeProfileId = computed(() => appStore.state.activeProfileId);
       </p>
     </header>
 
-    <div v-if="!activeProfileId" class="app-panel app-panel-compact">
+    <AppPanel v-if="!activeProfileId" variant="compact">
       <p class="app-muted text-sm">{{ t("quick_record.need_profile") }}</p>
       <RouterLink class="app-link mt-3 inline-block text-xs underline" to="/profiles">
         {{ t("quick_record.setup_profile") }}
       </RouterLink>
-    </div>
+    </AppPanel>
 
     <div v-else class="space-y-4">
       <AudioRecorder

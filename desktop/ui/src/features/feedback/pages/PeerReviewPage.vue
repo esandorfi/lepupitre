@@ -1,6 +1,7 @@
 ﻿<script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { useRoute, RouterLink } from "vue-router";
+import AppPanel from "../../../components/ui/AppPanel.vue";
 import { useI18n } from "../../../lib/i18n";
 import { appStore } from "../../../stores/app";
 import type { PeerReviewDetail } from "../../../schemas/ipc";
@@ -87,7 +88,7 @@ onMounted(async () => {
   <section class="space-y-6">
     <p class="app-muted text-sm font-semibold">{{ t("peer_review.subtitle") }}</p>
 
-    <div class="app-panel app-panel-compact text-sm">
+    <AppPanel class="text-sm" variant="compact">
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div class="app-subtle text-xs uppercase tracking-[0.2em]">
           {{ t("peer_review.title") }}
@@ -153,7 +154,7 @@ onMounted(async () => {
       <div v-else class="app-muted mt-4 text-xs">
         {{ t("peer_review.empty") }}
       </div>
-    </div>
+    </AppPanel>
   </section>
 </template>
 
