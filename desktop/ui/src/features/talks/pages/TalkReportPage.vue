@@ -2,6 +2,8 @@
 import { computed, onMounted, ref } from "vue";
 import { useRoute, RouterLink } from "vue-router";
 import TalkStepPageShell from "../../../components/TalkStepPageShell.vue";
+import AppButton from "../../../components/ui/AppButton.vue";
+import AppPanel from "../../../components/ui/AppPanel.vue";
 import { audioRevealWav } from "../../../domains/recorder/api";
 import { useI18n } from "../../../lib/i18n";
 import { appStore } from "../../../stores/app";
@@ -267,18 +269,18 @@ onMounted(loadReport);
       >
         {{ t("talk_report.active") }}
       </span>
-      <button
+      <AppButton
         v-else
-        class="app-button-secondary app-focus-ring app-button-sm inline-flex items-center disabled:cursor-not-allowed disabled:opacity-60"
-        type="button"
+        size="sm"
+        tone="secondary"
         :disabled="isActivating"
         @click="setActive"
       >
         {{ t("talk_report.set_active") }}
-      </button>
+      </AppButton>
     </template>
 
-    <div class="app-panel">
+    <AppPanel>
       <div v-if="isLoading" class="app-muted app-text-meta">
         {{ t("talk_report.loading") }}
       </div>
@@ -303,9 +305,9 @@ onMounted(loadReport);
           <div class="app-text mt-1 text-sm font-semibold">{{ formatDate(summary.last) }}</div>
         </div>
       </div>
-    </div>
+    </AppPanel>
 
-    <div class="app-panel">
+    <AppPanel>
       <div class="app-text-eyebrow">{{ t("talk_report.quest_library") }}</div>
       <div v-if="report.length === 0" class="app-muted app-text-body mt-3">
         {{ t("talk_report.no_quests") }}
@@ -331,12 +333,13 @@ onMounted(loadReport);
             </div>
           </div>
           <div class="mt-3 flex flex-wrap items-center gap-2">
-            <RouterLink
-              class="app-button-info app-focus-ring app-button-sm inline-flex items-center"
+            <AppButton
+              tone="info"
+              size="sm"
               :to="`/quest/${quest.quest_code}?from=talk&projectId=${projectId}`"
             >
               {{ t("talk_report.open_quest") }}
-            </RouterLink>
+            </AppButton>
             <RouterLink
               v-if="quest.feedback_id"
               class="app-link app-text-meta underline"
@@ -347,9 +350,9 @@ onMounted(loadReport);
           </div>
         </div>
       </div>
-    </div>
+    </AppPanel>
 
-    <div class="app-panel">
+    <AppPanel>
       <div class="app-text-eyebrow">{{ t("talk_report.export_title") }}</div>
       <div v-if="runs.length === 0" class="app-muted app-text-body mt-3">
         {{ t("boss_run.latest_empty") }}
@@ -367,14 +370,14 @@ onMounted(loadReport);
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <button
-              class="app-button-secondary app-focus-ring app-button-sm inline-flex items-center disabled:cursor-not-allowed disabled:opacity-60"
-              type="button"
+            <AppButton
+              tone="secondary"
+              size="sm"
               :disabled="exportingRunId === run.id"
               @click="exportPack(run.id)"
             >
               {{ t("packs.export") }}
-            </button>
+            </AppButton>
           </div>
         </div>
       </div>
@@ -383,22 +386,22 @@ onMounted(loadReport);
         <span class="app-text max-w-[360px] truncate" style="direction: rtl; text-align: left;">
           {{ exportPath }}
         </span>
-        <button
-          class="app-link app-text-meta underline"
-          type="button"
+        <AppButton
+          tone="ghost"
+          size="sm"
           :disabled="isRevealing"
           @click="revealExport"
         >
           {{ t("packs.export_reveal") }}
-        </button>
+        </AppButton>
         <span class="app-subtle app-text-meta">{{ t("packs.export_ready") }}</span>
       </div>
       <div v-if="exportError" class="app-danger-text app-text-meta mt-2">
         {{ exportError }}
       </div>
-    </div>
+    </AppPanel>
 
-    <div class="app-panel">
+    <AppPanel>
       <div class="app-text-eyebrow">{{ t("talk_report.timeline") }}</div>
       <div v-if="timeline.length === 0" class="app-muted app-text-body mt-3">
         {{ t("talk_report.timeline_empty") }}
@@ -423,7 +426,7 @@ onMounted(loadReport);
           </div>
         </div>
       </div>
-    </div>
+    </AppPanel>
   </TalkStepPageShell>
 </template>
 

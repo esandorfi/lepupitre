@@ -2,6 +2,9 @@
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import AudioRecorder from "../../../components/AudioRecorder.vue";
+import AppBadge from "../../../components/ui/AppBadge.vue";
+import AppButton from "../../../components/ui/AppButton.vue";
+import AppPanel from "../../../components/ui/AppPanel.vue";
 import { useI18n } from "../../../lib/i18n";
 import {
   canAnalyzeQuest,
@@ -251,29 +254,29 @@ watch(text, (nextValue) => {
       {{ t("quest.code") }}: {{ displayQuestCode }}
     </p>
 
-    <div v-if="isLoading" class="app-panel app-panel-compact">
+    <AppPanel v-if="isLoading" variant="compact">
       <p class="app-muted app-text-body">{{ t("quest.loading") }}</p>
-    </div>
+    </AppPanel>
 
     <div v-else-if="quest" class="space-y-4">
-      <div class="app-panel">
+      <AppPanel>
         <div class="app-text-eyebrow">{{ t("quest.step_brief") }}</div>
         <div class="app-text app-text-section-title mt-2">{{ quest.title }}</div>
         <div class="app-muted app-text-meta mt-2">{{ quest.prompt }}</div>
         <div class="mt-3 flex flex-wrap items-center gap-2 app-text-meta">
-          <span class="app-badge-neutral rounded-full px-2 py-1 font-semibold">
+          <AppBadge tone="neutral">
             {{ isAudioQuest ? t("quest.output_audio") : t("quest.output_text") }}
-          </span>
-          <span class="app-badge-neutral rounded-full px-2 py-1 font-semibold">
+          </AppBadge>
+          <AppBadge tone="neutral">
             {{ quest.category }}
-          </span>
-          <span class="app-badge-neutral rounded-full px-2 py-1 font-semibold">
+          </AppBadge>
+          <AppBadge tone="neutral">
             {{ Math.max(1, Math.round(quest.estimated_sec / 60)) }} {{ t("talks.minutes") }}
-          </span>
+          </AppBadge>
         </div>
-      </div>
+      </AppPanel>
 
-      <div class="app-panel">
+      <AppPanel>
         <div class="app-text-eyebrow">{{ t("quest.step_capture") }}</div>
 
         <div v-if="isAudioQuest" class="mt-3 space-y-4">
@@ -291,25 +294,25 @@ watch(text, (nextValue) => {
         </div>
 
         <div v-else class="mt-3 space-y-3">
-          <textarea
+          <UTextarea
             v-model="text"
             rows="6"
-            class="app-input app-focus-ring app-radius-control w-full border px-3 py-2 app-text-body"
+            class="w-full app-text-body"
             :placeholder="t('quest.response_placeholder')"
-          ></textarea>
+          />
 
           <div class="flex flex-wrap items-center gap-3">
-            <button
-              class="app-button-primary app-focus-ring app-button-lg inline-flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-              type="button"
+            <AppButton
+              tone="primary"
+              size="lg"
               :disabled="!canSubmitText"
               @click="submit"
             >
               {{ submitTextLabel }}
-            </button>
-            <span v-if="attemptId" class="app-badge-success app-text-caption rounded-full px-2 py-1 font-semibold">
+            </AppButton>
+            <AppBadge v-if="attemptId" tone="success">
               {{ t("quest.capture_saved") }}
-            </span>
+            </AppBadge>
           </div>
           <p
             v-if="submittedTextSnapshot"
@@ -322,42 +325,42 @@ watch(text, (nextValue) => {
             }}
           </p>
         </div>
-      </div>
+      </AppPanel>
 
-      <div class="app-panel">
+      <AppPanel>
         <div class="app-text-eyebrow">{{ t("quest.step_analysis") }}</div>
         <div class="mt-3 flex flex-wrap items-center gap-3">
-          <button
+          <AppButton
             v-if="!isAudioQuest"
-            class="app-button-info app-focus-ring app-button-lg inline-flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-            type="button"
+            tone="info"
+            size="lg"
             :disabled="!canAnalyze || isAnalyzing"
             @click="requestFeedback"
           >
             {{ analyzeLabel }}
-          </button>
-          <button
+          </AppButton>
+          <AppButton
             v-if="canLeaveWithoutFeedback"
-            class="app-button-secondary app-focus-ring app-button-lg inline-flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-            type="button"
+            tone="secondary"
+            size="lg"
             @click="skipTranscription"
           >
             {{ t("quest.keep_without_feedback") }}
-          </button>
+          </AppButton>
           <RouterLink class="app-muted app-text-meta underline" :to="backLink">
             {{ t("quest.back") }}
           </RouterLink>
         </div>
         <p v-if="captureStatusLabel" class="app-subtle app-text-meta mt-2">{{ captureStatusLabel }}</p>
         <p class="app-muted app-text-meta mt-2">{{ analysisHint }}</p>
-      </div>
+      </AppPanel>
 
       <p v-if="error" class="app-danger-text app-text-meta">{{ error }}</p>
     </div>
 
-    <div v-else class="app-panel app-panel-compact">
+    <AppPanel v-else variant="compact">
       <p class="app-muted app-text-body">{{ error || t("quest.empty") }}</p>
-    </div>
+    </AppPanel>
   </section>
 </template>
 

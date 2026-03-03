@@ -1,6 +1,8 @@
 ﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
+import AppBadge from "../../../components/ui/AppBadge.vue";
+import AppButton from "../../../components/ui/AppButton.vue";
 import EntityRow from "../../../components/EntityRow.vue";
 import PageHeader from "../../../components/PageHeader.vue";
 import PageShell from "../../../components/PageShell.vue";
@@ -137,14 +139,14 @@ function formatDateTime(value: string) {
   return date.toLocaleString();
 }
 
-function scoreToneClass(score: number) {
+function scoreToneClass(score: number): "success" | "neutral" | "danger" {
   if (score >= 80) {
-    return "app-badge-success";
+    return "success";
   }
   if (score >= 60) {
-    return "app-badge-neutral";
+    return "neutral";
   }
-  return "app-badge-danger";
+  return "danger";
 }
 
 function mascotToneClass(kind: string | null | undefined) {
@@ -182,8 +184,8 @@ function isReviewed(item: FeedbackTimelineItem) {
   return reviewedIds.value.has(item.id);
 }
 
-function reviewedBadgeClass(reviewed: boolean) {
-  return reviewed ? "app-badge-neutral" : "app-badge-success";
+function reviewedBadgeTone(reviewed: boolean): "success" | "neutral" {
+  return reviewed ? "neutral" : "success";
 }
 
 function applyFocusedContextFilters() {
@@ -320,9 +322,9 @@ watch(
       :subtitle="t('feedback.timeline_subtitle')"
     >
       <template #actions>
-        <RouterLink class="app-button-primary app-focus-ring app-button-md inline-flex items-center" to="/training">
+        <AppButton size="md" tone="primary" to="/training">
           {{ t("training.start") }}
-        </RouterLink>
+        </AppButton>
       </template>
     </PageHeader>
 
@@ -338,13 +340,14 @@ watch(
           <div class="app-text app-text-subheadline mt-1">{{ mascotMessage.title }}</div>
           <div v-if="mascotBody" class="app-muted app-text-body mt-1">{{ mascotBody }}</div>
         </div>
-        <RouterLink
+        <AppButton
           v-if="mascotMessage.cta_route && mascotMessage.cta_label"
-          class="app-button-secondary app-focus-ring app-button-md inline-flex items-center"
+          size="md"
+          tone="secondary"
           :to="mascotMessage.cta_route"
         >
           {{ mascotMessage.cta_label }}
-        </RouterLink>
+        </AppButton>
       </div>
     </SectionPanel>
 
@@ -369,15 +372,15 @@ watch(
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <span class="app-badge-neutral app-text-caption rounded-full px-2 py-1 font-semibold">
+            <AppBadge tone="neutral">
               {{ t("feedback.timeline_focus_badge") }}
-            </span>
-            <RouterLink class="app-button-secondary app-focus-ring app-button-sm inline-flex items-center" :to="focusedActionRoute">
+            </AppBadge>
+            <AppButton size="sm" tone="secondary" :to="focusedActionRoute">
               {{ focusedActionLabel }}
-            </RouterLink>
-            <RouterLink class="app-button-primary app-focus-ring app-button-sm inline-flex items-center" :to="`/feedback/${focusedEntry.id}`">
+            </AppButton>
+            <AppButton size="sm" tone="primary" :to="`/feedback/${focusedEntry.id}`">
               {{ t("feedback.timeline_open") }}
-            </RouterLink>
+            </AppButton>
           </div>
         </div>
       </SectionPanel>
@@ -401,56 +404,50 @@ watch(
         </div>
 
         <div class="mt-3 flex flex-wrap items-center gap-2">
-          <button
-            class="app-focus-ring app-button-sm inline-flex items-center transition"
-            :class="scope === 'workspace' ? 'app-button-secondary' : 'app-button-ghost'"
-            type="button"
+          <AppButton
+            size="sm"
+            :tone="scope === 'workspace' ? 'secondary' : 'ghost'"
             @click="scope = 'workspace'"
           >
             {{ t("feedback.timeline_scope_workspace") }}
-          </button>
-          <button
-            class="app-focus-ring app-button-sm inline-flex items-center transition disabled:cursor-not-allowed disabled:opacity-60"
-            :class="scope === 'talk' ? 'app-button-secondary' : 'app-button-ghost'"
-            type="button"
+          </AppButton>
+          <AppButton
+            size="sm"
+            :tone="scope === 'talk' ? 'secondary' : 'ghost'"
             :disabled="!canUseTalkScope"
             @click="scope = 'talk'"
           >
             {{ t("feedback.timeline_scope_talk") }}
-          </button>
+          </AppButton>
           <div class="ml-auto flex flex-wrap items-center gap-2">
-            <button
-              class="app-focus-ring app-button-sm inline-flex items-center transition"
-              :class="filterType === 'all' ? 'app-button-secondary' : 'app-button-ghost'"
-              type="button"
+            <AppButton
+              size="sm"
+              :tone="filterType === 'all' ? 'secondary' : 'ghost'"
               @click="filterType = 'all'"
             >
               {{ t("feedback.timeline_filter_all") }}
-            </button>
-            <button
-              class="app-focus-ring app-button-sm inline-flex items-center transition"
-              :class="filterType === 'quest_attempt' ? 'app-button-secondary' : 'app-button-ghost'"
-              type="button"
+            </AppButton>
+            <AppButton
+              size="sm"
+              :tone="filterType === 'quest_attempt' ? 'secondary' : 'ghost'"
               @click="filterType = 'quest_attempt'"
             >
               {{ t("feedback.timeline_filter_quest") }}
-            </button>
-            <button
-              class="app-focus-ring app-button-sm inline-flex items-center transition"
-              :class="filterType === 'run' ? 'app-button-secondary' : 'app-button-ghost'"
-              type="button"
+            </AppButton>
+            <AppButton
+              size="sm"
+              :tone="filterType === 'run' ? 'secondary' : 'ghost'"
               @click="filterType = 'run'"
             >
               {{ t("feedback.timeline_filter_run") }}
-            </button>
-            <button
-              class="app-focus-ring app-button-sm inline-flex items-center transition"
-              :class="showUnreadOnly ? 'app-button-secondary' : 'app-button-ghost'"
-              type="button"
+            </AppButton>
+            <AppButton
+              size="sm"
+              :tone="showUnreadOnly ? 'secondary' : 'ghost'"
               @click="showUnreadOnly = !showUnreadOnly"
             >
               {{ t("feedback.timeline_filter_unread") }} Â· {{ unreadCount }}
-            </button>
+            </AppButton>
           </div>
         </div>
       </SectionPanel>
@@ -473,32 +470,26 @@ watch(
           >
             <template #main>
               <div class="flex flex-wrap items-center gap-2">
-                <span class="app-badge-neutral app-text-caption inline-flex items-center rounded-full px-2 py-1 font-semibold">
+                <AppBadge tone="neutral">
                   {{ feedbackContextLabel(item) }}
-                </span>
+                </AppBadge>
                 <span class="app-muted app-text-meta">{{ formatDateTime(item.created_at) }}</span>
               </div>
               <div class="app-text app-text-body-strong mt-1">{{ feedbackTitle(item) }}</div>
             </template>
             <template #actions>
-              <span
-                class="app-text-caption inline-flex items-center rounded-full px-2 py-1 font-semibold"
-                :class="reviewedBadgeClass(isReviewed(item))"
-              >
+              <AppBadge :tone="reviewedBadgeTone(isReviewed(item))">
                 {{ isReviewed(item) ? t("feedback.reviewed_label") : t("feedback.unread_label") }}
-              </span>
-              <span
-                class="app-text-caption inline-flex items-center rounded-full px-2 py-1 font-semibold"
-                :class="scoreToneClass(item.overall_score)"
-              >
+              </AppBadge>
+              <AppBadge :tone="scoreToneClass(item.overall_score)">
                 {{ t("feedback.score") }}: {{ item.overall_score }}
-              </span>
-              <span
+              </AppBadge>
+              <AppBadge
                 v-if="item.note_updated_at"
-                class="app-badge-neutral app-text-caption inline-flex items-center rounded-full px-2 py-1 font-semibold"
+                tone="neutral"
               >
                 {{ t("feedback.notes_title") }}
-              </span>
+              </AppBadge>
               <RouterLink class="app-link app-text-meta underline" :to="`/feedback/${item.id}`">
                 {{ t("feedback.timeline_open") }}
               </RouterLink>

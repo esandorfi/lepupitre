@@ -2,6 +2,8 @@
 import { computed, onMounted, ref } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 import TalkStepPageShell from "../../../components/TalkStepPageShell.vue";
+import AppButton from "../../../components/ui/AppButton.vue";
+import AppPanel from "../../../components/ui/AppPanel.vue";
 import { useI18n } from "../../../lib/i18n";
 import { appStore } from "../../../stores/app";
 import type {
@@ -229,18 +231,18 @@ onMounted(loadData);
       >
         {{ t("talk_report.active") }}
       </span>
-      <button
+      <AppButton
         v-else
-        class="app-button-secondary app-focus-ring app-button-sm inline-flex items-center disabled:cursor-not-allowed disabled:opacity-60"
-        type="button"
+        size="sm"
+        tone="secondary"
         :disabled="isActivating"
         @click="setActive"
       >
         {{ t("talk_report.set_active") }}
-      </button>
+      </AppButton>
     </template>
 
-    <div class="app-panel">
+    <AppPanel>
       <div v-if="isLoading" class="app-muted app-text-meta">{{ t("talk_report.loading") }}</div>
       <div v-else-if="error" class="app-danger-text app-text-meta">{{ error }}</div>
       <div v-else class="app-data-grid-4 app-text-meta">
@@ -261,30 +263,27 @@ onMounted(loadData);
           <div class="app-text mt-1 text-sm font-semibold">{{ formatDate(summary.last) }}</div>
         </div>
       </div>
-    </div>
+    </AppPanel>
 
-    <div class="app-panel">
+    <AppPanel>
       <div class="app-text-eyebrow">{{ t("talk_report.boss_run") }}</div>
       <p class="app-muted app-text-body mt-2">{{ t("boss_run.subtitle") }}</p>
       <div class="mt-3 flex flex-wrap gap-2">
-        <RouterLink
-          class="app-button-secondary app-focus-ring app-button-lg inline-flex items-center"
-          to="/boss-run"
-          @click="markTrainStage"
-        >
+        <AppButton tone="secondary" size="lg" to="/boss-run" @click="markTrainStage">
           {{ t("boss_run.title") }}
-        </RouterLink>
-        <RouterLink
-          class="app-button-secondary app-focus-ring app-button-lg inline-flex items-center"
+        </AppButton>
+        <AppButton
+          tone="secondary"
+          size="lg"
           :to="`/quest/FREE?from=talk&projectId=${projectId}`"
           @click="markTrainStage"
         >
           {{ t("home.prototype_action_free") }}
-        </RouterLink>
+        </AppButton>
       </div>
-    </div>
+    </AppPanel>
 
-    <div class="app-panel">
+    <AppPanel>
       <div class="app-text-eyebrow">{{ t("talk_report.quest_library") }}</div>
       <div v-if="report.length === 0" class="app-muted app-text-body mt-3">{{ t("talk_report.no_quests") }}</div>
       <div v-else class="mt-3 space-y-3">
@@ -308,13 +307,14 @@ onMounted(loadData);
             </div>
           </div>
           <div class="mt-3 flex flex-wrap items-center gap-2">
-            <RouterLink
-              class="app-button-info app-focus-ring app-button-sm inline-flex items-center"
+            <AppButton
+              tone="info"
+              size="sm"
               :to="`/quest/${quest.quest_code}?from=talk&projectId=${projectId}`"
               @click="markTrainStage"
             >
               {{ t("talk_report.open_quest") }}
-            </RouterLink>
+            </AppButton>
             <RouterLink
               v-if="quest.feedback_id"
               class="app-link text-xs underline"
@@ -325,9 +325,9 @@ onMounted(loadData);
           </div>
         </div>
       </div>
-    </div>
+    </AppPanel>
 
-    <div class="app-panel">
+    <AppPanel>
       <div class="app-text-eyebrow">{{ t("talk_report.timeline") }}</div>
       <div v-if="timeline.length === 0" class="app-muted app-text-body mt-3">{{ t("talk_report.timeline_empty") }}</div>
       <div v-else class="mt-3 space-y-2 app-text-meta">
@@ -350,7 +350,7 @@ onMounted(loadData);
           </div>
         </div>
       </div>
-    </div>
+    </AppPanel>
   </TalkStepPageShell>
 </template>
 

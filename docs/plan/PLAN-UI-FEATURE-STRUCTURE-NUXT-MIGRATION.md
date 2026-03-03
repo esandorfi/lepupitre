@@ -68,10 +68,10 @@ Restructure the desktop UI into feature-oriented directories and then migrate to
 - [x] Add minimal wrapper set under `src/components/ui/`
 - [x] Refactor shared primitive components to use wrappers/Nuxt
 - [x] Migrate support + workspace pages
-- [ ] Migrate Home feature as a full vertical slice
-- [ ] Migrate talks + feedback features
+- [x] Migrate Home feature as a full vertical slice
+- [x] Migrate talks + feedback features
 - [ ] Migrate recorder composites
-- [ ] Add guard rails against raw primitive drift in pages
+- [x] Add guard rails against raw primitive drift in pages
 
 ## Risks and Mitigations
 - Large move conflict risk in Step A:
@@ -98,3 +98,13 @@ Restructure the desktop UI into feature-oriented directories and then migrate to
   - Step B wave 2 (partial) continued.
   - Migrated support pages `About`, `Help`, `Onboarding` and workspace page `Profiles` to wrapper-first panels/buttons/badges.
   - Completed `Settings` migration to wrapper-first panels/buttons/badges and Nuxt UI field controls (`USelect`/`USwitch`).
+  - Step B wave 3 completed for Home.
+  - Migrated `HomePage` primitives to wrapper-first (`AppPanel`, `AppButton`, `AppBadge`) and switched quest picker search input to `UInput`.
+  - Step B wave 4 started (talks + feedback).
+  - Migrated feedback pages (`FeedbackTimeline`, `Feedback`, `PeerReview`) to wrappers and Nuxt inputs where applicable.
+  - Migrated talks hub and setup pages (`Talks`, `ProjectSetup`, `TalkBuilder`) to wrappers and Nuxt inputs.
+  - Completed talks wave 4 pages: `TalkDefine`, `TalkTrain`, `TalkExport`, `TalkReport` migrated to wrapper-first + Nuxt field primitives.
+  - Added second-pass migration verification rule in `AGENTS.md` with Nuxt UI LLM references and explicit grep checks for raw primitives/legacy classes.
+  - Extended page migration pass for training + packs (`Quest`, `BossRun`, `QuickRecord`, `Packs`) to wrapper-first and Nuxt field controls.
+  - Second-pass verification result: no remaining `app-panel/app-button/app-badge` classes and no native `input/select/textarea/button` in `src/features/**/pages`.
+  - Remaining migration backlog is now concentrated in shared/components scope (not page scope), especially recorder composites and some shell/menu internals.

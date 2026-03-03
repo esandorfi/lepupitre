@@ -25,23 +25,29 @@ const props = withDefaults(
   }
 );
 
-const toneClassByTone: Record<AppBadgeTone, string> = {
-  neutral: "app-badge-neutral",
-  success: "app-badge-success",
-  danger: "app-badge-danger",
-  accent: "app-badge-accent",
-};
-
-const sizeClassBySize: Record<AppBadgeSize, string> = {
-  sm: "app-text-caption px-2 py-1",
-  md: "app-text-meta px-2.5 py-1",
+const BADGE_BASE_CLASS = "inline-flex items-center font-semibold";
+const BADGE_VARIANTS: {
+  tone: Record<AppBadgeTone, string>;
+  size: Record<AppBadgeSize, string>;
+} = {
+  tone: {
+    neutral: "app-badge-neutral",
+    success: "app-badge-success",
+    danger: "app-badge-danger",
+    accent: "app-badge-accent",
+  },
+  size: {
+    sm: "app-text-caption px-2 py-1",
+    md: "app-text-meta px-2.5 py-1",
+  },
 };
 
 const badgeClass = computed(() => {
   return [
-    "inline-flex items-center rounded-full font-semibold",
-    toneClassByTone[props.tone],
-    sizeClassBySize[props.size],
+    BADGE_BASE_CLASS,
+    props.square ? "rounded-md" : "rounded-full",
+    BADGE_VARIANTS.tone[props.tone],
+    BADGE_VARIANTS.size[props.size],
   ];
 });
 </script>

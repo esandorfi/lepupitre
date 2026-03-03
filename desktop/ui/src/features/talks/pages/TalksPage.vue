@@ -1,6 +1,8 @@
 ﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink, useRouter } from "vue-router";
+import AppBadge from "../../../components/ui/AppBadge.vue";
+import AppButton from "../../../components/ui/AppButton.vue";
 import EntityRow from "../../../components/EntityRow.vue";
 import PageHeader from "../../../components/PageHeader.vue";
 import PageShell from "../../../components/PageShell.vue";
@@ -208,12 +210,9 @@ watch(
   <PageShell>
     <PageHeader :eyebrow="t('talks.title')" :title="t('talks.title')" :subtitle="t('talks.subtitle')">
       <template #actions>
-        <RouterLink
-          class="app-button-primary app-focus-ring app-button-md inline-flex items-center"
-          to="/project/new"
-        >
+        <AppButton size="md" tone="primary" to="/project/new">
           {{ t("talks.create") }}
-        </RouterLink>
+        </AppButton>
       </template>
     </PageHeader>
 
@@ -229,13 +228,14 @@ watch(
           <div class="app-text app-text-subheadline mt-1">{{ mascotMessage.title }}</div>
           <div v-if="mascotBody" class="app-muted app-text-body mt-1">{{ mascotBody }}</div>
         </div>
-        <RouterLink
+        <AppButton
           v-if="mascotMessage.cta_route && mascotMessage.cta_label"
-          class="app-button-secondary app-focus-ring app-button-md inline-flex items-center"
+          size="md"
+          tone="secondary"
           :to="mascotMessage.cta_route"
         >
           {{ mascotMessage.cta_label }}
-        </RouterLink>
+        </AppButton>
       </div>
     </SectionPanel>
 
@@ -254,9 +254,9 @@ watch(
             <div class="app-text app-text-subheadline mt-1">{{ talksBlueprint.framework_label }}</div>
             <div class="app-muted app-text-body mt-1">{{ talksBlueprint.framework_summary }}</div>
           </div>
-          <div class="app-badge-neutral app-text-caption inline-flex items-center rounded-full px-2 py-1 font-semibold">
+          <AppBadge tone="neutral">
             {{ talksBlueprint.completion_percent }}%
-          </div>
+          </AppBadge>
         </div>
 
         <div class="h-2 overflow-hidden rounded-full app-meter-bg">
@@ -281,12 +281,9 @@ watch(
               </div>
             </div>
             <div class="flex items-center gap-2">
-              <span
-                class="app-text-caption inline-flex items-center rounded-full px-2 py-1 font-semibold"
-                :class="step.done ? 'app-badge-success' : 'app-badge-neutral'"
-              >
+              <AppBadge :tone="step.done ? 'success' : 'neutral'">
                 {{ step.done ? t("talks.blueprint_done") : t("talks.blueprint_pending") }}
-              </span>
+              </AppBadge>
               <RouterLink
                 v-if="!step.done && step.cta_route"
                 class="app-link app-text-meta underline"
@@ -336,9 +333,9 @@ watch(
               >
                 {{ talkNumberLabel(project.talk_number) }}
               </span>
-              <span class="app-badge-neutral app-text-caption inline-flex items-center rounded-full px-2 py-1 font-semibold">
+              <AppBadge tone="neutral">
                 {{ talkStageLabel(project.stage) }}
-              </span>
+              </AppBadge>
               <div class="app-text app-text-body-strong">{{ project.title }}</div>
             </div>
             <div class="app-subtle app-text-meta mt-1">
@@ -349,9 +346,9 @@ watch(
           </template>
 
           <template #actions>
-            <button
-              class="app-button-secondary app-focus-ring app-icon-button-md inline-flex items-center justify-center"
-              type="button"
+            <AppButton
+              size="icon-md"
+              tone="secondary"
               :aria-label="t('talks.view_report')"
               :title="t('talks.view_report')"
               @click.stop="goToReport(project.id)"
@@ -369,22 +366,22 @@ watch(
                 <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z" />
                 <circle cx="12" cy="12" r="3" />
               </svg>
-            </button>
+            </AppButton>
             <span
               v-if="project.is_active"
               class="app-pill app-pill-active app-text-meta inline-flex items-center rounded-full px-3 py-1 font-semibold"
             >
               {{ t("talks.active") }}
             </span>
-            <button
+            <AppButton
               v-else
-              class="app-button-secondary app-focus-ring app-button-sm inline-flex items-center disabled:cursor-not-allowed disabled:opacity-60"
-              type="button"
+              size="sm"
+              tone="secondary"
               :disabled="isSwitching === project.id"
               @click.stop="setActive(project.id)"
             >
               {{ t("talks.set_active") }}
-            </button>
+            </AppButton>
           </template>
         </EntityRow>
       </div>

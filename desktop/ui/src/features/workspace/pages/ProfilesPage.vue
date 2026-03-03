@@ -345,7 +345,6 @@ onBeforeUnmount(() => {
             </AppButton>
             <AppBadge
               v-else
-              class="app-button-lg"
               size="md"
               tone="accent"
             >

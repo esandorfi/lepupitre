@@ -234,12 +234,12 @@ async function restartOnboarding() {
         <article class="app-card app-radius-panel-lg border p-4">
           <h3 class="app-text text-sm font-semibold">{{ t("help.dev_ui_only_title") }}</h3>
           <p class="app-muted mt-2 text-sm">{{ t("help.dev_ui_only_body") }}</p>
-          <pre class="app-panel app-panel-compact mt-3 overflow-x-auto text-xs">pnpm -C desktop ui:dev</pre>
+          <pre class="app-card app-radius-panel-md mt-3 overflow-x-auto border p-3 text-xs">pnpm -C desktop ui:dev</pre>
         </article>
         <article class="app-card app-radius-panel-lg border p-4">
           <h3 class="app-text text-sm font-semibold">{{ t("help.dev_tauri_title") }}</h3>
           <p class="app-muted mt-2 text-sm">{{ t("help.dev_tauri_body") }}</p>
-          <pre class="app-panel app-panel-compact mt-3 overflow-x-auto text-xs">pnpm -C desktop dev</pre>
+          <pre class="app-card app-radius-panel-md mt-3 overflow-x-auto border p-3 text-xs">pnpm -C desktop dev</pre>
         </article>
       </div>
     </AppPanel>

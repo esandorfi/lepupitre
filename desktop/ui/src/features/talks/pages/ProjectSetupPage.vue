@@ -1,6 +1,8 @@
 ﻿<script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
+import AppButton from "../../../components/ui/AppButton.vue";
+import AppPanel from "../../../components/ui/AppPanel.vue";
 import { useI18n } from "../../../lib/i18n";
 import { appStore } from "../../../stores/app";
 
@@ -58,14 +60,14 @@ onMounted(bootstrap);
   <section class="space-y-6">
     <p class="app-muted text-sm font-semibold">{{ t("talk.subtitle") }}</p>
 
-    <div v-if="!activeProfileId" class="app-panel app-panel-compact">
+    <AppPanel v-if="!activeProfileId" variant="compact">
       <p class="app-text text-sm">{{ t("talk.need_profile") }}</p>
       <RouterLink class="app-link text-xs underline underline-offset-4" to="/profiles">
         {{ t("talk.goto_profiles") }}
       </RouterLink>
-    </div>
+    </AppPanel>
 
-    <div v-else class="app-panel app-panel-compact">
+    <AppPanel v-else variant="compact">
       <div v-if="activeProject" class="app-card mb-4 rounded-xl border p-3">
         <div class="app-subtle text-xs uppercase tracking-[0.2em]">
           {{ t("talk.active_title") }}
@@ -74,27 +76,24 @@ onMounted(bootstrap);
       </div>
 
       <div class="space-y-3">
-        <input
+        <UInput
           v-model="title"
-          class="app-input w-full rounded-lg border px-3 py-2 text-sm"
-          type="text"
+          class="w-full"
           :placeholder="t('talk.title_placeholder')"
         />
-        <input
+        <UInput
           v-model="audience"
-          class="app-input w-full rounded-lg border px-3 py-2 text-sm"
-          type="text"
+          class="w-full"
           :placeholder="t('talk.audience_placeholder')"
         />
-        <input
+        <UInput
           v-model="goal"
-          class="app-input w-full rounded-lg border px-3 py-2 text-sm"
-          type="text"
+          class="w-full"
           :placeholder="t('talk.goal_placeholder')"
         />
-        <input
+        <UInput
           v-model="duration"
-          class="app-input w-full rounded-lg border px-3 py-2 text-sm"
+          class="w-full"
           type="number"
           min="1"
           :placeholder="t('talk.duration_placeholder')"
@@ -102,21 +101,21 @@ onMounted(bootstrap);
       </div>
 
       <div class="mt-4 flex items-center gap-3">
-        <button
-          class="app-button-primary cursor-pointer rounded-full px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
-          type="button"
+        <AppButton
+          size="md"
+          tone="primary"
           :disabled="isSaving"
           @click="saveProject"
         >
           {{ t("talk.save") }}
-        </button>
+        </AppButton>
         <RouterLink class="app-muted text-xs underline underline-offset-4" to="/">
           {{ t("talk.back") }}
         </RouterLink>
       </div>
 
       <p v-if="error" class="app-danger-text mt-2 text-xs">{{ error }}</p>
-    </div>
+    </AppPanel>
   </section>
 </template>
 
