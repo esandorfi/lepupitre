@@ -146,8 +146,8 @@ function barStyle(peak: number, index: number) {
       </svg>
     </template>
     <span
-      v-else
       v-for="(peak, index) in bars"
+      v-else
       :key="index"
       class="flex-1 transition-[height,transform,opacity] duration-120 ease-out"
       :class="barClass()"
