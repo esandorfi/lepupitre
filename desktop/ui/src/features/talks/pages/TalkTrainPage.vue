@@ -287,10 +287,12 @@ onMounted(loadData);
       <div class="app-text-eyebrow">{{ t("talk_report.quest_library") }}</div>
       <div v-if="report.length === 0" class="app-muted app-text-body mt-3">{{ t("talk_report.no_quests") }}</div>
       <div v-else class="mt-3 space-y-3">
-        <div
+        <AppPanel
           v-for="(quest, index) in report"
           :key="quest.quest_code"
-          class="app-card app-radius-card border p-3"
+          as="div"
+          variant="compact"
+          class="app-radius-card"
         >
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -323,7 +325,7 @@ onMounted(loadData);
               {{ t("talk_report.view_feedback") }}
             </RouterLink>
           </div>
-        </div>
+        </AppPanel>
       </div>
     </AppPanel>
 

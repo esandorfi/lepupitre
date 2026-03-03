@@ -313,10 +313,11 @@ onMounted(loadReport);
         {{ t("talk_report.no_quests") }}
       </div>
       <div v-else class="mt-3 space-y-3">
-        <div
+        <AppPanel
           v-for="(quest, index) in report"
           :key="quest.quest_code"
-          class="app-card rounded-xl border p-3"
+          as="div"
+          variant="compact"
         >
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -348,7 +349,7 @@ onMounted(loadReport);
               {{ t("talk_report.view_feedback") }}
             </RouterLink>
           </div>
-        </div>
+        </AppPanel>
       </div>
     </AppPanel>
 
