@@ -813,13 +813,14 @@ onBeforeUnmount(() => {
               <div class="flex flex-col items-end gap-2">
                 <div class="app-muted text-xs">
                   {{ t("settings.transcription.model_source") }}:
-                  <button
-                    class="app-link max-w-[320px] truncate text-left"
-                    type="button"
+                  <AppButton
+                    class="app-link max-w-[320px] justify-start truncate text-left !px-0 !py-0 !font-normal"
+                    size="sm"
+                    tone="ghost"
                     @click="openSourceUrl(model.sourceUrl)"
                   >
                     {{ model.sourceUrl }}
-                  </button>
+                  </AppButton>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
                   <span v-if="downloadingModelId === model.id" class="app-muted text-xs">

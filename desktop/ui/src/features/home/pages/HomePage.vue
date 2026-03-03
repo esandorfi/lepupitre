@@ -790,14 +790,15 @@ watch(
               <AppBadge tone="neutral">
                 {{ heroQuestIsOverride ? t("training.hero_selected_badge") : t("training.hero_daily_badge") }}
               </AppBadge>
-              <button
+              <AppButton
                 v-if="heroQuestIsOverride && trainingDailyQuest"
-                class="app-link app-text-meta underline"
-                type="button"
+                class="app-link app-text-meta underline !px-0 !py-0 !font-normal"
+                size="sm"
+                tone="ghost"
                 @click="resetHeroQuestToDaily"
               >
                 {{ t("training.use_daily_quest") }}
-              </button>
+              </AppButton>
             </div>
             <div class="app-text app-text-page-title">{{ heroQuest.title }}</div>
             <div class="app-muted app-text-body">{{ heroQuest.prompt }}</div>

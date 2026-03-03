@@ -161,16 +161,17 @@ async function restartOnboarding() {
         <p class="app-muted mt-1 text-sm">{{ t("help.playbook_subtitle") }}</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
-        <button
+        <AppButton
           v-for="option in audienceOptions"
           :key="option.id"
-          class="app-focus-ring cursor-pointer rounded-full px-3 py-2 text-sm"
+          class="rounded-full px-3 py-2 text-sm"
           :class="selectedAudience === option.id ? 'app-pill-active' : 'app-pill'"
-          type="button"
+          size="sm"
+          tone="ghost"
           @click="setAudience(option.id)"
         >
           {{ option.label }}
-        </button>
+        </AppButton>
       </div>
     </AppPanel>
 
