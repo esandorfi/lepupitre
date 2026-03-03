@@ -1,12 +1,12 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, RouterLink } from "vue-router";
-import { resolveFeedbackBackLink, resolveFeedbackContextLabel } from "../lib/feedbackContext";
-import { useI18n } from "../lib/i18n";
-import { useUiPreferences } from "../lib/uiPreferences";
-import { isFeedbackReviewed, markFeedbackReviewed } from "../lib/feedbackReviewState";
-import { appStore } from "../stores/app";
-import type { FeedbackContext, FeedbackV1, MascotMessage } from "../schemas/ipc";
+import { resolveFeedbackBackLink, resolveFeedbackContextLabel } from "../../../lib/feedbackContext";
+import { useI18n } from "../../../lib/i18n";
+import { useUiPreferences } from "../../../lib/uiPreferences";
+import { isFeedbackReviewed, markFeedbackReviewed } from "../../../lib/feedbackReviewState";
+import { appStore } from "../../../stores/app";
+import type { FeedbackContext, FeedbackV1, MascotMessage } from "../../../schemas/ipc";
 
 const { t, locale } = useI18n();
 const { settings: uiSettings } = useUiPreferences();
@@ -321,3 +321,4 @@ watch(
     </div>
   </section>
 </template>
+

@@ -1,9 +1,9 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed } from "vue";
 import { RouterLink } from "vue-router";
-import AudioRecorder from "../components/AudioRecorder.vue";
-import { useI18n } from "../lib/i18n";
-import { appStore } from "../stores/app";
+import AudioRecorder from "../../../components/AudioRecorder.vue";
+import { useI18n } from "../../../lib/i18n";
+import { appStore } from "../../../stores/app";
 
 const { t } = useI18n();
 const activeProfileId = computed(() => appStore.state.activeProfileId);
@@ -40,3 +40,4 @@ const activeProfileId = computed(() => appStore.state.activeProfileId);
     </div>
   </section>
 </template>
+

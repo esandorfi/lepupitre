@@ -1,9 +1,9 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import TalkStepPageShell from "../components/TalkStepPageShell.vue";
-import { useI18n } from "../lib/i18n";
-import { appStore } from "../stores/app";
+import TalkStepPageShell from "../../../components/TalkStepPageShell.vue";
+import { useI18n } from "../../../lib/i18n";
+import { appStore } from "../../../stores/app";
 
 const { t } = useI18n();
 const route = useRoute();
@@ -441,3 +441,4 @@ watch(project, () => {
     </div>
   </TalkStepPageShell>
 </template>
+

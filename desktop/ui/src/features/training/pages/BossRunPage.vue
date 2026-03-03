@@ -1,10 +1,10 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter, RouterLink } from "vue-router";
-import AudioRecorder from "../components/AudioRecorder.vue";
-import { useI18n } from "../lib/i18n";
-import { appStore } from "../stores/app";
-import type { RunSummary } from "../schemas/ipc";
+import AudioRecorder from "../../../components/AudioRecorder.vue";
+import { useI18n } from "../../../lib/i18n";
+import { appStore } from "../../../stores/app";
+import type { RunSummary } from "../../../schemas/ipc";
 
 const { t } = useI18n();
 const router = useRouter();
@@ -25,7 +25,7 @@ const talkLabel = computed(() => {
     return "";
   }
   const number = appStore.getTalkNumber(activeProject.value.id);
-  const prefix = number ? `T${number} · ` : "";
+  const prefix = number ? `T${number} Â· ` : "";
   return `${prefix}${activeProject.value.title}`;
 });
 
@@ -252,3 +252,4 @@ watch(
     </div>
   </section>
 </template>
+

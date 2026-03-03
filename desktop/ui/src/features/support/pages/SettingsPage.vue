@@ -1,20 +1,20 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-shell";
-import { useI18n } from "../lib/i18n";
-import { classifyAsrError } from "../lib/asrErrors";
-import { useNavMetrics } from "../lib/navMetrics";
-import { useRecorderHealthMetrics } from "../lib/recorderHealthMetrics";
-import { useTranscriptionSettings } from "../lib/transcriptionSettings";
+import { useI18n } from "../../../lib/i18n";
+import { classifyAsrError } from "../../../lib/asrErrors";
+import { useNavMetrics } from "../../../lib/navMetrics";
+import { useRecorderHealthMetrics } from "../../../lib/recorderHealthMetrics";
+import { useTranscriptionSettings } from "../../../lib/transcriptionSettings";
 import type {
   GamificationMode,
   MascotIntensity,
   PrimaryNavMode,
-} from "../lib/uiPreferences";
-import { useUiPreferences } from "../lib/uiPreferences";
-import { hasTauriRuntime } from "../lib/runtime";
-import { invokeChecked } from "../composables/useIpc";
+} from "../../../lib/uiPreferences";
+import { useUiPreferences } from "../../../lib/uiPreferences";
+import { hasTauriRuntime } from "../../../lib/runtime";
+import { invokeChecked } from "../../../composables/useIpc";
 import {
   AsrModelDownloadPayloadSchema,
   AsrModelDownloadProgressEventSchema,
@@ -27,7 +27,7 @@ import {
   AsrSidecarStatusResponseSchema,
   EmptyPayloadSchema,
   VoidResponseSchema,
-} from "../schemas/ipc";
+} from "../../../schemas/ipc";
 
 const { t } = useI18n();
 const { settings, updateSettings } = useTranscriptionSettings();
@@ -743,7 +743,7 @@ onBeforeUnmount(() => {
               :value="option.id"
               :disabled="!option.installed"
             >
-              {{ option.label }} — {{ option.status }}
+              {{ option.label }} â€” {{ option.status }}
             </option>
           </select>
           <p class="app-muted mt-2 text-xs">
@@ -892,3 +892,4 @@ onBeforeUnmount(() => {
     </div>
   </section>
 </template>
+

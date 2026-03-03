@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 /* eslint-disable vue/no-v-html */
 import { computed, nextTick, ref, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
@@ -9,9 +9,9 @@ import {
   parseHelpTopic,
   toHelpTopicElementId,
   type HelpAudience,
-} from "../lib/helpContent";
-import { useI18n } from "../lib/i18n";
-import { useUiPreferences } from "../lib/uiPreferences";
+} from "../../../lib/helpContent";
+import { useI18n } from "../../../lib/i18n";
+import { useUiPreferences } from "../../../lib/uiPreferences";
 
 const { t } = useI18n();
 const route = useRoute();
@@ -262,3 +262,4 @@ async function restartOnboarding() {
     </div>
   </section>
 </template>
+

@@ -1,14 +1,14 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink, useRouter } from "vue-router";
-import EntityRow from "../components/EntityRow.vue";
-import PageHeader from "../components/PageHeader.vue";
-import PageShell from "../components/PageShell.vue";
-import SectionPanel from "../components/SectionPanel.vue";
-import { useI18n } from "../lib/i18n";
-import { useUiPreferences } from "../lib/uiPreferences";
-import { appStore } from "../stores/app";
-import type { MascotMessage, TalksBlueprint } from "../schemas/ipc";
+import EntityRow from "../../../components/EntityRow.vue";
+import PageHeader from "../../../components/PageHeader.vue";
+import PageShell from "../../../components/PageShell.vue";
+import SectionPanel from "../../../components/SectionPanel.vue";
+import { useI18n } from "../../../lib/i18n";
+import { useUiPreferences } from "../../../lib/uiPreferences";
+import { appStore } from "../../../stores/app";
+import type { MascotMessage, TalksBlueprint } from "../../../schemas/ipc";
 
 const { t, locale } = useI18n();
 const { settings: uiSettings } = useUiPreferences();
@@ -343,7 +343,7 @@ watch(
             </div>
             <div class="app-subtle app-text-meta mt-1">
               {{ t("talks.duration") }}: {{ formatDuration(project.duration_target_sec) }}
-              {{ t("talks.minutes") }} ·
+              {{ t("talks.minutes") }} Â·
               {{ t("talks.last_activity") }}: {{ formatLastActivity(project.updated_at) }}
             </div>
           </template>
@@ -391,3 +391,4 @@ watch(
     </SectionPanel>
   </PageShell>
 </template>
+

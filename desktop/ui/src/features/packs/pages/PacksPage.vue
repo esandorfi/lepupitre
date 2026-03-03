@@ -1,14 +1,14 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { RouterLink } from "vue-router";
 import { open } from "@tauri-apps/plugin-dialog";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { DragDropEvent } from "@tauri-apps/api/window";
 import type { UnlistenFn } from "@tauri-apps/api/event";
-import { useI18n } from "../lib/i18n";
-import { hasTauriRuntime } from "../lib/runtime";
-import { appStore } from "../stores/app";
-import type { PackInspectResponse } from "../schemas/ipc";
+import { useI18n } from "../../../lib/i18n";
+import { hasTauriRuntime } from "../../../lib/runtime";
+import { appStore } from "../../../stores/app";
+import type { PackInspectResponse } from "../../../schemas/ipc";
 
 const { t } = useI18n();
 const error = ref<string | null>(null);
@@ -242,3 +242,4 @@ onBeforeUnmount(() => {
     </div>
   </section>
 </template>
+
