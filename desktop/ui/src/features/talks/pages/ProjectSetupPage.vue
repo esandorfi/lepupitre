@@ -3,8 +3,8 @@ import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppPanel from "@/components/ui/AppPanel.vue";
-import { useI18n } from "../../../lib/i18n";
-import { appStore } from "../../../stores/app";
+import { useI18n } from "@/lib/i18n";
+import { appStore } from "@/stores/app";
 
 const { t } = useI18n();
 const title = ref("");
@@ -68,12 +68,12 @@ onMounted(bootstrap);
     </AppPanel>
 
     <AppPanel v-else variant="compact">
-      <div v-if="activeProject" class="app-card mb-4 rounded-xl border p-3">
+      <AppPanel v-if="activeProject" as="div" class="mb-4" variant="compact">
         <div class="app-subtle text-xs uppercase tracking-[0.2em]">
           {{ t("talk.active_title") }}
         </div>
         <div class="app-text text-sm">{{ activeProject.title }}</div>
-      </div>
+      </AppPanel>
 
       <div class="space-y-3">
         <UInput
