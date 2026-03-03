@@ -5,8 +5,8 @@ import TalkStepPageShell from "@/components/TalkStepPageShell.vue";
 import AppBadge from "@/components/ui/AppBadge.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppPanel from "@/components/ui/AppPanel.vue";
-import { useI18n } from "../../../lib/i18n";
-import { appStore } from "../../../stores/app";
+import { useI18n } from "@/lib/i18n";
+import { appStore } from "@/stores/app";
 
 const { t } = useI18n();
 const route = useRoute();
@@ -339,7 +339,7 @@ watch(project, () => {
           </p>
         </div>
         <div class="grid gap-3 md:grid-cols-2">
-          <div class="app-card app-radius-card border p-3 md:col-span-2">
+          <AppPanel as="div" class="app-radius-card md:col-span-2" variant="compact">
             <div class="app-text-eyebrow">{{ t("talk_define.field_title") }}</div>
             <UInput
               v-model="form.title"
@@ -350,8 +350,8 @@ watch(project, () => {
               @blur="saveDefine"
               @keydown.enter.prevent="saveDefine"
             />
-          </div>
-          <div class="app-card app-radius-card border p-3">
+          </AppPanel>
+          <AppPanel as="div" class="app-radius-card" variant="compact">
             <div class="app-text-eyebrow">{{ t("talk_define.field_audience") }}</div>
             <UInput
               v-model="form.audience"
@@ -362,8 +362,8 @@ watch(project, () => {
               @blur="saveDefine"
               @keydown.enter.prevent="saveDefine"
             />
-          </div>
-          <div class="app-card app-radius-card border p-3">
+          </AppPanel>
+          <AppPanel as="div" class="app-radius-card" variant="compact">
             <div class="app-text-eyebrow">{{ t("talk_define.field_duration") }}</div>
             <UInput
               v-model="form.durationMinutes"
@@ -379,8 +379,8 @@ watch(project, () => {
             <p class="app-muted app-text-meta mt-2">
               {{ minutesLabel(project.duration_target_sec) }}
             </p>
-          </div>
-          <div class="app-card app-radius-card border p-3 md:col-span-2">
+          </AppPanel>
+          <AppPanel as="div" class="app-radius-card md:col-span-2" variant="compact">
             <div class="app-text-eyebrow">{{ t("talk_define.field_goal") }}</div>
             <UTextarea
               v-model="form.goal"
@@ -389,8 +389,8 @@ watch(project, () => {
               :placeholder="t('talk.goal_placeholder')"
               @blur="saveDefine"
             />
-          </div>
-          <div class="app-card app-radius-card border p-3 md:col-span-2">
+          </AppPanel>
+          <AppPanel as="div" class="app-radius-card md:col-span-2" variant="compact">
             <div class="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <div class="app-text-eyebrow">
@@ -413,7 +413,7 @@ watch(project, () => {
                 {{ option.label }}
               </AppButton>
             </div>
-          </div>
+          </AppPanel>
         </div>
         <div class="mt-4 flex flex-wrap items-center gap-2">
           <AppButton
