@@ -2,6 +2,7 @@ export type AppErrorCode =
   | "IPC_INVALID_PAYLOAD"
   | "IPC_INVALID_RESPONSE"
   | "IPC_COMMAND_FAILED"
+  | "IPC_UNAVAILABLE"
   | "IPC_TIMEOUT";
 
 export class AppError extends Error {

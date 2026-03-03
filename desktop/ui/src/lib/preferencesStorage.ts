@@ -1,4 +1,5 @@
 import { invokeChecked } from "../composables/useIpc";
+import { hasTauriRuntime } from "./runtime";
 import {
   PreferenceGlobalGetPayloadSchema,
   PreferenceGlobalSetPayloadSchema,
@@ -35,14 +36,6 @@ function resolveStorage(): StorageLike | null {
   } catch {
     return null;
   }
-}
-
-function hasTauriRuntime(): boolean {
-  if (typeof window === "undefined") {
-    return false;
-  }
-  const runtimeWindow = window as typeof window & { __TAURI_INTERNALS__?: unknown };
-  return typeof runtimeWindow.__TAURI_INTERNALS__ !== "undefined";
 }
 
 function normalizeOptions(options: PreferenceOptions): ResolvedPreferenceOptions {

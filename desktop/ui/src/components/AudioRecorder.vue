@@ -10,6 +10,7 @@ import RecorderExportPanel from "./recorder/RecorderExportPanel.vue";
 import RecorderQuickCleanPanel from "./recorder/RecorderQuickCleanPanel.vue";
 import { classifyAsrError } from "../lib/asrErrors";
 import { useI18n } from "../lib/i18n";
+import { hasTauriRuntime } from "../lib/runtime";
 import { recordRecorderHealthEvent } from "../lib/recorderHealthMetrics";
 import { useUiPreferences } from "../lib/uiPreferences";
 import {
@@ -1127,6 +1128,10 @@ onMounted(async () => {
     }
   }, DEFERRED_BACKGROUND_CHECK_MS);
   window.addEventListener("keydown", handleShortcut);
+
+  if (!hasTauriRuntime()) {
+    return;
+  }
 
   unlistenProgress = await listen<JobProgressEvent>("job:progress", (event) => {
     if (transcribeJobId.value && event.payload.jobId !== transcribeJobId.value) {

@@ -77,6 +77,7 @@ import {
   TalksBlueprint,
 } from "../schemas/ipc";
 import { hydratePreferences, setActivePreferenceProfile } from "../lib/preferencesStorage";
+import { isUiDevWithoutTauri } from "../lib/runtime";
 
 const state = reactive({
   profiles: [] as ProfileSummary[],
@@ -128,6 +129,7 @@ async function hydratePreferenceContext(profileId: string | null) {
 }
 
 let bootstrapPromise: Promise<void> | null = null;
+let uiPreviewModeLogged = false;
 
 async function loadProfiles() {
   const profiles = await listWorkspaceProfiles();
@@ -583,6 +585,27 @@ async function setFeedbackNote(feedbackId: string, note: string) {
 
 async function bootstrap() {
   if (state.hasBootstrapped) {
+    return;
+  }
+  if (isUiDevWithoutTauri()) {
+    state.profiles = [];
+    state.activeProfileId = null;
+    state.hasBootstrapped = true;
+    state.isBootstrapping = false;
+    state.activeProject = null;
+    state.trainingProjectId = null;
+    state.projects = [];
+    state.dailyQuest = null;
+    state.recentAttempts = [];
+    state.lastAttemptId = null;
+    state.lastFeedbackId = null;
+    state.lastFeedbackContext = null;
+    setActivePreferenceProfile(null);
+    await hydratePreferenceContext(null);
+    if (!uiPreviewModeLogged) {
+      console.info("UI preview mode: running without Tauri backend runtime.");
+      uiPreviewModeLogged = true;
+    }
     return;
   }
   if (bootstrapPromise) {

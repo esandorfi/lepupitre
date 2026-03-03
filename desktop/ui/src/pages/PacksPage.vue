@@ -6,6 +6,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { DragDropEvent } from "@tauri-apps/api/window";
 import type { UnlistenFn } from "@tauri-apps/api/event";
 import { useI18n } from "../lib/i18n";
+import { hasTauriRuntime } from "../lib/runtime";
 import { appStore } from "../stores/app";
 import type { PackInspectResponse } from "../schemas/ipc";
 
@@ -132,6 +133,9 @@ onMounted(async () => {
     await appStore.bootstrap();
   } catch (err) {
     error.value = toError(err);
+  }
+  if (!hasTauriRuntime()) {
+    return;
   }
   unlistenDragDrop = await getCurrentWindow().onDragDropEvent((event) => {
     onDragDrop(event.payload);
