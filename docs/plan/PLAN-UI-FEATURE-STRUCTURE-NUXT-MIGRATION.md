@@ -67,7 +67,7 @@ Restructure the desktop UI into feature-oriented directories and then migrate to
 ### Checklist
 - [x] Add minimal wrapper set under `src/components/ui/`
 - [x] Refactor shared primitive components to use wrappers/Nuxt
-- [ ] Migrate support + workspace pages
+- [x] Migrate support + workspace pages
 - [ ] Migrate Home feature as a full vertical slice
 - [ ] Migrate talks + feedback features
 - [ ] Migrate recorder composites
@@ -97,4 +97,4 @@ Restructure the desktop UI into feature-oriented directories and then migrate to
   - Migrated `ConfirmDialog`, `PageHeader`, and `SectionPanel` to wrappers.
   - Step B wave 2 (partial) continued.
   - Migrated support pages `About`, `Help`, `Onboarding` and workspace page `Profiles` to wrapper-first panels/buttons/badges.
-  - Deferred `Settings` full field/menu migration to next wave (largest remaining support page).
+  - Completed `Settings` migration to wrapper-first panels/buttons/badges and Nuxt UI field controls (`USelect`/`USwitch`).

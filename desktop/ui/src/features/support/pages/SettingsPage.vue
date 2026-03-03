@@ -2,6 +2,9 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-shell";
+import AppBadge from "../../../components/ui/AppBadge.vue";
+import AppButton from "../../../components/ui/AppButton.vue";
+import AppPanel from "../../../components/ui/AppPanel.vue";
 import { useI18n } from "../../../lib/i18n";
 import { classifyAsrError } from "../../../lib/asrErrors";
 import { useNavMetrics } from "../../../lib/navMetrics";
@@ -121,6 +124,13 @@ const modelOptions = computed(() =>
     };
   })
 );
+const modelSelectOptions = computed(() =>
+  modelOptions.value.map((option) => ({
+    value: option.id,
+    label: `${option.label} - ${option.status}`,
+    disabled: !option.installed,
+  }))
+);
 
 const modeOptions = computed(() => [
   { value: "auto", label: t("settings.transcription.mode_auto") },
@@ -140,6 +150,29 @@ const mascotIntensityOptions = computed(() => [
   { value: "minimal", label: t("settings.voiceup.mascot_minimal") },
   { value: "contextual", label: t("settings.voiceup.mascot_contextual") },
 ]);
+
+const sidecarBadgeTone = computed<"danger" | "neutral" | "success">(() => {
+  if (sidecarStatus.value === "ready") {
+    return "success";
+  }
+  if (sidecarStatus.value === "missing" || sidecarStatus.value === "incompatible") {
+    return "danger";
+  }
+  return "neutral";
+});
+
+const sidecarStatusLabel = computed(() => {
+  if (sidecarStatus.value === "ready") {
+    return t("settings.transcription.sidecar_ready");
+  }
+  if (sidecarStatus.value === "missing") {
+    return t("settings.transcription.sidecar_missing_label");
+  }
+  if (sidecarStatus.value === "incompatible") {
+    return t("settings.transcription.sidecar_incompatible_label");
+  }
+  return t("settings.transcription.sidecar_unknown_label");
+});
 
 const spokenPunctuationEnabled = computed({
   get: () => settings.value.spokenPunctuation,
@@ -456,7 +489,7 @@ onBeforeUnmount(() => {
 
 <template>
   <section class="space-y-4">
-    <div class="app-card app-radius-panel-lg border p-4">
+    <AppPanel class="app-radius-panel-lg" variant="compact">
       <div class="flex items-center justify-between">
         <div>
           <h2 class="app-nav-text text-lg font-semibold">
@@ -476,15 +509,12 @@ onBeforeUnmount(() => {
           <label class="app-nav-text text-xs font-semibold">
             {{ t("settings.navigation.mode_label") }}
           </label>
-          <select v-model="selectedNavMode" class="app-input mt-2 w-full rounded-lg border px-3 py-2 text-sm">
-            <option
-              v-for="option in navModeOptions"
-              :key="option.value"
-              :value="option.value"
-            >
-              {{ option.label }}
-            </option>
-          </select>
+          <USelect
+            v-model="selectedNavMode"
+            class="mt-2 w-full"
+            :items="navModeOptions"
+            value-key="value"
+          />
           <p class="app-muted mt-2 text-xs">
             {{ t("settings.navigation.mode_note") }}
           </p>
@@ -507,19 +537,15 @@ onBeforeUnmount(() => {
             <div class="text-right font-semibold">{{ navMetrics.sidebarSessionCount }}</div>
           </div>
           <div class="mt-3 flex justify-end">
-            <button
-              class="app-button-secondary app-focus-ring cursor-pointer rounded-full px-3 py-1.5 text-xs font-semibold"
-              type="button"
-              @click="resetNavMetrics"
-            >
+            <AppButton size="sm" tone="secondary" @click="resetNavMetrics">
               {{ t("settings.navigation.metrics_reset") }}
-            </button>
+            </AppButton>
           </div>
         </div>
       </div>
-    </div>
+    </AppPanel>
 
-    <div class="app-card app-radius-panel-lg border p-4">
+    <AppPanel class="app-radius-panel-lg" variant="compact">
       <div class="flex items-center justify-between">
         <div>
           <h2 class="app-nav-text text-lg font-semibold">
@@ -605,17 +631,13 @@ onBeforeUnmount(() => {
       </div>
 
       <div class="mt-3 flex justify-end">
-        <button
-          class="app-button-secondary app-focus-ring cursor-pointer rounded-full px-3 py-1.5 text-xs font-semibold"
-          type="button"
-          @click="resetRecorderHealthMetrics"
-        >
+        <AppButton size="sm" tone="secondary" @click="resetRecorderHealthMetrics">
           {{ t("settings.insights.health_reset") }}
-        </button>
+        </AppButton>
       </div>
-    </div>
+    </AppPanel>
 
-    <div class="app-card app-radius-panel-lg border p-4">
+    <AppPanel class="app-radius-panel-lg" variant="compact">
       <div class="flex items-center justify-between">
         <div>
           <h2 class="app-nav-text text-lg font-semibold">
@@ -635,18 +657,12 @@ onBeforeUnmount(() => {
           <label class="app-nav-text text-xs font-semibold">
             {{ t("settings.voiceup.gamification_label") }}
           </label>
-          <select
+          <USelect
             v-model="selectedGamificationMode"
-            class="app-input mt-2 w-full rounded-lg border px-3 py-2 text-sm"
-          >
-            <option
-              v-for="option in gamificationModeOptions"
-              :key="option.value"
-              :value="option.value"
-            >
-              {{ option.label }}
-            </option>
-          </select>
+            class="mt-2 w-full"
+            :items="gamificationModeOptions"
+            value-key="value"
+          />
           <p class="app-muted mt-2 text-xs">
             {{ t("settings.voiceup.gamification_note") }}
           </p>
@@ -656,17 +672,12 @@ onBeforeUnmount(() => {
           <label class="app-nav-text text-xs font-semibold">
             {{ t("settings.voiceup.mascot_enabled_label") }}
           </label>
-          <button
-            type="button"
-            class="app-toggle mt-2 inline-flex items-center gap-2 text-xs"
-            :class="mascotEnabled ? 'app-toggle-on' : 'app-toggle-off'"
-            @click="mascotEnabled = !mascotEnabled"
-          >
-            <span class="app-toggle-dot"></span>
-            <span>
-              {{ mascotEnabled ? t("settings.voiceup.mascot_on") : t("settings.voiceup.mascot_off") }}
-            </span>
-          </button>
+          <USwitch
+            v-model="mascotEnabled"
+            class="mt-2"
+            :label="mascotEnabled ? t('settings.voiceup.mascot_on') : t('settings.voiceup.mascot_off')"
+            size="md"
+          />
           <p class="app-muted mt-2 text-xs">
             {{ t("settings.voiceup.mascot_note") }}
           </p>
@@ -676,27 +687,21 @@ onBeforeUnmount(() => {
           <label class="app-nav-text text-xs font-semibold">
             {{ t("settings.voiceup.mascot_intensity_label") }}
           </label>
-          <select
+          <USelect
             v-model="selectedMascotIntensity"
-            class="app-input mt-2 w-full rounded-lg border px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+            class="mt-2 w-full"
             :disabled="!mascotEnabled"
-          >
-            <option
-              v-for="option in mascotIntensityOptions"
-              :key="option.value"
-              :value="option.value"
-            >
-              {{ option.label }}
-            </option>
-          </select>
+            :items="mascotIntensityOptions"
+            value-key="value"
+          />
           <p class="app-muted mt-2 text-xs">
             {{ t("settings.voiceup.mascot_intensity_note") }}
           </p>
         </div>
       </div>
-    </div>
+    </AppPanel>
 
-    <div class="app-card app-radius-panel-lg border p-4">
+    <AppPanel class="app-radius-panel-lg" variant="compact">
       <div class="flex items-center justify-between">
         <div>
           <h2 class="app-nav-text text-lg font-semibold">
@@ -704,22 +709,9 @@ onBeforeUnmount(() => {
           </h2>
           <div class="mt-1 flex items-center gap-2 text-xs">
             <span class="app-muted">{{ t("settings.transcription.sidecar_label") }}</span>
-            <span
-              class="app-text-caption rounded-full px-2 py-0.5 font-semibold"
-              :class="sidecarStatus === 'ready'
-                ? 'app-badge-success'
-                : sidecarStatus === 'missing' || sidecarStatus === 'incompatible'
-                  ? 'app-badge-danger'
-                  : 'app-badge-neutral'"
-            >
-              {{ sidecarStatus === "ready"
-                ? t("settings.transcription.sidecar_ready")
-                : sidecarStatus === "missing"
-                  ? t("settings.transcription.sidecar_missing_label")
-                  : sidecarStatus === "incompatible"
-                    ? t("settings.transcription.sidecar_incompatible_label")
-                    : t("settings.transcription.sidecar_unknown_label") }}
-            </span>
+            <AppBadge :tone="sidecarBadgeTone">
+              {{ sidecarStatusLabel }}
+            </AppBadge>
           </div>
           <p class="app-muted text-xs">
             {{ t("settings.transcription.subtitle") }}
@@ -736,16 +728,12 @@ onBeforeUnmount(() => {
           <label class="app-nav-text text-xs font-semibold">
             {{ t("settings.transcription.model_label") }}
           </label>
-          <select v-model="selectedModel" class="app-input mt-2 w-full rounded-lg border px-3 py-2 text-sm">
-            <option
-              v-for="option in modelOptions"
-              :key="option.id"
-              :value="option.id"
-              :disabled="!option.installed"
-            >
-              {{ option.label }} â€” {{ option.status }}
-            </option>
-          </select>
+          <USelect
+            v-model="selectedModel"
+            class="mt-2 w-full"
+            :items="modelSelectOptions"
+            value-key="value"
+          />
           <p class="app-muted mt-2 text-xs">
             {{ t("settings.transcription.model_note") }}
           </p>
@@ -755,11 +743,12 @@ onBeforeUnmount(() => {
           <label class="app-nav-text text-xs font-semibold">
             {{ t("settings.transcription.mode_label") }}
           </label>
-          <select v-model="selectedMode" class="app-input mt-2 w-full rounded-lg border px-3 py-2 text-sm">
-            <option v-for="option in modeOptions" :key="option.value" :value="option.value">
-              {{ option.label }}
-            </option>
-          </select>
+          <USelect
+            v-model="selectedMode"
+            class="mt-2 w-full"
+            :items="modeOptions"
+            value-key="value"
+          />
           <p class="app-muted mt-2 text-xs">
             {{ t("settings.transcription.mode_note") }}
           </p>
@@ -769,11 +758,12 @@ onBeforeUnmount(() => {
           <label class="app-nav-text text-xs font-semibold">
             {{ t("settings.transcription.language_label") }}
           </label>
-          <select v-model="selectedLanguage" class="app-input mt-2 w-full rounded-lg border px-3 py-2 text-sm">
-            <option v-for="option in languageOptions" :key="option.value" :value="option.value">
-              {{ option.label }}
-            </option>
-          </select>
+          <USelect
+            v-model="selectedLanguage"
+            class="mt-2 w-full"
+            :items="languageOptions"
+            value-key="value"
+          />
           <p class="app-muted mt-2 text-xs">
             {{ t("settings.transcription.language_note") }}
           </p>
@@ -782,17 +772,14 @@ onBeforeUnmount(() => {
           <label class="app-nav-text text-xs font-semibold">
             {{ t("settings.transcription.spoken_punctuation_label") }}
           </label>
-          <button
-            type="button"
-            class="app-toggle mt-2 inline-flex items-center gap-2 text-xs"
-            :class="spokenPunctuationEnabled ? 'app-toggle-on' : 'app-toggle-off'"
-            @click="spokenPunctuationEnabled = !spokenPunctuationEnabled"
-          >
-            <span class="app-toggle-dot"></span>
-            <span>
-              {{ spokenPunctuationEnabled ? t("settings.transcription.spoken_punctuation_on") : t("settings.transcription.spoken_punctuation_off") }}
-            </span>
-          </button>
+          <USwitch
+            v-model="spokenPunctuationEnabled"
+            class="mt-2"
+            :label="spokenPunctuationEnabled
+              ? t('settings.transcription.spoken_punctuation_on')
+              : t('settings.transcription.spoken_punctuation_off')"
+            size="md"
+          />
           <p class="app-muted mt-2 text-xs">
             {{ t("settings.transcription.spoken_punctuation_note") }}
           </p>
@@ -841,30 +828,30 @@ onBeforeUnmount(() => {
                   <span v-else-if="verifyingModelId === model.id" class="app-muted text-xs">
                     {{ t("settings.transcription.model_verifying") }}
                   </span>
-                  <button
+                  <AppButton
                     v-else-if="!model.installed"
-                    class="app-button-secondary cursor-pointer rounded-full px-3 py-2 text-xs font-semibold transition"
-                    type="button"
+                    size="sm"
+                    tone="secondary"
                     @click="downloadModel(model.id)"
                   >
                     {{ t("settings.transcription.download_action") }}
-                  </button>
+                  </AppButton>
                   <template v-else>
-                    <button
+                    <AppButton
                       v-if="model.checksumOk == null"
-                      class="app-button-secondary cursor-pointer rounded-full px-3 py-2 text-xs font-semibold transition"
-                      type="button"
+                      size="sm"
+                      tone="secondary"
                       @click="verifyModel(model.id)"
                     >
                       {{ t("settings.transcription.model_verify") }}
-                    </button>
-                    <button
-                      class="app-button-secondary cursor-pointer rounded-full px-3 py-2 text-xs font-semibold transition"
-                      type="button"
+                    </AppButton>
+                    <AppButton
+                      size="sm"
+                      tone="secondary"
                       @click="removeModel(model.id)"
                     >
                       {{ t("settings.transcription.model_remove") }}
-                    </button>
+                    </AppButton>
                   </template>
                   <span v-if="model.installed" class="app-muted text-xs">
                     {{ t("settings.transcription.model_installed") }}
@@ -889,7 +876,7 @@ onBeforeUnmount(() => {
           {{ downloadError }}
         </div>
       </div>
-    </div>
+    </AppPanel>
   </section>
 </template>
 
