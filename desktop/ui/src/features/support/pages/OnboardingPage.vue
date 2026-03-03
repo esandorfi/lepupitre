@@ -142,17 +142,18 @@ async function finishOnboarding(target = nextPath.value) {
       </div>
 
       <div class="grid gap-2 lg:grid-cols-3">
-        <button
+        <AppButton
           v-for="option in audienceOptions"
           :key="option.id"
-          class="app-focus-ring cursor-pointer rounded-xl border px-3 py-3 text-left"
+          class="w-full justify-start rounded-xl border px-3 py-3 text-left"
           :class="selectedAudience === option.id ? 'app-pill-active' : 'app-pill'"
-          type="button"
+          size="md"
+          tone="ghost"
           @click="selectAudience(option.id)"
         >
           <div class="app-text text-sm font-semibold">{{ option.label }}</div>
           <div class="app-text-meta mt-1">{{ option.description }}</div>
-        </button>
+        </AppButton>
       </div>
 
       <article v-if="audiencePlan" class="app-card app-radius-panel-lg border p-4">
