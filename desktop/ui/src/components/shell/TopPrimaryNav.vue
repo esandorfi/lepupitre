@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppBadge from "@/components/ui/AppBadge.vue";
+import AppButton from "@/components/ui/AppButton.vue";
 import type { ResolvedPrimaryNavItem } from "@/lib/navigation";
 
 defineProps<{
@@ -36,14 +37,15 @@ const emit = defineEmits<{
               </AppBadge>
             </span>
           </RouterLink>
-          <button
+          <AppButton
             v-else
+            tone="ghost"
+            size="md"
             class="app-top-tab app-top-tab-disabled rounded-full px-3 py-2 transition"
-            type="button"
             disabled
           >
             {{ item.label }}
-          </button>
+          </AppButton>
         </template>
       </nav>
     </div>
