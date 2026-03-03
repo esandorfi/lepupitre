@@ -2,9 +2,9 @@
 import { computed, onMounted, ref } from "vue";
 import { useRoute, RouterLink } from "vue-router";
 import AppPanel from "@/components/ui/AppPanel.vue";
-import { useI18n } from "../../../lib/i18n";
-import { appStore } from "../../../stores/app";
-import type { PeerReviewDetail } from "../../../schemas/ipc";
+import { useI18n } from "@/lib/i18n";
+import { appStore } from "@/stores/app";
+import type { PeerReviewDetail } from "@/schemas/ipc";
 
 const { t } = useI18n();
 const route = useRoute();
@@ -111,7 +111,7 @@ onMounted(async () => {
       </div>
 
       <div v-else-if="reviewDetail" class="mt-4 space-y-4">
-        <div class="app-card rounded-xl border p-3">
+        <AppPanel variant="compact">
           <div class="app-subtle text-xs uppercase tracking-[0.2em]">
             {{ t("peer_review.scores") }}
           </div>
@@ -124,9 +124,9 @@ onMounted(async () => {
               <span class="app-text ml-1">{{ formatValue(value) }}</span>
             </div>
           </div>
-        </div>
+        </AppPanel>
 
-        <div class="app-card rounded-xl border p-3">
+        <AppPanel variant="compact">
           <div class="app-subtle text-xs uppercase tracking-[0.2em]">
             {{ t("peer_review.free_text") }}
           </div>
@@ -139,16 +139,16 @@ onMounted(async () => {
               <div class="app-muted">{{ formatValue(value) }}</div>
             </div>
           </div>
-        </div>
+        </AppPanel>
 
-        <div class="app-card rounded-xl border p-3 text-xs">
+        <AppPanel class="text-xs" variant="compact">
           <div class="app-subtle text-xs uppercase tracking-[0.2em]">
             {{ t("peer_review.timestamps") }}
           </div>
           <div class="app-text mt-2">
             {{ reviewDetail.review.timestamps.length }}
           </div>
-        </div>
+        </AppPanel>
       </div>
 
       <div v-else class="app-muted mt-4 text-xs">

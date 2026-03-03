@@ -3,12 +3,12 @@ import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, RouterLink } from "vue-router";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppPanel from "@/components/ui/AppPanel.vue";
-import { resolveFeedbackBackLink, resolveFeedbackContextLabel } from "../../../lib/feedbackContext";
-import { useI18n } from "../../../lib/i18n";
-import { useUiPreferences } from "../../../lib/uiPreferences";
-import { isFeedbackReviewed, markFeedbackReviewed } from "../../../lib/feedbackReviewState";
-import { appStore } from "../../../stores/app";
-import type { FeedbackContext, FeedbackV1, MascotMessage } from "../../../schemas/ipc";
+import { resolveFeedbackBackLink, resolveFeedbackContextLabel } from "@/lib/feedbackContext";
+import { useI18n } from "@/lib/i18n";
+import { useUiPreferences } from "@/lib/uiPreferences";
+import { isFeedbackReviewed, markFeedbackReviewed } from "@/lib/feedbackReviewState";
+import { appStore } from "@/stores/app";
+import type { FeedbackContext, FeedbackV1, MascotMessage } from "@/schemas/ipc";
 
 const { t, locale } = useI18n();
 const { settings: uiSettings } = useUiPreferences();
@@ -216,7 +216,7 @@ watch(
       </div>
 
       <div v-else-if="feedback" class="mt-4 space-y-4">
-        <div class="app-card rounded-xl border p-3">
+        <AppPanel variant="compact">
           <div class="app-subtle text-xs uppercase tracking-[0.2em]">
             {{ t("feedback.actions") }}
           </div>
@@ -230,9 +230,9 @@ watch(
               <div class="app-text mt-1 text-xs">{{ action.how_to_fix }}</div>
             </div>
           </div>
-        </div>
+        </AppPanel>
 
-        <div v-if="recommendedQuestLinks.length > 0" class="app-card rounded-xl border p-3">
+        <AppPanel v-if="recommendedQuestLinks.length > 0" variant="compact">
           <div class="app-subtle text-xs uppercase tracking-[0.2em]">
             {{ t("feedback.practice_next_title") }}
           </div>
@@ -256,9 +256,9 @@ watch(
               {{ t("feedback.practice_next_training") }}
             </RouterLink>
           </div>
-        </div>
+        </AppPanel>
 
-        <div class="app-card rounded-xl border p-3">
+        <AppPanel variant="compact">
           <div class="app-subtle text-xs uppercase tracking-[0.2em]">
             {{ t("feedback.metrics") }}
           </div>
@@ -284,9 +284,9 @@ watch(
               <span class="app-text">{{ feedback.metrics.repeat_terms.join(", ") }}</span>
             </div>
           </div>
-        </div>
+        </AppPanel>
 
-        <div v-if="feedback.comments.length > 0" class="app-card rounded-xl border p-3">
+        <AppPanel v-if="feedback.comments.length > 0" variant="compact">
           <div class="app-subtle text-xs uppercase tracking-[0.2em]">
             {{ t("feedback.comments") }}
           </div>
@@ -296,9 +296,9 @@ watch(
               <div class="app-muted">{{ comment.suggestion }}</div>
             </div>
           </div>
-        </div>
+        </AppPanel>
 
-        <div class="app-card rounded-xl border p-3">
+        <AppPanel variant="compact">
           <div class="app-subtle text-xs uppercase tracking-[0.2em]">
             {{ t("feedback.notes_title") }}
           </div>
@@ -318,7 +318,7 @@ watch(
           <div v-else-if="noteStatus === 'error'" class="app-danger-text mt-2 text-xs">
             {{ t("feedback.notes_error") }}
           </div>
-        </div>
+        </AppPanel>
       </div>
       <div v-else class="app-muted mt-4 text-xs">
         {{ t("feedback.empty") }}
