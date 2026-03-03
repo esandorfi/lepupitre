@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import { useRouter } from "vue-router";
-import ConfirmDialog from "./ConfirmDialog.vue";
-import { useI18n } from "../lib/i18n";
-import { useTheme } from "../lib/theme";
+import AppButton from "@/components/ui/AppButton.vue";
+import ConfirmDialog from "@/components/ConfirmDialog.vue";
+import { useI18n } from "@/lib/i18n";
+import { useTheme } from "@/lib/theme";
 import {
   applyWorkspaceToolbarColor,
   cycleWorkspaceToolbarColor,
   getWorkspaceToolbarColor,
   getWorkspaceToolbarColorPreview,
-} from "../lib/workspaceToolbarColor";
-import { appStore } from "../stores/app";
+} from "@/lib/workspaceToolbarColor";
+import { appStore } from "@/stores/app";
 
 const { t } = useI18n();
 const router = useRouter();
@@ -505,16 +506,17 @@ onBeforeUnmount(() => {
     >
       <div class="mb-2 flex items-center justify-between gap-2">
         <h2 class="app-text text-sm font-semibold">{{ t("shell.workspaces_switch_title") }}</h2>
-        <button
-          class="app-menu-item app-focus-ring inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border app-border"
-          type="button"
+        <AppButton
+          tone="secondary"
+          size="icon-md"
+          class="border app-border"
           :aria-label="t('shell.close')"
           @click="closePanel"
         >
           <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="m18 6-12 12M6 6l12 12" />
           </svg>
-        </button>
+        </AppButton>
       </div>
       <input
         v-if="showSearch"
@@ -633,13 +635,14 @@ onBeforeUnmount(() => {
 
       <div class="app-divider my-3"></div>
       <div class="grid gap-2">
-        <button
-          class="app-button-secondary app-focus-ring app-control-md cursor-pointer rounded-xl px-3 py-2 text-left app-text-body font-semibold"
-          type="button"
+        <AppButton
+          tone="secondary"
+          size="md"
+          class="w-full justify-start text-left app-text-body font-semibold"
           @click="toggleCreate"
         >
           + {{ t("shell.workspaces_new") }}
-        </button>
+        </AppButton>
         <div v-if="createOpen" class="app-card rounded-xl border p-2">
           <input
             ref="createInputRef"
@@ -652,22 +655,22 @@ onBeforeUnmount(() => {
             @keyup.escape="toggleCreate"
           />
           <div class="mt-2 flex justify-end gap-2">
-            <button
-              class="app-button-secondary app-focus-ring cursor-pointer rounded-full px-3 py-1.5 text-xs font-semibold"
-              type="button"
+            <AppButton
+              tone="secondary"
+              size="sm"
               :disabled="isCreating"
               @click="toggleCreate"
             >
               {{ t("profiles.cancel") }}
-            </button>
-            <button
-              class="app-button-primary app-focus-ring cursor-pointer rounded-full px-3 py-1.5 text-xs font-semibold"
-              type="button"
+            </AppButton>
+            <AppButton
+              tone="primary"
+              size="sm"
               :disabled="isCreating"
               @click="createProfileInline"
             >
               {{ t("profiles.create_action") }}
-            </button>
+            </AppButton>
           </div>
         </div>
       </div>

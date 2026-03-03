@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { useI18n } from "../../lib/i18n";
-import type { WaveformStyle } from "../../lib/waveform";
+import AppButton from "@/components/ui/AppButton.vue";
+import AppPanel from "@/components/ui/AppPanel.vue";
+import { useI18n } from "@/lib/i18n";
+import type { WaveformStyle } from "@/lib/waveform";
 
 const props = defineProps<{
   open: boolean;
@@ -32,7 +34,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <div class="app-card rounded-xl border p-3">
+  <AppPanel variant="compact">
     <button
       class="app-link app-focus-ring inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.16em] cursor-pointer"
       type="button"
@@ -124,13 +126,9 @@ const { t } = useI18n();
               {{ device.isDefault ? `${device.label} (${t("settings.recorder.input_device_default")})` : device.label }}
             </option>
           </select>
-          <button
-            class="app-button-secondary app-focus-ring inline-flex items-center cursor-pointer"
-            type="button"
-            @click="emit('refreshInputDevices')"
-          >
+          <AppButton tone="secondary" size="sm" @click="emit('refreshInputDevices')">
             {{ t("settings.recorder.input_device_refresh") }}
-          </button>
+          </AppButton>
         </div>
       </label>
 
@@ -150,5 +148,5 @@ const { t } = useI18n();
     <p v-if="props.open && props.diagnosticsCode" class="app-muted mt-2 text-xs">
       {{ t("audio.diagnostic") }}: {{ props.diagnosticsCode }}
     </p>
-  </div>
+  </AppPanel>
 </template>

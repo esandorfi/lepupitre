@@ -8,6 +8,7 @@ import RecorderAdvancedDrawer from "./recorder/RecorderAdvancedDrawer.vue";
 import RecorderCapturePanel from "./recorder/RecorderCapturePanel.vue";
 import RecorderExportPanel from "./recorder/RecorderExportPanel.vue";
 import RecorderQuickCleanPanel from "./recorder/RecorderQuickCleanPanel.vue";
+import AppPanel from "@/components/ui/AppPanel.vue";
 import { classifyAsrError } from "../lib/asrErrors";
 import { useI18n } from "../lib/i18n";
 import { hasTauriRuntime } from "../lib/runtime";
@@ -1284,7 +1285,7 @@ watch(
 </script>
 
 <template>
-  <div class="app-panel app-panel-compact space-y-4">
+  <AppPanel variant="compact" class="space-y-4">
     <div class="flex items-center justify-between">
       <div>
         <h2 class="text-lg font-bold">{{ t(props.titleKey) }}</h2>
@@ -1422,5 +1423,5 @@ watch(
       {{ t("audio.error_sidecar_incompatible_action") }}
     </RouterLink>
     <span class="sr-only" aria-live="polite">{{ announcement }}</span>
-  </div>
+  </AppPanel>
 </template>
