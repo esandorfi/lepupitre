@@ -1182,10 +1182,11 @@ watch(
               <div class="flex min-w-[440px] items-start gap-2 pr-1">
                 <template v-for="(node, index) in questMapNodes" :key="node.id">
                   <div class="flex items-start gap-2">
-                    <button
-                      class="app-focus-ring flex w-[76px] flex-col items-center text-center transition"
+                    <AppButton
+                      class="min-h-0 w-[76px] flex-col items-center text-center transition !px-0 !py-0"
                       :style="{ marginTop: `${node.offsetPx}px` }"
-                      type="button"
+                      size="sm"
+                      tone="ghost"
                       :aria-label="questMapNodeAriaLabel(node)"
                       @click="focusQuestMapNode(node)"
                     >
@@ -1204,7 +1205,7 @@ watch(
                       <AppBadge class="mt-1 py-0.5" tone="neutral">
                         {{ node.category ?? t("training.quest_map_any_category") }}
                       </AppBadge>
-                    </button>
+                    </AppButton>
                     <div
                       v-if="index < questMapNodes.length - 1"
                       class="mt-4 h-[2px] w-8 rounded-full transition"
