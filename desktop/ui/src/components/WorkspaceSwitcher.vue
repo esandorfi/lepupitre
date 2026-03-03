@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import AppButton from "@/components/ui/AppButton.vue";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
@@ -33,11 +33,20 @@ const deleteTarget = ref<{ id: string; name: string } | null>(null);
 const toolbarColorTick = ref(0);
 type ButtonRefTarget = HTMLButtonElement | { $el?: Element | null } | null;
 const triggerRef = ref<ButtonRefTarget>(null);
-const panelRef = ref<HTMLDivElement | null>(null);
 type InputRefTarget = HTMLInputElement | { $el?: Element | null; inputRef?: HTMLInputElement | null } | null;
 const searchInputRef = ref<InputRefTarget>(null);
 const createInputRef = ref<InputRefTarget>(null);
 const renameInputRef = ref<InputRefTarget>(null);
+
+const PANEL_POPOVER_CONTENT = {
+  align: "end",
+  side: "bottom",
+  sideOffset: 8,
+} as const;
+
+const PANEL_POPOVER_UI = {
+  content: "app-menu-panel z-40 w-[min(22rem,calc(100vw-2rem))] rounded-2xl border p-3 shadow-xl",
+} as const;
 
 const profiles = computed(() => appStore.state.profiles);
 const activeProfileId = computed(() => appStore.state.activeProfileId);
@@ -175,6 +184,9 @@ function toWorkspaceError(err: unknown) {
 }
 
 function closePanel() {
+  if (editingId.value) {
+    void confirmRename(editingId.value);
+  }
   open.value = false;
   error.value = null;
   search.value = "";
@@ -188,8 +200,24 @@ function closePanel() {
   });
 }
 
-function togglePanel() {
-  open.value = !open.value;
+function onPopoverOpenChange(nextOpen: boolean) {
+  if (open.value === nextOpen) {
+    return;
+  }
+  if (!nextOpen && editingId.value) {
+    void confirmRename(editingId.value);
+  }
+  open.value = nextOpen;
+  if (nextOpen) {
+    return;
+  }
+  error.value = null;
+  search.value = "";
+  createOpen.value = false;
+  createName.value = "";
+  editingId.value = null;
+  renameValue.value = "";
+  renameOriginal.value = "";
 }
 
 async function toggleCreate() {
@@ -422,37 +450,6 @@ function activeRowStyle(profileId: string) {
   } as Record<string, string>;
 }
 
-function onDocumentMouseDown(event: MouseEvent) {
-  if (!open.value) {
-    return;
-  }
-  const target = event.target;
-  if (!(target instanceof Node)) {
-    return;
-  }
-  if (editingId.value && !resolveInputElement(renameInputRef.value)?.contains(target)) {
-    void confirmRename(editingId.value);
-  }
-  const triggerElement = resolveButtonElement(triggerRef.value);
-  if (
-    panelRef.value?.contains(target) ||
-    triggerElement?.contains(target)
-  ) {
-    return;
-  }
-  closePanel();
-}
-
-function onDocumentKeydown(event: KeyboardEvent) {
-  if (!open.value) {
-    return;
-  }
-  if (event.key === "Escape") {
-    event.preventDefault();
-    closePanel();
-  }
-}
-
 watch(open, async (nextOpen) => {
   if (nextOpen) {
     await nextTick();
@@ -469,54 +466,45 @@ watch(
   },
   { immediate: true }
 );
-
-if (typeof document !== "undefined") {
-  document.addEventListener("mousedown", onDocumentMouseDown);
-  document.addEventListener("keydown", onDocumentKeydown);
-}
-
-onBeforeUnmount(() => {
-  if (typeof document !== "undefined") {
-    document.removeEventListener("mousedown", onDocumentMouseDown);
-    document.removeEventListener("keydown", onDocumentKeydown);
-  }
-});
 </script>
 
 <template>
   <div class="relative">
-    <AppButton
-      ref="triggerRef"
-      tone="secondary"
-      size="md"
-      class="app-toolbar-button flex max-w-[260px] items-center gap-2 border px-3 text-left app-text-meta transition"
-      aria-haspopup="menu"
-      :aria-expanded="open ? 'true' : 'false'"
-      :aria-label="t('shell.workspaces_toggle')"
-      @click="togglePanel"
+    <UPopover
+      :open="open"
+      :portal="false"
+      :content="PANEL_POPOVER_CONTENT"
+      :ui="PANEL_POPOVER_UI"
+      @update:open="onPopoverOpenChange"
     >
-      <span class="inline-flex h-3 w-3 shrink-0 rounded-full border app-border" :style="currentToolbarColorStyle"></span>
-      <span class="min-w-0 flex-1 truncate font-semibold">{{ currentLabel }}</span>
-      <svg
-        class="h-4 w-4 shrink-0"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <path d="m6 9 6 6 6-6" />
-      </svg>
-    </AppButton>
+      <template #default="{ open: menuOpen }">
+        <AppButton
+          ref="triggerRef"
+          tone="secondary"
+          size="md"
+          class="app-toolbar-button flex max-w-[260px] items-center gap-2 border px-3 text-left app-text-meta transition"
+          aria-haspopup="menu"
+          :aria-expanded="menuOpen ? 'true' : 'false'"
+          :aria-label="t('shell.workspaces_toggle')"
+        >
+          <span class="inline-flex h-3 w-3 shrink-0 rounded-full border app-border" :style="currentToolbarColorStyle"></span>
+          <span class="min-w-0 flex-1 truncate font-semibold">{{ currentLabel }}</span>
+          <svg
+            class="h-4 w-4 shrink-0"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </AppButton>
+      </template>
 
-    <div
-      v-if="open"
-      ref="panelRef"
-      class="app-menu-panel absolute top-[calc(100%+0.5rem)] right-0 z-40 w-[min(22rem,calc(100vw-2rem))] rounded-2xl border p-3 shadow-xl"
-      role="menu"
-      @pointerdown.capture="onPanelMouseDownCapture"
-    >
+      <template #content>
+        <div @pointerdown.capture="onPanelMouseDownCapture">
       <div class="mb-2 flex items-center justify-between gap-2">
         <h2 class="app-text text-sm font-semibold">{{ t("shell.workspaces_switch_title") }}</h2>
         <AppButton
@@ -700,7 +688,9 @@ onBeforeUnmount(() => {
           </div>
         </div>
       </div>
-    </div>
+        </div>
+      </template>
+    </UPopover>
     <ConfirmDialog
       :open="deleteTarget !== null"
       :title="deleteDialogTitle"
