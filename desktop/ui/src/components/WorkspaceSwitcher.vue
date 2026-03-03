@@ -33,7 +33,8 @@ const deletingId = ref<string | null>(null);
 const deleteTarget = ref<{ id: string; name: string } | null>(null);
 const toolbarColorTick = ref(0);
 const openMenuPosition = ref<{ top: number; left: number } | null>(null);
-const triggerRef = ref<HTMLButtonElement | null>(null);
+type ButtonRefTarget = HTMLButtonElement | { $el?: Element | null } | null;
+const triggerRef = ref<ButtonRefTarget>(null);
 const panelRef = ref<HTMLDivElement | null>(null);
 const menuOverlayRef = ref<HTMLDivElement | null>(null);
 type InputRefTarget = HTMLInputElement | { $el?: Element | null; inputRef?: HTMLInputElement | null } | null;
@@ -145,6 +146,26 @@ function resolveInputElement(target: InputRefTarget): HTMLInputElement | null {
   return null;
 }
 
+function resolveButtonElement(target: ButtonRefTarget): HTMLButtonElement | null {
+  if (!target) {
+    return null;
+  }
+  if (target instanceof HTMLButtonElement) {
+    return target;
+  }
+  if (!(target.$el instanceof HTMLElement)) {
+    return null;
+  }
+  if (target.$el instanceof HTMLButtonElement) {
+    return target.$el;
+  }
+  const button = target.$el.querySelector("button");
+  if (button instanceof HTMLButtonElement) {
+    return button;
+  }
+  return null;
+}
+
 function hasDuplicateName(nextName: string, exceptId?: string) {
   return profiles.value.some(
     (profile) =>
@@ -172,7 +193,7 @@ function closePanel() {
   renameValue.value = "";
   renameOriginal.value = "";
   nextTick(() => {
-    triggerRef.value?.focus();
+    resolveButtonElement(triggerRef.value)?.focus();
   });
 }
 
@@ -443,9 +464,10 @@ function onDocumentMouseDown(event: MouseEvent) {
   if (editingId.value && !resolveInputElement(renameInputRef.value)?.contains(target)) {
     void confirmRename(editingId.value);
   }
+  const triggerElement = resolveButtonElement(triggerRef.value);
   if (
     panelRef.value?.contains(target) ||
-    triggerRef.value?.contains(target) ||
+    triggerElement?.contains(target) ||
     menuOverlayRef.value?.contains(target)
   ) {
     return;
@@ -495,10 +517,11 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="relative">
-    <button
+    <AppButton
       ref="triggerRef"
-      class="app-toolbar-button app-focus-ring app-control-md flex max-w-[260px] cursor-pointer items-center gap-2 rounded-full border px-3 text-left app-text-meta transition"
-      type="button"
+      tone="secondary"
+      size="md"
+      class="app-toolbar-button flex max-w-[260px] items-center gap-2 border px-3 text-left app-text-meta transition"
       aria-haspopup="menu"
       :aria-expanded="open ? 'true' : 'false'"
       :aria-label="t('shell.workspaces_toggle')"
@@ -517,7 +540,7 @@ onBeforeUnmount(() => {
       >
         <path d="m6 9 6 6 6-6" />
       </svg>
-    </button>
+    </AppButton>
 
     <div
       v-if="open"
