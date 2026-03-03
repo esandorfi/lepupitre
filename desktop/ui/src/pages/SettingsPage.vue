@@ -13,6 +13,7 @@ import type {
   PrimaryNavMode,
 } from "../lib/uiPreferences";
 import { useUiPreferences } from "../lib/uiPreferences";
+import { hasTauriRuntime } from "../lib/runtime";
 import { invokeChecked } from "../composables/useIpc";
 import {
   AsrModelDownloadPayloadSchema,
@@ -425,6 +426,9 @@ async function downloadModel(modelId: string) {
 onMounted(async () => {
   await refreshModels();
   await refreshSidecarStatus();
+  if (!hasTauriRuntime()) {
+    return;
+  }
   unlistenDownloadProgress = await listen("asr/model_download_progress/v1", (event) => {
     const parsed = AsrModelDownloadProgressEventSchema.safeParse(event.payload);
     if (!parsed.success) {

@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { z } from "zod";
 import { AppError } from "../lib/errors";
+import { hasTauriRuntime, isUiDevWithoutTauri } from "../lib/runtime";
 
 export async function invokeChecked<TPayload, TResponse>(
   command: string,
@@ -18,8 +19,17 @@ export async function invokeChecked<TPayload, TResponse>(
 
   let response: unknown;
   try {
+    if (!hasTauriRuntime()) {
+      const hint = isUiDevWithoutTauri()
+        ? "Tauri runtime is unavailable in `ui:dev`. Use `pnpm -C desktop dev` for full backend behavior."
+        : "Tauri runtime is unavailable.";
+      throw new AppError("IPC_UNAVAILABLE", hint);
+    }
     response = await invoke(command, parsedPayload.data as Record<string, unknown>);
   } catch (err) {
+    if (err instanceof AppError) {
+      throw err;
+    }
     throw new AppError(
       "IPC_COMMAND_FAILED",
       err instanceof Error ? err.message : String(err)
