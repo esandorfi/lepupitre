@@ -40,6 +40,7 @@ declare module 'vue' {
     UBreadcrumb: typeof import('./../node_modules/.pnpm/@nuxt+ui@4.4.0_@tiptap+exte_de8bba3212ab9ac0762d9b96edb9e4e2/node_modules/@nuxt/ui/dist/runtime/components/Breadcrumb.vue')['default']
     UButton: typeof import('./../node_modules/.pnpm/@nuxt+ui@4.4.0_@tiptap+exte_de8bba3212ab9ac0762d9b96edb9e4e2/node_modules/@nuxt/ui/dist/runtime/components/Button.vue')['default']
     UCard: typeof import('./../node_modules/.pnpm/@nuxt+ui@4.4.0_@tiptap+exte_de8bba3212ab9ac0762d9b96edb9e4e2/node_modules/@nuxt/ui/dist/runtime/components/Card.vue')['default']
+    UDropdownMenu: typeof import('./../node_modules/.pnpm/@nuxt+ui@4.4.0_@tiptap+exte_de8bba3212ab9ac0762d9b96edb9e4e2/node_modules/@nuxt/ui/dist/runtime/components/DropdownMenu.vue')['default']
     UInput: typeof import('./../node_modules/.pnpm/@nuxt+ui@4.4.0_@tiptap+exte_de8bba3212ab9ac0762d9b96edb9e4e2/node_modules/@nuxt/ui/dist/runtime/components/Input.vue')['default']
     UModal: typeof import('./../node_modules/.pnpm/@nuxt+ui@4.4.0_@tiptap+exte_de8bba3212ab9ac0762d9b96edb9e4e2/node_modules/@nuxt/ui/dist/runtime/components/Modal.vue')['default']
     USelect: typeof import('./../node_modules/.pnpm/@nuxt+ui@4.4.0_@tiptap+exte_de8bba3212ab9ac0762d9b96edb9e4e2/node_modules/@nuxt/ui/dist/runtime/components/Select.vue')['default']
