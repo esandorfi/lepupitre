@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, ref } from "vue";
 import { useRouter } from "vue-router";
-import { useI18n } from "../lib/i18n";
-import { useTheme } from "../lib/theme";
+import AppButton from "@/components/ui/AppButton.vue";
+import { useI18n } from "@/lib/i18n";
+import { useTheme } from "@/lib/theme";
 
 const { locale, setLocale, t } = useI18n();
 const { theme, setTheme } = useTheme();
@@ -124,22 +125,24 @@ onBeforeUnmount(() => {
           {{ t("shell.menu_theme") }}
         </div>
         <div class="mt-2 grid grid-cols-2 gap-2">
-          <button
-            class="app-focus-ring app-control-md cursor-pointer rounded-xl px-3 py-2 app-text-body font-semibold"
-            :class="theme === 'orange' ? 'app-pill-active' : 'app-menu-item'"
-            type="button"
+          <AppButton
+            size="md"
+            :tone="theme === 'orange' ? 'ghost' : 'secondary'"
+            class="w-full app-text-body font-semibold"
+            :class="theme === 'orange' ? 'app-pill-active' : ''"
             @click="updateTheme('orange')"
           >
             {{ t("theme.orange") }}
-          </button>
-          <button
-            class="app-focus-ring app-control-md cursor-pointer rounded-xl px-3 py-2 app-text-body font-semibold"
-            :class="theme === 'terminal' ? 'app-pill-active' : 'app-menu-item'"
-            type="button"
+          </AppButton>
+          <AppButton
+            size="md"
+            :tone="theme === 'terminal' ? 'ghost' : 'secondary'"
+            class="w-full app-text-body font-semibold"
+            :class="theme === 'terminal' ? 'app-pill-active' : ''"
             @click="updateTheme('terminal')"
           >
             {{ t("theme.terminal") }}
-          </button>
+          </AppButton>
         </div>
       </div>
 
@@ -150,63 +153,45 @@ onBeforeUnmount(() => {
           {{ t("shell.menu_language") }}
         </div>
         <div class="mt-2 grid grid-cols-2 gap-2">
-          <button
-            class="app-focus-ring app-control-md cursor-pointer rounded-xl px-3 py-2 app-text-body font-semibold"
-            :class="locale === 'fr' ? 'app-pill-active' : 'app-menu-item'"
-            type="button"
+          <AppButton
+            size="md"
+            :tone="locale === 'fr' ? 'ghost' : 'secondary'"
+            class="w-full app-text-body font-semibold"
+            :class="locale === 'fr' ? 'app-pill-active' : ''"
             @click="updateLocale('fr')"
           >
             FR
-          </button>
-          <button
-            class="app-focus-ring app-control-md cursor-pointer rounded-xl px-3 py-2 app-text-body font-semibold"
-            :class="locale === 'en' ? 'app-pill-active' : 'app-menu-item'"
-            type="button"
+          </AppButton>
+          <AppButton
+            size="md"
+            :tone="locale === 'en' ? 'ghost' : 'secondary'"
+            class="w-full app-text-body font-semibold"
+            :class="locale === 'en' ? 'app-pill-active' : ''"
             @click="updateLocale('en')"
           >
             EN
-          </button>
+          </AppButton>
         </div>
       </div>
 
       <div class="app-divider my-3"></div>
 
       <div class="grid gap-1">
-        <button
-          class="app-menu-item app-focus-ring app-control-md cursor-pointer rounded-xl px-3 py-2 text-left app-text-body"
-          type="button"
-          @click="goTo('/settings')"
-        >
+        <AppButton size="md" tone="secondary" class="w-full justify-start text-left app-text-body" @click="goTo('/settings')">
           {{ t("shell.menu_settings") }}
-        </button>
-        <button
-          class="app-menu-item app-focus-ring app-control-md cursor-pointer rounded-xl px-3 py-2 text-left app-text-body"
-          type="button"
-          @click="goTo('/packs')"
-        >
+        </AppButton>
+        <AppButton size="md" tone="secondary" class="w-full justify-start text-left app-text-body" @click="goTo('/packs')">
           {{ t("shell.menu_packs") }}
-        </button>
-        <button
-          class="app-menu-item app-focus-ring app-control-md cursor-pointer rounded-xl px-3 py-2 text-left app-text-body"
-          type="button"
-          @click="goToHelp"
-        >
+        </AppButton>
+        <AppButton size="md" tone="secondary" class="w-full justify-start text-left app-text-body" @click="goToHelp">
           {{ t("shell.menu_help") }}
-        </button>
-        <button
-          class="app-menu-item app-focus-ring app-control-md cursor-pointer rounded-xl px-3 py-2 text-left app-text-body"
-          type="button"
-          @click="goToOnboarding"
-        >
+        </AppButton>
+        <AppButton size="md" tone="secondary" class="w-full justify-start text-left app-text-body" @click="goToOnboarding">
           {{ t("shell.menu_onboarding") }}
-        </button>
-        <button
-          class="app-menu-item app-focus-ring app-control-md cursor-pointer rounded-xl px-3 py-2 text-left app-text-body"
-          type="button"
-          @click="goToAbout"
-        >
+        </AppButton>
+        <AppButton size="md" tone="secondary" class="w-full justify-start text-left app-text-body" @click="goToAbout">
           {{ t("shell.menu_about") }}
-        </button>
+        </AppButton>
       </div>
     </div>
   </div>
