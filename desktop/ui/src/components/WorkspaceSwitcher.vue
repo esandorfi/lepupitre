@@ -532,11 +532,12 @@ onBeforeUnmount(() => {
           <p class="app-text-eyebrow px-2">
             {{ t("shell.workspaces_recent") }}
           </p>
-          <button
+          <AppButton
             v-for="profile in recentProfiles"
             :key="`recent-${profile.id}`"
-            class="app-switcher-row app-focus-ring flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-left"
-            type="button"
+            tone="ghost"
+            size="sm"
+            class="app-switcher-row w-full justify-start gap-3 rounded-xl px-3 py-2 text-left"
             :disabled="switchingId === profile.id"
             @click="selectProfile(profile.id)"
           >
@@ -545,7 +546,7 @@ onBeforeUnmount(() => {
               <span class="app-muted block text-xs">{{ workspaceMetaLabel(profile) }}</span>
             </span>
             <span v-if="switchingId === profile.id" class="app-muted shrink-0 text-xs">…</span>
-          </button>
+          </AppButton>
         </div>
 
         <div class="space-y-1">
@@ -569,11 +570,12 @@ onBeforeUnmount(() => {
               />
             </div>
 
-            <button
+            <AppButton
               v-else
-              class="app-switcher-row app-focus-ring group flex min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-left"
+              tone="ghost"
+              size="sm"
+              class="app-switcher-row group min-w-0 flex-1 justify-start gap-3 rounded-xl px-3 py-2 text-left"
               :class="profile.id === activeProfileId ? 'app-switcher-row-active' : ''"
-              type="button"
               :disabled="switchingId === profile.id || deletingId === profile.id"
               :title="profile.id === activeProfileId ? t('shell.workspaces_color_cycle') : undefined"
               :style="activeRowStyle(profile.id)"
@@ -603,13 +605,14 @@ onBeforeUnmount(() => {
                 <path d="M20 6 9 17l-5-5" />
               </svg>
               <span v-else-if="switchingId === profile.id" class="app-muted shrink-0 text-xs">…</span>
-            </button>
+            </AppButton>
 
             <div v-if="editingId !== profile.id" class="flex shrink-0 items-center gap-1">
               <div class="relative">
-                <button
-                  class="app-menu-item app-focus-ring inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border app-border"
-                  type="button"
+                <AppButton
+                  tone="secondary"
+                  size="icon-md"
+                  class="border app-border"
                   :aria-label="rowMenuButtonAriaLabel(profile.name)"
                   :aria-expanded="openMenuId === profile.id ? 'true' : 'false'"
                   aria-haspopup="menu"
@@ -621,7 +624,7 @@ onBeforeUnmount(() => {
                     <circle cx="19" cy="12" r="1" />
                     <circle cx="5" cy="12" r="1" />
                   </svg>
-                </button>
+                </AppButton>
               </div>
             </div>
             </div>
@@ -694,20 +697,22 @@ onBeforeUnmount(() => {
         :style="{ top: `${openMenuPosition.top}px`, left: `${openMenuPosition.left}px` }"
         role="menu"
       >
-        <button
-          class="app-menu-item app-focus-ring flex min-h-10 w-full cursor-pointer items-center rounded-lg px-3 py-2 text-left text-sm"
-          type="button"
+        <AppButton
+          tone="secondary"
+          size="sm"
+          class="min-h-10 w-full justify-start rounded-lg px-3 py-2 text-left text-sm"
           @click.stop="startRename(openMenuProfile.id, openMenuProfile.name)"
         >
           {{ t("profiles.rename") }}
-        </button>
-        <button
-          class="app-menu-item app-focus-ring app-danger-text flex min-h-10 w-full cursor-pointer items-center rounded-lg px-3 py-2 text-left text-sm"
-          type="button"
+        </AppButton>
+        <AppButton
+          tone="danger-soft"
+          size="sm"
+          class="min-h-10 w-full justify-start rounded-lg px-3 py-2 text-left text-sm"
           @click.stop="requestDelete(openMenuProfile.id, openMenuProfile.name)"
         >
           {{ t("profiles.delete") }}
-        </button>
+        </AppButton>
       </div>
     </Teleport>
   </div>
