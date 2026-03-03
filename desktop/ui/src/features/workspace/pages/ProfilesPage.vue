@@ -6,9 +6,9 @@ import AppBadge from "@/components/ui/AppBadge.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppPanel from "@/components/ui/AppPanel.vue";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
-import { useI18n } from "../../../lib/i18n";
-import type { ProfileSummary } from "../../../schemas/ipc";
-import { appStore } from "../../../stores/app";
+import { useI18n } from "@/lib/i18n";
+import type { ProfileSummary } from "@/schemas/ipc";
+import { appStore } from "@/stores/app";
 
 const { t } = useI18n();
 const router = useRouter();
@@ -24,20 +24,46 @@ const renameValue = ref("");
 const renameOriginal = ref("");
 const openMenuId = ref<string | null>(null);
 const deleteTarget = ref<ProfileSummary | null>(null);
-const createInput = ref<HTMLInputElement | null>(null);
 const createSection = ref<HTMLElement | null>(null);
 const pageRef = ref<HTMLElement | null>(null);
 
-const renameInputs = new Map<string, HTMLInputElement>();
+type InputRefTarget =
+  | HTMLInputElement
+  | ComponentPublicInstance
+  | { $el?: Element | null; inputRef?: HTMLInputElement | null }
+  | null;
+
+const createInput = ref<InputRefTarget>(null);
+const renameInputs = new Map<string, InputRefTarget>();
+
+function resolveInputElement(target: InputRefTarget): HTMLInputElement | null {
+  if (!target) {
+    return null;
+  }
+  if (target instanceof HTMLInputElement) {
+    return target;
+  }
+  if ("inputRef" in target && target.inputRef instanceof HTMLInputElement) {
+    return target.inputRef;
+  }
+  if ("$el" in target && target.$el instanceof HTMLElement) {
+    const input = target.$el.querySelector("input");
+    if (input instanceof HTMLInputElement) {
+      return input;
+    }
+  }
+  return null;
+}
+
 const setRenameInput =
   (profileId: string) =>
   (el: Element | ComponentPublicInstance | null, _refs?: Record<string, unknown>) => {
     void _refs;
-    if (el && el instanceof HTMLInputElement) {
-      renameInputs.set(profileId, el);
-    } else {
+    if (!el) {
       renameInputs.delete(profileId);
+      return;
     }
+    renameInputs.set(profileId, el as InputRefTarget);
   };
 
 const profiles = computed(() => appStore.state.profiles);
@@ -103,8 +129,9 @@ function hasDuplicateName(nextName: string, exceptId?: string) {
 async function focusCreateForm() {
   await nextTick();
   createSection.value?.scrollIntoView({ behavior: "smooth", block: "start" });
-  createInput.value?.focus();
-  createInput.value?.select();
+  const input = resolveInputElement(createInput.value);
+  input?.focus();
+  input?.select();
 }
 
 async function createProfile() {
@@ -152,7 +179,7 @@ function startRename(profileId: string, currentName: string) {
   renameValue.value = currentName;
   renameOriginal.value = currentName;
   nextTick(() => {
-    const input = renameInputs.get(profileId);
+    const input = resolveInputElement(renameInputs.get(profileId) ?? null);
     input?.focus();
     input?.select();
   });
@@ -318,12 +345,13 @@ onBeforeUnmount(() => {
               </div>
               <div v-else class="flex flex-wrap gap-2">
                 <label class="sr-only" :for="`rename-${profile.id}`">{{ t("profiles.rename") }}</label>
-                <input
+                <UInput
                   :id="`rename-${profile.id}`"
                   :ref="setRenameInput(profile.id)"
                   v-model="renameValue"
                   :disabled="isRenaming"
-                  class="app-input app-focus-ring app-control-md min-w-[240px] flex-1 rounded-lg border px-3 app-text-body"
+                  class="min-w-[240px] flex-1 app-text-body"
+                  size="md"
                   type="text"
                   @blur="confirmRename(profile.id)"
                   @keyup.enter="confirmRename(profile.id)"
@@ -381,22 +409,24 @@ onBeforeUnmount(() => {
                 class="app-menu-panel absolute top-[calc(100%+0.4rem)] right-0 z-20 w-44 rounded-xl border p-1 shadow-lg"
                 role="menu"
               >
-                <button
-                  class="app-menu-item app-focus-ring flex min-h-10 w-full cursor-pointer items-center rounded-lg px-3 py-2 text-left text-sm"
-                  type="button"
+                <AppButton
+                  class="app-menu-item min-h-10 w-full justify-start rounded-lg px-3 py-2 text-left text-sm"
+                  size="sm"
+                  tone="secondary"
                   :disabled="isRenaming"
                   @click="startRename(profile.id, profile.name)"
                 >
                   {{ t("profiles.rename") }}
-                </button>
-                <button
-                  class="app-menu-item app-focus-ring app-danger-text flex min-h-10 w-full cursor-pointer items-center rounded-lg px-3 py-2 text-left text-sm"
-                  type="button"
+                </AppButton>
+                <AppButton
+                  class="app-menu-item min-h-10 w-full justify-start rounded-lg px-3 py-2 text-left text-sm"
+                  size="sm"
+                  tone="danger-soft"
                   :disabled="deletingId === profile.id"
                   @click="requestDelete(profile)"
                 >
                   {{ t("profiles.delete") }}
-                </button>
+                </AppButton>
               </div>
             </div>
           </div>
@@ -416,12 +446,13 @@ onBeforeUnmount(() => {
             <label class="app-text text-sm font-medium" for="workspace-name-input">
               {{ t("profiles.create_placeholder") }}
             </label>
-            <input
+            <UInput
               id="workspace-name-input"
               ref="createInput"
               v-model="name"
               type="text"
-              class="app-input app-focus-ring app-control-md mt-2 w-full rounded-lg border px-3 app-text-body"
+              class="mt-2 w-full app-text-body"
+              size="md"
               :placeholder="t('profiles.create_placeholder')"
               @keyup.enter="createProfile"
               @keyup.escape="name = ''"
