@@ -2,6 +2,7 @@
 import { computed, ref, watch } from "vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppPanel from "@/components/ui/AppPanel.vue";
+import AppRange from "@/components/ui/AppRange.vue";
 import { useI18n } from "@/lib/i18n";
 import type { ReviewState, ReviewCtaConfig } from "@/lib/recorderFlow";
 import { formatTrimClock, normalizeTrimWindow } from "@/lib/recorderTrim";
@@ -739,9 +740,7 @@ watch(
             <span class="app-subtle">{{ t("audio.quick_clean_trim_start") }}</span>
             <span class="app-text">{{ formatTrimClock(trimStartSec) }}</span>
           </div>
-          <input
-            class="w-full"
-            type="range"
+          <AppRange
             min="0"
             :max="trimMaxSec"
             step="0.1"
@@ -754,9 +753,7 @@ watch(
             <span class="app-subtle">{{ t("audio.quick_clean_trim_end") }}</span>
             <span class="app-text">{{ formatTrimClock(trimEndSec) }}</span>
           </div>
-          <input
-            class="w-full"
-            type="range"
+          <AppRange
             min="0"
             :max="trimMaxSec"
             step="0.1"

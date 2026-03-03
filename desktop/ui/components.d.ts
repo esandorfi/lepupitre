@@ -16,6 +16,7 @@ declare module 'vue' {
     AppDialog: typeof import('./src/components/ui/AppDialog.vue')['default']
     AppHeaderMenu: typeof import('./src/components/AppHeaderMenu.vue')['default']
     AppPanel: typeof import('./src/components/ui/AppPanel.vue')['default']
+    AppRange: typeof import('./src/components/ui/AppRange.vue')['default']
     AudioRecorder: typeof import('./src/components/AudioRecorder.vue')['default']
     ConfirmDialog: typeof import('./src/components/ConfirmDialog.vue')['default']
     EntityRow: typeof import('./src/components/EntityRow.vue')['default']
