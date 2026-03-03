@@ -4,15 +4,15 @@ import { useRoute, RouterLink } from "vue-router";
 import TalkStepPageShell from "@/components/TalkStepPageShell.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppPanel from "@/components/ui/AppPanel.vue";
-import { audioRevealWav } from "../../../domains/recorder/api";
-import { useI18n } from "../../../lib/i18n";
-import { appStore } from "../../../stores/app";
+import { audioRevealWav } from "@/domains/recorder/api";
+import { useI18n } from "@/lib/i18n";
+import { appStore } from "@/stores/app";
 import type {
   PeerReviewSummary,
   QuestAttemptSummary,
   QuestReportItem,
   RunSummary,
-} from "../../../schemas/ipc";
+} from "@/schemas/ipc";
 
 const { t } = useI18n();
 const route = useRoute();
@@ -288,22 +288,22 @@ onMounted(loadReport);
         {{ error }}
       </div>
       <div v-else class="app-data-grid-4 app-text-meta">
-        <div class="app-card rounded-xl border p-3">
+        <AppPanel as="div" variant="compact">
           <div class="app-text-eyebrow">{{ t("talk_report.total") }}</div>
           <div class="app-text mt-1 text-lg font-semibold">{{ summary.total }}</div>
-        </div>
-        <div class="app-card rounded-xl border p-3">
+        </AppPanel>
+        <AppPanel as="div" variant="compact">
           <div class="app-text-eyebrow">{{ t("talk_report.started") }}</div>
           <div class="app-text mt-1 text-lg font-semibold">{{ summary.started }}</div>
-        </div>
-        <div class="app-card rounded-xl border p-3">
+        </AppPanel>
+        <AppPanel as="div" variant="compact">
           <div class="app-text-eyebrow">{{ t("talk_report.feedback") }}</div>
           <div class="app-text mt-1 text-lg font-semibold">{{ summary.feedbackCount }}</div>
-        </div>
-        <div class="app-card rounded-xl border p-3">
+        </AppPanel>
+        <AppPanel as="div" variant="compact">
           <div class="app-text-eyebrow">{{ t("talk_report.last_activity") }}</div>
           <div class="app-text mt-1 text-sm font-semibold">{{ formatDate(summary.last) }}</div>
-        </div>
+        </AppPanel>
       </div>
     </AppPanel>
 
