@@ -114,3 +114,6 @@ Restructure the desktop UI into feature-oriented directories and then migrate to
     - migrated `RecorderAdvancedDrawer` refresh action to `AppButton` and container to `AppPanel`
     - migrated `RecorderQuickCleanPanel` major controls/sections to `AppButton` + `AppPanel` and Nuxt fields (`UInput`/`UTextarea`)
   - Second-pass verification result (component scope): no `app-panel/app-button/app-badge` usages remain outside `src/components/ui/*` wrappers.
+  - Shared component wave continued:
+    - migrated `AppHeaderMenu` action/toggle groups to `AppButton`
+    - migrated `RecorderAdvancedDrawer` form controls to Nuxt primitives (`USelect`/`USwitch`) with typed option maps
