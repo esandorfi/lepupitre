@@ -3,6 +3,7 @@ import ui from "@nuxt/ui/vue-plugin";
 import App from "./App.vue";
 import { router } from "./router";
 import { useTheme } from "./lib/theme";
+import { isUiDevWithoutTauri } from "./lib/runtime";
 import "./assets/main.css";
 
 function renderFatalOverlay(title: string, detail: string) {
@@ -27,6 +28,7 @@ function errorMessage(value: unknown): string {
 }
 
 useTheme().initTheme();
+document.title = isUiDevWithoutTauri() ? "Le Pupitre UI Preview" : "Le Pupitre";
 
 const app = createApp(App);
 
