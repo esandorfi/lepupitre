@@ -293,7 +293,7 @@ onMounted(async () => {
       </AppButton>
     </header>
 
-    <div v-if="profiles.length === 0" class="app-card rounded-2xl border px-5 py-8 text-center">
+    <AppPanel v-if="profiles.length === 0" as="div" class="rounded-2xl px-5 py-8 text-center" variant="compact">
       <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full app-avatar text-sm font-bold">
         WS
       </div>
@@ -302,7 +302,7 @@ onMounted(async () => {
       <AppButton class="mt-4" size="lg" tone="primary" @click="focusCreateForm">
         {{ t("profiles.create_action") }}
       </AppButton>
-    </div>
+    </AppPanel>
 
     <AppPanel v-else as="section" variant="compact">
       <div class="flex items-center justify-between gap-3">
@@ -312,10 +312,12 @@ onMounted(async () => {
       </div>
 
       <div class="mt-4 space-y-2">
-        <div
+        <AppPanel
           v-for="profile in profiles"
           :key="profile.id"
-          class="app-card flex flex-col gap-3 rounded-xl border px-3 py-3 md:flex-row md:items-center md:justify-between"
+          as="div"
+          variant="compact"
+          class="flex flex-col gap-3 rounded-xl px-3 py-3 md:flex-row md:items-center md:justify-between"
         >
           <div class="flex min-w-0 items-start gap-3">
             <div class="app-avatar mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold">
@@ -392,7 +394,7 @@ onMounted(async () => {
               </template>
             </UDropdownMenu>
           </div>
-        </div>
+        </AppPanel>
       </div>
 
       <p v-if="error" class="app-danger-text mt-3 text-xs">{{ error }}</p>
