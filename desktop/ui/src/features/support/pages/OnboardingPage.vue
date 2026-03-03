@@ -9,9 +9,9 @@ import {
   getOnboardingTrackByAudience,
   parseHelpAudience,
   type HelpAudience,
-} from "../../../lib/helpContent";
-import { useI18n } from "../../../lib/i18n";
-import { useUiPreferences } from "../../../lib/uiPreferences";
+} from "@/lib/helpContent";
+import { useI18n } from "@/lib/i18n";
+import { useUiPreferences } from "@/lib/uiPreferences";
 
 const { t } = useI18n();
 const router = useRouter();
@@ -121,17 +121,19 @@ async function finishOnboarding(target = nextPath.value) {
     <AppPanel>
       <div class="app-text-eyebrow">{{ t("onboarding.quickstart_title") }}</div>
       <div class="mt-4 grid gap-3 lg:grid-cols-3">
-        <article
+        <AppPanel
           v-for="step in quickstartSteps"
           :key="step.title"
-          class="app-card app-radius-panel-lg border p-4"
+          as="article"
+          variant="compact"
+          class="app-radius-panel-lg"
         >
           <h2 class="app-text text-base font-semibold">{{ step.title }}</h2>
           <p class="app-muted mt-2 text-sm leading-6">{{ step.body }}</p>
           <RouterLink class="app-link app-text-meta mt-3 inline-block underline" :to="step.to">
             {{ step.action }}
           </RouterLink>
-        </article>
+        </AppPanel>
       </div>
     </AppPanel>
 
@@ -156,13 +158,13 @@ async function finishOnboarding(target = nextPath.value) {
         </AppButton>
       </div>
 
-      <article v-if="audiencePlan" class="app-card app-radius-panel-lg border p-4">
+      <AppPanel v-if="audiencePlan" as="article" class="app-radius-panel-lg" variant="compact">
         <h3 class="app-text text-sm font-semibold">
           {{ t("onboarding.audience_plan_title") }}: {{ audiencePlan.title }}
         </h3>
         <!-- eslint-disable-next-line vue/no-v-html -->
         <div class="app-markdown app-muted mt-2 text-sm leading-6" v-html="audiencePlan.html" />
-      </article>
+      </AppPanel>
     </AppPanel>
 
     <AppPanel class="space-y-3" variant="compact">
