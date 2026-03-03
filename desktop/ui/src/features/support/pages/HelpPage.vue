@@ -11,9 +11,9 @@ import {
   parseHelpTopic,
   toHelpTopicElementId,
   type HelpAudience,
-} from "../../../lib/helpContent";
-import { useI18n } from "../../../lib/i18n";
-import { useUiPreferences } from "../../../lib/uiPreferences";
+} from "@/lib/helpContent";
+import { useI18n } from "@/lib/i18n";
+import { useUiPreferences } from "@/lib/uiPreferences";
 
 const { t } = useI18n();
 const route = useRoute();
@@ -144,14 +144,16 @@ async function restartOnboarding() {
     <AppPanel>
       <h2 class="app-text text-base font-semibold">{{ t("help.faq_title") }}</h2>
       <div class="mt-3 grid gap-3 lg:grid-cols-2">
-        <article
+        <AppPanel
           v-for="item in faqs"
           :key="item.q"
-          class="app-card app-radius-panel-lg border p-4"
+          as="article"
+          variant="compact"
+          class="app-radius-panel-lg"
         >
           <h3 class="app-text text-sm font-semibold">{{ item.q }}</h3>
           <p class="app-muted mt-2 text-sm leading-6">{{ item.a }}</p>
-        </article>
+        </AppPanel>
       </div>
     </AppPanel>
 
@@ -181,11 +183,13 @@ async function restartOnboarding() {
         <p class="app-muted mt-1 text-sm">{{ t("help.onboarding_tracks_subtitle") }}</p>
       </div>
       <div class="grid gap-3 lg:grid-cols-3">
-        <article
+        <AppPanel
           v-for="entry in onboardingEntries"
           :id="topicDomId(entry.id)"
           :key="entry.id"
-          class="app-card app-radius-panel-lg border p-4 transition-colors"
+          as="article"
+          variant="compact"
+          class="app-radius-panel-lg transition-colors"
           :style="topicCardStyle(entry.id)"
         >
           <h3 class="app-text text-sm font-semibold">{{ entry.title }}</h3>
@@ -197,7 +201,7 @@ async function restartOnboarding() {
           >
             {{ t("help.open_deep_link") }}
           </RouterLink>
-        </article>
+        </AppPanel>
       </div>
     </AppPanel>
 
@@ -208,11 +212,13 @@ async function restartOnboarding() {
       </div>
       <p v-if="unknownTopic" class="app-muted text-sm">{{ t("help.contextual_unknown_topic") }}</p>
       <div class="grid gap-3">
-        <article
+        <AppPanel
           v-for="entry in contextualEntries"
           :id="topicDomId(entry.id)"
           :key="entry.id"
-          class="app-card app-radius-panel-lg border p-4 transition-colors"
+          as="article"
+          variant="compact"
+          class="app-radius-panel-lg transition-colors"
           :style="topicCardStyle(entry.id)"
         >
           <h3 class="app-text text-sm font-semibold">{{ entry.title }}</h3>
@@ -224,7 +230,7 @@ async function restartOnboarding() {
           >
             {{ t("help.open_deep_link") }}
           </RouterLink>
-        </article>
+        </AppPanel>
       </div>
     </AppPanel>
 
@@ -232,16 +238,16 @@ async function restartOnboarding() {
       <h2 class="app-text text-base font-semibold">{{ t("help.dev_title") }}</h2>
       <p class="app-muted mt-2 text-sm leading-6">{{ t("help.dev_subtitle") }}</p>
       <div class="mt-3 grid gap-3 lg:grid-cols-2">
-        <article class="app-card app-radius-panel-lg border p-4">
+        <AppPanel as="article" class="app-radius-panel-lg" variant="compact">
           <h3 class="app-text text-sm font-semibold">{{ t("help.dev_ui_only_title") }}</h3>
           <p class="app-muted mt-2 text-sm">{{ t("help.dev_ui_only_body") }}</p>
           <pre class="app-card app-radius-panel-md mt-3 overflow-x-auto border p-3 text-xs">pnpm -C desktop ui:dev</pre>
-        </article>
-        <article class="app-card app-radius-panel-lg border p-4">
+        </AppPanel>
+        <AppPanel as="article" class="app-radius-panel-lg" variant="compact">
           <h3 class="app-text text-sm font-semibold">{{ t("help.dev_tauri_title") }}</h3>
           <p class="app-muted mt-2 text-sm">{{ t("help.dev_tauri_body") }}</p>
           <pre class="app-card app-radius-panel-md mt-3 overflow-x-auto border p-3 text-xs">pnpm -C desktop dev</pre>
-        </article>
+        </AppPanel>
       </div>
     </AppPanel>
 
