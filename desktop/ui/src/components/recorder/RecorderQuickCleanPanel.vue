@@ -577,18 +577,19 @@ watch(
           <h3 class="app-text font-semibold">{{ t("audio.quick_clean_timeline_title") }}</h3>
           <p class="app-muted app-text-meta">{{ t("audio.quick_clean_timeline_hint") }}</p>
           <div v-if="timelineMarkers.length > 0" class="max-h-44 space-y-2 overflow-y-auto pr-1">
-            <button
+            <AppButton
               v-for="marker in timelineMarkers"
               :key="marker.atMs"
-              class="app-menu-item app-focus-ring flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left"
-              type="button"
+              tone="ghost"
+              size="sm"
+              class="w-full justify-start gap-3 rounded-lg px-3 py-2 text-left"
               @click="seekAudio(marker.atMs)"
             >
               <span class="app-pill-active-neutral inline-flex min-w-[3.5rem] justify-center rounded-full px-2 py-1 text-xs">
                 {{ marker.label }}
               </span>
               <span class="app-text-body line-clamp-2">{{ marker.preview }}</span>
-            </button>
+            </AppButton>
           </div>
           <p v-else class="app-muted app-text-meta">{{ t("audio.quick_clean_timeline_empty") }}</p>
         </AppPanel>
@@ -612,18 +613,19 @@ watch(
             </summary>
             <p class="app-muted app-text-meta">{{ t("audio.quick_clean_clean_anchors_hint") }}</p>
             <div v-if="cleanTextAnchors.length > 0" class="max-h-44 space-y-2 overflow-y-auto pr-1">
-              <button
+              <AppButton
                 v-for="(anchor, index) in cleanTextAnchors"
                 :key="`${anchor.startMs}-${anchor.endMs}-${index}`"
-                class="app-menu-item app-focus-ring flex w-full cursor-pointer items-start gap-3 rounded-lg px-3 py-2 text-left"
-                type="button"
+                tone="ghost"
+                size="sm"
+                class="w-full justify-start items-start gap-3 rounded-lg px-3 py-2 text-left"
                 @click="seekAudio(anchor.startMs)"
               >
                 <span class="app-pill-active-neutral inline-flex min-w-[3.5rem] justify-center rounded-full px-2 py-1 text-xs">
                   {{ formatTimelineClock(anchor.startMs) }}
                 </span>
                 <span class="app-text-body line-clamp-2">{{ anchor.line }}</span>
-              </button>
+              </AppButton>
             </div>
             <p v-else class="app-muted app-text-meta">{{ t("audio.quick_clean_timeline_empty") }}</p>
           </details>
@@ -680,13 +682,9 @@ watch(
               :key="`${chunk.startMs}-${chunk.endMs}`"
               class="app-surface rounded-lg border border-[var(--color-border-muted)] px-3 py-2"
             >
-              <button
-                class="app-link app-focus-ring inline-flex cursor-pointer text-xs underline"
-                type="button"
-                @click="seekAudio(chunk.startMs)"
-              >
+              <AppButton tone="ghost" size="sm" class="app-link text-xs underline" @click="seekAudio(chunk.startMs)">
                 {{ formatTimelineClock(chunk.startMs) }} - {{ formatTimelineClock(chunk.endMs) }}
-              </button>
+              </AppButton>
               <p class="mt-1 app-text-body">{{ chunk.text }}</p>
             </div>
           </div>
