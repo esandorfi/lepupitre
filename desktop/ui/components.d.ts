@@ -11,12 +11,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    AppBadge: typeof import('./src/components/ui/AppBadge.vue')['default']
-    AppButton: typeof import('./src/components/ui/AppButton.vue')['default']
-    AppDialog: typeof import('./src/components/ui/AppDialog.vue')['default']
     AppHeaderMenu: typeof import('./src/components/AppHeaderMenu.vue')['default']
-    AppPanel: typeof import('./src/components/ui/AppPanel.vue')['default']
-    AppRange: typeof import('./src/components/ui/AppRange.vue')['default']
     AudioRecorder: typeof import('./src/components/AudioRecorder.vue')['default']
     ConfirmDialog: typeof import('./src/components/ConfirmDialog.vue')['default']
     EntityRow: typeof import('./src/components/EntityRow.vue')['default']
@@ -44,7 +39,9 @@ declare module 'vue' {
     UFormField: typeof import('./../node_modules/.pnpm/@nuxt+ui@4.4.0_@tiptap+exte_de8bba3212ab9ac0762d9b96edb9e4e2/node_modules/@nuxt/ui/dist/runtime/components/FormField.vue')['default']
     UInput: typeof import('./../node_modules/.pnpm/@nuxt+ui@4.4.0_@tiptap+exte_de8bba3212ab9ac0762d9b96edb9e4e2/node_modules/@nuxt/ui/dist/runtime/components/Input.vue')['default']
     UModal: typeof import('./../node_modules/.pnpm/@nuxt+ui@4.4.0_@tiptap+exte_de8bba3212ab9ac0762d9b96edb9e4e2/node_modules/@nuxt/ui/dist/runtime/components/Modal.vue')['default']
+    UPopover: typeof import('./../node_modules/.pnpm/@nuxt+ui@4.4.0_@tiptap+exte_de8bba3212ab9ac0762d9b96edb9e4e2/node_modules/@nuxt/ui/dist/runtime/components/Popover.vue')['default']
     USelect: typeof import('./../node_modules/.pnpm/@nuxt+ui@4.4.0_@tiptap+exte_de8bba3212ab9ac0762d9b96edb9e4e2/node_modules/@nuxt/ui/dist/runtime/components/Select.vue')['default']
+    USeparator: typeof import('./../node_modules/.pnpm/@nuxt+ui@4.4.0_@tiptap+exte_de8bba3212ab9ac0762d9b96edb9e4e2/node_modules/@nuxt/ui/dist/runtime/components/Separator.vue')['default']
     USlider: typeof import('./../node_modules/.pnpm/@nuxt+ui@4.4.0_@tiptap+exte_de8bba3212ab9ac0762d9b96edb9e4e2/node_modules/@nuxt/ui/dist/runtime/components/Slider.vue')['default']
     USwitch: typeof import('./../node_modules/.pnpm/@nuxt+ui@4.4.0_@tiptap+exte_de8bba3212ab9ac0762d9b96edb9e4e2/node_modules/@nuxt/ui/dist/runtime/components/Switch.vue')['default']
     UTextarea: typeof import('./../node_modules/.pnpm/@nuxt+ui@4.4.0_@tiptap+exte_de8bba3212ab9ac0762d9b96edb9e4e2/node_modules/@nuxt/ui/dist/runtime/components/Textarea.vue')['default']
