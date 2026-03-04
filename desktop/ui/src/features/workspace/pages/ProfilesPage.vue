@@ -328,12 +328,12 @@ onMounted(async () => {
                 {{ profile.name }}
               </div>
               <div v-else class="flex flex-wrap gap-2">
-                <label class="sr-only" :for="`rename-${profile.id}`">{{ t("profiles.rename") }}</label>
                 <UInput
                   :id="`rename-${profile.id}`"
                   :ref="setRenameInput(profile.id)"
                   v-model="renameValue"
                   :disabled="isRenaming"
+                  :aria-label="t('profiles.rename')"
                   class="min-w-[240px] flex-1 app-text-body"
                   size="md"
                   type="text"
@@ -406,23 +406,23 @@ onMounted(async () => {
           {{ t("profiles.add_title") }}
         </h2>
         <div class="mt-3 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
-          <div>
-            <label class="app-text text-sm font-medium" for="workspace-name-input">
-              {{ t("profiles.create_placeholder") }}
-            </label>
+          <UFormField
+            :label="t('profiles.create_placeholder')"
+            :help="t('profiles.create_helper')"
+            class="app-text text-sm"
+          >
             <UInput
               id="workspace-name-input"
               ref="createInput"
               v-model="name"
               type="text"
-              class="mt-2 w-full app-text-body"
+              class="w-full app-text-body"
               size="md"
               :placeholder="t('profiles.create_placeholder')"
               @keyup.enter="createProfile"
               @keyup.escape="name = ''"
             />
-            <p class="app-muted mt-2 text-xs">{{ t("profiles.create_helper") }}</p>
-          </div>
+          </UFormField>
           <AppButton
             size="lg"
             tone="primary"

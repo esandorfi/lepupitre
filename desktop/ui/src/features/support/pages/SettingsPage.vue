@@ -505,20 +505,18 @@ onBeforeUnmount(() => {
       </div>
 
       <div class="mt-4 grid gap-4 md:grid-cols-2">
-        <div>
-          <label class="app-nav-text text-xs font-semibold">
-            {{ t("settings.navigation.mode_label") }}
-          </label>
+        <UFormField
+          :label="t('settings.navigation.mode_label')"
+          :help="t('settings.navigation.mode_note')"
+          class="app-nav-text text-xs"
+        >
           <USelect
             v-model="selectedNavMode"
-            class="mt-2 w-full"
+            class="w-full"
             :items="navModeOptions"
             value-key="value"
           />
-          <p class="app-muted mt-2 text-xs">
-            {{ t("settings.navigation.mode_note") }}
-          </p>
-        </div>
+        </UFormField>
 
         <div class="app-surface rounded-xl border px-3 py-3">
           <div class="app-nav-text text-sm font-semibold">
@@ -653,51 +651,44 @@ onBeforeUnmount(() => {
       </div>
 
       <div class="mt-4 grid gap-4 md:grid-cols-3">
-        <div>
-          <label class="app-nav-text text-xs font-semibold">
-            {{ t("settings.voiceup.gamification_label") }}
-          </label>
+        <UFormField
+          :label="t('settings.voiceup.gamification_label')"
+          :help="t('settings.voiceup.gamification_note')"
+          class="app-nav-text text-xs"
+        >
           <USelect
             v-model="selectedGamificationMode"
-            class="mt-2 w-full"
+            class="w-full"
             :items="gamificationModeOptions"
             value-key="value"
           />
-          <p class="app-muted mt-2 text-xs">
-            {{ t("settings.voiceup.gamification_note") }}
-          </p>
-        </div>
+        </UFormField>
 
-        <div>
-          <label class="app-nav-text text-xs font-semibold">
-            {{ t("settings.voiceup.mascot_enabled_label") }}
-          </label>
+        <UFormField
+          :label="t('settings.voiceup.mascot_enabled_label')"
+          :help="t('settings.voiceup.mascot_note')"
+          class="app-nav-text text-xs"
+        >
           <USwitch
             v-model="mascotEnabled"
-            class="mt-2"
             :label="mascotEnabled ? t('settings.voiceup.mascot_on') : t('settings.voiceup.mascot_off')"
             size="md"
           />
-          <p class="app-muted mt-2 text-xs">
-            {{ t("settings.voiceup.mascot_note") }}
-          </p>
-        </div>
+        </UFormField>
 
-        <div>
-          <label class="app-nav-text text-xs font-semibold">
-            {{ t("settings.voiceup.mascot_intensity_label") }}
-          </label>
+        <UFormField
+          :label="t('settings.voiceup.mascot_intensity_label')"
+          :help="t('settings.voiceup.mascot_intensity_note')"
+          class="app-nav-text text-xs"
+        >
           <USelect
             v-model="selectedMascotIntensity"
-            class="mt-2 w-full"
+            class="w-full"
             :disabled="!mascotEnabled"
             :items="mascotIntensityOptions"
             value-key="value"
           />
-          <p class="app-muted mt-2 text-xs">
-            {{ t("settings.voiceup.mascot_intensity_note") }}
-          </p>
-        </div>
+        </UFormField>
       </div>
     </AppPanel>
 
@@ -724,69 +715,60 @@ onBeforeUnmount(() => {
       </div>
 
       <div class="mt-4 grid gap-4 md:grid-cols-3">
-        <div>
-          <label class="app-nav-text text-xs font-semibold">
-            {{ t("settings.transcription.model_label") }}
-          </label>
+        <UFormField
+          :label="t('settings.transcription.model_label')"
+          :help="t('settings.transcription.model_note')"
+          class="app-nav-text text-xs"
+        >
           <USelect
             v-model="selectedModel"
-            class="mt-2 w-full"
+            class="w-full"
             :items="modelSelectOptions"
             value-key="value"
           />
-          <p class="app-muted mt-2 text-xs">
-            {{ t("settings.transcription.model_note") }}
-          </p>
-        </div>
+        </UFormField>
 
-        <div>
-          <label class="app-nav-text text-xs font-semibold">
-            {{ t("settings.transcription.mode_label") }}
-          </label>
+        <UFormField
+          :label="t('settings.transcription.mode_label')"
+          :help="t('settings.transcription.mode_note')"
+          class="app-nav-text text-xs"
+        >
           <USelect
             v-model="selectedMode"
-            class="mt-2 w-full"
+            class="w-full"
             :items="modeOptions"
             value-key="value"
           />
-          <p class="app-muted mt-2 text-xs">
-            {{ t("settings.transcription.mode_note") }}
-          </p>
-        </div>
+        </UFormField>
 
-        <div>
-          <label class="app-nav-text text-xs font-semibold">
-            {{ t("settings.transcription.language_label") }}
-          </label>
+        <UFormField
+          :label="t('settings.transcription.language_label')"
+          :help="t('settings.transcription.language_note')"
+          class="app-nav-text text-xs"
+        >
           <USelect
             v-model="selectedLanguage"
-            class="mt-2 w-full"
+            class="w-full"
             :items="languageOptions"
             value-key="value"
           />
-          <p class="app-muted mt-2 text-xs">
-            {{ t("settings.transcription.language_note") }}
-          </p>
-        </div>
-        <div>
-          <label class="app-nav-text text-xs font-semibold">
-            {{ t("settings.transcription.spoken_punctuation_label") }}
-          </label>
+        </UFormField>
+        <UFormField
+          :label="t('settings.transcription.spoken_punctuation_label')"
+          :help="t('settings.transcription.spoken_punctuation_note')"
+          class="app-nav-text text-xs"
+        >
           <USwitch
             v-model="spokenPunctuationEnabled"
-            class="mt-2"
             :label="spokenPunctuationEnabled
               ? t('settings.transcription.spoken_punctuation_on')
               : t('settings.transcription.spoken_punctuation_off')"
             size="md"
           />
-          <p class="app-muted mt-2 text-xs">
-            {{ t("settings.transcription.spoken_punctuation_note") }}
-          </p>
           <p class="app-muted text-xs">
             {{ t("settings.transcription.spoken_punctuation_help") }}
           </p>
-        </div>
+        </UFormField>
       </div>
 
       <div class="mt-4 space-y-2">

@@ -487,8 +487,7 @@ watch(
           <h3 class="app-text font-semibold">{{ t("audio.review_onboarding_title") }}</h3>
           <p class="app-muted app-text-meta">{{ t("audio.review_onboarding_hint") }}</p>
 
-          <div class="space-y-2">
-            <label class="app-text app-text-meta font-medium">{{ t("audio.review_onboarding_audience") }}</label>
+          <UFormField :label="t('audio.review_onboarding_audience')" class="app-text app-text-meta">
             <div class="flex flex-wrap gap-2">
               <AppButton
                 v-for="option in AUDIENCE_OPTIONS"
@@ -510,10 +509,9 @@ watch(
               :placeholder="t('audio.review_onboarding_audience_other')"
               @input="emitOnboardingContext"
             />
-          </div>
+          </UFormField>
 
-          <div class="space-y-2">
-            <label class="app-text app-text-meta font-medium">{{ t("audio.review_onboarding_goal") }}</label>
+          <UFormField :label="t('audio.review_onboarding_goal')" class="app-text app-text-meta">
             <div class="flex flex-wrap gap-2">
               <AppButton
                 v-for="option in GOAL_OPTIONS"
@@ -526,10 +524,9 @@ watch(
                 {{ t(`audio.review_onboarding_goal_${option}`) }}
               </AppButton>
             </div>
-          </div>
+          </UFormField>
 
-          <div class="space-y-2">
-            <label class="app-text app-text-meta font-medium">{{ t("audio.review_onboarding_duration") }}</label>
+          <UFormField :label="t('audio.review_onboarding_duration')" class="app-text app-text-meta">
             <UInput
               v-model.number="onboardingTargetMinutes"
               class="w-32 app-text-body text-sm"
@@ -539,7 +536,7 @@ watch(
               max="120"
               @input="emitOnboardingContext"
             />
-          </div>
+          </UFormField>
 
           <AppButton
             tone="secondary"
@@ -669,7 +666,7 @@ watch(
           </div>
         </AppPanel>
 
-        <details class="app-card app-radius-panel-md space-y-3 border p-4">
+        <details class="app-radius-panel-md space-y-3 border bg-[var(--color-surface-elevated)] p-4">
           <summary class="cursor-pointer app-text font-semibold">
             <span class="collapse-chevron mr-1" aria-hidden="true">></span>
             {{ t("audio.quick_clean_raw_chunks_title") }}
@@ -712,7 +709,7 @@ watch(
       </AppButton>
     </div>
 
-    <details class="app-card app-radius-panel-md space-y-3 border p-4">
+    <details class="app-radius-panel-md space-y-3 border bg-[var(--color-surface-elevated)] p-4">
       <summary class="cursor-pointer app-text font-semibold">
         <span class="collapse-chevron mr-1" aria-hidden="true">></span>
         {{ t("audio.quick_clean_trim_advanced_title") }}

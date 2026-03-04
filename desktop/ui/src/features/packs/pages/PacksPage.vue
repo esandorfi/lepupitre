@@ -175,7 +175,7 @@ onBeforeUnmount(() => {
         </div>
         <div
           class="mt-3 rounded-xl border border-dashed border-[var(--app-border)] px-4 py-6 text-center text-xs"
-          :class="isDragging ? 'bg-[var(--app-card)]' : 'bg-transparent'"
+          :class="isDragging ? 'bg-[var(--color-surface-elevated)]' : 'bg-transparent'"
         >
           <div class="app-text text-sm">{{ t("packs.import_drop_title") }}</div>
           <div class="app-muted mt-1">{{ t("packs.import_drop_hint") }}</div>

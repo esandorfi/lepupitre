@@ -43,7 +43,7 @@ Restructure the desktop UI into feature-oriented directories and then migrate to
 - [x] Keep composed `routes.ts` as single export surface
 - [x] Preserve route names/paths
 - [ ] Extract Home page internals into `features/home/components` and `features/home/composables`
-- [ ] Validate all UI smoke paths after restructure
+- [x] Validate all UI smoke paths after restructure
 
 ## Step B: Nuxt UI Single-System Migration
 
@@ -70,7 +70,7 @@ Restructure the desktop UI into feature-oriented directories and then migrate to
 - [x] Migrate support + workspace pages
 - [x] Migrate Home feature as a full vertical slice
 - [x] Migrate talks + feedback features
-- [ ] Migrate recorder composites
+- [x] Migrate recorder composites
 - [x] Add guard rails against raw primitive drift in pages
 
 ## Risks and Mitigations
@@ -117,3 +117,34 @@ Restructure the desktop UI into feature-oriented directories and then migrate to
   - Shared component wave continued:
     - migrated `AppHeaderMenu` action/toggle groups to `AppButton`
     - migrated `RecorderAdvancedDrawer` form controls to Nuxt primitives (`USelect`/`USwitch`) with typed option maps
+  - Completed shared shell/menu Nuxt UI alignment:
+    - replaced custom menu panel utility class usage in `AppHeaderMenu` and `WorkspaceSwitcher` with explicit Nuxt-popover content surface tokens
+    - replaced custom divider utility usage with `USeparator`
+  - Completed recorder composite migration wave:
+    - migrated `RecorderAdvancedDrawer` label+field blocks to `UFormField` wrappers around Nuxt controls
+    - removed remaining legacy `app-card` usage in recorder quick-clean advanced details
+  - Extended Nuxt UI form-field migration in support settings:
+    - replaced manual label/select blocks with `UFormField` for navigation, voiceup, and transcription selectors/toggles
+  - Home internals extraction started:
+    - moved achievement pulse decision logic + type into `features/home/composables/useAchievementPulse.ts`
+    - `HomePage` now consumes composable instead of inline implementation
+    - moved home page presentation helpers/types into `features/home/composables/useHomePresentation.ts`
+    - switched `HomePage` shared imports to `@/` alias form (removed deep relative paths)
+    - moved quest picker keyboard/active-row navigation logic into `features/home/composables/useQuestPickerNavigation.ts`
+    - `HomePage` now consumes `useQuestPickerNavigation` for focus sync and key handling
+    - moved training data orchestration (`loadTrainingData`, `preloadQuestCatalog`, `openQuestPicker`, `focusQuestMapNode`) into `features/home/composables/useHomeTrainingOrchestration.ts`
+    - `HomePage` now consumes orchestration composable and keeps page-level watch/mount hooks as composition root
+  - Remaining field-label normalization pass:
+    - migrated recorder spoken punctuation row to `UFormField` in `RecorderAdvancedDrawer`
+    - migrated recorder onboarding audience/goal/duration label groups to `UFormField` in `RecorderQuickCleanPanel`
+    - migrated workspace profile create form to `UFormField` and replaced inline rename label with input `aria-label` in `ProfilesPage`
+    - verification: no remaining raw `<label>` usage in `desktop/ui/src/**/*.vue` outside wrapper components
+  - Second-pass migration audit (Nuxt UI first):
+    - no remaining `app-card`, `--app-card`, `app-menu-panel`, `app-divider`, or `app-button/app-badge/app-panel` class usages in Vue files outside wrapper implementations
+    - no native `<input|select|textarea|button>` usage in Vue files outside wrapper implementations
+    - no deep relative imports to shared UI wrappers (`../../..../components/ui`) remain
+    - direct Nuxt primitives (`UFormField`, `UInput`, `USelect`, `USwitch`, `UTextarea`, `USeparator`, `UDropdownMenu`, `UPopover`) are now consistently used in feature and shared pages/components
+  - Validation gate pass after recorder + shell wave:
+    - `pnpm -C desktop ui:typecheck`
+    - `pnpm -C desktop ui:lint`
+    - `pnpm -C desktop ui:test`

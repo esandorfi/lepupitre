@@ -784,13 +784,6 @@ body,
   cursor: not-allowed;
 }
 
-.app-menu-panel {
-  background-color: var(--color-surface-elevated);
-  border-color: var(--color-border);
-  color: var(--color-text);
-  box-shadow: var(--shadow-md);
-}
-
 .app-menu-item {
   background-color: transparent;
   color: var(--color-text);
@@ -798,10 +791,6 @@ body,
 
 .app-menu-item:hover {
   background-color: color-mix(in srgb, var(--color-accent-soft) 65%, transparent);
-}
-
-.app-divider {
-  border-top: 1px solid var(--color-border-muted);
 }
 
 .app-avatar {
