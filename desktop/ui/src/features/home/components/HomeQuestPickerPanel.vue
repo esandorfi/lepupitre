@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { nextTick, ref, watch } from "vue";
-import AppButton from "@/components/ui/AppButton.vue";
 import { useI18n } from "@/lib/i18n";
 import type { Quest } from "@/schemas/ipc";
 import HomeQuestPickerRow from "./HomeQuestPickerRow.vue";
@@ -85,9 +84,9 @@ watch(
   >
     <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
       <div class="app-text app-text-section-title">{{ t("training.quest_picker_title") }}</div>
-      <AppButton size="md" tone="ghost" @click="closePicker">
+      <UButton size="md" color="neutral" variant="ghost" @click="closePicker">
         {{ t("training.close_picker") }}
-      </AppButton>
+      </UButton>
     </div>
 
     <div class="space-y-3">
@@ -100,39 +99,39 @@ watch(
       />
 
       <div class="flex flex-wrap gap-2">
-        <AppButton
+        <UButton
           v-for="option in props.categories"
           :key="option"
           size="sm"
-          :tone="props.category === option ? 'secondary' : 'ghost'"
+          color="neutral" :variant="props.category === option ? 'outline' : 'ghost'"
           @click="emit('update:category', option)"
         >
           {{ option === "all" ? t("training.quest_category_all") : option }}
-        </AppButton>
+        </UButton>
       </div>
 
       <div class="flex flex-wrap gap-2">
-        <AppButton
+        <UButton
           size="sm"
-          :tone="props.sort === 'recent' ? 'secondary' : 'ghost'"
+          color="neutral" :variant="props.sort === 'recent' ? 'outline' : 'ghost'"
           @click="emit('update:sort', 'recent')"
         >
           {{ t("training.quest_sort_recent") }}
-        </AppButton>
-        <AppButton
+        </UButton>
+        <UButton
           size="sm"
-          :tone="props.sort === 'az' ? 'secondary' : 'ghost'"
+          color="neutral" :variant="props.sort === 'az' ? 'outline' : 'ghost'"
           @click="emit('update:sort', 'az')"
         >
           {{ t("training.quest_sort_az") }}
-        </AppButton>
-        <AppButton
+        </UButton>
+        <UButton
           size="sm"
-          :tone="props.sort === 'category' ? 'secondary' : 'ghost'"
+          color="neutral" :variant="props.sort === 'category' ? 'outline' : 'ghost'"
           @click="emit('update:sort', 'category')"
         >
           {{ t("training.quest_sort_category") }}
-        </AppButton>
+        </UButton>
       </div>
 
       <div v-if="props.isLoading" class="app-muted app-text-body">{{ t("talks.loading") }}</div>

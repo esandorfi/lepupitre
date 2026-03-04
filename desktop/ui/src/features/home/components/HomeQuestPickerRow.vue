@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { RouterLink } from "vue-router";
-import AppBadge from "@/components/ui/AppBadge.vue";
 import { useI18n } from "@/lib/i18n";
 import type { Quest } from "@/schemas/ipc";
 
@@ -60,15 +59,15 @@ const rowUi = {
         <div class="app-text text-sm font-semibold">{{ props.quest.title }}</div>
         <div class="app-muted mt-1 line-clamp-2 text-xs">{{ props.quest.prompt }}</div>
         <div class="mt-2 flex flex-wrap items-center gap-2 app-text-caption">
-          <AppBadge tone="neutral">
+          <UBadge color="neutral" variant="solid">
             {{ props.questCodeLabel(props.quest.code) }}
-          </AppBadge>
-          <AppBadge tone="neutral">
+          </UBadge>
+          <UBadge color="neutral" variant="solid">
             {{ props.outputLabel(props.quest.output_type) }}
-          </AppBadge>
-          <AppBadge tone="neutral">
+          </UBadge>
+          <UBadge color="neutral" variant="solid">
             {{ props.estimatedMinutesLabel(props.quest.estimated_sec) }} {{ t("talks.minutes") }}
-          </AppBadge>
+          </UBadge>
         </div>
       </div>
       <div class="flex items-center gap-2">
@@ -80,9 +79,9 @@ const rowUi = {
         >
           {{ t("training.quest_start_now") }}
         </RouterLink>
-        <AppBadge v-if="props.selected" tone="success">
+        <UBadge v-if="props.selected" color="success" variant="solid">
           {{ t("training.quest_selected") }}
-        </AppBadge>
+        </UBadge>
         <span class="app-subtle app-text-meta font-semibold">{{ props.quest.category }}</span>
       </div>
     </div>

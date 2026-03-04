@@ -416,6 +416,12 @@
   padding: 20px;
 }
 
+.app-panel > [data-slot="header"],
+.app-panel > [data-slot="body"],
+.app-panel > [data-slot="footer"] {
+  padding: 0;
+}
+
 .app-panel-compact {
   padding: 16px;
 }

@@ -2,9 +2,6 @@
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import TalkStepPageShell from "@/components/TalkStepPageShell.vue";
-import AppBadge from "@/components/ui/AppBadge.vue";
-import AppButton from "@/components/ui/AppButton.vue";
-import AppPanel from "@/components/ui/AppPanel.vue";
 import { useI18n } from "@/lib/i18n";
 import { appStore } from "@/stores/app";
 
@@ -252,41 +249,41 @@ watch(project, () => {
     :subtitle="t('talk_define.subtitle')"
   >
 
-    <AppPanel v-if="!activeProfileId" variant="compact">
+    <UCard v-if="!activeProfileId" class="app-panel app-panel-compact" variant="outline">
       <p class="app-muted app-text-body">{{ t("talk.need_profile") }}</p>
       <RouterLink class="app-link app-text-meta mt-3 inline-block underline" to="/profiles">
         {{ t("talk.goto_profiles") }}
       </RouterLink>
-    </AppPanel>
+    </UCard>
 
-    <AppPanel v-else-if="isLoading" variant="compact">
+    <UCard v-else-if="isLoading" class="app-panel app-panel-compact" variant="outline">
       <p class="app-muted app-text-body">{{ t("talks.loading") }}</p>
-    </AppPanel>
+    </UCard>
 
-    <AppPanel v-else-if="error" variant="compact">
+    <UCard v-else-if="error" class="app-panel app-panel-compact" variant="outline">
       <p class="app-danger-text app-text-body">{{ error }}</p>
-    </AppPanel>
+    </UCard>
 
-    <AppPanel v-else-if="!project" variant="compact">
+    <UCard v-else-if="!project" class="app-panel app-panel-compact" variant="outline">
       <p class="app-muted app-text-body">{{ t("talk_define.missing") }}</p>
       <RouterLink class="app-link app-text-meta mt-3 inline-block underline" to="/talks">
         {{ t("talk_report.back") }}
       </RouterLink>
-    </AppPanel>
+    </UCard>
 
     <div v-else class="space-y-4">
-      <AppPanel
-        variant="compact"
-        class="border border-[var(--color-accent)] bg-[var(--color-surface-selected)]"
-      >
+      <UCard
+       
+        class="app-panel app-panel-compact border border-[var(--color-accent)] bg-[var(--color-surface-selected)]"
+       variant="outline">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div>
             <div class="app-text-eyebrow">{{ t("talk_define.readiness_title") }}</div>
             <div class="app-muted app-text-meta mt-1">{{ t("talk_define.readiness_subtitle") }}</div>
           </div>
-          <AppBadge tone="neutral">
+          <UBadge color="neutral" variant="solid">
             {{ defineCompletedCount }} / {{ defineChecklist.length }}
-          </AppBadge>
+          </UBadge>
         </div>
         <div class="mt-3 h-2 overflow-hidden rounded-full app-meter-bg">
           <div
@@ -303,9 +300,9 @@ watch(project, () => {
           >
             <div class="flex items-center justify-between gap-2">
               <span class="app-text app-text-body-strong text-sm">{{ item.label }}</span>
-              <AppBadge :tone="item.done ? 'success' : 'neutral'">
+              <UBadge :color="item.done ? 'success' : 'neutral'" variant="solid">
                 {{ item.done ? t("talk_define.check_done") : t("talk_define.check_missing") }}
-              </AppBadge>
+              </UBadge>
             </div>
           </div>
         </div>
@@ -316,9 +313,9 @@ watch(project, () => {
               : `${t("talk_define.readiness_missing")} ${nextMissingDefineItem ?? t("talk_define.empty_value")}`
           }}
         </div>
-      </AppPanel>
+      </UCard>
 
-      <AppPanel>
+      <UCard class="app-panel" variant="outline">
         <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
           <p class="app-muted app-text-meta">{{ t("talk_define.autosave_hint") }}</p>
           <p
@@ -339,7 +336,7 @@ watch(project, () => {
           </p>
         </div>
         <div class="grid gap-3 md:grid-cols-2">
-          <AppPanel as="div" class="app-radius-card md:col-span-2" variant="compact">
+          <UCard as="div" class="app-panel app-panel-compact app-radius-card md:col-span-2" variant="outline">
             <div class="app-text-eyebrow">{{ t("talk_define.field_title") }}</div>
             <UInput
               v-model="form.title"
@@ -350,8 +347,8 @@ watch(project, () => {
               @blur="saveDefine"
               @keydown.enter.prevent="saveDefine"
             />
-          </AppPanel>
-          <AppPanel as="div" class="app-radius-card" variant="compact">
+          </UCard>
+          <UCard as="div" class="app-panel app-panel-compact app-radius-card" variant="outline">
             <div class="app-text-eyebrow">{{ t("talk_define.field_audience") }}</div>
             <UInput
               v-model="form.audience"
@@ -362,8 +359,8 @@ watch(project, () => {
               @blur="saveDefine"
               @keydown.enter.prevent="saveDefine"
             />
-          </AppPanel>
-          <AppPanel as="div" class="app-radius-card" variant="compact">
+          </UCard>
+          <UCard as="div" class="app-panel app-panel-compact app-radius-card" variant="outline">
             <div class="app-text-eyebrow">{{ t("talk_define.field_duration") }}</div>
             <UInput
               v-model="form.durationMinutes"
@@ -379,8 +376,8 @@ watch(project, () => {
             <p class="app-muted app-text-meta mt-2">
               {{ minutesLabel(project.duration_target_sec) }}
             </p>
-          </AppPanel>
-          <AppPanel as="div" class="app-radius-card md:col-span-2" variant="compact">
+          </UCard>
+          <UCard as="div" class="app-panel app-panel-compact app-radius-card md:col-span-2" variant="outline">
             <div class="app-text-eyebrow">{{ t("talk_define.field_goal") }}</div>
             <UTextarea
               v-model="form.goal"
@@ -389,8 +386,8 @@ watch(project, () => {
               :placeholder="t('talk.goal_placeholder')"
               @blur="saveDefine"
             />
-          </AppPanel>
-          <AppPanel as="div" class="app-radius-card md:col-span-2" variant="compact">
+          </UCard>
+          <UCard as="div" class="app-panel app-panel-compact app-radius-card md:col-span-2" variant="outline">
             <div class="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <div class="app-text-eyebrow">
@@ -398,43 +395,43 @@ watch(project, () => {
                 </div>
                 <p class="app-muted app-text-meta mt-1">{{ t("talk_define.stage_hint") }}</p>
               </div>
-              <AppBadge tone="neutral">
+              <UBadge color="neutral" variant="solid">
                 {{ stageOptions.find((option) => option.value === projectStage)?.label }}
-              </AppBadge>
+              </UBadge>
             </div>
             <div class="mt-3 flex flex-wrap gap-2">
-              <AppButton
+              <UButton
                 v-for="option in stageOptions"
                 :key="option.value"
                 size="sm"
-                :tone="projectStage === option.value ? 'secondary' : 'ghost'"
+                color="neutral" :variant="projectStage === option.value ? 'outline' : 'ghost'"
                 @click="setStage(option.value)"
               >
                 {{ option.label }}
-              </AppButton>
+              </UButton>
             </div>
-          </AppPanel>
+          </UCard>
         </div>
         <div class="mt-4 flex flex-wrap items-center gap-2">
-          <AppButton
+          <UButton
             v-if="nextAction"
-            tone="primary"
+           
             size="lg"
-            @click="runNextAction"
-          >
+            color="primary"
+           @click="runNextAction">
             {{ nextAction.label }}
-          </AppButton>
-          <AppButton tone="secondary" size="lg" :to="`/talks/${project.id}/builder`">
+          </UButton>
+          <UButton size="lg" :to="`/talks/${project.id}/builder`" color="neutral" variant="outline">
             {{ t("talk_steps.builder") }}
-          </AppButton>
-          <AppButton tone="secondary" size="lg" :to="`/talks/${project.id}/train`">
+          </UButton>
+          <UButton size="lg" :to="`/talks/${project.id}/train`" color="neutral" variant="outline">
             {{ t("talk_steps.train") }}
-          </AppButton>
-          <AppButton tone="secondary" size="lg" :to="`/talks/${project.id}/export`">
+          </UButton>
+          <UButton size="lg" :to="`/talks/${project.id}/export`" color="neutral" variant="outline">
             {{ t("talk_steps.export") }}
-          </AppButton>
+          </UButton>
         </div>
-      </AppPanel>
+      </UCard>
     </div>
   </TalkStepPageShell>
 </template>

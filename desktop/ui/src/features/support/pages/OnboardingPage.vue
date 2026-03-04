@@ -2,9 +2,6 @@
 /* eslint-disable vue/no-v-html */
 import { computed, ref, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
-import AppBadge from "@/components/ui/AppBadge.vue";
-import AppButton from "@/components/ui/AppButton.vue";
-import AppPanel from "@/components/ui/AppPanel.vue";
 import {
   getOnboardingTrackByAudience,
   parseHelpAudience,
@@ -104,70 +101,70 @@ async function finishOnboarding(target = nextPath.value) {
   <section class="space-y-6">
     <header class="space-y-3">
       <div class="flex flex-wrap items-center gap-2">
-        <AppBadge tone="neutral">
+        <UBadge color="neutral" variant="solid">
           {{ t("onboarding.badge_local") }}
-        </AppBadge>
-        <AppBadge tone="neutral">
+        </UBadge>
+        <UBadge color="neutral" variant="solid">
           {{ t("onboarding.badge_offline") }}
-        </AppBadge>
-        <AppBadge tone="neutral">
+        </UBadge>
+        <UBadge color="neutral" variant="solid">
           {{ t("onboarding.badge_private") }}
-        </AppBadge>
+        </UBadge>
       </div>
       <h1 class="app-text text-2xl font-semibold tracking-tight">{{ t("onboarding.title") }}</h1>
       <p class="app-muted text-sm">{{ t("onboarding.subtitle") }}</p>
     </header>
 
-    <AppPanel>
+    <UCard class="app-panel" variant="outline">
       <div class="app-text-eyebrow">{{ t("onboarding.quickstart_title") }}</div>
       <div class="mt-4 grid gap-3 lg:grid-cols-3">
-        <AppPanel
+        <UCard
           v-for="step in quickstartSteps"
           :key="step.title"
           as="article"
-          variant="compact"
-          class="app-radius-panel-lg"
-        >
+         
+          class="app-panel app-panel-compact app-radius-panel-lg"
+         variant="outline">
           <h2 class="app-text text-base font-semibold">{{ step.title }}</h2>
           <p class="app-muted mt-2 text-sm leading-6">{{ step.body }}</p>
           <RouterLink class="app-link app-text-meta mt-3 inline-block underline" :to="step.to">
             {{ step.action }}
           </RouterLink>
-        </AppPanel>
+        </UCard>
       </div>
-    </AppPanel>
+    </UCard>
 
-    <AppPanel class="space-y-4">
+    <UCard class="app-panel space-y-4" variant="outline">
       <div>
         <h2 class="app-text text-base font-semibold">{{ t("onboarding.audience_title") }}</h2>
         <p class="app-muted mt-1 text-sm">{{ t("onboarding.audience_subtitle") }}</p>
       </div>
 
       <div class="grid gap-2 lg:grid-cols-3">
-        <AppButton
+        <UButton
           v-for="option in audienceOptions"
           :key="option.id"
           class="w-full justify-start rounded-xl border px-3 py-3 text-left"
           :class="selectedAudience === option.id ? 'app-pill-active' : 'app-pill'"
           size="md"
-          tone="ghost"
-          @click="selectAudience(option.id)"
-        >
+         
+          color="neutral"
+         variant="ghost" @click="selectAudience(option.id)">
           <div class="app-text text-sm font-semibold">{{ option.label }}</div>
           <div class="app-text-meta mt-1">{{ option.description }}</div>
-        </AppButton>
+        </UButton>
       </div>
 
-      <AppPanel v-if="audiencePlan" as="article" class="app-radius-panel-lg" variant="compact">
+      <UCard v-if="audiencePlan" as="article" class="app-panel app-panel-compact app-radius-panel-lg" variant="outline">
         <h3 class="app-text text-sm font-semibold">
           {{ t("onboarding.audience_plan_title") }}: {{ audiencePlan.title }}
         </h3>
         <!-- eslint-disable-next-line vue/no-v-html -->
         <div class="app-markdown app-muted mt-2 text-sm leading-6" v-html="audiencePlan.html" />
-      </AppPanel>
-    </AppPanel>
+      </UCard>
+    </UCard>
 
-    <AppPanel class="space-y-3" variant="compact">
+    <UCard class="app-panel app-panel-compact space-y-3" variant="outline">
       <h2 class="app-text text-base font-semibold">{{ t("onboarding.help_title") }}</h2>
       <p class="app-muted text-sm leading-6">{{ t("onboarding.help_body") }}</p>
       <div class="flex flex-wrap items-center gap-3">
@@ -178,15 +175,15 @@ async function finishOnboarding(target = nextPath.value) {
           {{ t("onboarding.action_about") }}
         </RouterLink>
       </div>
-    </AppPanel>
+    </UCard>
 
     <div class="flex flex-wrap items-center gap-3">
-      <AppButton size="md" tone="primary" @click="finishOnboarding('/profiles')">
+      <UButton size="md" color="primary" @click="finishOnboarding('/profiles')">
         {{ t("onboarding.action_setup") }}
-      </AppButton>
-      <AppButton size="md" tone="secondary" @click="finishOnboarding()">
+      </UButton>
+      <UButton size="md" color="neutral" variant="outline" @click="finishOnboarding()">
         {{ t("onboarding.action_continue") }}
-      </AppButton>
+      </UButton>
     </div>
   </section>
 </template>

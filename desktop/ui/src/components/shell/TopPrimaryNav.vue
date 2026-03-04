@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import AppBadge from "@/components/ui/AppBadge.vue";
-import AppButton from "@/components/ui/AppButton.vue";
 import type { ResolvedPrimaryNavItem } from "@/lib/navigation";
 
 defineProps<{
@@ -26,26 +24,26 @@ const emit = defineEmits<{
           >
             <span class="inline-flex items-center gap-2">
               <span>{{ item.label }}</span>
-              <AppBadge
+              <UBadge
                 v-if="item.badge !== null"
-                tone="neutral"
+               
                 size="sm"
                 as="span"
                 class="min-w-5 justify-center px-1.5 py-0.5"
-              >
+               color="neutral" variant="solid">
                 {{ item.badge }}
-              </AppBadge>
+              </UBadge>
             </span>
           </RouterLink>
-          <AppButton
+          <UButton
             v-else
-            tone="ghost"
+           
             size="md"
             class="app-top-tab app-top-tab-disabled rounded-full px-3 py-2 transition"
             disabled
-          >
+           color="neutral" variant="ghost">
             {{ item.label }}
-          </AppButton>
+          </UButton>
         </template>
       </nav>
     </div>

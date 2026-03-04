@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import AppPanel from "@/components/ui/AppPanel.vue";
 import { useI18n } from "../../../lib/i18n";
 import packageJson from "../../../../package.json";
 import readmeRaw from "../../../../../../README.md?raw";
@@ -23,20 +22,20 @@ const readmeIntro = computed(() => {
       <p class="app-muted mt-1 text-sm">{{ t("about.subtitle") }}</p>
     </header>
 
-    <AppPanel class="app-radius-panel-lg" variant="compact">
+    <UCard class="app-panel app-panel-compact app-radius-panel-lg" variant="outline">
       <div class="app-subtle text-xs font-semibold uppercase tracking-[0.2em]">
         {{ t("settings.about.version") }}
       </div>
       <div class="app-text mt-2 text-lg font-semibold">Le Pupitre</div>
       <div class="app-muted text-sm">v{{ appVersion }}</div>
-    </AppPanel>
+    </UCard>
 
-    <AppPanel variant="compact">
+    <UCard class="app-panel app-panel-compact" variant="outline">
       <div class="app-subtle text-xs font-semibold uppercase tracking-[0.2em]">
         {{ t("about.readme_intro") }}
       </div>
       <pre class="app-text mt-3 whitespace-pre-wrap text-sm leading-6">{{ readmeIntro }}</pre>
-    </AppPanel>
+    </UCard>
   </section>
 </template>
 

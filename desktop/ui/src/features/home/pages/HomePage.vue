@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
-import AppBadge from "@/components/ui/AppBadge.vue";
-import AppButton from "@/components/ui/AppButton.vue";
-import AppPanel from "@/components/ui/AppPanel.vue";
 import HomeQuestPickerPanel from "../components/HomeQuestPickerPanel.vue";
 import { useI18n } from "@/lib/i18n";
 import {
@@ -463,54 +460,54 @@ watch(
   <section class="app-page-shell">
     <div class="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(0,0.95fr)] xl:items-start">
       <div class="space-y-4">
-        <AppPanel variant="hero">
+        <UCard class="app-panel app-panel-hero" variant="outline">
           <div class="app-text-eyebrow">{{ t("training.hero_label") }}</div>
           <div v-if="trainingError" class="app-danger-text app-text-meta mt-2">{{ trainingError }}</div>
           <div v-else-if="isTrainingLoading" class="app-muted app-text-body mt-2">{{ t("talks.loading") }}</div>
           <div v-else-if="heroQuest" class="mt-2 space-y-2">
             <div class="flex flex-wrap items-center gap-2">
-              <AppBadge tone="neutral">
+              <UBadge color="neutral" variant="solid">
                 {{ heroQuestIsOverride ? t("training.hero_selected_badge") : t("training.hero_daily_badge") }}
-              </AppBadge>
-              <AppButton
+              </UBadge>
+              <UButton
                 v-if="heroQuestIsOverride && trainingDailyQuest"
                 class="app-link app-text-meta underline !px-0 !py-0 !font-normal"
                 size="sm"
-                tone="ghost"
-                @click="resetHeroQuestToDaily"
-              >
+               
+                color="neutral"
+               variant="ghost" @click="resetHeroQuestToDaily">
                 {{ t("training.use_daily_quest") }}
-              </AppButton>
+              </UButton>
             </div>
             <div class="app-text app-text-page-title">{{ heroQuest.title }}</div>
             <div class="app-muted app-text-body">{{ heroQuest.prompt }}</div>
             <div class="flex flex-wrap items-center gap-2 app-text-meta">
-              <AppBadge tone="neutral">
+              <UBadge color="neutral" variant="solid">
                 {{ outputLabel(heroQuest.output_type) }}
-              </AppBadge>
-              <AppBadge tone="neutral">
+              </UBadge>
+              <UBadge color="neutral" variant="solid">
                 {{ heroQuest.category }}
-              </AppBadge>
-              <AppBadge tone="neutral">
+              </UBadge>
+              <UBadge color="neutral" variant="solid">
                 {{ estimatedMinutesLabel(heroQuest.estimated_sec) }} {{ t("talks.minutes") }}
-              </AppBadge>
+              </UBadge>
             </div>
             <div class="pt-1">
-              <AppButton size="lg" tone="primary" :to="questRoute(heroQuest.code)">
+              <UButton size="lg" :to="questRoute(heroQuest.code)" color="primary">
                 {{ t("training.start") }}
-              </AppButton>
+              </UButton>
             </div>
           </div>
           <div v-else class="app-muted app-text-body mt-2">
             {{ t("home.quest_empty") }}
           </div>
-        </AppPanel>
+        </UCard>
 
-        <AppPanel
+        <UCard
           v-if="achievementPulse && !trainingError"
-          class="border border-[var(--color-success)] bg-[color-mix(in_srgb,var(--color-success)_12%,var(--color-surface))]"
-          variant="compact"
-        >
+          class="app-panel app-panel-compact border border-[var(--color-success)] bg-[color-mix(in_srgb,var(--color-success)_12%,var(--color-surface))]"
+         
+         variant="outline">
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div class="min-w-0 flex-1">
               <div class="app-text-eyebrow">{{ t("training.achievement_title") }}</div>
@@ -518,53 +515,53 @@ watch(
               <div class="app-muted app-text-body mt-1">{{ achievementPulse.body }}</div>
             </div>
             <div class="flex items-center gap-2">
-              <AppButton size="sm" tone="secondary" :to="achievementPulse.ctaRoute">
+              <UButton size="sm" :to="achievementPulse.ctaRoute" color="neutral" variant="outline">
                 {{ achievementPulse.ctaLabel }}
-              </AppButton>
-              <AppButton size="sm" tone="ghost" @click="achievementPulse = null">
+              </UButton>
+              <UButton size="sm" color="neutral" variant="ghost" @click="achievementPulse = null">
                 {{ t("training.achievement_dismiss") }}
-              </AppButton>
+              </UButton>
             </div>
           </div>
-        </AppPanel>
+        </UCard>
 
-        <AppPanel
+        <UCard
           v-if="showMascotCard && mascotMessage && !trainingError"
-          class="border"
+          class="app-panel app-panel-compact border"
           :class="mascotToneClass(mascotMessage.kind)"
-          variant="compact"
-        >
+         
+         variant="outline">
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div class="min-w-0 flex-1">
               <div class="app-text-eyebrow">{{ t("training.mascot_label") }}</div>
               <div class="app-text app-text-subheadline mt-1">{{ mascotMessage.title }}</div>
               <div v-if="mascotBody" class="app-muted app-text-body mt-1">{{ mascotBody }}</div>
             </div>
-            <AppButton
+            <UButton
               v-if="mascotMessage.cta_route && mascotMessage.cta_label"
               size="md"
-              tone="secondary"
+             
               :to="mascotMessage.cta_route"
-            >
+             color="neutral" variant="outline">
               {{ mascotMessage.cta_label }}
-            </AppButton>
+            </UButton>
           </div>
-        </AppPanel>
+        </UCard>
 
-        <AppPanel
+        <UCard
           v-if="trainingProgress"
-          class="border"
+          class="app-panel app-panel-compact border"
           :class="dailyLoopIsComplete ? 'border-[var(--color-success)] bg-[color-mix(in_srgb,var(--color-success)_10%,var(--color-surface))]' : ''"
-          variant="compact"
-        >
+         
+         variant="outline">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div>
               <div class="app-text-eyebrow">{{ t("training.daily_loop_title") }}</div>
               <div class="app-muted app-text-meta mt-1">{{ t("training.daily_loop_subtitle") }}</div>
             </div>
-            <AppBadge tone="neutral">
+            <UBadge color="neutral" variant="solid">
               {{ dailyLoopCompletedCount }} / {{ dailyLoopSteps.length }}
-            </AppBadge>
+            </UBadge>
           </div>
           <div class="mt-3 space-y-2">
             <div
@@ -575,9 +572,9 @@ watch(
             >
               <div class="app-text app-text-body-strong text-sm">{{ step.title }}</div>
               <div class="flex items-center gap-2">
-                <AppBadge :tone="step.done ? 'success' : 'neutral'" class="py-0.5">
+                <UBadge :color="step.done ? 'success' : 'neutral'" class="py-0.5" variant="solid">
                   {{ step.done ? t("training.daily_loop_done") : t("training.daily_loop_pending") }}
-                </AppBadge>
+                </UBadge>
                 <RouterLink
                   v-if="!step.done"
                   class="app-link app-text-meta underline"
@@ -591,28 +588,28 @@ watch(
           <div class="app-muted app-text-meta mt-2">
             {{ dailyLoopIsComplete ? t("training.daily_loop_hint_complete") : t("training.daily_loop_hint_pending") }}
           </div>
-        </AppPanel>
+        </UCard>
 
-        <AppPanel>
+        <UCard class="app-panel" variant="outline">
           <div class="app-text-eyebrow">{{ t("training.alternate_title") }}</div>
           <p class="app-muted app-text-body mt-2">{{ t("training.alternate_subtitle") }}</p>
           <div class="mt-3 flex flex-wrap gap-2">
-            <AppButton
+            <UButton
               v-if="trainingProjectId"
               size="lg"
-              tone="secondary"
+             
               :to="`/quest/FREE?projectId=${trainingProjectId}&from=training`"
-            >
+             color="neutral" variant="outline">
               {{ t("training.free_quest") }}
-            </AppButton>
-            <AppButton
+            </UButton>
+            <UButton
               v-if="trainingProjectId"
               size="lg"
-              tone="secondary"
-              @click="openQuestPicker"
-            >
+             
+              color="neutral"
+             variant="outline" @click="openQuestPicker">
               {{ t("training.change_quest") }}
-            </AppButton>
+            </UButton>
             <RouterLink
               class="app-link app-text-meta inline-flex items-center underline"
               to="/talks"
@@ -646,10 +643,10 @@ watch(
             @select-quest="selectHeroQuest"
             @keydown="onQuestPickerKeydown"
           />
-        </AppPanel>
+        </UCard>
       </div>
 
-      <AppPanel class="xl:sticky xl:top-4">
+      <UCard class="app-panel xl:sticky xl:top-4" variant="outline">
       <div
         class="rounded-xl border border-[var(--app-border)] p-3"
         :class="isQuestWorldMode ? 'bg-[color-mix(in_srgb,var(--color-accent-soft)_30%,var(--color-surface))]' : ''"
@@ -700,22 +697,22 @@ watch(
           >
             <div class="flex flex-wrap items-center justify-between gap-2">
               <div class="app-text-eyebrow">{{ t("training.quest_map_title") }}</div>
-              <AppBadge tone="neutral">
+              <UBadge color="neutral" variant="solid">
                 {{ trainingProgress.weekly_completed }} / {{ trainingProgress.weekly_target }}
-              </AppBadge>
+              </UBadge>
             </div>
             <div class="mt-3 overflow-x-auto pb-1">
               <div class="flex min-w-[440px] items-start gap-2 pr-1">
                 <template v-for="(node, index) in questMapNodes" :key="node.id">
                   <div class="flex items-start gap-2">
-                    <AppButton
+                    <UButton
                       class="min-h-0 w-[76px] flex-col items-center text-center transition !px-0 !py-0"
                       :style="{ marginTop: `${node.offsetPx}px` }"
                       size="sm"
-                      tone="ghost"
+                     
                       :aria-label="questMapNodeAriaLabel(node)"
-                      @click="focusQuestMapNode(node)"
-                    >
+                      color="neutral"
+                     variant="ghost" @click="focusQuestMapNode(node)">
                       <div
                         class="flex h-9 w-9 items-center justify-center rounded-full border text-sm font-semibold transition"
                         :class="questMapNodeClass(node)"
@@ -728,10 +725,10 @@ watch(
                       <div class="app-muted app-text-meta mt-1">
                         +{{ node.reward }} {{ t("training.progress_credits") }}
                       </div>
-                      <AppBadge class="mt-1 py-0.5" tone="neutral">
+                      <UBadge class="mt-1 py-0.5" color="neutral" variant="solid">
                         {{ node.category ?? t("training.quest_map_any_category") }}
-                      </AppBadge>
-                    </AppButton>
+                      </UBadge>
+                    </UButton>
                     <div
                       v-if="index < questMapNodes.length - 1"
                       class="mt-4 h-[2px] w-8 rounded-full transition"
@@ -752,9 +749,9 @@ watch(
           >
             <div class="flex flex-wrap items-center justify-between gap-2">
               <div class="app-text-eyebrow">{{ t("training.rewards_title") }}</div>
-              <AppBadge tone="neutral">
+              <UBadge color="neutral" variant="solid">
                 {{ unlockedRewardCount }} / {{ rewardBadges.length }} {{ t("training.rewards_unlocked") }}
-              </AppBadge>
+              </UBadge>
             </div>
             <div class="mt-3 grid gap-2 sm:grid-cols-2">
               <div
@@ -765,12 +762,13 @@ watch(
               >
                 <div class="flex items-center justify-between gap-2">
                   <div class="app-text app-text-body-strong text-sm">{{ badge.title }}</div>
-                  <AppBadge
+                  <UBadge
                     class="py-0.5"
-                    :tone="badge.unlocked ? 'success' : 'neutral'"
+                    :color="badge.unlocked ? 'success' : 'neutral'"
+                    variant="solid"
                   >
                     {{ badge.unlocked ? t("training.rewards_status_unlocked") : t("training.rewards_status_locked") }}
-                  </AppBadge>
+                  </UBadge>
                 </div>
                 <div class="app-muted app-text-meta mt-1">
                   {{ Math.min(badge.current, badge.target) }} / {{ badge.target }}
@@ -789,20 +787,20 @@ watch(
           {{ t("training.history_title") }}
         </div>
         <div class="flex flex-wrap gap-2">
-          <AppButton
+          <UButton
             size="sm"
-            :tone="trainingActivityTab === 'feedback' ? 'secondary' : 'ghost'"
+            color="neutral" :variant="trainingActivityTab === 'feedback' ? 'outline' : 'ghost'"
             @click="trainingActivityTab = 'feedback'"
           >
             {{ t("training.feedback_title") }} · {{ feedbackAttempts.length }}
-          </AppButton>
-          <AppButton
+          </UButton>
+          <UButton
             size="sm"
-            :tone="trainingActivityTab === 'history' ? 'secondary' : 'ghost'"
+            color="neutral" :variant="trainingActivityTab === 'history' ? 'outline' : 'ghost'"
             @click="trainingActivityTab = 'history'"
           >
             {{ t("training.history_title") }} · {{ recentAttempts.length }}
-          </AppButton>
+          </UButton>
         </div>
       </div>
 
@@ -827,9 +825,9 @@ watch(
                 </div>
               </div>
               <div class="flex items-center gap-2">
-                <AppBadge tone="success">
+                <UBadge color="success" variant="solid">
                   {{ t("training.feedback_ready") }}
-                </AppBadge>
+                </UBadge>
                 <RouterLink
                   v-if="attempt.feedback_id"
                   class="app-link app-text-meta underline"
@@ -878,7 +876,7 @@ watch(
           </div>
         </div>
       </template>
-      </AppPanel>
+      </UCard>
     </div>
   </section>
 </template>

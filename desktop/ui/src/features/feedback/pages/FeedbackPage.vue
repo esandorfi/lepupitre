@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, RouterLink } from "vue-router";
-import AppButton from "@/components/ui/AppButton.vue";
-import AppPanel from "@/components/ui/AppPanel.vue";
 import { resolveFeedbackBackLink, resolveFeedbackContextLabel } from "@/lib/feedbackContext";
 import { useI18n } from "@/lib/i18n";
 import { useUiPreferences } from "@/lib/uiPreferences";
@@ -170,34 +168,34 @@ watch(
       }}
     </p>
 
-    <AppPanel
+    <UCard
       v-if="showMascotCard && mascotMessage"
-      class="border"
+      class="app-panel app-panel-compact border"
       :class="mascotToneClass(mascotMessage.kind)"
-      variant="compact"
-    >
+     
+     variant="outline">
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div class="min-w-0 flex-1">
           <div class="app-text-eyebrow">{{ t("feedback.mascot_label") }}</div>
           <div class="app-text app-text-subheadline mt-1">{{ mascotMessage.title }}</div>
           <div v-if="mascotBody" class="app-muted app-text-body mt-1">{{ mascotBody }}</div>
         </div>
-        <AppButton
+        <UButton
           v-if="mascotMessage.cta_route && mascotMessage.cta_label"
           size="md"
-          tone="secondary"
+         
           :to="mascotMessage.cta_route"
-        >
+         color="neutral" variant="outline">
           {{ mascotMessage.cta_label }}
-        </AppButton>
+        </UButton>
       </div>
-    </AppPanel>
+    </UCard>
 
-    <AppPanel
-      class="text-sm"
+    <UCard
+      class="app-panel app-panel-compact text-sm"
       :class="isQuestWorldMode ? 'bg-[color-mix(in_srgb,var(--color-accent-soft)_20%,var(--color-surface))]' : ''"
-      variant="compact"
-    >
+     
+     variant="outline">
       <div class="app-subtle text-xs uppercase tracking-[0.2em]">
         {{ t("feedback.score") }}
       </div>
@@ -216,7 +214,7 @@ watch(
       </div>
 
       <div v-else-if="feedback" class="mt-4 space-y-4">
-        <AppPanel variant="compact">
+        <UCard class="app-panel app-panel-compact" variant="outline">
           <div class="app-subtle text-xs uppercase tracking-[0.2em]">
             {{ t("feedback.actions") }}
           </div>
@@ -230,9 +228,9 @@ watch(
               <div class="app-text mt-1 text-xs">{{ action.how_to_fix }}</div>
             </div>
           </div>
-        </AppPanel>
+        </UCard>
 
-        <AppPanel v-if="recommendedQuestLinks.length > 0" variant="compact">
+        <UCard v-if="recommendedQuestLinks.length > 0" class="app-panel app-panel-compact" variant="outline">
           <div class="app-subtle text-xs uppercase tracking-[0.2em]">
             {{ t("feedback.practice_next_title") }}
           </div>
@@ -240,15 +238,16 @@ watch(
             {{ t("feedback.practice_next_subtitle") }}
           </div>
           <div class="mt-2 flex flex-wrap gap-2">
-            <AppButton
+            <UButton
               v-for="item in recommendedQuestLinks"
               :key="item.code"
               size="sm"
-              tone="secondary"
               :to="item.to"
+              color="neutral"
+              variant="outline"
             >
               {{ item.label }}
-            </AppButton>
+            </UButton>
             <RouterLink
               class="app-link app-text-meta inline-flex items-center underline"
               to="/training"
@@ -256,9 +255,9 @@ watch(
               {{ t("feedback.practice_next_training") }}
             </RouterLink>
           </div>
-        </AppPanel>
+        </UCard>
 
-        <AppPanel variant="compact">
+        <UCard class="app-panel app-panel-compact" variant="outline">
           <div class="app-subtle text-xs uppercase tracking-[0.2em]">
             {{ t("feedback.metrics") }}
           </div>
@@ -284,9 +283,9 @@ watch(
               <span class="app-text">{{ feedback.metrics.repeat_terms.join(", ") }}</span>
             </div>
           </div>
-        </AppPanel>
+        </UCard>
 
-        <AppPanel v-if="feedback.comments.length > 0" variant="compact">
+        <UCard v-if="feedback.comments.length > 0" class="app-panel app-panel-compact" variant="outline">
           <div class="app-subtle text-xs uppercase tracking-[0.2em]">
             {{ t("feedback.comments") }}
           </div>
@@ -296,9 +295,9 @@ watch(
               <div class="app-muted">{{ comment.suggestion }}</div>
             </div>
           </div>
-        </AppPanel>
+        </UCard>
 
-        <AppPanel variant="compact">
+        <UCard class="app-panel app-panel-compact" variant="outline">
           <div class="app-subtle text-xs uppercase tracking-[0.2em]">
             {{ t("feedback.notes_title") }}
           </div>
@@ -318,7 +317,7 @@ watch(
           <div v-else-if="noteStatus === 'error'" class="app-danger-text mt-2 text-xs">
             {{ t("feedback.notes_error") }}
           </div>
-        </AppPanel>
+        </UCard>
       </div>
       <div v-else class="app-muted mt-4 text-xs">
         {{ t("feedback.empty") }}
@@ -327,7 +326,7 @@ watch(
       <RouterLink class="app-link mt-4 inline-block text-xs underline" :to="backLink">
         {{ t("feedback.back_parent") }}
       </RouterLink>
-    </AppPanel>
+    </UCard>
   </section>
 </template>
 

@@ -1,8 +1,5 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import AppButton from "@/components/ui/AppButton.vue";
-import AppPanel from "@/components/ui/AppPanel.vue";
-import AppRange from "@/components/ui/AppRange.vue";
 import { useI18n } from "@/lib/i18n";
 import type { ReviewState, ReviewCtaConfig } from "@/lib/recorderFlow";
 import { formatTrimClock, normalizeTrimWindow } from "@/lib/recorderTrim";
@@ -420,17 +417,17 @@ watch(
   <div class="space-y-4">
     <!-- Primary CTA bar -->
     <div class="flex items-center gap-3">
-      <AppButton
-        tone="info"
+      <UButton
+       
         size="lg"
         :disabled="props.reviewCta.disabled"
-        @click="handlePrimaryCta"
-      >
+        color="info"
+       @click="handlePrimaryCta">
         {{ t(props.reviewCta.labelKey) }}
         <span v-if="props.reviewCta.progressPercent !== null" class="ml-2 app-text-meta">
           {{ props.reviewCta.progressPercent }}%
         </span>
-      </AppButton>
+      </UButton>
       <span
         v-if="props.reviewCta.progressPercent !== null && props.transcribeStageLabel"
         class="app-muted app-text-meta"
@@ -452,7 +449,7 @@ watch(
     >
       <!-- LEFT column: Playback + onboarding + transcription progress -->
       <div class="space-y-4">
-        <AppPanel as="section" variant="compact" class="space-y-3">
+        <UCard as="section" class="app-panel app-panel-compact space-y-3" variant="outline">
           <div class="flex items-center justify-between gap-2">
             <h3 class="app-text font-semibold">{{ t("audio.quick_clean_playback_title") }}</h3>
           </div>
@@ -475,30 +472,30 @@ watch(
               />
             </audio>
           </div>
-        </AppPanel>
+        </UCard>
 
         <!-- Onboarding card: shown when no transcript exists yet (including during transcribing) -->
-        <AppPanel
+        <UCard
           v-if="!props.hasTranscript && showOnboarding"
           as="section"
-          variant="compact"
-          class="space-y-3"
-        >
+         
+          class="app-panel app-panel-compact space-y-3"
+         variant="outline">
           <h3 class="app-text font-semibold">{{ t("audio.review_onboarding_title") }}</h3>
           <p class="app-muted app-text-meta">{{ t("audio.review_onboarding_hint") }}</p>
 
           <UFormField :label="t('audio.review_onboarding_audience')" class="app-text app-text-meta">
             <div class="flex flex-wrap gap-2">
-              <AppButton
+              <UButton
                 v-for="option in AUDIENCE_OPTIONS"
                 :key="option"
                 size="sm"
-                :tone="onboardingAudience === option ? 'ghost' : 'secondary'"
+                color="neutral" :variant="onboardingAudience === option ? 'ghost' : 'outline'"
                 :class="onboardingAudience === option ? 'app-pill-active-neutral font-semibold' : ''"
                 @click="selectAudience(option)"
               >
                 {{ t(`audio.review_onboarding_audience_${option}`) }}
-              </AppButton>
+              </UButton>
             </div>
             <UInput
               v-if="onboardingAudience === 'other'"
@@ -513,16 +510,16 @@ watch(
 
           <UFormField :label="t('audio.review_onboarding_goal')" class="app-text app-text-meta">
             <div class="flex flex-wrap gap-2">
-              <AppButton
+              <UButton
                 v-for="option in GOAL_OPTIONS"
                 :key="option"
                 size="sm"
-                :tone="onboardingGoal === option ? 'ghost' : 'secondary'"
+                color="neutral" :variant="onboardingGoal === option ? 'ghost' : 'outline'"
                 :class="onboardingGoal === option ? 'app-pill-active-neutral font-semibold' : ''"
                 @click="selectGoal(option)"
               >
                 {{ t(`audio.review_onboarding_goal_${option}`) }}
-              </AppButton>
+              </UButton>
             </div>
           </UFormField>
 
@@ -538,14 +535,14 @@ watch(
             />
           </UFormField>
 
-          <AppButton
-            tone="secondary"
+          <UButton
+           
             size="sm"
-            @click="skipOnboarding"
-          >
+            color="neutral"
+           variant="outline" @click="skipOnboarding">
             {{ t("audio.review_onboarding_skip") }}
-          </AppButton>
-        </AppPanel>
+          </UButton>
+        </UCard>
 
         <!-- Transcription progress (transcribing state, inline in left col) -->
         <div
@@ -569,28 +566,28 @@ watch(
 
       <!-- RIGHT column: Transcript workspace (only when transcript exists) -->
       <div v-if="showTranscriptWorkspace" class="space-y-3">
-        <AppPanel as="section" variant="compact" class="space-y-3">
+        <UCard as="section" class="app-panel app-panel-compact space-y-3" variant="outline">
           <h3 class="app-text font-semibold">{{ t("audio.quick_clean_timeline_title") }}</h3>
           <p class="app-muted app-text-meta">{{ t("audio.quick_clean_timeline_hint") }}</p>
           <div v-if="timelineMarkers.length > 0" class="max-h-44 space-y-2 overflow-y-auto pr-1">
-            <AppButton
+            <UButton
               v-for="marker in timelineMarkers"
               :key="marker.atMs"
-              tone="ghost"
+             
               size="sm"
               class="w-full justify-start gap-3 rounded-lg px-3 py-2 text-left"
-              @click="seekAudio(marker.atMs)"
-            >
+              color="neutral"
+             variant="ghost" @click="seekAudio(marker.atMs)">
               <span class="app-pill-active-neutral inline-flex min-w-[3.5rem] justify-center rounded-full px-2 py-1 text-xs">
                 {{ marker.label }}
               </span>
               <span class="app-text-body line-clamp-2">{{ marker.preview }}</span>
-            </AppButton>
+            </UButton>
           </div>
           <p v-else class="app-muted app-text-meta">{{ t("audio.quick_clean_timeline_empty") }}</p>
-        </AppPanel>
+        </UCard>
 
-        <AppPanel as="section" variant="compact" class="space-y-3">
+        <UCard as="section" class="app-panel app-panel-compact space-y-3" variant="outline">
           <h3 class="app-text font-semibold">{{ t("audio.quick_clean_clean_text_title") }}</h3>
           <UTextarea
             ref="transcriptTextareaRef"
@@ -609,62 +606,62 @@ watch(
             </summary>
             <p class="app-muted app-text-meta">{{ t("audio.quick_clean_clean_anchors_hint") }}</p>
             <div v-if="cleanTextAnchors.length > 0" class="max-h-44 space-y-2 overflow-y-auto pr-1">
-              <AppButton
+              <UButton
                 v-for="(anchor, index) in cleanTextAnchors"
                 :key="`${anchor.startMs}-${anchor.endMs}-${index}`"
-                tone="ghost"
+               
                 size="sm"
                 class="w-full justify-start items-start gap-3 rounded-lg px-3 py-2 text-left"
-                @click="seekAudio(anchor.startMs)"
-              >
+                color="neutral"
+               variant="ghost" @click="seekAudio(anchor.startMs)">
                 <span class="app-pill-active-neutral inline-flex min-w-[3.5rem] justify-center rounded-full px-2 py-1 text-xs">
                   {{ formatTimelineClock(anchor.startMs) }}
                 </span>
                 <span class="app-text-body line-clamp-2">{{ anchor.line }}</span>
-              </AppButton>
+              </UButton>
             </div>
             <p v-else class="app-muted app-text-meta">{{ t("audio.quick_clean_timeline_empty") }}</p>
           </details>
           <div class="flex flex-wrap items-center gap-2">
-            <AppButton
-              tone="secondary"
+            <UButton
+             
               size="sm"
               :disabled="cleanTextAnchors.length === 0"
-              @click="exportAnchorMapJson"
-            >
+              color="neutral"
+             variant="outline" @click="exportAnchorMapJson">
               {{ anchorMapCopied ? t("audio.quick_clean_export_anchor_map_copied") : t("audio.quick_clean_export_anchor_map") }}
-            </AppButton>
+            </UButton>
             <span class="app-muted app-text-meta">
               {{ t("audio.quick_clean_export_anchor_map_hint") }}
             </span>
           </div>
           <div class="flex flex-wrap items-center gap-2">
-            <AppButton
-              tone="primary"
+            <UButton
+             
               size="lg"
               :disabled="props.isSavingEdited || props.isApplyingTrim || !props.transcriptText.trim()"
-              @click="emit('saveEdited')"
-            >
+              color="primary"
+             @click="emit('saveEdited')">
               {{ t("audio.quick_clean_save_edited") }}
-            </AppButton>
-            <AppButton
-              tone="secondary"
+            </UButton>
+            <UButton
+             
               size="lg"
               :disabled="props.isSavingEdited || props.isApplyingTrim || !props.transcriptText.trim()"
-              @click="emit('autoCleanFillers')"
-            >
+              color="neutral"
+             variant="outline" @click="emit('autoCleanFillers')">
               {{ t("audio.quick_clean_auto_clean") }}
-            </AppButton>
-            <AppButton
-              tone="secondary"
+            </UButton>
+            <UButton
+             
               size="lg"
               :disabled="props.isSavingEdited || props.isApplyingTrim || !props.transcriptText.trim()"
-              @click="emit('fixPunctuation')"
-            >
+              color="neutral"
+             variant="outline" @click="emit('fixPunctuation')">
               {{ t("audio.quick_clean_fix_punctuation") }}
-            </AppButton>
+            </UButton>
           </div>
-        </AppPanel>
+        </UCard>
 
         <details class="app-radius-panel-md space-y-3 border bg-[var(--color-surface-elevated)] p-4">
           <summary class="cursor-pointer app-text font-semibold">
@@ -678,9 +675,9 @@ watch(
               :key="`${chunk.startMs}-${chunk.endMs}`"
               class="app-surface rounded-lg border border-[var(--color-border-muted)] px-3 py-2"
             >
-              <AppButton tone="ghost" size="sm" class="app-link text-xs underline" @click="seekAudio(chunk.startMs)">
+              <UButton size="sm" class="app-link text-xs underline" color="neutral" variant="ghost" @click="seekAudio(chunk.startMs)">
                 {{ formatTimelineClock(chunk.startMs) }} - {{ formatTimelineClock(chunk.endMs) }}
-              </AppButton>
+              </UButton>
               <p class="mt-1 app-text-body">{{ chunk.text }}</p>
             </div>
           </div>
@@ -691,22 +688,22 @@ watch(
 
     <!-- Bottom: open original + continue secondary + trim panel -->
     <div class="flex flex-wrap items-center gap-2">
-      <AppButton
-        tone="secondary"
+      <UButton
+       
         size="lg"
         :disabled="!props.canOpenOriginal || props.isRevealing"
-        @click="emit('openOriginal')"
-      >
+        color="neutral"
+       variant="outline" @click="emit('openOriginal')">
         {{ t("audio.quick_clean_open_original") }}
-      </AppButton>
-      <AppButton
-        tone="secondary"
+      </UButton>
+      <UButton
+       
         size="lg"
         :disabled="!props.hasTranscript || props.isApplyingTrim"
-        @click="emit('continue')"
-      >
+        color="neutral"
+       variant="outline" @click="emit('continue')">
         {{ t("audio.quick_clean_continue") }}
-      </AppButton>
+      </UButton>
     </div>
 
     <details class="app-radius-panel-md space-y-3 border bg-[var(--color-surface-elevated)] p-4">
@@ -721,52 +718,52 @@ watch(
       <div v-else class="space-y-3">
         <div class="flex items-center justify-between gap-2">
           <span class="app-text font-medium">{{ t("audio.quick_clean_trim_title") }}</span>
-          <AppButton
-            tone="secondary"
+          <UButton
+           
             size="sm"
             :disabled="!hasTrimSourceDuration || props.isApplyingTrim"
-            @click="resetTrimWindow"
-          >
+            color="neutral"
+           variant="outline" @click="resetTrimWindow">
             {{ t("audio.quick_clean_trim_reset") }}
-          </AppButton>
+          </UButton>
         </div>
         <div class="space-y-1">
           <div class="flex items-center justify-between text-xs">
             <span class="app-subtle">{{ t("audio.quick_clean_trim_start") }}</span>
             <span class="app-text">{{ formatTrimClock(trimStartSec) }}</span>
           </div>
-          <AppRange
+          <USlider
             min="0"
             :max="trimMaxSec"
             step="0.1"
             :model-value="trimStartSec"
             @update:model-value="onTrimStartInput"
-          />
+           />
         </div>
         <div class="space-y-1">
           <div class="flex items-center justify-between text-xs">
             <span class="app-subtle">{{ t("audio.quick_clean_trim_end") }}</span>
             <span class="app-text">{{ formatTrimClock(trimEndSec) }}</span>
           </div>
-          <AppRange
+          <USlider
             min="0"
             :max="trimMaxSec"
             step="0.1"
             :model-value="trimEndSec"
             @update:model-value="onTrimEndInput"
-          />
+           />
         </div>
         <div class="app-muted app-text-meta">
           {{ t("audio.quick_clean_trim_duration") }}: {{ formatTrimClock(trimDurationSec) }}
         </div>
-        <AppButton
-          tone="secondary"
+        <UButton
+         
           size="lg"
           :disabled="!props.canApplyTrim || !trimDirty || props.isApplyingTrim"
-          @click="applyTrim"
-        >
+          color="neutral"
+         variant="outline" @click="applyTrim">
           {{ props.isApplyingTrim ? t("audio.quick_clean_trim_applying") : t("audio.quick_clean_trim_apply") }}
-        </AppButton>
+        </UButton>
       </div>
     </details>
   </div>

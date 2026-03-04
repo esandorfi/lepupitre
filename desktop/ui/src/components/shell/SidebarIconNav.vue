@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import AppBadge from "@/components/ui/AppBadge.vue";
-import AppButton from "@/components/ui/AppButton.vue";
 import type { PrimaryNavIcon, ResolvedPrimaryNavItem } from "@/lib/navigation";
 
 defineProps<{
@@ -54,25 +52,25 @@ function iconPath(icon: PrimaryNavIcon): string {
                 >
                   <path :d="iconPath(item.icon)" />
                 </svg>
-                <AppBadge
+                <UBadge
                   v-if="item.badge !== null"
                   as="span"
-                  tone="neutral"
+                 
                   size="sm"
                   class="absolute -top-2 -right-2 min-w-4 justify-center px-1 py-0.5 leading-none"
-                >
+                 color="neutral" variant="solid">
                   {{ item.badge }}
-                </AppBadge>
+                </UBadge>
               </span>
             </RouterLink>
-            <AppButton
+            <UButton
               v-else
-              tone="ghost"
-              size="icon-md"
+             
+             
               class="app-sidebar-nav-button app-sidebar-nav-button-disabled inline-flex items-center justify-center border"
               :aria-label="item.label"
               disabled
-            >
+             color="neutral" variant="ghost" size="md" square="true">
               <svg
                 class="h-5 w-5"
                 viewBox="0 0 24 24"
@@ -84,7 +82,7 @@ function iconPath(icon: PrimaryNavIcon): string {
               >
                 <path :d="iconPath(item.icon)" />
               </svg>
-            </AppButton>
+            </UButton>
             <span
               class="app-sidebar-tooltip pointer-events-none absolute left-[calc(100%+0.65rem)] top-1/2 z-30 -translate-y-1/2 whitespace-nowrap rounded-md px-2 py-1 text-xs font-semibold opacity-0 shadow-md transition group-hover:opacity-100"
             >

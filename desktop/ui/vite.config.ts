@@ -8,7 +8,32 @@ const host = process.env.TAURI_DEV_HOST;
 
 // https://vite.dev/config/
 export default defineConfig(async () => ({
-  plugins: [vue(), ui()],
+  plugins: [
+    vue(),
+    ui({
+      ui: {
+        badge: {
+          defaultVariants: {
+            color: "neutral",
+            size: "sm",
+            variant: "solid",
+          },
+        },
+        button: {
+          defaultVariants: {
+            color: "neutral",
+            size: "md",
+            variant: "outline",
+          },
+        },
+        card: {
+          defaultVariants: {
+            variant: "outline",
+          },
+        },
+      },
+    }),
+  ],
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),

@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, RouterLink } from "vue-router";
-import AppBadge from "@/components/ui/AppBadge.vue";
-import AppButton from "@/components/ui/AppButton.vue";
-import AppPanel from "@/components/ui/AppPanel.vue";
 import TalkStepPageShell from "@/components/TalkStepPageShell.vue";
 import { audioRevealWav } from "../../../domains/recorder/api";
 import { useI18n } from "../../../lib/i18n";
@@ -244,53 +241,53 @@ watch(
       <span>{{ talkLabel }}</span>
     </template>
 
-    <AppPanel v-if="!activeProfileId" variant="compact">
+    <UCard v-if="!activeProfileId" class="app-panel app-panel-compact" variant="outline">
       <p class="app-muted app-text-body">{{ t("builder.no_profile") }}</p>
       <RouterLink class="app-link app-text-meta mt-3 inline-block underline" to="/profiles">
         {{ t("builder.setup_profile") }}
       </RouterLink>
-    </AppPanel>
+    </UCard>
 
-    <AppPanel v-else-if="!selectedProjectId" variant="compact">
+    <UCard v-else-if="!selectedProjectId" class="app-panel app-panel-compact" variant="outline">
       <p class="app-muted app-text-body">{{ t("builder.no_talk") }}</p>
       <RouterLink class="app-link app-text-meta mt-3 inline-block underline" to="/project/new">
         {{ t("builder.setup_talk") }}
       </RouterLink>
-    </AppPanel>
+    </UCard>
 
     <div v-else class="space-y-4">
-      <AppPanel
+      <UCard
         v-if="blueprint"
-        class="border border-[var(--color-accent)] bg-[var(--color-surface-selected)]"
-        variant="compact"
-      >
+        class="app-panel app-panel-compact border border-[var(--color-accent)] bg-[var(--color-surface-selected)]"
+       
+       variant="outline">
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div class="min-w-0 flex-1">
             <div class="app-text-eyebrow">{{ t("builder.framework_title") }}</div>
             <div class="app-text app-text-section-title mt-1">{{ blueprint.framework_label }}</div>
             <div class="app-muted app-text-body mt-1">{{ blueprint.framework_summary }}</div>
           </div>
-          <AppButton
+          <UButton
             size="md"
-            tone="secondary"
+           
             :disabled="isApplyingTemplate || isSaving"
-            @click="applyFrameworkTemplate"
-          >
+            color="neutral"
+           variant="outline" @click="applyFrameworkTemplate">
             {{ t("builder.framework_apply_template") }}
-          </AppButton>
+          </UButton>
         </div>
         <div class="mt-3 flex flex-wrap gap-2">
-          <AppBadge
+          <UBadge
             v-for="(prompt, index) in activeFrameworkPrompts"
             :key="`framework-prompt-${index}`"
-            tone="neutral"
-          >
+           
+           color="neutral" variant="solid">
             {{ prompt }}
-          </AppBadge>
+          </UBadge>
         </div>
-      </AppPanel>
+      </UCard>
 
-      <AppPanel>
+      <UCard class="app-panel" variant="outline">
         <div class="app-text-eyebrow">
           {{ t("builder.outline_label") }}
         </div>
@@ -300,22 +297,22 @@ watch(
           class="mt-3 w-full"
         />
         <div class="mt-3 flex flex-wrap items-center gap-3">
-          <AppButton
+          <UButton
             size="md"
-            tone="primary"
+           
             :disabled="isSaving"
-            @click="saveOutline"
-          >
+            color="primary"
+           @click="saveOutline">
             {{ t("builder.save") }}
-          </AppButton>
-          <AppButton
+          </UButton>
+          <UButton
             size="md"
-            tone="secondary"
+           
             :disabled="isExporting"
-            @click="exportOutline"
-          >
+            color="neutral"
+           variant="outline" @click="exportOutline">
             {{ t("builder.export") }}
-          </AppButton>
+          </UButton>
           <span v-if="saveStatus === 'saving'" class="app-muted app-text-meta">
             {{ t("builder.saving") }}
           </span>
@@ -328,14 +325,14 @@ watch(
           <span class="app-text max-w-[360px] truncate" style="direction: rtl; text-align: left;">
             {{ exportPath }}
           </span>
-          <AppButton
-            tone="ghost"
+          <UButton
+           
             size="sm"
             :disabled="isRevealing"
-            @click="revealExport"
-          >
+            color="neutral"
+           variant="ghost" @click="revealExport">
             {{ t("builder.export_reveal") }}
-          </AppButton>
+          </UButton>
           <span class="app-subtle app-text-meta">{{ t("builder.export_ready") }}</span>
         </div>
         <div v-if="isLoading" class="app-muted app-text-meta mt-3">
@@ -344,7 +341,7 @@ watch(
         <div v-if="error" class="app-danger-text app-text-meta mt-3">
           {{ error }}
         </div>
-      </AppPanel>
+      </UCard>
     </div>
   </TalkStepPageShell>
 </template>

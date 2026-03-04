@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import AppButton from "@/components/ui/AppButton.vue";
-import AppPanel from "@/components/ui/AppPanel.vue";
 import { useI18n } from "@/lib/i18n";
 import { appStore } from "@/stores/app";
 
@@ -60,20 +58,20 @@ onMounted(bootstrap);
   <section class="space-y-6">
     <p class="app-muted text-sm font-semibold">{{ t("talk.subtitle") }}</p>
 
-    <AppPanel v-if="!activeProfileId" variant="compact">
+    <UCard v-if="!activeProfileId" class="app-panel app-panel-compact" variant="outline">
       <p class="app-text text-sm">{{ t("talk.need_profile") }}</p>
       <RouterLink class="app-link text-xs underline underline-offset-4" to="/profiles">
         {{ t("talk.goto_profiles") }}
       </RouterLink>
-    </AppPanel>
+    </UCard>
 
-    <AppPanel v-else variant="compact">
-      <AppPanel v-if="activeProject" as="div" class="mb-4" variant="compact">
+    <UCard v-else class="app-panel app-panel-compact" variant="outline">
+      <UCard v-if="activeProject" as="div" class="app-panel app-panel-compact mb-4" variant="outline">
         <div class="app-subtle text-xs uppercase tracking-[0.2em]">
           {{ t("talk.active_title") }}
         </div>
         <div class="app-text text-sm">{{ activeProject.title }}</div>
-      </AppPanel>
+      </UCard>
 
       <div class="space-y-3">
         <UInput
@@ -101,21 +99,21 @@ onMounted(bootstrap);
       </div>
 
       <div class="mt-4 flex items-center gap-3">
-        <AppButton
+        <UButton
           size="md"
-          tone="primary"
+         
           :disabled="isSaving"
-          @click="saveProject"
-        >
+          color="primary"
+         @click="saveProject">
           {{ t("talk.save") }}
-        </AppButton>
+        </UButton>
         <RouterLink class="app-muted text-xs underline underline-offset-4" to="/">
           {{ t("talk.back") }}
         </RouterLink>
       </div>
 
       <p v-if="error" class="app-danger-text mt-2 text-xs">{{ error }}</p>
-    </AppPanel>
+    </UCard>
   </section>
 </template>
 

@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import AppButton from "@/components/ui/AppButton.vue";
-import AppPanel from "@/components/ui/AppPanel.vue";
 import { securityPrepareAppdataFile, securityProbeFs } from "@/domains/security/api";
 import { useI18n } from "@/lib/i18n";
 
@@ -73,7 +71,7 @@ async function testFsAllowed() {
 </script>
 
 <template>
-  <AppPanel variant="compact" class="space-y-3">
+  <UCard class="app-panel app-panel-compact space-y-3" variant="outline">
     <div class="flex items-center justify-between">
       <div>
         <h3 class="app-subtle text-sm font-semibold uppercase tracking-[0.2em]">
@@ -86,30 +84,30 @@ async function testFsAllowed() {
     </div>
 
     <div class="flex flex-wrap gap-2">
-      <AppButton
-        tone="secondary"
+      <UButton
+       
         size="md"
         :disabled="networkStatus === 'running'"
-        @click="testNetwork"
-      >
+        color="neutral"
+       variant="outline" @click="testNetwork">
         {{ t("security.test_network") }}
-      </AppButton>
-      <AppButton
-        tone="secondary"
+      </UButton>
+      <UButton
+       
         size="md"
         :disabled="fsStatus === 'running'"
-        @click="testFs"
-      >
+        color="neutral"
+       variant="outline" @click="testFs">
         {{ t("security.test_blocked") }}
-      </AppButton>
-      <AppButton
-        tone="secondary"
+      </UButton>
+      <UButton
+       
         size="md"
         :disabled="fsAllowedStatus === 'running'"
-        @click="testFsAllowed"
-      >
+        color="neutral"
+       variant="outline" @click="testFsAllowed">
         {{ t("security.test_appdata") }}
-      </AppButton>
+      </UButton>
     </div>
 
     <div class="app-muted grid gap-2 text-xs">
@@ -129,5 +127,5 @@ async function testFsAllowed() {
         <span v-if="fsAllowedDetail" class="app-subtle">({{ fsAllowedDetail }})</span>
       </div>
     </div>
-  </AppPanel>
+  </UCard>
 </template>

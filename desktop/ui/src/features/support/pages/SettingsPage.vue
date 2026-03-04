@@ -2,9 +2,6 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-shell";
-import AppBadge from "@/components/ui/AppBadge.vue";
-import AppButton from "@/components/ui/AppButton.vue";
-import AppPanel from "@/components/ui/AppPanel.vue";
 import { useI18n } from "../../../lib/i18n";
 import { classifyAsrError } from "../../../lib/asrErrors";
 import { useNavMetrics } from "../../../lib/navMetrics";
@@ -151,12 +148,12 @@ const mascotIntensityOptions = computed(() => [
   { value: "contextual", label: t("settings.voiceup.mascot_contextual") },
 ]);
 
-const sidecarBadgeTone = computed<"danger" | "neutral" | "success">(() => {
+const sidecarBadgeTone = computed<"error" | "neutral" | "success">(() => {
   if (sidecarStatus.value === "ready") {
     return "success";
   }
   if (sidecarStatus.value === "missing" || sidecarStatus.value === "incompatible") {
-    return "danger";
+    return "error";
   }
   return "neutral";
 });
@@ -489,7 +486,7 @@ onBeforeUnmount(() => {
 
 <template>
   <section class="space-y-4">
-    <AppPanel class="app-radius-panel-lg" variant="compact">
+    <UCard class="app-panel app-panel-compact app-radius-panel-lg" variant="outline">
       <div class="flex items-center justify-between">
         <div>
           <h2 class="app-nav-text text-lg font-semibold">
@@ -535,15 +532,15 @@ onBeforeUnmount(() => {
             <div class="text-right font-semibold">{{ navMetrics.sidebarSessionCount }}</div>
           </div>
           <div class="mt-3 flex justify-end">
-            <AppButton size="sm" tone="secondary" @click="resetNavMetrics">
+            <UButton size="sm" color="neutral" variant="outline" @click="resetNavMetrics">
               {{ t("settings.navigation.metrics_reset") }}
-            </AppButton>
+            </UButton>
           </div>
         </div>
       </div>
-    </AppPanel>
+    </UCard>
 
-    <AppPanel class="app-radius-panel-lg" variant="compact">
+    <UCard class="app-panel app-panel-compact app-radius-panel-lg" variant="outline">
       <div class="flex items-center justify-between">
         <div>
           <h2 class="app-nav-text text-lg font-semibold">
@@ -629,13 +626,13 @@ onBeforeUnmount(() => {
       </div>
 
       <div class="mt-3 flex justify-end">
-        <AppButton size="sm" tone="secondary" @click="resetRecorderHealthMetrics">
+        <UButton size="sm" color="neutral" variant="outline" @click="resetRecorderHealthMetrics">
           {{ t("settings.insights.health_reset") }}
-        </AppButton>
+        </UButton>
       </div>
-    </AppPanel>
+    </UCard>
 
-    <AppPanel class="app-radius-panel-lg" variant="compact">
+    <UCard class="app-panel app-panel-compact app-radius-panel-lg" variant="outline">
       <div class="flex items-center justify-between">
         <div>
           <h2 class="app-nav-text text-lg font-semibold">
@@ -690,9 +687,9 @@ onBeforeUnmount(() => {
           />
         </UFormField>
       </div>
-    </AppPanel>
+    </UCard>
 
-    <AppPanel class="app-radius-panel-lg" variant="compact">
+    <UCard class="app-panel app-panel-compact app-radius-panel-lg" variant="outline">
       <div class="flex items-center justify-between">
         <div>
           <h2 class="app-nav-text text-lg font-semibold">
@@ -700,9 +697,9 @@ onBeforeUnmount(() => {
           </h2>
           <div class="mt-1 flex items-center gap-2 text-xs">
             <span class="app-muted">{{ t("settings.transcription.sidecar_label") }}</span>
-            <AppBadge :tone="sidecarBadgeTone">
+            <UBadge :color="sidecarBadgeTone" variant="solid">
               {{ sidecarStatusLabel }}
-            </AppBadge>
+            </UBadge>
           </div>
           <p class="app-muted text-xs">
             {{ t("settings.transcription.subtitle") }}
@@ -795,14 +792,14 @@ onBeforeUnmount(() => {
               <div class="flex flex-col items-end gap-2">
                 <div class="app-muted text-xs">
                   {{ t("settings.transcription.model_source") }}:
-                  <AppButton
+                  <UButton
                     class="app-link max-w-[320px] justify-start truncate text-left !px-0 !py-0 !font-normal"
                     size="sm"
-                    tone="ghost"
-                    @click="openSourceUrl(model.sourceUrl)"
-                  >
+                   
+                    color="neutral"
+                   variant="ghost" @click="openSourceUrl(model.sourceUrl)">
                     {{ model.sourceUrl }}
-                  </AppButton>
+                  </UButton>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
                   <span v-if="downloadingModelId === model.id" class="app-muted text-xs">
@@ -811,30 +808,30 @@ onBeforeUnmount(() => {
                   <span v-else-if="verifyingModelId === model.id" class="app-muted text-xs">
                     {{ t("settings.transcription.model_verifying") }}
                   </span>
-                  <AppButton
+                  <UButton
                     v-else-if="!model.installed"
                     size="sm"
-                    tone="secondary"
-                    @click="downloadModel(model.id)"
-                  >
+                   
+                    color="neutral"
+                   variant="outline" @click="downloadModel(model.id)">
                     {{ t("settings.transcription.download_action") }}
-                  </AppButton>
+                  </UButton>
                   <template v-else>
-                    <AppButton
+                    <UButton
                       v-if="model.checksumOk == null"
                       size="sm"
-                      tone="secondary"
-                      @click="verifyModel(model.id)"
-                    >
+                     
+                      color="neutral"
+                     variant="outline" @click="verifyModel(model.id)">
                       {{ t("settings.transcription.model_verify") }}
-                    </AppButton>
-                    <AppButton
+                    </UButton>
+                    <UButton
                       size="sm"
-                      tone="secondary"
-                      @click="removeModel(model.id)"
-                    >
+                     
+                      color="neutral"
+                     variant="outline" @click="removeModel(model.id)">
                       {{ t("settings.transcription.model_remove") }}
-                    </AppButton>
+                    </UButton>
                   </template>
                   <span v-if="model.installed" class="app-muted text-xs">
                     {{ t("settings.transcription.model_installed") }}
@@ -859,7 +856,7 @@ onBeforeUnmount(() => {
           {{ downloadError }}
         </div>
       </div>
-    </AppPanel>
+    </UCard>
   </section>
 </template>
 

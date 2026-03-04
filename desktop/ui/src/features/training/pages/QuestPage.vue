@@ -2,9 +2,6 @@
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import AudioRecorder from "@/components/AudioRecorder.vue";
-import AppBadge from "@/components/ui/AppBadge.vue";
-import AppButton from "@/components/ui/AppButton.vue";
-import AppPanel from "@/components/ui/AppPanel.vue";
 import { useI18n } from "../../../lib/i18n";
 import {
   canAnalyzeQuest,
@@ -254,29 +251,29 @@ watch(text, (nextValue) => {
       {{ t("quest.code") }}: {{ displayQuestCode }}
     </p>
 
-    <AppPanel v-if="isLoading" variant="compact">
+    <UCard v-if="isLoading" class="app-panel app-panel-compact" variant="outline">
       <p class="app-muted app-text-body">{{ t("quest.loading") }}</p>
-    </AppPanel>
+    </UCard>
 
     <div v-else-if="quest" class="space-y-4">
-      <AppPanel>
+      <UCard class="app-panel" variant="outline">
         <div class="app-text-eyebrow">{{ t("quest.step_brief") }}</div>
         <div class="app-text app-text-section-title mt-2">{{ quest.title }}</div>
         <div class="app-muted app-text-meta mt-2">{{ quest.prompt }}</div>
         <div class="mt-3 flex flex-wrap items-center gap-2 app-text-meta">
-          <AppBadge tone="neutral">
+          <UBadge color="neutral" variant="solid">
             {{ isAudioQuest ? t("quest.output_audio") : t("quest.output_text") }}
-          </AppBadge>
-          <AppBadge tone="neutral">
+          </UBadge>
+          <UBadge color="neutral" variant="solid">
             {{ quest.category }}
-          </AppBadge>
-          <AppBadge tone="neutral">
+          </UBadge>
+          <UBadge color="neutral" variant="solid">
             {{ Math.max(1, Math.round(quest.estimated_sec / 60)) }} {{ t("talks.minutes") }}
-          </AppBadge>
+          </UBadge>
         </div>
-      </AppPanel>
+      </UCard>
 
-      <AppPanel>
+      <UCard class="app-panel" variant="outline">
         <div class="app-text-eyebrow">{{ t("quest.step_capture") }}</div>
 
         <div v-if="isAudioQuest" class="mt-3 space-y-4">
@@ -302,17 +299,17 @@ watch(text, (nextValue) => {
           />
 
           <div class="flex flex-wrap items-center gap-3">
-            <AppButton
-              tone="primary"
+            <UButton
+             
               size="lg"
               :disabled="!canSubmitText"
-              @click="submit"
-            >
+              color="primary"
+             @click="submit">
               {{ submitTextLabel }}
-            </AppButton>
-            <AppBadge v-if="attemptId" tone="success">
+            </UButton>
+            <UBadge v-if="attemptId" color="success" variant="solid">
               {{ t("quest.capture_saved") }}
-            </AppBadge>
+            </UBadge>
           </div>
           <p
             v-if="submittedTextSnapshot"
@@ -325,42 +322,42 @@ watch(text, (nextValue) => {
             }}
           </p>
         </div>
-      </AppPanel>
+      </UCard>
 
-      <AppPanel>
+      <UCard class="app-panel" variant="outline">
         <div class="app-text-eyebrow">{{ t("quest.step_analysis") }}</div>
         <div class="mt-3 flex flex-wrap items-center gap-3">
-          <AppButton
+          <UButton
             v-if="!isAudioQuest"
-            tone="info"
+           
             size="lg"
             :disabled="!canAnalyze || isAnalyzing"
-            @click="requestFeedback"
-          >
+            color="info"
+           @click="requestFeedback">
             {{ analyzeLabel }}
-          </AppButton>
-          <AppButton
+          </UButton>
+          <UButton
             v-if="canLeaveWithoutFeedback"
-            tone="secondary"
+           
             size="lg"
-            @click="skipTranscription"
-          >
+            color="neutral"
+           variant="outline" @click="skipTranscription">
             {{ t("quest.keep_without_feedback") }}
-          </AppButton>
+          </UButton>
           <RouterLink class="app-muted app-text-meta underline" :to="backLink">
             {{ t("quest.back") }}
           </RouterLink>
         </div>
         <p v-if="captureStatusLabel" class="app-subtle app-text-meta mt-2">{{ captureStatusLabel }}</p>
         <p class="app-muted app-text-meta mt-2">{{ analysisHint }}</p>
-      </AppPanel>
+      </UCard>
 
       <p v-if="error" class="app-danger-text app-text-meta">{{ error }}</p>
     </div>
 
-    <AppPanel v-else variant="compact">
+    <UCard v-else class="app-panel app-panel-compact" variant="outline">
       <p class="app-muted app-text-body">{{ error || t("quest.empty") }}</p>
-    </AppPanel>
+    </UCard>
   </section>
 </template>
 

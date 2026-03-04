@@ -1,6 +1,13 @@
 <script setup lang="ts">
-import AppButton from "./ui/AppButton.vue";
-import AppDialog from "./ui/AppDialog.vue";
+const DIALOG_UI = {
+  body: "p-5",
+  content: "app-dialog rounded-2xl border shadow-xl",
+  description: "app-muted mt-2 text-sm",
+  footer: "p-5 pt-0 flex flex-wrap justify-end gap-2",
+  header: "p-5 pb-0",
+  overlay: "app-dialog-overlay",
+  title: "app-text text-base font-semibold",
+} as const;
 
 withDefaults(
   defineProps<{
@@ -32,27 +39,28 @@ function onOpenChange(nextOpen: boolean) {
 </script>
 
 <template>
-  <AppDialog
+  <UModal
     :close="false"
     :description="body || undefined"
     :dismissible="!busy"
     :open="open"
     :title="title"
+    :ui="DIALOG_UI"
     @update:open="onOpenChange"
   >
     <template #footer>
-      <AppButton autofocus :disabled="busy" size="md" tone="secondary" @click="emit('cancel')">
+      <UButton autofocus :disabled="busy" size="md" color="neutral" variant="outline" @click="emit('cancel')">
         {{ cancelLabel }}
-      </AppButton>
-      <AppButton
+      </UButton>
+      <UButton
         :disabled="busy"
         :loading="busy"
         size="md"
-        :tone="confirmVariant === 'danger' ? 'danger' : 'primary'"
+        :color="confirmVariant === 'danger' ? 'error' : 'primary'"
         @click="emit('confirm')"
       >
         {{ confirmLabel }}
-      </AppButton>
+      </UButton>
     </template>
-  </AppDialog>
+  </UModal>
 </template>

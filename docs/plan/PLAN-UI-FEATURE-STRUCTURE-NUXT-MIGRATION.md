@@ -5,7 +5,7 @@ Owner: UI / Maintainers
 Last updated: 2026-03-04
 
 ## Objective
-Restructure the desktop UI into feature-oriented directories and then migrate to a Nuxt UI single-component system with minimal wrappers.
+Restructure the desktop UI into feature-oriented directories and migrate to a Nuxt UI single-component system (direct Nuxt primitives, no legacy `App*` wrappers).
 
 ## Scope
 - `desktop/ui/src` frontend structure and routing
@@ -49,12 +49,8 @@ Restructure the desktop UI into feature-oriented directories and then migrate to
 
 ### Policy
 - Nuxt UI is the base component system
-- Minimal wrappers only:
-  - `AppButton` (`UButton`)
-  - `AppPanel` (`UCard`)
-  - `AppDialog` (`UModal`)
-  - `AppBadge` (`UBadge`)
-- Direct Nuxt primitives for fields and menus:
+- Direct Nuxt primitives are required for surface controls and fields:
+  - `UButton`, `UCard`, `UBadge`, `UModal`, `USlider`
   - `UInput`, `UTextarea`, `USelect`, `USwitch`, `UDropdownMenu`, `UPopover`, etc.
 
 ### Migration waves
@@ -72,6 +68,18 @@ Restructure the desktop UI into feature-oriented directories and then migrate to
 - [x] Migrate talks + feedback features
 - [x] Migrate recorder composites
 - [x] Add guard rails against raw primitive drift in pages
+
+## Step C: Wrapper Removal (Single-Phase Final Rewrite)
+
+### Policy delta
+- Remove `src/components/ui/App*` wrappers after direct Nuxt migration parity is achieved.
+- Keep visual parity through shared semantic CSS (`app-*`) while component primitives are Nuxt-first.
+
+### Checklist
+- [x] Replace all `AppButton/AppPanel/AppBadge/AppDialog/AppRange` usages with direct Nuxt components
+- [x] Convert wrapper-only props (`tone`, panel `variant`) to Nuxt-native props (`color`, `variant`) and class tokens
+- [x] Remove legacy wrapper files under `src/components/ui/`
+- [x] Run full validation gate on the direct-Nuxt rewrite
 
 ## Risks and Mitigations
 - Large move conflict risk in Step A:
@@ -159,3 +167,12 @@ Restructure the desktop UI into feature-oriented directories and then migrate to
       - `features/home/composables/useQuestPickerNavigation.test.ts`
       - `features/home/composables/useHomePresentation.test.ts`
     - validation remains green after hardening (`ui:typecheck`, `ui:lint`, `ui:test`)
+  - Step C executed as one final rewrite phase:
+    - replaced all `AppButton`, `AppPanel`, `AppBadge`, `AppDialog`, and `AppRange` callsites with `UButton`, `UCard`, `UBadge`, `UModal`, and `USlider`
+    - removed legacy wrapper files from `desktop/ui/src/components/ui/`
+    - normalized converted `tone`-style semantics to Nuxt `color`/`variant` usage
+    - preserved panel visual parity by applying `app-panel` classes directly on `UCard` and slot-padding reset in `main.css`
+    - validation gate passed on final direct-Nuxt state:
+      - `pnpm -C desktop ui:typecheck`
+      - `pnpm -C desktop ui:lint`
+      - `pnpm -C desktop ui:test`

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import AppButton from "@/components/ui/AppButton.vue";
 import type { TranscriptExportFormat } from "../../schemas/ipc";
 import { useI18n } from "../../lib/i18n";
 
@@ -27,96 +26,96 @@ const { t } = useI18n();
 <template>
   <div class="space-y-4">
     <div class="flex flex-wrap items-center gap-2">
-      <AppButton
-        tone="primary"
+      <UButton
+       
         size="lg"
         :disabled="!props.canExport || props.isExporting"
-        @click="emit('exportPreset', 'presentation')"
-      >
+        color="primary"
+       @click="emit('exportPreset', 'presentation')">
         {{ t("audio.export_preset_presentation") }}
-      </AppButton>
-      <AppButton
-        tone="secondary"
+      </UButton>
+      <UButton
+       
         size="lg"
         :disabled="!props.canExport || props.isExporting"
-        @click="emit('exportPreset', 'podcast')"
-      >
+        color="neutral"
+       variant="outline" @click="emit('exportPreset', 'podcast')">
         {{ t("audio.export_preset_podcast") }}
-      </AppButton>
-      <AppButton
-        tone="secondary"
+      </UButton>
+      <UButton
+       
         size="lg"
         :disabled="!props.canExport || props.isExporting"
-        @click="emit('exportPreset', 'voice_note')"
-      >
+        color="neutral"
+       variant="outline" @click="emit('exportPreset', 'voice_note')">
         {{ t("audio.export_preset_voice_note") }}
-      </AppButton>
+      </UButton>
     </div>
 
     <div class="flex flex-wrap items-center gap-2">
-      <AppButton
-        tone="info"
+      <UButton
+       
         size="lg"
         :disabled="!props.canAnalyze || props.isAnalyzing"
-        @click="emit('analyze')"
-      >
+        color="info"
+       @click="emit('analyze')">
         {{ t("quest.analyze") }}
-      </AppButton>
-      <AppButton
-        tone="secondary"
+      </UButton>
+      <UButton
+       
         size="lg"
-        @click="showMoreFormats = !showMoreFormats"
-      >
+        color="neutral"
+       variant="outline" @click="showMoreFormats = !showMoreFormats">
         {{ t("audio.more_formats") }}
-      </AppButton>
-      <AppButton
-        tone="secondary"
+      </UButton>
+      <UButton
+       
         size="lg"
-        @click="emit('back')"
-      >
+        color="neutral"
+       variant="outline" @click="emit('back')">
         {{ t("audio.back_to_quick_clean") }}
-      </AppButton>
+      </UButton>
     </div>
 
     <div v-if="showMoreFormats" class="flex flex-wrap items-center gap-2">
-      <AppButton
-        tone="info"
+      <UButton
+       
         size="lg"
         :disabled="!props.canExport || props.isExporting"
-        @click="emit('exportFormat', 'txt')"
-      >
+        color="info"
+       @click="emit('exportFormat', 'txt')">
         .txt
-      </AppButton>
-      <AppButton
-        tone="info"
+      </UButton>
+      <UButton
+       
         size="lg"
         :disabled="!props.canExport || props.isExporting"
-        @click="emit('exportFormat', 'json')"
-      >
+        color="info"
+       @click="emit('exportFormat', 'json')">
         .json
-      </AppButton>
-      <AppButton
-        tone="info"
+      </UButton>
+      <UButton
+       
         size="lg"
         :disabled="!props.canExport || props.isExporting"
-        @click="emit('exportFormat', 'srt')"
-      >
+        color="info"
+       @click="emit('exportFormat', 'srt')">
         .srt
-      </AppButton>
-      <AppButton
-        tone="info"
+      </UButton>
+      <UButton
+       
         size="lg"
         :disabled="!props.canExport || props.isExporting"
-        @click="emit('exportFormat', 'vtt')"
-      >
+        color="info"
+       @click="emit('exportFormat', 'vtt')">
         .vtt
-      </AppButton>
+      </UButton>
     </div>
 
     <div v-if="props.exportPath" class="flex flex-wrap items-center gap-2 app-text-meta">
-      <AppButton tone="ghost" size="sm" @click="emit('openExportPath')">
+      <UButton size="sm" color="neutral" variant="ghost" @click="emit('openExportPath')">
         {{ t("audio.open_export") }}
-      </AppButton>
+      </UButton>
       <span class="app-link">{{ t("audio.exported_to") }}:</span>
       <span class="app-text max-w-[360px] truncate" style="direction: rtl; text-align: left;">
         {{ props.exportPath }}

@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
-import AppBadge from "@/components/ui/AppBadge.vue";
-import AppButton from "@/components/ui/AppButton.vue";
 import EntityRow from "@/components/EntityRow.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import PageShell from "@/components/PageShell.vue";
@@ -139,14 +137,14 @@ function formatDateTime(value: string) {
   return date.toLocaleString();
 }
 
-function scoreToneClass(score: number): "success" | "neutral" | "danger" {
+function scoreToneClass(score: number): "success" | "neutral" | "error" {
   if (score >= 80) {
     return "success";
   }
   if (score >= 60) {
     return "neutral";
   }
-  return "danger";
+  return "error";
 }
 
 function mascotToneClass(kind: string | null | undefined) {
@@ -322,9 +320,9 @@ watch(
       :subtitle="t('feedback.timeline_subtitle')"
     >
       <template #actions>
-        <AppButton size="md" tone="primary" to="/training">
+        <UButton size="md" to="/training" color="primary">
           {{ t("training.start") }}
-        </AppButton>
+        </UButton>
       </template>
     </PageHeader>
 
@@ -340,14 +338,14 @@ watch(
           <div class="app-text app-text-subheadline mt-1">{{ mascotMessage.title }}</div>
           <div v-if="mascotBody" class="app-muted app-text-body mt-1">{{ mascotBody }}</div>
         </div>
-        <AppButton
+        <UButton
           v-if="mascotMessage.cta_route && mascotMessage.cta_label"
           size="md"
-          tone="secondary"
+         
           :to="mascotMessage.cta_route"
-        >
+         color="neutral" variant="outline">
           {{ mascotMessage.cta_label }}
-        </AppButton>
+        </UButton>
       </div>
     </SectionPanel>
 
@@ -372,15 +370,15 @@ watch(
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <AppBadge tone="neutral">
+            <UBadge color="neutral" variant="solid">
               {{ t("feedback.timeline_focus_badge") }}
-            </AppBadge>
-            <AppButton size="sm" tone="secondary" :to="focusedActionRoute">
+            </UBadge>
+            <UButton size="sm" :to="focusedActionRoute" color="neutral" variant="outline">
               {{ focusedActionLabel }}
-            </AppButton>
-            <AppButton size="sm" tone="primary" :to="`/feedback/${focusedEntry.id}`">
+            </UButton>
+            <UButton size="sm" :to="`/feedback/${focusedEntry.id}`" color="primary">
               {{ t("feedback.timeline_open") }}
-            </AppButton>
+            </UButton>
           </div>
         </div>
       </SectionPanel>
@@ -404,50 +402,50 @@ watch(
         </div>
 
         <div class="mt-3 flex flex-wrap items-center gap-2">
-          <AppButton
+          <UButton
             size="sm"
-            :tone="scope === 'workspace' ? 'secondary' : 'ghost'"
+            color="neutral" :variant="scope === 'workspace' ? 'outline' : 'ghost'"
             @click="scope = 'workspace'"
           >
             {{ t("feedback.timeline_scope_workspace") }}
-          </AppButton>
-          <AppButton
+          </UButton>
+          <UButton
             size="sm"
-            :tone="scope === 'talk' ? 'secondary' : 'ghost'"
+            color="neutral" :variant="scope === 'talk' ? 'outline' : 'ghost'"
             :disabled="!canUseTalkScope"
             @click="scope = 'talk'"
           >
             {{ t("feedback.timeline_scope_talk") }}
-          </AppButton>
+          </UButton>
           <div class="ml-auto flex flex-wrap items-center gap-2">
-            <AppButton
+            <UButton
               size="sm"
-              :tone="filterType === 'all' ? 'secondary' : 'ghost'"
+              color="neutral" :variant="filterType === 'all' ? 'outline' : 'ghost'"
               @click="filterType = 'all'"
             >
               {{ t("feedback.timeline_filter_all") }}
-            </AppButton>
-            <AppButton
+            </UButton>
+            <UButton
               size="sm"
-              :tone="filterType === 'quest_attempt' ? 'secondary' : 'ghost'"
+              color="neutral" :variant="filterType === 'quest_attempt' ? 'outline' : 'ghost'"
               @click="filterType = 'quest_attempt'"
             >
               {{ t("feedback.timeline_filter_quest") }}
-            </AppButton>
-            <AppButton
+            </UButton>
+            <UButton
               size="sm"
-              :tone="filterType === 'run' ? 'secondary' : 'ghost'"
+              color="neutral" :variant="filterType === 'run' ? 'outline' : 'ghost'"
               @click="filterType = 'run'"
             >
               {{ t("feedback.timeline_filter_run") }}
-            </AppButton>
-            <AppButton
+            </UButton>
+            <UButton
               size="sm"
-              :tone="showUnreadOnly ? 'secondary' : 'ghost'"
+              color="neutral" :variant="showUnreadOnly ? 'outline' : 'ghost'"
               @click="showUnreadOnly = !showUnreadOnly"
             >
               {{ t("feedback.timeline_filter_unread") }} · {{ unreadCount }}
-            </AppButton>
+            </UButton>
           </div>
         </div>
       </SectionPanel>
@@ -470,26 +468,26 @@ watch(
           >
             <template #main>
               <div class="flex flex-wrap items-center gap-2">
-                <AppBadge tone="neutral">
+                <UBadge color="neutral" variant="solid">
                   {{ feedbackContextLabel(item) }}
-                </AppBadge>
+                </UBadge>
                 <span class="app-muted app-text-meta">{{ formatDateTime(item.created_at) }}</span>
               </div>
               <div class="app-text app-text-body-strong mt-1">{{ feedbackTitle(item) }}</div>
             </template>
             <template #actions>
-              <AppBadge :tone="reviewedBadgeTone(isReviewed(item))">
+              <UBadge :color="reviewedBadgeTone(isReviewed(item))" variant="solid">
                 {{ isReviewed(item) ? t("feedback.reviewed_label") : t("feedback.unread_label") }}
-              </AppBadge>
-              <AppBadge :tone="scoreToneClass(item.overall_score)">
+              </UBadge>
+              <UBadge :color="scoreToneClass(item.overall_score)" variant="solid">
                 {{ t("feedback.score") }}: {{ item.overall_score }}
-              </AppBadge>
-              <AppBadge
+              </UBadge>
+              <UBadge
                 v-if="item.note_updated_at"
-                tone="neutral"
-              >
+               
+               color="neutral" variant="solid">
                 {{ t("feedback.notes_title") }}
-              </AppBadge>
+              </UBadge>
               <RouterLink class="app-link app-text-meta underline" :to="`/feedback/${item.id}`">
                 {{ t("feedback.timeline_open") }}
               </RouterLink>
