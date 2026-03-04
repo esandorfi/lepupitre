@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, useSlots } from "vue";
-import AppPanel from "./ui/AppPanel.vue";
 
 defineProps<{
   eyebrow?: string;
@@ -15,7 +14,10 @@ const hasMeta = computed(() => Boolean(slots.meta));
 </script>
 
 <template>
-  <AppPanel :variant="compact ? 'compact' : 'default'">
+  <UCard
+    variant="outline"
+    :class="compact ? 'app-panel app-panel-compact' : 'app-panel'"
+  >
     <div class="app-page-header">
       <div class="app-page-header-main">
         <div v-if="eyebrow" class="app-text-eyebrow">{{ eyebrow }}</div>
@@ -35,5 +37,5 @@ const hasMeta = computed(() => Boolean(slots.meta));
         <slot name="actions" />
       </div>
     </div>
-  </AppPanel>
+  </UCard>
 </template>

@@ -2,7 +2,6 @@
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter, RouterLink } from "vue-router";
 import AudioRecorder from "@/components/AudioRecorder.vue";
-import AppPanel from "@/components/ui/AppPanel.vue";
 import { useI18n } from "../../../lib/i18n";
 import { appStore } from "../../../stores/app";
 import type { RunSummary } from "../../../schemas/ipc";
@@ -176,28 +175,28 @@ watch(
 
 <template>
   <section class="space-y-6">
-    <AppPanel variant="compact">
+    <UCard class="app-panel app-panel-compact" variant="outline">
       <div class="app-subtle text-xs uppercase tracking-[0.2em]">
         {{ t("boss_run.title") }}
       </div>
       <div class="app-text mt-2 text-sm">{{ t("boss_run.subtitle") }}</div>
       <div v-if="talkLabel" class="app-muted mt-2 text-xs">{{ talkLabel }}</div>
       <div v-else class="app-muted mt-2 text-xs">{{ t("boss_run.no_talk") }}</div>
-    </AppPanel>
+    </UCard>
 
-    <AppPanel v-if="!activeProfileId" variant="compact">
+    <UCard v-if="!activeProfileId" class="app-panel app-panel-compact" variant="outline">
       <p class="app-muted text-sm">{{ t("boss_run.need_profile") }}</p>
       <RouterLink class="app-link mt-3 inline-block text-xs underline" to="/profiles">
         {{ t("boss_run.setup_profile") }}
       </RouterLink>
-    </AppPanel>
+    </UCard>
 
-    <AppPanel v-else-if="!activeProject" variant="compact">
+    <UCard v-else-if="!activeProject" class="app-panel app-panel-compact" variant="outline">
       <p class="app-muted text-sm">{{ t("boss_run.need_talk") }}</p>
       <RouterLink class="app-link mt-3 inline-block text-xs underline" to="/project/new">
         {{ t("boss_run.setup_talk") }}
       </RouterLink>
-    </AppPanel>
+    </UCard>
 
     <div v-else class="space-y-4">
       <AudioRecorder
@@ -227,7 +226,7 @@ watch(
         {{ t("boss_run.transcript_optional") }}
       </p>
 
-      <AppPanel variant="compact">
+      <UCard class="app-panel app-panel-compact" variant="outline">
         <div class="app-subtle text-xs uppercase tracking-[0.2em]">
           {{ t("boss_run.latest_title") }}
         </div>
@@ -249,7 +248,7 @@ watch(
         <div v-else class="app-muted mt-3 text-xs">
           {{ t("boss_run.latest_empty") }}
         </div>
-      </AppPanel>
+      </UCard>
     </div>
   </section>
 </template>

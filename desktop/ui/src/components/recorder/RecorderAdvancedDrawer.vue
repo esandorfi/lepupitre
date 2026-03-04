@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import AppButton from "@/components/ui/AppButton.vue";
-import AppPanel from "@/components/ui/AppPanel.vue";
 import { useI18n } from "@/lib/i18n";
 import type { WaveformStyle } from "@/lib/waveform";
 
@@ -96,11 +94,11 @@ function updateInputDevice(value: string) {
 </script>
 
 <template>
-  <AppPanel variant="compact">
-    <AppButton tone="ghost" size="sm" class="gap-1 text-xs uppercase tracking-[0.16em]" @click="emit('toggle')">
+  <UCard class="app-panel app-panel-compact" variant="outline">
+    <UButton size="sm" class="gap-1 text-xs uppercase tracking-[0.16em]" color="neutral" variant="ghost" @click="emit('toggle')">
       <span aria-hidden="true">{{ props.open ? "v" : ">" }}</span>
       {{ t("audio.advanced") }}
-    </AppButton>
+    </UButton>
     <div v-if="props.open" class="mt-3 grid gap-3 md:grid-cols-2">
       <UFormField :label="t('settings.transcription.model_label')" class="app-text-meta">
         <USelect
@@ -159,9 +157,9 @@ function updateInputDevice(value: string) {
             :disabled="props.isLoadingInputDevices || props.inputDevices.length === 0"
             @update:model-value="updateInputDevice(String($event))"
           />
-          <AppButton tone="secondary" size="sm" @click="emit('refreshInputDevices')">
+          <UButton size="sm" color="neutral" variant="outline" @click="emit('refreshInputDevices')">
             {{ t("settings.recorder.input_device_refresh") }}
-          </AppButton>
+          </UButton>
         </div>
       </UFormField>
 
@@ -181,5 +179,5 @@ function updateInputDevice(value: string) {
     <p v-if="props.open && props.diagnosticsCode" class="app-muted mt-2 text-xs">
       {{ t("audio.diagnostic") }}: {{ props.diagnosticsCode }}
     </p>
-  </AppPanel>
+  </UCard>
 </template>

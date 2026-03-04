@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import SectionPanel from "@/components/SectionPanel.vue";
-import AppButton from "@/components/ui/AppButton.vue";
 import { useI18n } from "@/lib/i18n";
 
 const props = defineProps<{
@@ -22,17 +21,17 @@ const tabs = computed(() => [
 <template>
   <SectionPanel variant="compact">
     <nav class="flex flex-wrap items-center gap-2" :aria-label="t('talk_steps.aria')">
-      <AppButton
+      <UButton
         v-for="tab in tabs"
         :key="tab.key"
         :to="tab.to"
         size="md"
-        :tone="tab.key === active ? 'secondary' : 'ghost'"
+        color="neutral" :variant="tab.key === active ? 'outline' : 'ghost'"
         class="app-top-tab transition"
         :class="tab.key === active ? 'app-top-tab-active' : ''"
       >
         {{ tab.label }}
-      </AppButton>
+      </UButton>
     </nav>
   </SectionPanel>
 </template>

@@ -2,8 +2,6 @@
 import { computed, onMounted, ref } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 import TalkStepPageShell from "@/components/TalkStepPageShell.vue";
-import AppButton from "@/components/ui/AppButton.vue";
-import AppPanel from "@/components/ui/AppPanel.vue";
 import { audioRevealWav } from "@/domains/recorder/api";
 import { useI18n } from "@/lib/i18n";
 import { appStore } from "@/stores/app";
@@ -196,59 +194,59 @@ onMounted(loadData);
       >
         {{ t("talk_report.active") }}
       </span>
-      <AppButton
+      <UButton
         v-else
         size="sm"
-        tone="secondary"
+       
         :disabled="isActivating"
-        @click="setActive"
-      >
+        color="neutral"
+       variant="outline" @click="setActive">
         {{ t("talk_report.set_active") }}
-      </AppButton>
+      </UButton>
     </template>
 
-    <AppPanel>
+    <UCard class="app-panel" variant="outline">
       <div v-if="isLoading" class="app-muted app-text-meta">{{ t("talk_report.loading") }}</div>
       <div v-else-if="error" class="app-danger-text app-text-meta">{{ error }}</div>
       <div v-else class="app-data-grid-4 app-text-meta">
-        <AppPanel as="div" variant="compact">
+        <UCard as="div" class="app-panel app-panel-compact" variant="outline">
           <div class="app-text-eyebrow">{{ t("talk_report.total") }}</div>
           <div class="app-text mt-1 text-lg font-semibold">{{ summary.total }}</div>
-        </AppPanel>
-        <AppPanel as="div" variant="compact">
+        </UCard>
+        <UCard as="div" class="app-panel app-panel-compact" variant="outline">
           <div class="app-text-eyebrow">{{ t("talk_report.started") }}</div>
           <div class="app-text mt-1 text-lg font-semibold">{{ summary.started }}</div>
-        </AppPanel>
-        <AppPanel as="div" variant="compact">
+        </UCard>
+        <UCard as="div" class="app-panel app-panel-compact" variant="outline">
           <div class="app-text-eyebrow">{{ t("talk_report.feedback") }}</div>
           <div class="app-text mt-1 text-lg font-semibold">{{ summary.feedbackCount }}</div>
-        </AppPanel>
-        <AppPanel as="div" variant="compact">
+        </UCard>
+        <UCard as="div" class="app-panel app-panel-compact" variant="outline">
           <div class="app-text-eyebrow">{{ t("talk_report.last_activity") }}</div>
           <div class="app-text mt-1 text-sm font-semibold">{{ formatDate(summary.last) }}</div>
-        </AppPanel>
+        </UCard>
       </div>
-    </AppPanel>
+    </UCard>
 
-    <AppPanel>
+    <UCard class="app-panel" variant="outline">
       <div class="app-text-eyebrow">{{ t("builder.export") }}</div>
       <p class="app-muted app-text-body mt-2">{{ t("builder.subtitle") }}</p>
       <div class="mt-3 flex flex-wrap items-center gap-2">
-        <AppButton
-          tone="secondary"
+        <UButton
+         
           size="lg"
           :disabled="isExportingOutline"
-          @click="exportOutline"
-        >
+          color="neutral"
+         variant="outline" @click="exportOutline">
           {{ t("builder.export") }}
-        </AppButton>
+        </UButton>
         <RouterLink class="app-link app-text-meta underline" :to="`/talks/${projectId}/builder`">
           {{ t("talk_report.builder") }}
         </RouterLink>
       </div>
-    </AppPanel>
+    </UCard>
 
-    <AppPanel>
+    <UCard class="app-panel" variant="outline">
       <div class="app-text-eyebrow">{{ t("talk_report.export_title") }}</div>
       <div v-if="runs.length === 0" class="app-muted app-text-body mt-3">{{ t("boss_run.latest_empty") }}</div>
       <div v-else class="mt-3 space-y-2 app-text-meta">
@@ -264,14 +262,14 @@ onMounted(loadData);
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <AppButton
-              tone="secondary"
+            <UButton
+             
               size="sm"
               :disabled="exportingRunId === run.id"
-              @click="exportPack(run.id)"
-            >
+              color="neutral"
+             variant="outline" @click="exportPack(run.id)">
               {{ t("packs.export") }}
-            </AppButton>
+            </UButton>
           </div>
         </div>
       </div>
@@ -280,20 +278,20 @@ onMounted(loadData);
         <span class="app-text max-w-[360px] truncate" style="direction: rtl; text-align: left;">
           {{ exportPath }}
         </span>
-        <AppButton
-          tone="ghost"
+        <UButton
+         
           size="sm"
           :disabled="isRevealing"
-          @click="revealExport"
-        >
+          color="neutral"
+         variant="ghost" @click="revealExport">
           {{ t("packs.export_reveal") }}
-        </AppButton>
+        </UButton>
         <span class="app-subtle app-text-meta">{{ t("packs.export_ready") }}</span>
       </div>
       <div v-if="exportError" class="app-danger-text app-text-meta mt-2">{{ exportError }}</div>
-    </AppPanel>
+    </UCard>
 
-    <AppPanel>
+    <UCard class="app-panel" variant="outline">
       <div class="app-text-eyebrow">{{ t("talk_report.packs") }}</div>
       <div v-if="peerReviews.length === 0" class="app-muted app-text-body mt-3">{{ t("talk_report.timeline_empty") }}</div>
       <div v-else class="mt-3 space-y-2 app-text-meta">
@@ -315,11 +313,11 @@ onMounted(loadData);
         </div>
       </div>
       <div class="mt-3">
-        <AppButton tone="secondary" size="lg" to="/packs" @click="markExportStage">
+        <UButton size="lg" to="/packs" color="neutral" variant="outline" @click="markExportStage">
           {{ t("talk_report.packs") }}
-        </AppButton>
+        </UButton>
       </div>
-    </AppPanel>
+    </UCard>
   </TalkStepPageShell>
 </template>
 

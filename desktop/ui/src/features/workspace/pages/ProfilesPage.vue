@@ -2,9 +2,6 @@
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import type { ComponentPublicInstance } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import AppBadge from "@/components/ui/AppBadge.vue";
-import AppButton from "@/components/ui/AppButton.vue";
-import AppPanel from "@/components/ui/AppPanel.vue";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import { useI18n } from "@/lib/i18n";
 import type { ProfileSummary } from "@/schemas/ipc";
@@ -288,23 +285,23 @@ onMounted(async () => {
         <h1 class="app-text text-2xl font-semibold tracking-tight">{{ t("profiles.title") }}</h1>
         <p class="app-muted mt-1 text-sm">{{ t("profiles.subtitle") }}</p>
       </div>
-      <AppButton size="lg" tone="primary" @click="focusCreateForm">
+      <UButton size="lg" color="primary" @click="focusCreateForm">
         {{ t("profiles.create_action") }}
-      </AppButton>
+      </UButton>
     </header>
 
-    <AppPanel v-if="profiles.length === 0" as="div" class="rounded-2xl px-5 py-8 text-center" variant="compact">
+    <UCard v-if="profiles.length === 0" as="div" class="app-panel app-panel-compact rounded-2xl px-5 py-8 text-center" variant="outline">
       <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full app-avatar text-sm font-bold">
         WS
       </div>
       <h2 class="app-text text-lg font-semibold">{{ t("profiles.empty_title") }}</h2>
       <p class="app-muted mx-auto mt-2 max-w-xl text-sm">{{ t("profiles.empty_body") }}</p>
-      <AppButton class="mt-4" size="lg" tone="primary" @click="focusCreateForm">
+      <UButton class="mt-4" size="lg" color="primary" @click="focusCreateForm">
         {{ t("profiles.create_action") }}
-      </AppButton>
-    </AppPanel>
+      </UButton>
+    </UCard>
 
-    <AppPanel v-else as="section" variant="compact">
+    <UCard v-else as="section" class="app-panel app-panel-compact" variant="outline">
       <div class="flex items-center justify-between gap-3">
         <h2 class="app-subtle text-xs font-semibold uppercase tracking-[0.2em]">
           {{ t("profiles.existing_title") }}
@@ -312,13 +309,13 @@ onMounted(async () => {
       </div>
 
       <div class="mt-4 space-y-2">
-        <AppPanel
+        <UCard
           v-for="profile in profiles"
           :key="profile.id"
           as="div"
-          variant="compact"
-          class="flex flex-col gap-3 rounded-xl px-3 py-3 md:flex-row md:items-center md:justify-between"
-        >
+         
+          class="app-panel app-panel-compact flex flex-col gap-3 rounded-xl px-3 py-3 md:flex-row md:items-center md:justify-between"
+         variant="outline">
           <div class="flex min-w-0 items-start gap-3">
             <div class="app-avatar mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold">
               {{ initialsFor(profile.name) }}
@@ -347,21 +344,21 @@ onMounted(async () => {
           </div>
 
           <div class="flex items-center gap-2">
-            <AppButton
+            <UButton
               v-if="profile.id !== activeProfileId"
               size="lg"
-              tone="secondary"
-              @click="switchProfile(profile.id)"
-            >
+             
+              color="neutral"
+             variant="outline" @click="switchProfile(profile.id)">
               {{ t("profiles.switch") }}
-            </AppButton>
-            <AppBadge
+            </UButton>
+            <UBadge
               v-else
               size="md"
-              tone="accent"
-            >
+             
+             color="primary" variant="solid">
               {{ t("profiles.active") }}
-            </AppBadge>
+            </UBadge>
 
             <UDropdownMenu
               :items="profileMenuItems(profile)"
@@ -369,14 +366,14 @@ onMounted(async () => {
               :portal="false"
             >
               <template #default="{ open: menuOpen }">
-                <AppButton
-                  size="icon-xl"
-                  tone="secondary"
+                <UButton
+                 
+                 
                   :aria-label="`${t('profiles.row_actions')}: ${profile.name}`"
                   :aria-expanded="menuOpen ? 'true' : 'false'"
                   aria-haspopup="menu"
                   :disabled="isRenaming || deletingId === profile.id"
-                >
+                 color="neutral" variant="outline" size="xl" square="true">
                   <svg
                     class="h-4 w-4"
                     viewBox="0 0 24 24"
@@ -390,17 +387,17 @@ onMounted(async () => {
                     <circle cx="19" cy="12" r="1" />
                     <circle cx="5" cy="12" r="1" />
                   </svg>
-                </AppButton>
+                </UButton>
               </template>
             </UDropdownMenu>
           </div>
-        </AppPanel>
+        </UCard>
       </div>
 
       <p v-if="error" class="app-danger-text mt-3 text-xs">{{ error }}</p>
-    </AppPanel>
+    </UCard>
 
-    <AppPanel as="section" class="app-radius-panel-lg" variant="compact">
+    <UCard as="section" class="app-panel app-panel-compact app-radius-panel-lg" variant="outline">
       <div ref="createSection">
         <h2 class="app-subtle text-xs font-semibold uppercase tracking-[0.2em]">
           {{ t("profiles.add_title") }}
@@ -423,18 +420,18 @@ onMounted(async () => {
               @keyup.escape="name = ''"
             />
           </UFormField>
-          <AppButton
+          <UButton
             size="lg"
-            tone="primary"
+           
             :disabled="isSaving"
-            @click="createProfile"
-          >
+            color="primary"
+           @click="createProfile">
             {{ t("profiles.create_action") }}
-          </AppButton>
+          </UButton>
         </div>
       </div>
       <p v-if="error" class="app-danger-text mt-3 text-xs">{{ error }}</p>
-    </AppPanel>
+    </UCard>
 
     <ConfirmDialog
       :open="deleteTarget !== null"

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import AppButton from "@/components/ui/AppButton.vue";
 import { useI18n } from "@/lib/i18n";
 import { useTheme } from "@/lib/theme";
 
@@ -63,13 +62,15 @@ function updateLocale(next: "fr" | "en") {
     :ui="MENU_POPOVER_UI"
   >
     <template #default="{ open: menuOpen }">
-      <AppButton
-        tone="secondary"
-        size="icon-md"
+      <UButton
         class="app-toolbar-button border"
         :aria-label="t('shell.menu_toggle')"
         aria-haspopup="menu"
         :aria-expanded="menuOpen ? 'true' : 'false'"
+        color="neutral"
+        variant="outline"
+        size="md"
+        square
       >
         <svg
           class="h-4 w-4"
@@ -83,7 +84,7 @@ function updateLocale(next: "fr" | "en") {
           <circle cx="12" cy="12" r="3" />
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01A1.65 1.65 0 0 0 9.93 3.1V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
         </svg>
-      </AppButton>
+      </UButton>
     </template>
 
     <template #content>
@@ -92,24 +93,26 @@ function updateLocale(next: "fr" | "en") {
           {{ t("shell.menu_theme") }}
         </div>
         <div class="mt-2 grid grid-cols-2 gap-2">
-          <AppButton
+          <UButton
             size="md"
-            :tone="theme === 'orange' ? 'ghost' : 'secondary'"
+            color="neutral"
+            :variant="theme === 'orange' ? 'ghost' : 'outline'"
             class="w-full app-text-body font-semibold"
             :class="theme === 'orange' ? 'app-pill-active' : ''"
             @click="updateTheme('orange')"
           >
             {{ t("theme.orange") }}
-          </AppButton>
-          <AppButton
+          </UButton>
+          <UButton
             size="md"
-            :tone="theme === 'terminal' ? 'ghost' : 'secondary'"
+            color="neutral"
+            :variant="theme === 'terminal' ? 'ghost' : 'outline'"
             class="w-full app-text-body font-semibold"
             :class="theme === 'terminal' ? 'app-pill-active' : ''"
             @click="updateTheme('terminal')"
           >
             {{ t("theme.terminal") }}
-          </AppButton>
+          </UButton>
         </div>
       </div>
 
@@ -120,45 +123,47 @@ function updateLocale(next: "fr" | "en") {
           {{ t("shell.menu_language") }}
         </div>
         <div class="mt-2 grid grid-cols-2 gap-2">
-          <AppButton
+          <UButton
             size="md"
-            :tone="locale === 'fr' ? 'ghost' : 'secondary'"
+            color="neutral"
+            :variant="locale === 'fr' ? 'ghost' : 'outline'"
             class="w-full app-text-body font-semibold"
             :class="locale === 'fr' ? 'app-pill-active' : ''"
             @click="updateLocale('fr')"
           >
             FR
-          </AppButton>
-          <AppButton
+          </UButton>
+          <UButton
             size="md"
-            :tone="locale === 'en' ? 'ghost' : 'secondary'"
+            color="neutral"
+            :variant="locale === 'en' ? 'ghost' : 'outline'"
             class="w-full app-text-body font-semibold"
             :class="locale === 'en' ? 'app-pill-active' : ''"
             @click="updateLocale('en')"
           >
             EN
-          </AppButton>
+          </UButton>
         </div>
       </div>
 
       <USeparator class="my-3" />
 
       <div class="grid gap-1">
-        <AppButton size="md" tone="secondary" class="w-full justify-start text-left app-text-body" @click="goTo('/settings')">
+        <UButton size="md" class="w-full justify-start text-left app-text-body" color="neutral" variant="outline" @click="goTo('/settings')">
           {{ t("shell.menu_settings") }}
-        </AppButton>
-        <AppButton size="md" tone="secondary" class="w-full justify-start text-left app-text-body" @click="goTo('/packs')">
+        </UButton>
+        <UButton size="md" class="w-full justify-start text-left app-text-body" color="neutral" variant="outline" @click="goTo('/packs')">
           {{ t("shell.menu_packs") }}
-        </AppButton>
-        <AppButton size="md" tone="secondary" class="w-full justify-start text-left app-text-body" @click="goToHelp">
+        </UButton>
+        <UButton size="md" class="w-full justify-start text-left app-text-body" color="neutral" variant="outline" @click="goToHelp">
           {{ t("shell.menu_help") }}
-        </AppButton>
-        <AppButton size="md" tone="secondary" class="w-full justify-start text-left app-text-body" @click="goToOnboarding">
+        </UButton>
+        <UButton size="md" class="w-full justify-start text-left app-text-body" color="neutral" variant="outline" @click="goToOnboarding">
           {{ t("shell.menu_onboarding") }}
-        </AppButton>
-        <AppButton size="md" tone="secondary" class="w-full justify-start text-left app-text-body" @click="goToAbout">
+        </UButton>
+        <UButton size="md" class="w-full justify-start text-left app-text-body" color="neutral" variant="outline" @click="goToAbout">
           {{ t("shell.menu_about") }}
-        </AppButton>
+        </UButton>
       </div>
     </template>
   </UPopover>

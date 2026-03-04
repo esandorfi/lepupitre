@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, useSlots } from "vue";
-import AppPanel from "./ui/AppPanel.vue";
 
 const props = withDefaults(
   defineProps<{
@@ -21,14 +20,13 @@ const hasHeader = computed(
 </script>
 
 <template>
-  <AppPanel
-    :variant="
-      variant === 'compact'
-        ? 'compact'
-        : variant === 'dense-list'
-          ? 'dense-list'
-          : 'default'
-    "
+  <UCard
+    variant="outline"
+    :class="[
+      'app-panel',
+      variant === 'compact' ? 'app-panel-compact' : '',
+      variant === 'dense-list' ? 'app-panel-dense-list' : '',
+    ]"
   >
     <div v-if="hasHeader" class="app-section-header">
       <div class="app-section-header-main">
@@ -45,5 +43,5 @@ const hasHeader = computed(
     <div :class="hasHeader ? 'mt-3' : ''">
       <slot />
     </div>
-  </AppPanel>
+  </UCard>
 </template>

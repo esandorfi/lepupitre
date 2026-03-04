@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import AppBadge from "@/components/ui/AppBadge.vue";
-import AppButton from "@/components/ui/AppButton.vue";
 import RecorderWaveform from "./RecorderWaveform.vue";
 import type { WaveformStyle } from "../../lib/waveform";
 
@@ -32,7 +30,7 @@ function qualityTone() {
     return "success";
   }
   if (props.qualityTone === "danger") {
-    return "danger";
+    return "error";
   }
   return "neutral";
 }
@@ -48,40 +46,40 @@ function primaryIcon() {
 <template>
   <div class="space-y-4">
     <div class="flex flex-wrap items-center gap-3">
-      <AppButton
-        tone="primary"
+      <UButton
+       
         size="lg"
         class="min-w-[180px] justify-center"
         :disabled="!props.canPrimary"
-        @click="emit('primary')"
-      >
+        color="primary"
+       @click="emit('primary')">
         <span aria-hidden="true" class="mr-2 text-xs font-bold">{{ primaryIcon() }}</span>
         {{ props.primaryLabel }}
-      </AppButton>
-      <AppButton
-        tone="danger"
+      </UButton>
+      <UButton
+       
         size="lg"
         class="min-w-[140px] justify-center"
         :disabled="!props.canStop"
-        @click="emit('stop')"
-      >
+        color="error"
+       @click="emit('stop')">
         <span aria-hidden="true" class="mr-2 text-xs font-bold">[]</span>
         {{ props.stopLabel }}
-      </AppButton>
-      <AppBadge
+      </UButton>
+      <UBadge
         v-if="props.showRecBadge"
-        tone="danger"
+       
         class="px-3 py-1 uppercase tracking-[0.2em]"
-      >
+       color="error" variant="solid">
         {{ props.recBadgeLabel }}
-      </AppBadge>
+      </UBadge>
     </div>
 
     <div class="flex flex-wrap items-center gap-3">
       <div class="app-text text-2xl font-bold tabular-nums">{{ props.durationLabel }}</div>
-      <AppBadge :tone="qualityTone()" class="px-3 py-1">
+      <UBadge :color="qualityTone()" class="px-3 py-1" variant="solid">
         {{ props.qualityLabel }}
-      </AppBadge>
+      </UBadge>
     </div>
 
     <div class="space-y-2">

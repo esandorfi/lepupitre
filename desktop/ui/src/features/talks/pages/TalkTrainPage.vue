@@ -2,8 +2,6 @@
 import { computed, onMounted, ref } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 import TalkStepPageShell from "@/components/TalkStepPageShell.vue";
-import AppButton from "@/components/ui/AppButton.vue";
-import AppPanel from "@/components/ui/AppPanel.vue";
 import { useI18n } from "@/lib/i18n";
 import { appStore } from "@/stores/app";
 import type {
@@ -231,69 +229,69 @@ onMounted(loadData);
       >
         {{ t("talk_report.active") }}
       </span>
-      <AppButton
+      <UButton
         v-else
         size="sm"
-        tone="secondary"
+       
         :disabled="isActivating"
-        @click="setActive"
-      >
+        color="neutral"
+       variant="outline" @click="setActive">
         {{ t("talk_report.set_active") }}
-      </AppButton>
+      </UButton>
     </template>
 
-    <AppPanel>
+    <UCard class="app-panel" variant="outline">
       <div v-if="isLoading" class="app-muted app-text-meta">{{ t("talk_report.loading") }}</div>
       <div v-else-if="error" class="app-danger-text app-text-meta">{{ error }}</div>
       <div v-else class="app-data-grid-4 app-text-meta">
-        <AppPanel as="div" variant="compact">
+        <UCard as="div" class="app-panel app-panel-compact" variant="outline">
           <div class="app-text-eyebrow">{{ t("talk_report.total") }}</div>
           <div class="app-text mt-1 text-lg font-semibold">{{ summary.total }}</div>
-        </AppPanel>
-        <AppPanel as="div" variant="compact">
+        </UCard>
+        <UCard as="div" class="app-panel app-panel-compact" variant="outline">
           <div class="app-text-eyebrow">{{ t("talk_report.started") }}</div>
           <div class="app-text mt-1 text-lg font-semibold">{{ summary.started }}</div>
-        </AppPanel>
-        <AppPanel as="div" variant="compact">
+        </UCard>
+        <UCard as="div" class="app-panel app-panel-compact" variant="outline">
           <div class="app-text-eyebrow">{{ t("talk_report.feedback") }}</div>
           <div class="app-text mt-1 text-lg font-semibold">{{ summary.feedbackCount }}</div>
-        </AppPanel>
-        <AppPanel as="div" variant="compact">
+        </UCard>
+        <UCard as="div" class="app-panel app-panel-compact" variant="outline">
           <div class="app-text-eyebrow">{{ t("talk_report.last_activity") }}</div>
           <div class="app-text mt-1 text-sm font-semibold">{{ formatDate(summary.last) }}</div>
-        </AppPanel>
+        </UCard>
       </div>
-    </AppPanel>
+    </UCard>
 
-    <AppPanel>
+    <UCard class="app-panel" variant="outline">
       <div class="app-text-eyebrow">{{ t("talk_report.boss_run") }}</div>
       <p class="app-muted app-text-body mt-2">{{ t("boss_run.subtitle") }}</p>
       <div class="mt-3 flex flex-wrap gap-2">
-        <AppButton tone="secondary" size="lg" to="/boss-run" @click="markTrainStage">
+        <UButton size="lg" to="/boss-run" color="neutral" variant="outline" @click="markTrainStage">
           {{ t("boss_run.title") }}
-        </AppButton>
-        <AppButton
-          tone="secondary"
+        </UButton>
+        <UButton
+         
           size="lg"
           :to="`/quest/FREE?from=talk&projectId=${projectId}`"
-          @click="markTrainStage"
-        >
+          color="neutral"
+         variant="outline" @click="markTrainStage">
           {{ t("home.prototype_action_free") }}
-        </AppButton>
+        </UButton>
       </div>
-    </AppPanel>
+    </UCard>
 
-    <AppPanel>
+    <UCard class="app-panel" variant="outline">
       <div class="app-text-eyebrow">{{ t("talk_report.quest_library") }}</div>
       <div v-if="report.length === 0" class="app-muted app-text-body mt-3">{{ t("talk_report.no_quests") }}</div>
       <div v-else class="mt-3 space-y-3">
-        <AppPanel
+        <UCard
           v-for="(quest, index) in report"
           :key="quest.quest_code"
           as="div"
-          variant="compact"
-          class="app-radius-card"
-        >
+         
+          class="app-panel app-panel-compact app-radius-card"
+         variant="outline">
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
               <div class="app-text-eyebrow">
@@ -309,14 +307,14 @@ onMounted(loadData);
             </div>
           </div>
           <div class="mt-3 flex flex-wrap items-center gap-2">
-            <AppButton
-              tone="info"
+            <UButton
+             
               size="sm"
               :to="`/quest/${quest.quest_code}?from=talk&projectId=${projectId}`"
-              @click="markTrainStage"
-            >
+              color="info"
+             @click="markTrainStage">
               {{ t("talk_report.open_quest") }}
-            </AppButton>
+            </UButton>
             <RouterLink
               v-if="quest.feedback_id"
               class="app-link text-xs underline"
@@ -325,11 +323,11 @@ onMounted(loadData);
               {{ t("talk_report.view_feedback") }}
             </RouterLink>
           </div>
-        </AppPanel>
+        </UCard>
       </div>
-    </AppPanel>
+    </UCard>
 
-    <AppPanel>
+    <UCard class="app-panel" variant="outline">
       <div class="app-text-eyebrow">{{ t("talk_report.timeline") }}</div>
       <div v-if="timeline.length === 0" class="app-muted app-text-body mt-3">{{ t("talk_report.timeline_empty") }}</div>
       <div v-else class="mt-3 space-y-2 app-text-meta">
@@ -352,7 +350,7 @@ onMounted(loadData);
           </div>
         </div>
       </div>
-    </AppPanel>
+    </UCard>
   </TalkStepPageShell>
 </template>
 

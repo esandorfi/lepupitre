@@ -2,8 +2,6 @@
 /* eslint-disable vue/no-v-html */
 import { computed, nextTick, ref, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
-import AppButton from "@/components/ui/AppButton.vue";
-import AppPanel from "@/components/ui/AppPanel.vue";
 import {
   getHelpContentById,
   listHelpContentByAudience,
@@ -131,7 +129,7 @@ async function restartOnboarding() {
       <p class="app-muted mt-1 text-sm">{{ t("help.subtitle") }}</p>
     </header>
 
-    <AppPanel>
+    <UCard class="app-panel" variant="outline">
       <h2 class="app-text text-base font-semibold">{{ t("help.quickstart_title") }}</h2>
       <ol class="app-text mt-3 list-decimal space-y-2 pl-5 text-sm leading-6">
         <li>{{ t("help.quickstart_1") }}</li>
@@ -139,59 +137,59 @@ async function restartOnboarding() {
         <li>{{ t("help.quickstart_3") }}</li>
         <li>{{ t("help.quickstart_4") }}</li>
       </ol>
-    </AppPanel>
+    </UCard>
 
-    <AppPanel>
+    <UCard class="app-panel" variant="outline">
       <h2 class="app-text text-base font-semibold">{{ t("help.faq_title") }}</h2>
       <div class="mt-3 grid gap-3 lg:grid-cols-2">
-        <AppPanel
+        <UCard
           v-for="item in faqs"
           :key="item.q"
           as="article"
-          variant="compact"
-          class="app-radius-panel-lg"
-        >
+         
+          class="app-panel app-panel-compact app-radius-panel-lg"
+         variant="outline">
           <h3 class="app-text text-sm font-semibold">{{ item.q }}</h3>
           <p class="app-muted mt-2 text-sm leading-6">{{ item.a }}</p>
-        </AppPanel>
+        </UCard>
       </div>
-    </AppPanel>
+    </UCard>
 
-    <AppPanel class="space-y-4">
+    <UCard class="app-panel space-y-4" variant="outline">
       <div>
         <h2 class="app-text text-base font-semibold">{{ t("help.playbook_title") }}</h2>
         <p class="app-muted mt-1 text-sm">{{ t("help.playbook_subtitle") }}</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
-        <AppButton
+        <UButton
           v-for="option in audienceOptions"
           :key="option.id"
           class="rounded-full px-3 py-2 text-sm"
           :class="selectedAudience === option.id ? 'app-pill-active' : 'app-pill'"
           size="sm"
-          tone="ghost"
-          @click="setAudience(option.id)"
-        >
+         
+          color="neutral"
+         variant="ghost" @click="setAudience(option.id)">
           {{ option.label }}
-        </AppButton>
+        </UButton>
       </div>
-    </AppPanel>
+    </UCard>
 
-    <AppPanel class="space-y-4">
+    <UCard class="app-panel space-y-4" variant="outline">
       <div>
         <h2 class="app-text text-base font-semibold">{{ t("help.onboarding_tracks_title") }}</h2>
         <p class="app-muted mt-1 text-sm">{{ t("help.onboarding_tracks_subtitle") }}</p>
       </div>
       <div class="grid gap-3 lg:grid-cols-3">
-        <AppPanel
+        <UCard
           v-for="entry in onboardingEntries"
           :id="topicDomId(entry.id)"
           :key="entry.id"
           as="article"
-          variant="compact"
-          class="app-radius-panel-lg transition-colors"
+         
+          class="app-panel app-panel-compact app-radius-panel-lg transition-colors"
           :style="topicCardStyle(entry.id)"
-        >
+         variant="outline">
           <h3 class="app-text text-sm font-semibold">{{ entry.title }}</h3>
           <!-- eslint-disable-next-line vue/no-v-html -->
           <div class="app-markdown app-muted mt-2 text-sm leading-6" v-html="entry.html" />
@@ -201,26 +199,26 @@ async function restartOnboarding() {
           >
             {{ t("help.open_deep_link") }}
           </RouterLink>
-        </AppPanel>
+        </UCard>
       </div>
-    </AppPanel>
+    </UCard>
 
-    <AppPanel class="space-y-4">
+    <UCard class="app-panel space-y-4" variant="outline">
       <div>
         <h2 class="app-text text-base font-semibold">{{ t("help.contextual_title") }}</h2>
         <p class="app-muted mt-1 text-sm">{{ t("help.contextual_subtitle") }}</p>
       </div>
       <p v-if="unknownTopic" class="app-muted text-sm">{{ t("help.contextual_unknown_topic") }}</p>
       <div class="grid gap-3">
-        <AppPanel
+        <UCard
           v-for="entry in contextualEntries"
           :id="topicDomId(entry.id)"
           :key="entry.id"
           as="article"
-          variant="compact"
-          class="app-radius-panel-lg transition-colors"
+         
+          class="app-panel app-panel-compact app-radius-panel-lg transition-colors"
           :style="topicCardStyle(entry.id)"
-        >
+         variant="outline">
           <h3 class="app-text text-sm font-semibold">{{ entry.title }}</h3>
           <!-- eslint-disable-next-line vue/no-v-html -->
           <div class="app-markdown app-muted mt-2 text-sm leading-6" v-html="entry.html" />
@@ -230,33 +228,33 @@ async function restartOnboarding() {
           >
             {{ t("help.open_deep_link") }}
           </RouterLink>
-        </AppPanel>
+        </UCard>
       </div>
-    </AppPanel>
+    </UCard>
 
-    <AppPanel>
+    <UCard class="app-panel" variant="outline">
       <h2 class="app-text text-base font-semibold">{{ t("help.dev_title") }}</h2>
       <p class="app-muted mt-2 text-sm leading-6">{{ t("help.dev_subtitle") }}</p>
       <div class="mt-3 grid gap-3 lg:grid-cols-2">
-        <AppPanel as="article" class="app-radius-panel-lg" variant="compact">
+        <UCard as="article" class="app-panel app-panel-compact app-radius-panel-lg" variant="outline">
           <h3 class="app-text text-sm font-semibold">{{ t("help.dev_ui_only_title") }}</h3>
           <p class="app-muted mt-2 text-sm">{{ t("help.dev_ui_only_body") }}</p>
           <pre class="app-radius-panel-md mt-3 overflow-x-auto border bg-[var(--color-surface-elevated)] p-3 text-xs">{{ t("help.dev_ui_only_command") }}</pre>
-        </AppPanel>
-        <AppPanel as="article" class="app-radius-panel-lg" variant="compact">
+        </UCard>
+        <UCard as="article" class="app-panel app-panel-compact app-radius-panel-lg" variant="outline">
           <h3 class="app-text text-sm font-semibold">{{ t("help.dev_tauri_title") }}</h3>
           <p class="app-muted mt-2 text-sm">{{ t("help.dev_tauri_body") }}</p>
           <pre class="app-radius-panel-md mt-3 overflow-x-auto border bg-[var(--color-surface-elevated)] p-3 text-xs">{{ t("help.dev_tauri_command") }}</pre>
-        </AppPanel>
+        </UCard>
       </div>
-    </AppPanel>
+    </UCard>
 
-    <AppPanel variant="compact">
+    <UCard class="app-panel app-panel-compact" variant="outline">
       <h2 class="app-text text-base font-semibold">{{ t("help.actions_title") }}</h2>
       <div class="mt-3 flex flex-wrap items-center gap-3">
-        <AppButton size="md" tone="secondary" @click="restartOnboarding">
+        <UButton size="md" color="neutral" variant="outline" @click="restartOnboarding">
           {{ t("help.action_restart_onboarding") }}
-        </AppButton>
+        </UButton>
         <RouterLink class="app-link app-text-meta underline" to="/settings">
           {{ t("help.action_settings") }}
         </RouterLink>
@@ -264,7 +262,7 @@ async function restartOnboarding() {
           {{ t("help.action_about") }}
         </RouterLink>
       </div>
-    </AppPanel>
+    </UCard>
   </section>
 </template>
 
