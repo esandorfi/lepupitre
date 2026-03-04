@@ -102,8 +102,7 @@ function updateInputDevice(value: string) {
       {{ t("audio.advanced") }}
     </AppButton>
     <div v-if="props.open" class="mt-3 grid gap-3 md:grid-cols-2">
-      <label class="space-y-1 app-text-meta">
-        <span class="app-subtle">{{ t("settings.transcription.model_label") }}</span>
+      <UFormField :label="t('settings.transcription.model_label')" class="app-text-meta">
         <USelect
           :model-value="props.model"
           class="w-full"
@@ -111,10 +110,9 @@ function updateInputDevice(value: string) {
           value-key="value"
           @update:model-value="updateModel(String($event))"
         />
-      </label>
+      </UFormField>
 
-      <label class="space-y-1 app-text-meta">
-        <span class="app-subtle">{{ t("settings.transcription.mode_label") }}</span>
+      <UFormField :label="t('settings.transcription.mode_label')" class="app-text-meta">
         <USelect
           :model-value="props.mode"
           class="w-full"
@@ -122,10 +120,9 @@ function updateInputDevice(value: string) {
           value-key="value"
           @update:model-value="updateMode(String($event))"
         />
-      </label>
+      </UFormField>
 
-      <label class="space-y-1 app-text-meta">
-        <span class="app-subtle">{{ t("settings.transcription.language_label") }}</span>
+      <UFormField :label="t('settings.transcription.language_label')" class="app-text-meta">
         <USelect
           :model-value="props.language"
           class="w-full"
@@ -133,18 +130,16 @@ function updateInputDevice(value: string) {
           value-key="value"
           @update:model-value="updateLanguage(String($event))"
         />
-      </label>
+      </UFormField>
 
-      <label class="flex items-center gap-2 app-text-meta">
+      <UFormField :label="t('settings.transcription.spoken_punctuation_label')" class="app-text-meta">
         <USwitch
           :model-value="props.spokenPunctuation"
           @update:model-value="emit('update:spokenPunctuation', Boolean($event))"
         />
-        <span>{{ t("settings.transcription.spoken_punctuation_label") }}</span>
-      </label>
+      </UFormField>
 
-      <label class="space-y-1 app-text-meta md:col-span-2">
-        <span class="app-subtle">{{ t("settings.recorder.waveform_style_label") }}</span>
+      <UFormField :label="t('settings.recorder.waveform_style_label')" class="app-text-meta md:col-span-2">
         <USelect
           :model-value="props.waveformStyle"
           class="w-full"
@@ -152,10 +147,9 @@ function updateInputDevice(value: string) {
           value-key="value"
           @update:model-value="updateWaveformStyle(String($event))"
         />
-      </label>
+      </UFormField>
 
-      <label class="space-y-1 app-text-meta md:col-span-2">
-        <span class="app-subtle">{{ t("settings.recorder.input_device_label") }}</span>
+      <UFormField :label="t('settings.recorder.input_device_label')" class="app-text-meta md:col-span-2">
         <div class="flex flex-wrap items-center gap-2">
           <USelect
             :model-value="props.selectedInputDeviceId ?? ''"
@@ -169,7 +163,7 @@ function updateInputDevice(value: string) {
             {{ t("settings.recorder.input_device_refresh") }}
           </AppButton>
         </div>
-      </label>
+      </UFormField>
 
       <div class="space-y-2 app-text-meta md:col-span-2">
         <span class="app-subtle">{{ t("audio.calibration_title") }}</span>

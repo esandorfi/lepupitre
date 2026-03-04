@@ -18,7 +18,8 @@ const MENU_POPOVER_CONTENT = {
 } as const;
 
 const MENU_POPOVER_UI = {
-  content: "app-menu-panel z-40 w-[min(22rem,calc(100vw-2rem))] rounded-2xl border p-3 shadow-xl",
+  content:
+    "z-40 w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-3 text-[var(--color-text)] shadow-[var(--shadow-md)]",
 } as const;
 
 function closePanel() {
@@ -112,7 +113,7 @@ function updateLocale(next: "fr" | "en") {
         </div>
       </div>
 
-      <div class="app-divider my-3"></div>
+      <USeparator class="my-3" />
 
       <div>
         <div class="app-text-eyebrow">
@@ -140,7 +141,7 @@ function updateLocale(next: "fr" | "en") {
         </div>
       </div>
 
-      <div class="app-divider my-3"></div>
+      <USeparator class="my-3" />
 
       <div class="grid gap-1">
         <AppButton size="md" tone="secondary" class="w-full justify-start text-left app-text-body" @click="goTo('/settings')">

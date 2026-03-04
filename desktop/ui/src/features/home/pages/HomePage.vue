@@ -1,61 +1,46 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 import AppBadge from "@/components/ui/AppBadge.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppPanel from "@/components/ui/AppPanel.vue";
-import { useI18n } from "../../../lib/i18n";
+import { useI18n } from "@/lib/i18n";
 import {
-  readAchievementMemory,
-  readStoredHeroQuestCode,
-  writeAchievementMemory,
   writeStoredHeroQuestCode,
-  type AchievementMemory,
-} from "../../../lib/trainingPreferences";
-import { useUiPreferences } from "../../../lib/uiPreferences";
-import { appStore } from "../../../stores/app";
+} from "@/lib/trainingPreferences";
+import { useUiPreferences } from "@/lib/uiPreferences";
+import { appStore } from "@/stores/app";
+import type { AchievementPulse } from "../composables/useAchievementPulse";
+import {
+  useHomePresentation,
+  type DailyLoopStep,
+  type QuestMapNode,
+  type RewardBadge,
+} from "../composables/useHomePresentation";
+import { useHomeTrainingOrchestration } from "../composables/useHomeTrainingOrchestration";
+import { useQuestPickerNavigation } from "../composables/useQuestPickerNavigation";
 import type {
   MascotMessage,
   ProgressSnapshot,
   Quest,
   QuestAttemptSummary,
   QuestDaily,
-} from "../../../schemas/ipc";
-
-type QuestMapNode = {
-  id: string;
-  label: string;
-  reward: number;
-  category: string | null;
-  done: boolean;
-  current: boolean;
-  offsetPx: number;
-};
-
-type DailyLoopStep = {
-  id: string;
-  title: string;
-  done: boolean;
-  ctaRoute: string;
-};
-
-type RewardBadge = {
-  id: string;
-  title: string;
-  unlocked: boolean;
-  current: number;
-  target: number;
-};
-
-type AchievementPulse = {
-  id: string;
-  title: string;
-  body: string;
-  ctaLabel: string;
-  ctaRoute: string;
-};
+} from "@/schemas/ipc";
 
 const { t, locale } = useI18n();
+const {
+  attemptStatus,
+  dailyLoopStepClass,
+  estimatedMinutesLabel,
+  formatDate,
+  mascotToneClass,
+  outputLabel,
+  questMapConnectorClass,
+  questMapNodeAriaLabel,
+  questMapNodeClass,
+  rewardBadgeClass,
+  toError,
+} = useHomePresentation(t);
 const { settings: uiSettings } = useUiPreferences();
 const state = computed(() => appStore.state);
 const trainingProjectId = ref<string | null>(null);
@@ -76,7 +61,6 @@ const trainingActivityTab = ref<"feedback" | "history">("feedback");
 const availableQuests = ref<Quest[]>([]);
 const questPickerSearchEl = ref<HTMLInputElement | null>(null);
 const questPickerListEl = ref<HTMLElement | null>(null);
-const questPickerActiveCode = ref<string | null>(null);
 const achievementPulse = ref<AchievementPulse | null>(null);
 
 const feedbackAttempts = computed(() =>
@@ -331,140 +315,24 @@ const pickerVisibleQuests = computed(() => [
   ...pickerMainQuests.value,
 ]);
 
-function formatDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-  return date.toLocaleDateString();
-}
-
-function estimatedMinutesLabel(seconds: number) {
-  return Math.max(1, Math.round(seconds / 60));
-}
-
-function attemptStatus(attempt: QuestAttemptSummary) {
-  if (attempt.has_feedback) {
-    return t("quest.status_feedback");
-  }
-  if (attempt.has_transcript) {
-    return t("quest.status_transcribed");
-  }
-  if (attempt.has_audio) {
-    return t("quest.status_recorded");
-  }
-  return t("quest.status_submitted");
-}
+const {
+  activeCode: questPickerActiveCode,
+  onKeydown: onQuestPickerKeydown,
+  syncActive: syncQuestPickerActive,
+} = useQuestPickerNavigation({
+  isOpen: isQuestPickerOpen,
+  isLoading: isQuestPickerLoading,
+  error: questPickerError,
+  visibleItems: pickerVisibleQuests,
+  preferredCode: computed(() => heroQuest.value?.code ?? null),
+  listElement: questPickerListEl,
+  onClose: closeQuestPicker,
+  onSelect: selectHeroQuest,
+});
 
 function questCodeLabel(code: string) {
   const projectId = trainingProjectId.value ?? "";
   return appStore.formatQuestCode(projectId, code);
-}
-
-function outputLabel(outputType: string) {
-  return outputType.toLowerCase() === "audio"
-    ? t("quest.output_audio")
-    : t("quest.output_text");
-}
-
-function toError(err: unknown) {
-  return err instanceof Error ? err.message : String(err);
-}
-
-function mascotToneClass(kind: string | null | undefined) {
-  if (kind === "celebrate") {
-    return "border-[var(--color-success)] bg-[color-mix(in_srgb,var(--color-success)_15%,var(--color-surface))]";
-  }
-  if (kind === "nudge") {
-    return "border-[var(--color-accent)] bg-[color-mix(in_srgb,var(--color-accent-soft)_35%,var(--color-surface))]";
-  }
-  return "border-[var(--color-border)] bg-[var(--color-surface-elevated)]";
-}
-
-function questMapNodeClass(node: QuestMapNode) {
-  if (node.done) {
-    return "border-[var(--color-success)] bg-[color-mix(in_srgb,var(--color-success)_22%,var(--color-surface))] text-[var(--color-success)]";
-  }
-  if (node.current) {
-    return "border-[var(--color-accent)] bg-[var(--color-surface-selected)] text-[var(--color-accent)]";
-  }
-  return "border-[var(--app-border)] bg-[var(--color-surface-elevated)] text-[var(--color-muted)]";
-}
-
-function questMapConnectorClass(done: boolean) {
-  return done
-    ? "bg-[var(--color-success)]"
-    : "bg-[color-mix(in_srgb,var(--app-border)_70%,transparent)]";
-}
-
-function dailyLoopStepClass(done: boolean) {
-  if (done) {
-    return "border-[var(--color-success)] bg-[color-mix(in_srgb,var(--color-success)_12%,var(--color-surface))]";
-  }
-  return "border-[var(--app-border)] bg-[var(--color-surface-elevated)]";
-}
-
-function rewardBadgeClass(unlocked: boolean, isNext: boolean) {
-  if (unlocked) {
-    return "border-[var(--color-success)] bg-[color-mix(in_srgb,var(--color-success)_14%,var(--color-surface))]";
-  }
-  if (isNext) {
-    return "border-[var(--color-accent)] bg-[color-mix(in_srgb,var(--color-accent-soft)_35%,var(--color-surface))]";
-  }
-  return "border-[var(--app-border)] bg-[var(--color-surface-elevated)]";
-}
-
-function questMapNodeAriaLabel(node: QuestMapNode) {
-  const category = node.category ?? t("training.quest_map_any_category");
-  return `${node.label} (${category})`;
-}
-
-function evaluateAchievementPulse(profileId: string, progress: ProgressSnapshot): AchievementPulse | null {
-  const currentTier = Math.max(0, Math.floor(progress.credits / 50));
-  const currentStreak = Math.max(0, progress.streak_days);
-  const previous = readAchievementMemory(profileId);
-  if (!previous) {
-    writeAchievementMemory(profileId, {
-      creditTier: currentTier,
-      maxStreak: currentStreak,
-    });
-    return null;
-  }
-
-  const nextMemory: AchievementMemory = {
-    creditTier: Math.max(previous.creditTier, currentTier),
-    maxStreak: Math.max(previous.maxStreak, currentStreak),
-  };
-
-  let pulse: AchievementPulse | null = null;
-  if (previous.maxStreak < 7 && currentStreak >= 7) {
-    pulse = {
-      id: "streak-7",
-      title: t("training.achievement_streak7_title"),
-      body: t("training.achievement_streak7_body"),
-      ctaLabel: t("training.achievement_cta_boss_run"),
-      ctaRoute: "/boss-run",
-    };
-  } else if (previous.maxStreak < 3 && currentStreak >= 3) {
-    pulse = {
-      id: "streak-3",
-      title: t("training.achievement_streak3_title"),
-      body: t("training.achievement_streak3_body"),
-      ctaLabel: t("training.achievement_cta_training"),
-      ctaRoute: "/training",
-    };
-  } else if (currentTier > previous.creditTier) {
-    pulse = {
-      id: "credits-tier",
-      title: t("training.achievement_levelup_title"),
-      body: t("training.achievement_levelup_body"),
-      ctaLabel: t("training.achievement_cta_feedback"),
-      ctaRoute: "/feedback",
-    };
-  }
-
-  writeAchievementMemory(profileId, nextMemory);
-  return pulse;
 }
 
 function questRoute(code: string) {
@@ -497,216 +365,41 @@ function resetHeroQuestToDaily() {
   }
 }
 
-async function loadTrainingData() {
-  if (!state.value.activeProfileId) {
-    trainingProjectId.value = null;
-    trainingDailyQuest.value = null;
-    selectedHeroQuest.value = null;
-    recentAttempts.value = [];
-    trainingProgress.value = null;
-    mascotMessage.value = null;
-    return;
-  }
-  isTrainingLoading.value = true;
-  trainingError.value = null;
-  try {
-    const projectId = await appStore.ensureTrainingProject();
-    trainingProjectId.value = projectId;
-    trainingDailyQuest.value = await appStore.getDailyQuestForProject(projectId);
-    if (
-      selectedHeroQuest.value &&
-      selectedHeroQuest.value.code === trainingDailyQuest.value.quest.code
-    ) {
-      selectedHeroQuest.value = null;
-    }
-    const activeProfileId = state.value.activeProfileId;
-    if (activeProfileId) {
-      const storedQuestCode = readStoredHeroQuestCode(activeProfileId);
-      if (storedQuestCode && storedQuestCode !== trainingDailyQuest.value.quest.code) {
-        if (selectedHeroQuest.value?.code !== storedQuestCode) {
-          try {
-            selectedHeroQuest.value = await appStore.getQuestByCode(storedQuestCode);
-          } catch {
-            writeStoredHeroQuestCode(activeProfileId, null);
-            selectedHeroQuest.value = null;
-          }
-        }
-      } else if (storedQuestCode === trainingDailyQuest.value.quest.code) {
-        writeStoredHeroQuestCode(activeProfileId, null);
-      }
-    }
-    const [attempts, progress, mascot] = await Promise.all([
-      appStore.getQuestAttempts(projectId, 6),
-      appStore.getProgressSnapshot(projectId),
-      showMascotCard.value
-        ? appStore.getMascotContextMessage({
-            routeName: "training",
-            projectId,
-            locale: locale.value,
-          })
-        : Promise.resolve(null),
-    ]);
-    recentAttempts.value = attempts;
-    trainingProgress.value = progress;
-    mascotMessage.value = mascot;
-    if (activeProfileId) {
-      achievementPulse.value = evaluateAchievementPulse(activeProfileId, progress);
-    }
-    void preloadQuestCatalog();
-  } catch (err) {
-    trainingError.value = toError(err);
-    trainingDailyQuest.value = null;
-    recentAttempts.value = [];
-    trainingProgress.value = null;
-    mascotMessage.value = null;
-    achievementPulse.value = null;
-  } finally {
-    isTrainingLoading.value = false;
-  }
-}
-
-async function preloadQuestCatalog() {
-  if (!state.value.activeProfileId) {
-    return;
-  }
-  if (availableQuests.value.length > 0 || isQuestPickerLoading.value) {
-    return;
-  }
-  try {
-    availableQuests.value = await appStore.getQuestList();
-  } catch {
-    // non-blocking; quest picker still loads on demand
-  }
-}
-
-async function openQuestPicker() {
-  isQuestPickerOpen.value = true;
-  await nextTick();
-  questPickerSearchEl.value?.focus();
-  if (availableQuests.value.length > 0 || isQuestPickerLoading.value) {
-    return;
-  }
-  isQuestPickerLoading.value = true;
-  questPickerError.value = null;
-  try {
-    availableQuests.value = await appStore.getQuestList();
-  } catch (err) {
-    questPickerError.value = toError(err);
-  } finally {
-    isQuestPickerLoading.value = false;
-  }
-}
-
-async function focusQuestMapNode(node: QuestMapNode) {
-  await openQuestPicker();
-  if (!isQuestPickerOpen.value) {
-    return;
-  }
-  if (node.category && questCategories.value.includes(node.category)) {
-    questPickerCategory.value = node.category;
-  } else {
-    questPickerCategory.value = "all";
-  }
-  questPickerSort.value = "category";
-  questPickerSearch.value = "";
-}
-
 function closeQuestPicker() {
   isQuestPickerOpen.value = false;
 }
 
-function syncQuestPickerActive() {
-  if (!isQuestPickerOpen.value) {
-    questPickerActiveCode.value = null;
-    return;
-  }
-  const visible = pickerVisibleQuests.value;
-  if (visible.length === 0) {
-    questPickerActiveCode.value = null;
-    return;
-  }
-  if (questPickerActiveCode.value && visible.some((quest) => quest.code === questPickerActiveCode.value)) {
-    return;
-  }
-  const preferredCode = heroQuest.value?.code;
-  const preferred = preferredCode
-    ? visible.find((quest) => quest.code === preferredCode)
-    : null;
-  questPickerActiveCode.value = preferred?.code ?? visible[0]?.code ?? null;
-  scrollQuestPickerActiveIntoView();
-}
-
-function moveQuestPickerActive(delta: 1 | -1) {
-  const visible = pickerVisibleQuests.value;
-  if (visible.length === 0) {
-    return;
-  }
-  const currentIndex = questPickerActiveCode.value
-    ? visible.findIndex((quest) => quest.code === questPickerActiveCode.value)
-    : -1;
-  const nextIndex =
-    currentIndex < 0
-      ? 0
-      : (currentIndex + delta + visible.length) % visible.length;
-  questPickerActiveCode.value = visible[nextIndex]?.code ?? null;
-  scrollQuestPickerActiveIntoView();
-}
-
-function activateQuestPickerActive() {
-  const code = questPickerActiveCode.value;
-  if (!code) {
-    return;
-  }
-  const quest = pickerVisibleQuests.value.find((item) => item.code === code);
-  if (quest) {
-    selectHeroQuest(quest);
-  }
-}
-
-function scrollQuestPickerActiveIntoView() {
-  void nextTick(() => {
-    const code = questPickerActiveCode.value;
-    const listEl = questPickerListEl.value;
-    if (!code || !listEl) {
-      return;
-    }
-    const rows = Array.from(listEl.querySelectorAll<HTMLElement>("[data-quest-code]"));
-    const activeEl = rows.find((row) => row.dataset.questCode === code);
-    activeEl?.scrollIntoView({ block: "nearest" });
-  });
-}
-
-function onQuestPickerKeydown(event: KeyboardEvent) {
-  if (!isQuestPickerOpen.value) {
-    return;
-  }
-  if (event.key === "Escape") {
-    event.preventDefault();
-    closeQuestPicker();
-    return;
-  }
-  if (isQuestPickerLoading.value || Boolean(questPickerError.value) || pickerVisibleQuests.value.length === 0) {
-    return;
-  }
-  if (event.key === "ArrowDown") {
-    event.preventDefault();
-    moveQuestPickerActive(1);
-    return;
-  }
-  if (event.key === "ArrowUp") {
-    event.preventDefault();
-    moveQuestPickerActive(-1);
-    return;
-  }
-  if (event.key === "Enter") {
-    const target = event.target as HTMLElement | null;
-    if (target?.closest("[data-quest-row-action]")) {
-      return;
-    }
-    event.preventDefault();
-    activateQuestPickerActive();
-  }
-}
+const {
+  focusQuestMapNode,
+  loadTrainingData,
+  openQuestPicker,
+} = useHomeTrainingOrchestration({
+  refs: {
+    state,
+    locale,
+    showMascotCard,
+    questCategories,
+    trainingProjectId,
+    trainingDailyQuest,
+    selectedHeroQuest,
+    recentAttempts,
+    trainingProgress,
+    mascotMessage,
+    trainingError,
+    isTrainingLoading,
+    isQuestPickerOpen,
+    isQuestPickerLoading,
+    questPickerError,
+    questPickerSearch,
+    questPickerCategory,
+    questPickerSort,
+    availableQuests,
+    questPickerSearchEl,
+    achievementPulse,
+  },
+  t,
+  toError,
+});
 
 onMounted(async () => {
   await appStore.bootstrap();

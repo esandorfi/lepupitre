@@ -2,6 +2,7 @@
 import { computed, nextTick, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import AppButton from "@/components/ui/AppButton.vue";
+import AppPanel from "@/components/ui/AppPanel.vue";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import { useI18n } from "@/lib/i18n";
 import { useTheme } from "@/lib/theme";
@@ -45,7 +46,8 @@ const PANEL_POPOVER_CONTENT = {
 } as const;
 
 const PANEL_POPOVER_UI = {
-  content: "app-menu-panel z-40 w-[min(22rem,calc(100vw-2rem))] rounded-2xl border p-3 shadow-xl",
+  content:
+    "z-40 w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-3 text-[var(--color-text)] shadow-[var(--shadow-md)]",
 } as const;
 
 const profiles = computed(() => appStore.state.profiles);
@@ -646,7 +648,7 @@ watch(
 
       <p v-if="error" class="app-danger-text mt-2 text-xs">{{ error }}</p>
 
-      <div class="app-divider my-3"></div>
+      <USeparator class="my-3" />
       <div class="grid gap-2">
         <AppButton
           tone="secondary"
@@ -656,7 +658,7 @@ watch(
         >
           + {{ t("shell.workspaces_new") }}
         </AppButton>
-        <div v-if="createOpen" class="app-card rounded-xl border p-2">
+        <AppPanel v-if="createOpen" as="div" class="rounded-xl p-2" variant="compact">
           <UInput
             ref="createInputRef"
             v-model="createName"
@@ -686,7 +688,7 @@ watch(
               {{ t("profiles.create_action") }}
             </AppButton>
           </div>
-        </div>
+        </AppPanel>
       </div>
         </div>
       </template>
