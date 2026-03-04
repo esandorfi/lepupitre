@@ -1,4 +1,4 @@
-import { nextTick, type ComputedRef, type Ref } from "vue";
+import type { ComputedRef, Ref } from "vue";
 import { appStore } from "@/stores/app";
 import {
   readStoredHeroQuestCode,
@@ -38,7 +38,6 @@ type HomeOrchestrationStateRefs = {
   questPickerCategory: Ref<string>;
   questPickerSort: Ref<HomePickerSort>;
   availableQuests: Ref<Quest[]>;
-  questPickerSearchEl: Ref<HTMLInputElement | null>;
   achievementPulse: Ref<AchievementPulse | null>;
 };
 
@@ -69,7 +68,6 @@ export function useHomeTrainingOrchestration(options: HomeOrchestrationOptions) 
     questPickerCategory,
     questPickerSort,
     availableQuests,
-    questPickerSearchEl,
     achievementPulse,
   } = options.refs;
 
@@ -157,8 +155,6 @@ export function useHomeTrainingOrchestration(options: HomeOrchestrationOptions) 
 
   async function openQuestPicker() {
     isQuestPickerOpen.value = true;
-    await nextTick();
-    questPickerSearchEl.value?.focus();
     if (availableQuests.value.length > 0 || isQuestPickerLoading.value) {
       return;
     }
