@@ -1,4 +1,4 @@
-import { nextTick, ref, type ComputedRef, type Ref } from "vue";
+import { ref, type ComputedRef, type Ref } from "vue";
 
 type QuestPickerItem = {
   code: string;
@@ -12,7 +12,6 @@ type UseQuestPickerNavigationOptions<TItem extends QuestPickerItem> = {
   error: Ref<string | null>;
   visibleItems: ComputedRef<TItem[]>;
   preferredCode: ComputedRef<string | null>;
-  listElement: Ref<HTMLElement | null>;
   onClose: () => void;
   onSelect: (item: TItem) => void;
 };
@@ -21,19 +20,6 @@ export function useQuestPickerNavigation<TItem extends QuestPickerItem>(
   options: UseQuestPickerNavigationOptions<TItem>
 ) {
   const activeCode = ref<string | null>(null);
-
-  function scrollActiveIntoView() {
-    void nextTick(() => {
-      const code = activeCode.value;
-      const listEl = options.listElement.value;
-      if (!code || !listEl) {
-        return;
-      }
-      const rows = Array.from(listEl.querySelectorAll<HTMLElement>("[data-quest-code]"));
-      const activeEl = rows.find((row) => row.dataset.questCode === code);
-      activeEl?.scrollIntoView({ block: "nearest" });
-    });
-  }
 
   function syncActive() {
     if (!options.isOpen.value) {
@@ -52,7 +38,6 @@ export function useQuestPickerNavigation<TItem extends QuestPickerItem>(
       ? visible.find((item) => item.code === options.preferredCode.value)
       : null;
     activeCode.value = preferred?.code ?? visible[0]?.code ?? null;
-    scrollActiveIntoView();
   }
 
   function moveActive(delta: MoveDelta) {
@@ -68,7 +53,6 @@ export function useQuestPickerNavigation<TItem extends QuestPickerItem>(
         ? 0
         : (currentIndex + delta + visible.length) % visible.length;
     activeCode.value = visible[nextIndex]?.code ?? null;
-    scrollActiveIntoView();
   }
 
   function activateActive() {
@@ -123,7 +107,6 @@ export function useQuestPickerNavigation<TItem extends QuestPickerItem>(
     activeCode,
     moveActive,
     onKeydown,
-    scrollActiveIntoView,
     syncActive,
   };
 }

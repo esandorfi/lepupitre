@@ -4,6 +4,7 @@ import { RouterLink } from "vue-router";
 import AppBadge from "@/components/ui/AppBadge.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import AppPanel from "@/components/ui/AppPanel.vue";
+import HomeQuestPickerPanel from "../components/HomeQuestPickerPanel.vue";
 import { useI18n } from "@/lib/i18n";
 import {
   writeStoredHeroQuestCode,
@@ -59,8 +60,6 @@ const questPickerCategory = ref("all");
 const questPickerSort = ref<"recent" | "az" | "category">("recent");
 const trainingActivityTab = ref<"feedback" | "history">("feedback");
 const availableQuests = ref<Quest[]>([]);
-const questPickerSearchEl = ref<HTMLInputElement | null>(null);
-const questPickerListEl = ref<HTMLElement | null>(null);
 const achievementPulse = ref<AchievementPulse | null>(null);
 
 const feedbackAttempts = computed(() =>
@@ -325,7 +324,6 @@ const {
   error: questPickerError,
   visibleItems: pickerVisibleQuests,
   preferredCode: computed(() => heroQuest.value?.code ?? null),
-  listElement: questPickerListEl,
   onClose: closeQuestPicker,
   onSelect: selectHeroQuest,
 });
@@ -340,14 +338,6 @@ function questRoute(code: string) {
     return "/training";
   }
   return `/quest/${code}?projectId=${trainingProjectId.value}&from=training`;
-}
-
-function isSelectedHeroQuest(code: string) {
-  return heroQuest.value?.code === code;
-}
-
-function isQuestPickerActive(code: string) {
-  return questPickerActiveCode.value === code;
 }
 
 function selectHeroQuest(quest: Quest) {
@@ -394,7 +384,6 @@ const {
     questPickerCategory,
     questPickerSort,
     availableQuests,
-    questPickerSearchEl,
     achievementPulse,
   },
   t,
@@ -632,187 +621,31 @@ watch(
             </RouterLink>
           </div>
 
-          <div
-            v-if="isQuestPickerOpen"
-            class="mt-4 rounded-xl border border-[var(--app-border)] p-3"
+          <HomeQuestPickerPanel
+            :open="isQuestPickerOpen"
+            :is-loading="isQuestPickerLoading"
+            :error="questPickerError"
+            :search="questPickerSearch"
+            :category="questPickerCategory"
+            :sort="questPickerSort"
+            :categories="questCategories"
+            :has-filtered-quests="filteredQuests.length > 0"
+            :show-recent-section="showRecentQuestSection"
+            :recent-quests="recentPickerQuests"
+            :main-quests="pickerMainQuests"
+            :selected-quest-code="heroQuest?.code ?? null"
+            :active-quest-code="questPickerActiveCode"
+            :project-id="trainingProjectId"
+            :quest-code-label="questCodeLabel"
+            :output-label="outputLabel"
+            :estimated-minutes-label="estimatedMinutesLabel"
+            @update:search="questPickerSearch = $event"
+            @update:category="questPickerCategory = $event"
+            @update:sort="questPickerSort = $event"
+            @close="closeQuestPicker"
+            @select-quest="selectHeroQuest"
             @keydown="onQuestPickerKeydown"
-          >
-            <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <div class="app-text app-text-section-title">{{ t("training.quest_picker_title") }}</div>
-              <AppButton size="md" tone="ghost" @click="closeQuestPicker">
-                {{ t("training.close_picker") }}
-              </AppButton>
-            </div>
-
-            <div class="space-y-3">
-              <UInput
-                ref="questPickerSearchEl"
-                v-model="questPickerSearch"
-                class="w-full"
-                :placeholder="t('training.quest_search_placeholder')"
-              />
-
-              <div class="flex flex-wrap gap-2">
-                <AppButton
-                  v-for="category in questCategories"
-                  :key="category"
-                  size="sm"
-                  :tone="questPickerCategory === category ? 'secondary' : 'ghost'"
-                  @click="questPickerCategory = category"
-                >
-                  {{ category === "all" ? t("training.quest_category_all") : category }}
-                </AppButton>
-              </div>
-
-              <div class="flex flex-wrap gap-2">
-                <AppButton
-                  size="sm"
-                  :tone="questPickerSort === 'recent' ? 'secondary' : 'ghost'"
-                  @click="questPickerSort = 'recent'"
-                >
-                  {{ t("training.quest_sort_recent") }}
-                </AppButton>
-                <AppButton
-                  size="sm"
-                  :tone="questPickerSort === 'az' ? 'secondary' : 'ghost'"
-                  @click="questPickerSort = 'az'"
-                >
-                  {{ t("training.quest_sort_az") }}
-                </AppButton>
-                <AppButton
-                  size="sm"
-                  :tone="questPickerSort === 'category' ? 'secondary' : 'ghost'"
-                  @click="questPickerSort = 'category'"
-                >
-                  {{ t("training.quest_sort_category") }}
-                </AppButton>
-              </div>
-
-          <div v-if="isQuestPickerLoading" class="app-muted app-text-body">{{ t("talks.loading") }}</div>
-          <div v-else-if="questPickerError" class="app-danger-text app-text-meta">{{ questPickerError }}</div>
-          <div v-else-if="filteredQuests.length === 0" class="app-muted app-text-body">
-            {{ t("training.quest_picker_empty") }}
-          </div>
-          <div v-else ref="questPickerListEl" class="max-h-72 space-y-3 overflow-y-auto pr-1">
-            <div v-if="showRecentQuestSection" class="space-y-2">
-              <p class="app-text-eyebrow">
-                {{ t("training.quest_recent_title") }}
-              </p>
-              <div
-                v-for="quest in recentPickerQuests"
-                :key="`recent-${quest.code}`"
-                class="block w-full cursor-pointer rounded-xl border px-3 py-2 text-left transition"
-                :class="
-                  [
-                    isSelectedHeroQuest(quest.code)
-                      ? 'border-[var(--color-accent)] bg-[var(--color-surface-selected)]'
-                      : 'border-[var(--app-border)] hover:bg-[var(--color-surface-elevated)]',
-                    isQuestPickerActive(quest.code) ? 'outline outline-1 outline-[var(--color-accent)]' : '',
-                  ]
-                "
-                :data-quest-code="quest.code"
-                :aria-selected="isQuestPickerActive(quest.code)"
-                @click="selectHeroQuest(quest)"
-              >
-                <div class="flex flex-wrap items-start justify-between gap-2">
-                  <div class="min-w-0 flex-1">
-                    <div class="app-text text-sm font-semibold">{{ quest.title }}</div>
-                    <div class="app-muted mt-1 line-clamp-2 text-xs">{{ quest.prompt }}</div>
-                    <div class="mt-2 flex flex-wrap items-center gap-2 app-text-caption">
-                      <AppBadge tone="neutral">
-                        {{ questCodeLabel(quest.code) }}
-                      </AppBadge>
-                      <AppBadge tone="neutral">
-                        {{ outputLabel(quest.output_type) }}
-                      </AppBadge>
-                      <AppBadge tone="neutral">
-                        {{ estimatedMinutesLabel(quest.estimated_sec) }} {{ t("talks.minutes") }}
-                      </AppBadge>
-                    </div>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <RouterLink
-                      data-quest-row-action
-                      class="app-link app-text-meta underline"
-                      :to="questRoute(quest.code)"
-                      @click.stop="closeQuestPicker"
-                    >
-                      {{ t("training.quest_start_now") }}
-                    </RouterLink>
-                    <AppBadge
-                      v-if="isSelectedHeroQuest(quest.code)"
-                      tone="success"
-                    >
-                      {{ t("training.quest_selected") }}
-                    </AppBadge>
-                    <span class="app-subtle app-text-meta font-semibold">{{ quest.category }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div v-if="pickerMainQuests.length > 0" class="space-y-2">
-              <p
-                v-if="showRecentQuestSection"
-                class="app-text-eyebrow"
-              >
-                {{ t("training.quest_all_title") }}
-              </p>
-            <div
-              v-for="quest in pickerMainQuests"
-              :key="quest.code"
-              class="block w-full cursor-pointer rounded-xl border px-3 py-2 text-left transition"
-              :class="
-                [
-                  isSelectedHeroQuest(quest.code)
-                    ? 'border-[var(--color-accent)] bg-[var(--color-surface-selected)]'
-                    : 'border-[var(--app-border)] hover:bg-[var(--color-surface-elevated)]',
-                  isQuestPickerActive(quest.code) ? 'outline outline-1 outline-[var(--color-accent)]' : '',
-                ]
-              "
-              :data-quest-code="quest.code"
-              :aria-selected="isQuestPickerActive(quest.code)"
-              @click="selectHeroQuest(quest)"
-            >
-              <div class="flex flex-wrap items-start justify-between gap-2">
-                <div class="min-w-0 flex-1">
-                  <div class="app-text text-sm font-semibold">{{ quest.title }}</div>
-                  <div class="app-muted mt-1 line-clamp-2 text-xs">{{ quest.prompt }}</div>
-                  <div class="mt-2 flex flex-wrap items-center gap-2 app-text-caption">
-                    <AppBadge tone="neutral">
-                      {{ questCodeLabel(quest.code) }}
-                    </AppBadge>
-                    <AppBadge tone="neutral">
-                      {{ outputLabel(quest.output_type) }}
-                    </AppBadge>
-                    <AppBadge tone="neutral">
-                      {{ estimatedMinutesLabel(quest.estimated_sec) }} {{ t("talks.minutes") }}
-                    </AppBadge>
-                  </div>
-                </div>
-                <div class="flex items-center gap-2">
-                  <RouterLink
-                    data-quest-row-action
-                    class="app-link app-text-meta underline"
-                    :to="questRoute(quest.code)"
-                    @click.stop="closeQuestPicker"
-                  >
-                    {{ t("training.quest_start_now") }}
-                  </RouterLink>
-                  <AppBadge
-                    v-if="isSelectedHeroQuest(quest.code)"
-                    tone="success"
-                  >
-                    {{ t("training.quest_selected") }}
-                  </AppBadge>
-                  <span class="app-subtle app-text-meta font-semibold">{{ quest.category }}</span>
-                </div>
-              </div>
-            </div>
-            </div>
-          </div>
-        </div>
-          </div>
+          />
         </AppPanel>
       </div>
 

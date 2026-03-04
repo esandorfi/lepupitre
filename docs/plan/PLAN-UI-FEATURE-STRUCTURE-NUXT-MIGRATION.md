@@ -1,8 +1,8 @@
 # Plan: UI Feature Structure and Nuxt UI Migration
 
-Status: in_progress  
+Status: implemented  
 Owner: UI / Maintainers  
-Last updated: 2026-03-03
+Last updated: 2026-03-04
 
 ## Objective
 Restructure the desktop UI into feature-oriented directories and then migrate to a Nuxt UI single-component system with minimal wrappers.
@@ -42,7 +42,7 @@ Restructure the desktop UI into feature-oriented directories and then migrate to
 - [x] Split router into feature route modules
 - [x] Keep composed `routes.ts` as single export surface
 - [x] Preserve route names/paths
-- [ ] Extract Home page internals into `features/home/components` and `features/home/composables`
+- [x] Extract Home page internals into `features/home/components` and `features/home/composables`
 - [x] Validate all UI smoke paths after restructure
 
 ## Step B: Nuxt UI Single-System Migration
@@ -134,6 +134,8 @@ Restructure the desktop UI into feature-oriented directories and then migrate to
     - `HomePage` now consumes `useQuestPickerNavigation` for focus sync and key handling
     - moved training data orchestration (`loadTrainingData`, `preloadQuestCatalog`, `openQuestPicker`, `focusQuestMapNode`) into `features/home/composables/useHomeTrainingOrchestration.ts`
     - `HomePage` now consumes orchestration composable and keeps page-level watch/mount hooks as composition root
+    - moved quest picker UI block into `features/home/components/HomeQuestPickerPanel.vue`
+    - `HomePage` now consumes `HomeQuestPickerPanel` as a feature component and keeps only integration state/events
   - Remaining field-label normalization pass:
     - migrated recorder spoken punctuation row to `UFormField` in `RecorderAdvancedDrawer`
     - migrated recorder onboarding audience/goal/duration label groups to `UFormField` in `RecorderQuickCleanPanel`
@@ -148,3 +150,12 @@ Restructure the desktop UI into feature-oriented directories and then migrate to
     - `pnpm -C desktop ui:typecheck`
     - `pnpm -C desktop ui:lint`
     - `pnpm -C desktop ui:test`
+  - Plan completion checkpoint:
+    - Step A feature structure migration is complete (including Home internals split into `components` + `composables`)
+    - Step B Nuxt UI first migration is complete across pages and shared components in scope
+    - second-pass verification is clean and guard-rail checks are in place
+  - Post-completion hardening:
+    - added focused unit tests for Home composables:
+      - `features/home/composables/useQuestPickerNavigation.test.ts`
+      - `features/home/composables/useHomePresentation.test.ts`
+    - validation remains green after hardening (`ui:typecheck`, `ui:lint`, `ui:test`)
