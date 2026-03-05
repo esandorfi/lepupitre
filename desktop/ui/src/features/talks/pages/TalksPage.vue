@@ -7,12 +7,12 @@ import PageShell from "@/components/PageShell.vue";
 import SectionPanel from "@/components/SectionPanel.vue";
 import { useI18n } from "@/lib/i18n";
 import { useUiPreferences } from "@/lib/uiPreferences";
-import { appStore } from "@/stores/app";
+import { appState, coachStore, sessionStore, talksStore } from "@/stores/app";
 import type { MascotMessage, TalksBlueprint } from "@/schemas/ipc";
 
 const { t, locale } = useI18n();
 const { settings: uiSettings } = useUiPreferences();
-const state = computed(() => appStore.state);
+const state = computed(() => appState);
 const error = ref<string | null>(null);
 const isLoading = ref(false);
 const isBlueprintLoading = ref(false);
@@ -124,8 +124,8 @@ async function bootstrap() {
   isLoading.value = true;
   error.value = null;
   try {
-    await appStore.bootstrap();
-    await appStore.loadProjects();
+    await sessionStore.bootstrap();
+    await talksStore.loadProjects();
     await refreshTalksBlueprint();
     await refreshMascotMessage();
   } catch (err) {
@@ -142,7 +142,7 @@ async function refreshTalksBlueprint() {
   }
   isBlueprintLoading.value = true;
   try {
-    talksBlueprint.value = await appStore.getTalksBlueprint(
+    talksBlueprint.value = await coachStore.getTalksBlueprint(
       state.value.activeProject.id,
       locale.value
     );
@@ -159,7 +159,7 @@ async function refreshMascotMessage() {
     return;
   }
   try {
-    mascotMessage.value = await appStore.getMascotContextMessage({
+    mascotMessage.value = await coachStore.getMascotContextMessage({
       routeName: "talks",
       projectId: state.value.activeProject?.id ?? null,
       locale: locale.value,
@@ -173,7 +173,7 @@ async function setActive(projectId: string) {
   isSwitching.value = projectId;
   error.value = null;
   try {
-    await appStore.setActiveProject(projectId);
+    await talksStore.setActiveProject(projectId);
     await refreshTalksBlueprint();
     await refreshMascotMessage();
   } catch (err) {
@@ -338,7 +338,7 @@ watch(
             </div>
             <div class="app-subtle app-text-meta mt-1">
               {{ t("talks.duration") }}: {{ formatDuration(project.duration_target_sec) }}
-              {{ t("talks.minutes") }} ·
+              {{ t("talks.minutes") }} Â·
               {{ t("talks.last_activity") }}: {{ formatLastActivity(project.updated_at) }}
             </div>
           </template>

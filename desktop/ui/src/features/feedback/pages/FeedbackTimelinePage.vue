@@ -8,13 +8,20 @@ import SectionPanel from "@/components/SectionPanel.vue";
 import { readReviewedFeedbackIds } from "@/lib/feedbackReviewState";
 import { useI18n } from "@/lib/i18n";
 import { useUiPreferences } from "@/lib/uiPreferences";
-import { appStore } from "@/stores/app";
+import {
+  appState,
+  coachStore,
+  feedbackStore,
+  sessionStore,
+  talksStore,
+  trainingStore,
+} from "@/stores/app";
 import type { FeedbackTimelineItem, MascotMessage } from "@/schemas/ipc";
 
 const { t, locale } = useI18n();
 const route = useRoute();
 const { settings: uiSettings } = useUiPreferences();
-const state = computed(() => appStore.state);
+const state = computed(() => appState);
 const entries = ref<FeedbackTimelineItem[]>([]);
 const isLoading = ref(false);
 const error = ref<string | null>(null);
@@ -162,7 +169,7 @@ function feedbackContextLabel(item: FeedbackTimelineItem) {
     return t("feedback.run_label");
   }
   if (item.quest_code) {
-    return appStore.formatQuestCode(item.project_id, item.quest_code);
+    return trainingStore.formatQuestCode(item.project_id, item.quest_code);
   }
   return t("feedback.quest_code");
 }
@@ -207,7 +214,7 @@ async function refreshMascotMessage(expectedSeq?: number) {
     return;
   }
   try {
-    const message = await appStore.getMascotContextMessage({
+    const message = await coachStore.getMascotContextMessage({
       routeName: "feedback",
       projectId: scope.value === "talk" ? activeProjectId.value : null,
       locale: locale.value,
@@ -236,7 +243,7 @@ async function loadTimeline() {
   isLoading.value = true;
   error.value = null;
   try {
-    const timeline = await appStore.getFeedbackTimeline(
+    const timeline = await feedbackStore.getFeedbackTimeline(
       scope.value === "talk" ? activeProjectId.value : null,
       48
     );
@@ -262,8 +269,8 @@ async function loadTimeline() {
 }
 
 onMounted(async () => {
-  await appStore.bootstrap();
-  await appStore.loadProjects();
+  await sessionStore.bootstrap();
+  await talksStore.loadProjects();
   if (focusedFeedbackId.value) {
     applyFocusedContextFilters();
     scope.value = "workspace";

@@ -9,7 +9,7 @@ import {
   canSubmitQuestText,
   questAnalysisHintKey,
 } from "@/lib/questFlow";
-import { appStore } from "@/stores/app";
+import { appState, feedbackStore, sessionStore, trainingStore } from "@/stores/app";
 import type { Quest } from "@/schemas/ipc";
 
 const { t } = useI18n();
@@ -18,7 +18,7 @@ const router = useRouter();
 
 const questCode = computed(() => String(route.params.questCode || ""));
 const routeProjectId = computed(() => String(route.query.projectId || ""));
-const contextProjectId = computed(() => routeProjectId.value || appStore.state.activeProject?.id || "");
+const contextProjectId = computed(() => routeProjectId.value || appState.activeProject?.id || "");
 const backLink = computed(() => {
   if (route.query.from === "training") {
     return "/training";
@@ -26,8 +26,8 @@ const backLink = computed(() => {
   if (route.query.projectId) {
     return `/talks/${route.query.projectId}/train`;
   }
-  if (appStore.state.activeProject?.id) {
-    return `/talks/${appStore.state.activeProject.id}/train`;
+  if (appState.activeProject?.id) {
+    return `/talks/${appState.activeProject.id}/train`;
   }
   return "/training";
 });
@@ -37,8 +37,8 @@ const displayQuestCode = computed(() => {
     return t("quest.daily");
   }
   const projectId =
-    String(route.query.projectId || "") || appStore.state.activeProject?.id || "";
-  return appStore.formatQuestCode(projectId, code);
+    String(route.query.projectId || "") || appState.activeProject?.id || "";
+  return trainingStore.formatQuestCode(projectId, code);
 });
 const text = ref("");
 const error = ref<string | null>(null);
@@ -99,7 +99,7 @@ function toError(err: unknown) {
 }
 
 async function bootstrap() {
-  await appStore.bootstrap();
+  await sessionStore.bootstrap();
 }
 
 async function loadQuest() {
@@ -120,15 +120,15 @@ async function loadQuest() {
   isLoading.value = true;
   try {
     await bootstrap();
-    if (!appStore.state.activeProfileId || !contextProjectId.value) {
+    if (!appState.activeProfileId || !contextProjectId.value) {
       error.value = t("home.quest_empty");
       return;
     }
 
-    if (appStore.state.dailyQuest?.quest.code === code) {
-      quest.value = appStore.state.dailyQuest.quest;
+    if (appState.dailyQuest?.quest.code === code) {
+      quest.value = appState.dailyQuest.quest;
     } else {
-      quest.value = await appStore.getQuestByCode(code);
+      quest.value = await trainingStore.getQuestByCode(code);
     }
   } catch (err) {
     error.value = toError(err);
@@ -149,7 +149,7 @@ async function submit() {
   isSubmitting.value = true;
   error.value = null;
   try {
-    const attempt = await appStore.submitQuestTextForProject(
+    const attempt = await trainingStore.submitQuestTextForProject(
       contextProjectId.value,
       quest.value.code,
       text.value.trim()
@@ -171,7 +171,7 @@ async function handleAudioSaved(payload: { artifactId: string }) {
   transcriptId.value = null;
   audioArtifactId.value = payload.artifactId;
   try {
-    const attempt = await appStore.submitQuestAudioForProject(contextProjectId.value, {
+    const attempt = await trainingStore.submitQuestAudioForProject(contextProjectId.value, {
       questCode: quest.value.code,
       audioArtifactId: payload.artifactId,
       transcriptId: null,
@@ -189,7 +189,7 @@ async function handleTranscribed(payload: { transcriptId: string }) {
   error.value = null;
   transcriptId.value = payload.transcriptId;
   try {
-    const attempt = await appStore.submitQuestAudioForProject(contextProjectId.value, {
+    const attempt = await trainingStore.submitQuestAudioForProject(contextProjectId.value, {
       questCode: quest.value.code,
       audioArtifactId: audioArtifactId.value,
       transcriptId: payload.transcriptId,
@@ -212,7 +212,7 @@ async function requestFeedback() {
   isAnalyzing.value = true;
   error.value = null;
   try {
-    const feedbackId = await appStore.analyzeAttempt(attemptId.value);
+    const feedbackId = await feedbackStore.analyzeAttempt(attemptId.value);
     await router.push(`/feedback?focus=${feedbackId}&source=quest`);
   } catch (err) {
     error.value = toError(err);

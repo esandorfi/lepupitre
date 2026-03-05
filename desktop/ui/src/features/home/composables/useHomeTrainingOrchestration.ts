@@ -1,5 +1,5 @@
 import type { ComputedRef, Ref } from "vue";
-import { appStore } from "@/stores/app";
+import { coachStore, trainingStore } from "@/stores/app";
 import {
   readStoredHeroQuestCode,
   writeStoredHeroQuestCode,
@@ -79,7 +79,7 @@ export function useHomeTrainingOrchestration(options: HomeOrchestrationOptions) 
       return;
     }
     try {
-      availableQuests.value = await appStore.getQuestList();
+      availableQuests.value = await trainingStore.getQuestList();
     } catch {
       // non-blocking; quest picker still loads on demand
     }
@@ -98,9 +98,9 @@ export function useHomeTrainingOrchestration(options: HomeOrchestrationOptions) 
     isTrainingLoading.value = true;
     trainingError.value = null;
     try {
-      const projectId = await appStore.ensureTrainingProject();
+      const projectId = await trainingStore.ensureTrainingProject();
       trainingProjectId.value = projectId;
-      trainingDailyQuest.value = await appStore.getDailyQuestForProject(projectId);
+      trainingDailyQuest.value = await trainingStore.getDailyQuestForProject(projectId);
       if (
         selectedHeroQuest.value &&
         selectedHeroQuest.value.code === trainingDailyQuest.value.quest.code
@@ -113,7 +113,7 @@ export function useHomeTrainingOrchestration(options: HomeOrchestrationOptions) 
         if (storedQuestCode && storedQuestCode !== trainingDailyQuest.value.quest.code) {
           if (selectedHeroQuest.value?.code !== storedQuestCode) {
             try {
-              selectedHeroQuest.value = await appStore.getQuestByCode(storedQuestCode);
+              selectedHeroQuest.value = await trainingStore.getQuestByCode(storedQuestCode);
             } catch {
               writeStoredHeroQuestCode(activeProfileId, null);
               selectedHeroQuest.value = null;
@@ -124,10 +124,10 @@ export function useHomeTrainingOrchestration(options: HomeOrchestrationOptions) 
         }
       }
       const [attempts, progress, mascot] = await Promise.all([
-        appStore.getQuestAttempts(projectId, 6),
-        appStore.getProgressSnapshot(projectId),
+        trainingStore.getQuestAttempts(projectId, 6),
+        coachStore.getProgressSnapshot(projectId),
         showMascotCard.value
-          ? appStore.getMascotContextMessage({
+          ? coachStore.getMascotContextMessage({
               routeName: "training",
               projectId,
               locale: locale.value,
@@ -161,7 +161,7 @@ export function useHomeTrainingOrchestration(options: HomeOrchestrationOptions) 
     isQuestPickerLoading.value = true;
     questPickerError.value = null;
     try {
-      availableQuests.value = await appStore.getQuestList();
+      availableQuests.value = await trainingStore.getQuestList();
     } catch (err) {
       questPickerError.value = options.toError(err);
     } finally {

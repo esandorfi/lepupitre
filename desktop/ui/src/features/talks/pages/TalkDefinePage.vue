@@ -3,7 +3,7 @@ import { computed, onMounted, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import TalkStepPageShell from "@/components/TalkStepPageShell.vue";
 import { useI18n } from "@/lib/i18n";
-import { appStore } from "@/stores/app";
+import { appState, sessionStore, talksStore } from "@/stores/app";
 
 const { t } = useI18n();
 const route = useRoute();
@@ -22,9 +22,9 @@ const form = reactive({
 });
 
 const projectId = computed(() => String(route.params.projectId || ""));
-const activeProfileId = computed(() => appStore.state.activeProfileId);
+const activeProfileId = computed(() => appState.activeProfileId);
 const project = computed(() =>
-  appStore.state.projects.find((item) => item.id === projectId.value) ?? null
+  appState.projects.find((item) => item.id === projectId.value) ?? null
 );
 const stageOptions = computed(() => [
   { value: "draft", label: t("talk_steps.define") },
@@ -189,7 +189,7 @@ async function persistDefine(stageOverride?: string) {
   }
   saveState.value = "saving";
   try {
-    await appStore.updateProject(project.value.id, payload);
+    await talksStore.updateProject(project.value.id, payload);
     saveState.value = "saved";
     return true;
   } catch (err) {
@@ -225,8 +225,8 @@ async function bootstrap() {
   isLoading.value = true;
   error.value = null;
   try {
-    await appStore.bootstrap();
-    await appStore.loadProjects();
+    await sessionStore.bootstrap();
+    await talksStore.loadProjects();
   } catch (err) {
     error.value = toError(err);
   } finally {
