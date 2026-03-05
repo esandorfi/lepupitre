@@ -4,7 +4,7 @@ import {
   normalizeWaveformPeaks,
   resolveWaveformStyle,
   type WaveformStyle,
-} from "../../lib/waveform";
+} from "@/lib/waveform";
 
 const props = defineProps<{
   peaks: number[];

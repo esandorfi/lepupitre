@@ -1,4 +1,4 @@
-import { invokeChecked } from "../../composables/useIpc";
+import { invokeChecked } from "@/composables/useIpc";
 import {
   AnalyzeResponseSchema,
   IdSchema,
@@ -13,7 +13,7 @@ import {
   RunSummaryListSchema,
   RunSummaryNullableSchema,
   VoidResponseSchema,
-} from "../../schemas/ipc";
+} from "@/schemas/ipc";
 
 export async function createRun(profileId: string, projectId: string) {
   return invokeChecked("run_create", RunCreatePayloadSchema, IdSchema, {

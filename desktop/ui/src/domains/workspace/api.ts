@@ -1,4 +1,4 @@
-import { invokeChecked } from "../../composables/useIpc";
+import { invokeChecked } from "@/composables/useIpc";
 import {
   EmptyPayloadSchema,
   IdSchema,
@@ -7,7 +7,7 @@ import {
   ProfileListResponseSchema,
   ProfileRenamePayloadSchema,
   VoidResponseSchema,
-} from "../../schemas/ipc";
+} from "@/schemas/ipc";
 
 export async function listProfiles() {
   return invokeChecked("profile_list", EmptyPayloadSchema, ProfileListResponseSchema, {});

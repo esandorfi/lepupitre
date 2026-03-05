@@ -1,4 +1,4 @@
-import { invokeChecked } from "../../composables/useIpc";
+import { invokeChecked } from "@/composables/useIpc";
 import {
   ExportResult,
   ExportResultSchema,
@@ -13,7 +13,7 @@ import {
   PeerReviewListPayloadSchema,
   PeerReviewSummary,
   PeerReviewSummarySchema,
-} from "../../schemas/ipc";
+} from "@/schemas/ipc";
 
 export async function exportPack(profileId: string, runId: string): Promise<ExportResult> {
   return invokeChecked("pack_export", PackExportPayloadSchema, ExportResultSchema, {

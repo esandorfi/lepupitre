@@ -3,7 +3,14 @@ import { computed, onMounted, ref } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 import TalkStepPageShell from "@/components/TalkStepPageShell.vue";
 import { useI18n } from "@/lib/i18n";
-import { appStore } from "@/stores/app";
+import {
+  appState,
+  packStore,
+  runStore,
+  sessionStore,
+  talksStore,
+  trainingStore,
+} from "@/stores/app";
 import type {
   PeerReviewSummary,
   QuestAttemptSummary,
@@ -24,9 +31,9 @@ const peerReviews = ref<PeerReviewSummary[]>([]);
 const isActivating = ref(false);
 
 const project = computed(() =>
-  appStore.state.projects.find((item) => item.id === projectId.value) ?? null
+  appState.projects.find((item) => item.id === projectId.value) ?? null
 );
-const isActive = computed(() => appStore.state.activeProject?.id === projectId.value);
+const isActive = computed(() => appState.activeProject?.id === projectId.value);
 const talkNumber = computed(() => project.value?.talk_number ?? null);
 
 function toError(err: unknown) {
@@ -82,7 +89,7 @@ function outputLabel(outputType: string) {
 }
 
 function questCodeLabel(code: string) {
-  return appStore.formatQuestCode(projectId.value, code);
+  return trainingStore.formatQuestCode(projectId.value, code);
 }
 
 const timeline = computed(() => {
@@ -155,15 +162,15 @@ async function loadData() {
   error.value = null;
   isLoading.value = true;
   try {
-    await appStore.bootstrap();
-    await appStore.loadProjects();
+    await sessionStore.bootstrap();
+    await talksStore.loadProjects();
     if (!projectId.value) {
       throw new Error("project_missing");
     }
-    report.value = await appStore.getQuestReport(projectId.value);
-    attempts.value = await appStore.getQuestAttempts(projectId.value, 12);
-    runs.value = await appStore.getRuns(projectId.value, 12);
-    peerReviews.value = await appStore.getPeerReviews(projectId.value, 12);
+    report.value = await trainingStore.getQuestReport(projectId.value);
+    attempts.value = await trainingStore.getQuestAttempts(projectId.value, 12);
+    runs.value = await runStore.getRuns(projectId.value, 12);
+    peerReviews.value = await packStore.getPeerReviews(projectId.value, 12);
   } catch (err) {
     error.value = toError(err);
   } finally {
@@ -178,7 +185,7 @@ async function setActive() {
   isActivating.value = true;
   error.value = null;
   try {
-    await appStore.setActiveProject(projectId.value);
+    await talksStore.setActiveProject(projectId.value);
   } catch (err) {
     error.value = toError(err);
   } finally {
@@ -191,7 +198,7 @@ async function markTrainStage() {
     return;
   }
   try {
-    await appStore.ensureProjectStageAtLeast(projectId.value, "train");
+    await talksStore.ensureProjectStageAtLeast(projectId.value, "train");
   } catch {
     // non-blocking UI progression hint
   }
