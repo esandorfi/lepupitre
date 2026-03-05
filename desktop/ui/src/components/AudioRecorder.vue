@@ -44,7 +44,7 @@ import {
   buildRecordingStartPayload,
   buildTranscribeAudioPayload,
 } from "../lib/asrPayloads";
-import { appStore } from "../stores/app";
+import { appState } from "../stores/app";
 import {
   audioRevealWav,
   audioTrimWav,
@@ -129,7 +129,7 @@ const emit = defineEmits<{
   ): void;
 }>();
 
-const activeProfileId = computed(() => appStore.state.activeProfileId);
+const activeProfileId = computed(() => appState.activeProfileId);
 const phase = ref<"capture" | "quick_clean" | "analyze_export">("capture");
 const isRecording = ref(false);
 const isPaused = ref(false);

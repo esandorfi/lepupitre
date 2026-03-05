@@ -10,7 +10,7 @@ import {
   getWorkspaceToolbarColor,
   getWorkspaceToolbarColorPreview,
 } from "@/lib/workspaceToolbarColor";
-import { appStore } from "@/stores/app";
+import { appState, talksStore, trainingStore, workspaceStore } from "@/stores/app";
 
 const { t } = useI18n();
 const router = useRouter();
@@ -48,8 +48,8 @@ const PANEL_POPOVER_UI = {
     "z-40 w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-3 text-[var(--color-text)] shadow-[var(--shadow-md)]",
 } as const;
 
-const profiles = computed(() => appStore.state.profiles);
-const activeProfileId = computed(() => appStore.state.activeProfileId);
+const profiles = computed(() => appState.profiles);
+const activeProfileId = computed(() => appState.activeProfileId);
 const activeProfile = computed(
   () => profiles.value.find((profile) => profile.id === activeProfileId.value) ?? null
 );
@@ -102,7 +102,7 @@ const currentLabel = computed(() => {
   if (activeProfile.value) {
     return activeProfile.value.name;
   }
-  if (appStore.state.isBootstrapping) {
+  if (appState.isBootstrapping) {
     return t("shell.workspaces_loading");
   }
   return t("shell.workspaces_none");
@@ -183,6 +183,28 @@ function toWorkspaceError(err: unknown) {
   return message;
 }
 
+async function refreshProfileContext() {
+  await talksStore.loadActiveProject();
+  await talksStore.loadProjects();
+  await trainingStore.loadDailyQuest();
+}
+
+async function createProfileWithContext(name: string) {
+  const id = await workspaceStore.createProfile(name);
+  await refreshProfileContext();
+  return id;
+}
+
+async function switchProfileWithContext(profileId: string) {
+  await workspaceStore.switchProfile(profileId);
+  await refreshProfileContext();
+}
+
+async function deleteProfileWithContext(profileId: string) {
+  await workspaceStore.deleteProfile(profileId);
+  await refreshProfileContext();
+}
+
 function closePanel() {
   if (editingId.value) {
     void confirmRename(editingId.value);
@@ -247,7 +269,7 @@ async function createProfileInline() {
   isCreating.value = true;
   error.value = null;
   try {
-    await appStore.createProfile(trimmed);
+    await createProfileWithContext(trimmed);
     createName.value = "";
     createOpen.value = false;
     await router.push("/");
@@ -266,7 +288,7 @@ async function selectProfile(profileId: string) {
   switchingId.value = profileId;
   error.value = null;
   try {
-    await appStore.switchProfile(profileId);
+    await switchProfileWithContext(profileId);
     await router.push("/");
     closePanel();
   } catch (err) {
@@ -314,7 +336,7 @@ async function confirmRename(profileId: string) {
   isRenaming.value = true;
   error.value = null;
   try {
-    await appStore.renameProfile(profileId, nextName);
+    await workspaceStore.renameProfile(profileId, nextName);
   } catch (err) {
     error.value = toWorkspaceError(err);
   } finally {
@@ -385,7 +407,7 @@ async function confirmDelete() {
   deletingId.value = target.id;
   error.value = null;
   try {
-    await appStore.deleteProfile(target.id);
+    await deleteProfileWithContext(target.id);
     deleteTarget.value = null;
     editingId.value = null;
     await router.push("/");
