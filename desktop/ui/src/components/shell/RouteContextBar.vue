@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ContextBreadcrumb } from "../../lib/navigation";
+import type { ContextBreadcrumb } from "@/lib/navigation";
 
 defineProps<{
   items: ContextBreadcrumb[];

@@ -1,4 +1,4 @@
-import { invokeChecked } from "../../composables/useIpc";
+import { invokeChecked } from "@/composables/useIpc";
 import {
   AsrModelDownloadPayloadSchema,
   AsrModelDownloadResultSchema,
@@ -18,7 +18,7 @@ import {
   TranscribeAudioPayloadSchema,
   TranscribeResponseSchema,
   VoidResponseSchema,
-} from "../../schemas/ipc";
+} from "@/schemas/ipc";
 
 export async function asrSidecarStatus() {
   return invokeChecked("asr_sidecar_status", EmptyPayloadSchema, AsrSidecarStatusResponseSchema, {});

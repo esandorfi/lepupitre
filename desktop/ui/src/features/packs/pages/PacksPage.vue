@@ -5,10 +5,10 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { DragDropEvent } from "@tauri-apps/api/window";
 import type { UnlistenFn } from "@tauri-apps/api/event";
-import { useI18n } from "../../../lib/i18n";
-import { hasTauriRuntime } from "../../../lib/runtime";
-import { appStore } from "../../../stores/app";
-import type { PackInspectResponse } from "../../../schemas/ipc";
+import { useI18n } from "@/lib/i18n";
+import { hasTauriRuntime } from "@/lib/runtime";
+import { appState, packStore, sessionStore } from "@/stores/app";
+import type { PackInspectResponse } from "@/schemas/ipc";
 
 const { t } = useI18n();
 const error = ref<string | null>(null);
@@ -21,7 +21,7 @@ const isPicking = ref(false);
 const isDragging = ref(false);
 let unlistenDragDrop: UnlistenFn | null = null;
 
-const activeProfileId = computed(() => appStore.state.activeProfileId);
+const activeProfileId = computed(() => appState.activeProfileId);
 
 function toError(err: unknown) {
   return err instanceof Error ? err.message : String(err);
@@ -46,7 +46,7 @@ async function inspectPack(path: string) {
   importDetails.value = null;
   error.value = null;
   try {
-    importDetails.value = await appStore.inspectPack(path);
+    importDetails.value = await packStore.inspectPack(path);
   } catch (err) {
     error.value = toError(err);
   } finally {
@@ -90,7 +90,7 @@ async function importReview() {
   error.value = null;
   importResult.value = null;
   try {
-    const result = await appStore.importPeerReview(importPath.value.trim());
+    const result = await packStore.importPeerReview(importPath.value.trim());
     importStatus.value = "success";
     importResult.value = {
       projectId: result.projectId,
@@ -130,7 +130,7 @@ function onDragDrop(event: DragDropEvent) {
 
 onMounted(async () => {
   try {
-    await appStore.bootstrap();
+    await sessionStore.bootstrap();
   } catch (err) {
     error.value = toError(err);
   }

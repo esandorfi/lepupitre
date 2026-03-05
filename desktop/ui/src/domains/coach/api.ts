@@ -1,4 +1,4 @@
-import { invokeChecked } from "../../composables/useIpc";
+import { invokeChecked } from "@/composables/useIpc";
 import {
   MascotMessage,
   MascotMessagePayloadSchema,
@@ -9,7 +9,7 @@ import {
   TalksBlueprint,
   TalksBlueprintPayloadSchema,
   TalksBlueprintSchema,
-} from "../../schemas/ipc";
+} from "@/schemas/ipc";
 
 export async function getProgressSnapshot(
   profileId: string,

@@ -1,4 +1,4 @@
-import { invokeChecked } from "../../composables/useIpc";
+import { invokeChecked } from "@/composables/useIpc";
 import {
   AudioRevealWavPayloadSchema,
   AudioTrimPayloadSchema,
@@ -15,7 +15,7 @@ import {
   RecordingStopResponseSchema,
   RecordingTelemetryBudgetResponseSchema,
   VoidResponseSchema,
-} from "../../schemas/ipc";
+} from "@/schemas/ipc";
 
 export async function recordingStart(payload: {
   profileId: string;

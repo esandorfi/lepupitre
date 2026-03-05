@@ -1,4 +1,4 @@
-import { invokeChecked } from "../../composables/useIpc";
+import { invokeChecked } from "@/composables/useIpc";
 import {
   AnalyzeAttemptPayloadSchema,
   AnalyzeResponseSchema,
@@ -15,7 +15,7 @@ import {
   FeedbackV1,
   FeedbackV1Schema,
   VoidResponseSchema,
-} from "../../schemas/ipc";
+} from "@/schemas/ipc";
 
 export async function analyzeAttempt(profileId: string, attemptId: string) {
   return invokeChecked("analyze_attempt", AnalyzeAttemptPayloadSchema, AnalyzeResponseSchema, {

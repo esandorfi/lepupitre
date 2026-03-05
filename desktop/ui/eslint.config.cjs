@@ -39,6 +39,14 @@ module.exports = [
         },
       ],
       complexity: ["warn", 18],
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "ImportDeclaration[source.value=/^\\.\\.\\/\\.\\.\\//]",
+          message:
+            "Avoid relative imports deeper than one level (../../ or more). Use the @/ alias.",
+        },
+      ],
     },
   },
   {
