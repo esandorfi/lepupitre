@@ -9,16 +9,16 @@ import { createTalksStore } from "./talks.store";
 import { createTrainingStore } from "./training.store";
 import { createWorkspaceStore } from "./workspace.store";
 
-const workspaceStore = createWorkspaceStore(state);
-const talksStore = createTalksStore(state);
-const trainingStore = createTrainingStore(state, {
+export const workspaceStore = createWorkspaceStore(state);
+export const talksStore = createTalksStore(state);
+export const trainingStore = createTrainingStore(state, {
   ensureTrainingProject: talksStore.ensureTrainingProject,
   getTalkNumber: talksStore.getTalkNumber,
 });
-const feedbackStore = createFeedbackStore(state);
-const runStore = createRunStore(state);
-const packStore = createPackStore(state);
-const coachStore = createCoachStore(state);
+export const feedbackStore = createFeedbackStore(state);
+export const runStore = createRunStore(state);
+export const packStore = createPackStore(state);
+export const coachStore = createCoachStore(state);
 
 async function refreshProfileContext() {
   await talksStore.loadActiveProject();
@@ -62,13 +62,15 @@ async function setActiveProject(projectId: string) {
   await trainingStore.loadDailyQuest();
 }
 
-const sessionStore = createSessionStore(state, {
+export const sessionStore = createSessionStore(state, {
   loadProfiles: workspaceStore.loadProfiles,
   loadActiveProject: talksStore.loadActiveProject,
   loadProjects: talksStore.loadProjects,
   loadDailyQuest: trainingStore.loadDailyQuest,
   hydratePreferenceContext: workspaceStore.hydratePreferenceContext,
 });
+
+export const appState = state;
 
 export const appStore = {
   state,

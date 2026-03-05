@@ -5,10 +5,10 @@ import EntityRow from "@/components/EntityRow.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import PageShell from "@/components/PageShell.vue";
 import SectionPanel from "@/components/SectionPanel.vue";
-import { useI18n } from "../../../lib/i18n";
-import { useUiPreferences } from "../../../lib/uiPreferences";
-import { appStore } from "../../../stores/app";
-import type { MascotMessage, TalksBlueprint } from "../../../schemas/ipc";
+import { useI18n } from "@/lib/i18n";
+import { useUiPreferences } from "@/lib/uiPreferences";
+import { appStore } from "@/stores/app";
+import type { MascotMessage, TalksBlueprint } from "@/schemas/ipc";
 
 const { t, locale } = useI18n();
 const { settings: uiSettings } = useUiPreferences();

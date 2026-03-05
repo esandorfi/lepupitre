@@ -1,4 +1,4 @@
-import { invokeChecked } from "../../composables/useIpc";
+import { invokeChecked } from "@/composables/useIpc";
 import {
   ExportOutlinePayloadSchema,
   ExportResult,
@@ -18,7 +18,7 @@ import {
   ProjectUpdatePayload,
   ProjectUpdateRequestSchema,
   VoidResponseSchema,
-} from "../../schemas/ipc";
+} from "@/schemas/ipc";
 
 export async function listProjects(profileId: string): Promise<ProjectListItem[]> {
   return invokeChecked("project_list", ProfileIdPayloadSchema, ProjectListResponseSchema, {

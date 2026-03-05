@@ -1,4 +1,4 @@
-import { invokeChecked } from "../../composables/useIpc";
+import { invokeChecked } from "@/composables/useIpc";
 import {
   IdSchema,
   Quest,
@@ -17,7 +17,7 @@ import {
   QuestReportResponseSchema,
   QuestSubmitAudioPayloadSchema,
   QuestSubmitTextPayloadSchema,
-} from "../../schemas/ipc";
+} from "@/schemas/ipc";
 
 export async function getDailyQuest(
   profileId: string,

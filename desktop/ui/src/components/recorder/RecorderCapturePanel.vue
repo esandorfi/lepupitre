@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import RecorderWaveform from "./RecorderWaveform.vue";
-import type { WaveformStyle } from "../../lib/waveform";
+import type { WaveformStyle } from "@/lib/waveform";
 
 const props = defineProps<{
   primaryLabel: string;

@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from "vue";
 import { useRoute, RouterLink } from "vue-router";
 import { useI18n } from "@/lib/i18n";
-import { appStore } from "@/stores/app";
+import { packStore, sessionStore } from "@/stores/app";
 import type { PeerReviewDetail } from "@/schemas/ipc";
 
 const { t } = useI18n();
@@ -73,8 +73,8 @@ onMounted(async () => {
   isLoading.value = true;
   error.value = null;
   try {
-    await appStore.bootstrap();
-    reviewDetail.value = await appStore.getPeerReview(peerReviewId.value);
+    await sessionStore.bootstrap();
+    reviewDetail.value = await packStore.getPeerReview(peerReviewId.value);
   } catch (err) {
     error.value = toError(err);
   } finally {
