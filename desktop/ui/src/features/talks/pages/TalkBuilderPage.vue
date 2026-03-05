@@ -4,7 +4,7 @@ import { useRoute, RouterLink } from "vue-router";
 import TalkStepPageShell from "@/components/TalkStepPageShell.vue";
 import { audioRevealWav } from "@/domains/recorder/api";
 import { useI18n } from "@/lib/i18n";
-import { appStore } from "@/stores/app";
+import { appState, coachStore, sessionStore, talksStore } from "@/stores/app";
 import type { TalksBlueprint } from "@/schemas/ipc";
 
 const { t } = useI18n();
@@ -21,7 +21,7 @@ const isRevealing = ref(false);
 const blueprint = ref<TalksBlueprint | null>(null);
 const isApplyingTemplate = ref(false);
 
-const activeProfileId = computed(() => appStore.state.activeProfileId);
+const activeProfileId = computed(() => appState.activeProfileId);
 const selectedProjectId = computed(() => {
   const paramId = String(route.params.projectId || "");
   if (paramId) {
@@ -31,7 +31,7 @@ const selectedProjectId = computed(() => {
   if (queryId) {
     return queryId;
   }
-  return appStore.state.activeProject?.id ?? "";
+  return appState.activeProject?.id ?? "";
 });
 const selectedProject = computed(() => {
   const projectId = selectedProjectId.value;
@@ -39,8 +39,8 @@ const selectedProject = computed(() => {
     return null;
   }
   return (
-    appStore.state.projects.find((project) => project.id === projectId) ??
-    appStore.state.activeProject ??
+    appState.projects.find((project) => project.id === projectId) ??
+    appState.activeProject ??
     null
   );
 });
@@ -48,8 +48,8 @@ const talkLabel = computed(() => {
   if (!selectedProject.value) {
     return "";
   }
-  const number = appStore.getTalkNumber(selectedProject.value.id);
-  const prefix = number ? `T${number} · ` : "";
+  const number = talksStore.getTalkNumber(selectedProject.value.id);
+  const prefix = number ? `T${number} Â· ` : "";
   return `${prefix}${selectedProject.value.title}`;
 });
 
@@ -62,7 +62,7 @@ async function markBuilderStage() {
     return;
   }
   try {
-    await appStore.ensureProjectStageAtLeast(selectedProjectId.value, "builder");
+    await talksStore.ensureProjectStageAtLeast(selectedProjectId.value, "builder");
   } catch {
     // keep save/export non-blocking
   }
@@ -75,15 +75,15 @@ async function loadOutline() {
   blueprint.value = null;
   isLoading.value = true;
   try {
-    await appStore.bootstrap();
-    await appStore.loadProjects();
+    await sessionStore.bootstrap();
+    await talksStore.loadProjects();
     const projectId = selectedProjectId.value;
     if (!projectId || !activeProfileId.value) {
       return;
     }
-    const doc = await appStore.getOutline(projectId);
+    const doc = await talksStore.getOutline(projectId);
     outline.value = doc.markdown;
-    blueprint.value = await appStore.getTalksBlueprint(projectId);
+    blueprint.value = await coachStore.getTalksBlueprint(projectId);
     saveStatus.value = "idle";
   } catch (err) {
     error.value = toError(err);
@@ -173,7 +173,7 @@ async function saveOutline() {
   saveStatus.value = "saving";
   error.value = null;
   try {
-    await appStore.saveOutline(selectedProjectId.value, outline.value);
+    await talksStore.saveOutline(selectedProjectId.value, outline.value);
     await markBuilderStage();
     saveStatus.value = "saved";
     setTimeout(() => {
@@ -196,7 +196,7 @@ async function exportOutline() {
   error.value = null;
   try {
     await markBuilderStage();
-    const result = await appStore.exportOutline(selectedProjectId.value);
+    const result = await talksStore.exportOutline(selectedProjectId.value);
     exportPath.value = result.path;
   } catch (err) {
     error.value = toError(err);

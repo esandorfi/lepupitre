@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "@/lib/i18n";
-import { appStore } from "@/stores/app";
+import { appState, sessionStore, talksStore } from "@/stores/app";
 
 const { t } = useI18n();
 const title = ref("");
@@ -12,8 +12,8 @@ const duration = ref("");
 const error = ref<string | null>(null);
 const isSaving = ref(false);
 
-const activeProfileId = computed(() => appStore.state.activeProfileId);
-const activeProject = computed(() => appStore.state.activeProject);
+const activeProfileId = computed(() => appState.activeProfileId);
+const activeProject = computed(() => appState.activeProject);
 
 const router = useRouter();
 
@@ -23,7 +23,7 @@ function toError(err: unknown) {
 
 async function bootstrap() {
   try {
-    await appStore.bootstrap();
+    await sessionStore.bootstrap();
   } catch (err) {
     error.value = toError(err);
   }
@@ -37,7 +37,7 @@ async function saveProject() {
   isSaving.value = true;
   error.value = null;
   try {
-    await appStore.createProject({
+    await talksStore.createProject({
       title: title.value.trim(),
       audience: audience.value.trim() || null,
       goal: goal.value.trim() || null,

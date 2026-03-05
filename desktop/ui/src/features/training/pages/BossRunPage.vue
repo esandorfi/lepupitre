@@ -3,7 +3,7 @@ import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter, RouterLink } from "vue-router";
 import AudioRecorder from "@/components/AudioRecorder.vue";
 import { useI18n } from "@/lib/i18n";
-import { appStore } from "@/stores/app";
+import { appState, runStore, sessionStore, talksStore } from "@/stores/app";
 import type { RunSummary } from "@/schemas/ipc";
 
 const { t } = useI18n();
@@ -18,14 +18,14 @@ const run = ref<RunSummary | null>(null);
 const pendingTranscriptId = ref<string | null>(null);
 const requestedRunId = computed(() => String(route.query.runId || ""));
 
-const activeProfileId = computed(() => appStore.state.activeProfileId);
-const activeProject = computed(() => appStore.state.activeProject);
+const activeProfileId = computed(() => appState.activeProfileId);
+const activeProject = computed(() => appState.activeProject);
 const talkLabel = computed(() => {
   if (!activeProject.value) {
     return "";
   }
-  const number = appStore.getTalkNumber(activeProject.value.id);
-  const prefix = number ? `T${number} · ` : "";
+  const number = talksStore.getTalkNumber(activeProject.value.id);
+  const prefix = number ? `T${number} - ` : "";
   return `${prefix}${activeProject.value.title}`;
 });
 
@@ -69,12 +69,12 @@ async function loadLatest() {
   error.value = null;
   try {
     if (requestedRunId.value) {
-      run.value = await appStore.getRun(requestedRunId.value);
+      run.value = await runStore.getRun(requestedRunId.value);
       if (!run.value) {
-        run.value = await appStore.getLatestRun(activeProject.value.id);
+        run.value = await runStore.getLatestRun(activeProject.value.id);
       }
     } else {
-      run.value = await appStore.getLatestRun(activeProject.value.id);
+      run.value = await runStore.getLatestRun(activeProject.value.id);
     }
   } catch (err) {
     error.value = toError(err);
@@ -92,13 +92,13 @@ async function handleAudioSaved(payload: { artifactId: string }) {
   isSaving.value = true;
   error.value = null;
   try {
-    const runId = await appStore.createRun(activeProject.value.id);
-    await appStore.finishRun(runId, payload.artifactId);
+    const runId = await runStore.createRun(activeProject.value.id);
+    await runStore.finishRun(runId, payload.artifactId);
     if (pendingTranscriptId.value) {
-      await appStore.setRunTranscript(runId, pendingTranscriptId.value);
+      await runStore.setRunTranscript(runId, pendingTranscriptId.value);
       pendingTranscriptId.value = null;
     }
-    run.value = await appStore.getLatestRun(activeProject.value.id);
+    run.value = await runStore.getLatestRun(activeProject.value.id);
   } catch (err) {
     error.value = toError(err);
   } finally {
@@ -117,8 +117,8 @@ async function handleTranscribed(payload: { transcriptId: string }) {
   }
   error.value = null;
   try {
-    await appStore.setRunTranscript(run.value.id, payload.transcriptId);
-    run.value = await appStore.getLatestRun(activeProject.value.id);
+    await runStore.setRunTranscript(run.value.id, payload.transcriptId);
+    run.value = await runStore.getLatestRun(activeProject.value.id);
   } catch (err) {
     error.value = toError(err);
   }
@@ -132,7 +132,7 @@ async function requestFeedback() {
   isAnalyzing.value = true;
   error.value = null;
   try {
-    const feedbackId = await appStore.analyzeRun(run.value.id);
+    const feedbackId = await runStore.analyzeRun(run.value.id);
     await router.push(`/feedback?focus=${feedbackId}&source=boss-run`);
   } catch (err) {
     error.value = toError(err);
@@ -154,7 +154,7 @@ function handleViewFeedback() {
 }
 
 onMounted(async () => {
-  await appStore.bootstrap();
+  await sessionStore.bootstrap();
   await loadLatest();
 });
 

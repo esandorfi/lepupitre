@@ -5,7 +5,13 @@ import { resolveFeedbackBackLink, resolveFeedbackContextLabel } from "@/lib/feed
 import { useI18n } from "@/lib/i18n";
 import { useUiPreferences } from "@/lib/uiPreferences";
 import { isFeedbackReviewed, markFeedbackReviewed } from "@/lib/feedbackReviewState";
-import { appStore } from "@/stores/app";
+import {
+  appState,
+  coachStore,
+  feedbackStore,
+  sessionStore,
+  trainingStore,
+} from "@/stores/app";
 import type { FeedbackContext, FeedbackV1, MascotMessage } from "@/schemas/ipc";
 
 const { t, locale } = useI18n();
@@ -27,7 +33,7 @@ const mascotBody = computed(() =>
   uiSettings.value.mascotIntensity === "minimal" ? "" : mascotMessage.value?.body ?? ""
 );
 const isReviewed = computed(() => {
-  const profileId = appStore.state.activeProfileId;
+  const profileId = appState.activeProfileId;
   if (!profileId || !feedbackId.value) {
     return false;
   }
@@ -44,15 +50,15 @@ const recommendedQuestLinks = computed(() => {
   }
   return recommendedQuestCodes.value.map((code) => ({
     code,
-    label: appStore.formatQuestCode(projectId, code),
+    label: trainingStore.formatQuestCode(projectId, code),
     to: `/quest/${code}?projectId=${projectId}&from=talk`,
   }));
 });
 const backLink = computed(() => {
-  return resolveFeedbackBackLink(context.value, appStore.state.activeProject?.id ?? null);
+  return resolveFeedbackBackLink(context.value, appState.activeProject?.id ?? null);
 });
 const contextLabel = computed(() => {
-  return resolveFeedbackContextLabel(context.value, appStore.formatQuestCode, t("feedback.run_label"));
+  return resolveFeedbackContextLabel(context.value, trainingStore.formatQuestCode, t("feedback.run_label"));
 });
 
 function toError(err: unknown) {
@@ -70,12 +76,12 @@ function mascotToneClass(kind: string | null | undefined) {
 }
 
 async function refreshMascotMessage() {
-  if (!showMascotCard.value || !appStore.state.activeProfileId) {
+  if (!showMascotCard.value || !appState.activeProfileId) {
     mascotMessage.value = null;
     return;
   }
   try {
-    mascotMessage.value = await appStore.getMascotContextMessage({
+    mascotMessage.value = await coachStore.getMascotContextMessage({
       routeName: "feedback",
       projectId: context.value?.project_id ?? null,
       locale: locale.value,
@@ -90,7 +96,7 @@ async function loadNote() {
     return;
   }
   try {
-    const existing = await appStore.getFeedbackNote(feedbackId.value);
+    const existing = await feedbackStore.getFeedbackNote(feedbackId.value);
     note.value = existing ?? "";
     lastSavedNote.value = note.value;
   } catch {
@@ -107,7 +113,7 @@ async function saveNote() {
   }
   noteStatus.value = "saving";
   try {
-    await appStore.setFeedbackNote(feedbackId.value, note.value);
+    await feedbackStore.setFeedbackNote(feedbackId.value, note.value);
     lastSavedNote.value = note.value;
     noteStatus.value = "saved";
     setTimeout(() => {
@@ -125,13 +131,13 @@ onMounted(async () => {
   isLoading.value = true;
   error.value = null;
   try {
-    await appStore.bootstrap();
-    feedback.value = await appStore.getFeedback(feedbackId.value);
-    context.value = await appStore.getFeedbackContext(feedbackId.value);
-    if (appStore.state.activeProfileId && feedbackId.value) {
-      const alreadyReviewed = isFeedbackReviewed(appStore.state.activeProfileId, feedbackId.value);
+    await sessionStore.bootstrap();
+    feedback.value = await feedbackStore.getFeedback(feedbackId.value);
+    context.value = await feedbackStore.getFeedbackContext(feedbackId.value);
+    if (appState.activeProfileId && feedbackId.value) {
+      const alreadyReviewed = isFeedbackReviewed(appState.activeProfileId, feedbackId.value);
       if (!alreadyReviewed) {
-        markFeedbackReviewed(appStore.state.activeProfileId, feedbackId.value);
+        markFeedbackReviewed(appState.activeProfileId, feedbackId.value);
         reviewMarked.value = true;
       } else {
         reviewMarked.value = false;
