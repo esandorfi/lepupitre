@@ -21,6 +21,41 @@ module.exports = [
       ...vue.configs["vue3-recommended"].rules,
       ...tsPlugin.configs.recommended.rules,
       "vue/multi-word-component-names": "off",
+      "max-lines": [
+        "warn",
+        {
+          max: 500,
+          skipBlankLines: true,
+          skipComments: true,
+        },
+      ],
+      "max-lines-per-function": [
+        "warn",
+        {
+          max: 150,
+          skipBlankLines: true,
+          skipComments: true,
+          IIFEs: true,
+        },
+      ],
+      complexity: ["warn", 18],
+    },
+  },
+  {
+    files: ["src/features/**/pages/**/*.vue"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["@/composables/useIpc", "../composables/useIpc", "**/composables/useIpc"],
+              message:
+                "Do not invoke IPC directly from feature pages. Use domain APIs and store/composable controllers.",
+            },
+          ],
+        },
+      ],
     },
   },
   {
