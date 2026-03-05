@@ -2,6 +2,13 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-shell";
+import {
+  asrModelDownload,
+  asrModelRemove,
+  asrModelsList,
+  asrModelVerify,
+  asrSidecarStatus,
+} from "../../../domains/asr/api";
 import { useI18n } from "../../../lib/i18n";
 import { classifyAsrError } from "../../../lib/asrErrors";
 import { useNavMetrics } from "../../../lib/navMetrics";
@@ -14,19 +21,9 @@ import type {
 } from "../../../lib/uiPreferences";
 import { useUiPreferences } from "../../../lib/uiPreferences";
 import { hasTauriRuntime } from "../../../lib/runtime";
-import { invokeChecked } from "../../../composables/useIpc";
 import {
-  AsrModelDownloadPayloadSchema,
   AsrModelDownloadProgressEventSchema,
-  AsrModelDownloadResultSchema,
-  AsrModelRemovePayloadSchema,
-  AsrModelVerifyPayloadSchema,
-  AsrModelVerifyResultSchema,
   AsrModelStatus,
-  AsrModelsListSchema,
-  AsrSidecarStatusResponseSchema,
-  EmptyPayloadSchema,
-  VoidResponseSchema,
 } from "../../../schemas/ipc";
 
 const { t } = useI18n();
@@ -322,7 +319,7 @@ function formatBytes(value?: number | null) {
 
 async function refreshSidecarStatus() {
   try {
-    await invokeChecked("asr_sidecar_status", EmptyPayloadSchema, AsrSidecarStatusResponseSchema, {});
+    await asrSidecarStatus();
     sidecarStatus.value = "ready";
     sidecarMessage.value = null;
   } catch (err) {
@@ -375,7 +372,7 @@ async function refreshModels() {
   isLoadingModels.value = true;
   downloadError.value = null;
   try {
-    models.value = await invokeChecked("asr_models_list", EmptyPayloadSchema, AsrModelsListSchema, {});
+    models.value = await asrModelsList();
   } catch (err) {
     downloadError.value = err instanceof Error ? err.message : String(err);
   } finally {
@@ -390,12 +387,7 @@ async function removeModel(modelId: string) {
   }
   downloadError.value = null;
   try {
-    await invokeChecked(
-      "asr_model_remove",
-      AsrModelRemovePayloadSchema,
-      VoidResponseSchema,
-      { modelId }
-    );
+    await asrModelRemove(modelId);
     await refreshModels();
     await refreshSidecarStatus();
   } catch (err) {
@@ -410,12 +402,7 @@ async function verifyModel(modelId: string) {
   verifyingModelId.value = modelId;
   downloadError.value = null;
   try {
-    await invokeChecked(
-      "asr_model_verify",
-      AsrModelVerifyPayloadSchema,
-      AsrModelVerifyResultSchema,
-      { modelId }
-    );
+    await asrModelVerify(modelId);
     await refreshModels();
     await refreshSidecarStatus();
   } catch (err) {
@@ -434,12 +421,7 @@ async function downloadModel(modelId: string) {
   downloadProgress.value = { ...downloadProgress.value, [modelId]: { downloadedBytes: 0, totalBytes: 0 } };
 
   try {
-    await invokeChecked(
-      "asr_model_download",
-      AsrModelDownloadPayloadSchema,
-      AsrModelDownloadResultSchema,
-      { modelId }
-    );
+    await asrModelDownload(modelId);
     await refreshModels();
     await refreshSidecarStatus();
   } catch (err) {

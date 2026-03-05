@@ -1,5 +1,9 @@
 import { invokeChecked } from "../../composables/useIpc";
 import {
+  AsrModelDownloadPayloadSchema,
+  AsrModelDownloadResultSchema,
+  AsrModelRemovePayloadSchema,
+  AsrModelsListSchema,
   AsrModelVerifyPayloadSchema,
   AsrModelVerifyResultSchema,
   AsrSidecarStatusResponseSchema,
@@ -13,6 +17,7 @@ import {
   TranscriptV1Schema,
   TranscribeAudioPayloadSchema,
   TranscribeResponseSchema,
+  VoidResponseSchema,
 } from "../../schemas/ipc";
 
 export async function asrSidecarStatus() {
@@ -23,6 +28,25 @@ export async function asrModelVerify(modelId: string) {
   return invokeChecked("asr_model_verify", AsrModelVerifyPayloadSchema, AsrModelVerifyResultSchema, {
     modelId,
   });
+}
+
+export async function asrModelsList() {
+  return invokeChecked("asr_models_list", EmptyPayloadSchema, AsrModelsListSchema, {});
+}
+
+export async function asrModelRemove(modelId: string) {
+  await invokeChecked("asr_model_remove", AsrModelRemovePayloadSchema, VoidResponseSchema, {
+    modelId,
+  });
+}
+
+export async function asrModelDownload(modelId: string) {
+  return invokeChecked(
+    "asr_model_download",
+    AsrModelDownloadPayloadSchema,
+    AsrModelDownloadResultSchema,
+    { modelId }
+  );
 }
 
 export async function transcribeAudio(payload: {
