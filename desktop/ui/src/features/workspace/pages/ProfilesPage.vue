@@ -5,7 +5,7 @@ import { useRoute, useRouter } from "vue-router";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import { useI18n } from "@/lib/i18n";
 import type { ProfileSummary } from "@/schemas/ipc";
-import { appStore } from "@/stores/app";
+import { appState, sessionStore, workspaceStore } from "@/stores/app";
 
 const { t } = useI18n();
 const router = useRouter();
@@ -61,8 +61,8 @@ const setRenameInput =
     renameInputs.set(profileId, el as InputRefTarget);
   };
 
-const profiles = computed(() => appStore.state.profiles);
-const activeProfileId = computed(() => appStore.state.activeProfileId);
+const profiles = computed(() => appState.profiles);
+const activeProfileId = computed(() => appState.activeProfileId);
 const deleteDialogTitle = computed(() => {
   if (!deleteTarget.value) {
     return "";
@@ -115,7 +115,7 @@ function initialsFor(nameValue: string) {
 }
 
 function hasDuplicateName(nextName: string, exceptId?: string) {
-  return appStore.state.profiles.some(
+  return appState.profiles.some(
     (profile) =>
       profile.id !== exceptId && profile.name.trim().toLowerCase() === nextName.trim().toLowerCase()
   );
@@ -143,7 +143,7 @@ async function createProfile() {
   isSaving.value = true;
   error.value = null;
   try {
-    await appStore.createProfile(trimmed);
+    await workspaceStore.createProfile(trimmed);
     name.value = "";
     await router.push("/");
   } catch (err) {
@@ -160,7 +160,7 @@ async function switchProfile(profileId: string) {
   }
   error.value = null;
   try {
-    await appStore.switchProfile(profileId);
+    await workspaceStore.switchProfile(profileId);
     await router.push("/");
   } catch (err) {
     const message = toError(err);
@@ -200,7 +200,7 @@ async function confirmRename(profileId: string) {
   isRenaming.value = true;
   error.value = null;
   try {
-    await appStore.renameProfile(profileId, nextName);
+    await workspaceStore.renameProfile(profileId, nextName);
     cancelRename();
   } catch (err) {
     error.value = toError(err);
@@ -241,7 +241,7 @@ async function confirmDelete() {
   deletingId.value = target.id;
   error.value = null;
   try {
-    await appStore.deleteProfile(target.id);
+    await workspaceStore.deleteProfile(target.id);
     deleteTarget.value = null;
     if (route.name === "profiles") {
       await router.push("/");
@@ -270,7 +270,7 @@ watch(
 
 onMounted(async () => {
   try {
-    await appStore.ensureBootstrapped();
+    await sessionStore.ensureBootstrapped();
   } catch (err) {
     error.value = toError(err);
   }

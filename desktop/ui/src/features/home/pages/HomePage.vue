@@ -7,7 +7,7 @@ import {
   writeStoredHeroQuestCode,
 } from "@/lib/trainingPreferences";
 import { useUiPreferences } from "@/lib/uiPreferences";
-import { appStore } from "@/stores/app";
+import { appState, coachStore, sessionStore, trainingStore } from "@/stores/app";
 import type { AchievementPulse } from "../composables/useAchievementPulse";
 import {
   useHomePresentation,
@@ -40,7 +40,7 @@ const {
   toError,
 } = useHomePresentation(t);
 const { settings: uiSettings } = useUiPreferences();
-const state = computed(() => appStore.state);
+const state = computed(() => appState);
 const trainingProjectId = ref<string | null>(null);
 const trainingDailyQuest = ref<QuestDaily | null>(null);
 const selectedHeroQuest = ref<Quest | null>(null);
@@ -327,7 +327,7 @@ const {
 
 function questCodeLabel(code: string) {
   const projectId = trainingProjectId.value ?? "";
-  return appStore.formatQuestCode(projectId, code);
+  return trainingStore.formatQuestCode(projectId, code);
 }
 
 function questRoute(code: string) {
@@ -388,7 +388,7 @@ const {
 });
 
 onMounted(async () => {
-  await appStore.bootstrap();
+  await sessionStore.bootstrap();
   await loadTrainingData();
 });
 
@@ -422,7 +422,7 @@ watch(
       return;
     }
     try {
-      mascotMessage.value = await appStore.getMascotContextMessage({
+      mascotMessage.value = await coachStore.getMascotContextMessage({
         routeName: "training",
         projectId: trainingProjectId.value,
         locale: locale.value,
@@ -444,7 +444,7 @@ watch(
       return;
     }
     try {
-      mascotMessage.value = await appStore.getMascotContextMessage({
+      mascotMessage.value = await coachStore.getMascotContextMessage({
         routeName: "training",
         projectId: trainingProjectId.value,
         locale: locale.value,
@@ -792,14 +792,14 @@ watch(
             color="neutral" :variant="trainingActivityTab === 'feedback' ? 'outline' : 'ghost'"
             @click="trainingActivityTab = 'feedback'"
           >
-            {{ t("training.feedback_title") }} · {{ feedbackAttempts.length }}
+            {{ t("training.feedback_title") }} Â· {{ feedbackAttempts.length }}
           </UButton>
           <UButton
             size="sm"
             color="neutral" :variant="trainingActivityTab === 'history' ? 'outline' : 'ghost'"
             @click="trainingActivityTab = 'history'"
           >
-            {{ t("training.history_title") }} · {{ recentAttempts.length }}
+            {{ t("training.history_title") }} Â· {{ recentAttempts.length }}
           </UButton>
         </div>
       </div>
@@ -820,7 +820,7 @@ watch(
               <div>
                 <div class="app-text text-sm">{{ attempt.quest_title }}</div>
                 <div class="app-muted app-text-meta">
-                  {{ formatDate(attempt.created_at) }} · {{ outputLabel(attempt.output_type) }} ·
+                  {{ formatDate(attempt.created_at) }} Â· {{ outputLabel(attempt.output_type) }} Â·
                   {{ questCodeLabel(attempt.quest_code) }}
                 </div>
               </div>
@@ -854,7 +854,7 @@ watch(
             <div>
               <div class="app-text text-sm">{{ attempt.quest_title }}</div>
               <div class="app-muted app-text-meta">
-                {{ formatDate(attempt.created_at) }} · {{ attemptStatus(attempt) }} ·
+                {{ formatDate(attempt.created_at) }} Â· {{ attemptStatus(attempt) }} Â·
                 {{ questCodeLabel(attempt.quest_code) }}
               </div>
             </div>

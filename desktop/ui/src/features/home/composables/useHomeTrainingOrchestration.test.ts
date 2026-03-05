@@ -10,17 +10,22 @@ import type {
 import { useHomeTrainingOrchestration } from "./useHomeTrainingOrchestration";
 
 const mockAppStore = vi.hoisted(() => ({
+  // training
   ensureTrainingProject: vi.fn(),
   getDailyQuestForProject: vi.fn(),
   getQuestByCode: vi.fn(),
   getQuestAttempts: vi.fn(),
-  getProgressSnapshot: vi.fn(),
-  getMascotContextMessage: vi.fn(),
   getQuestList: vi.fn(),
 }));
 
+const mockCoachStore = vi.hoisted(() => ({
+  getProgressSnapshot: vi.fn(),
+  getMascotContextMessage: vi.fn(),
+}));
+
 vi.mock("@/stores/app", () => ({
-  appStore: mockAppStore,
+  trainingStore: mockAppStore,
+  coachStore: mockCoachStore,
 }));
 
 vi.mock("@/lib/trainingPreferences", () => ({
