@@ -14,7 +14,7 @@ import { flushNavIntent, markSidebarSession, recordNavIntent } from "../lib/navM
 import { resolveHelpTopicForRoute } from "../lib/helpTopics";
 import { useI18n } from "../lib/i18n";
 import { useUiPreferences } from "../lib/uiPreferences";
-import { appStore } from "../stores/app";
+import { appState, sessionStore, talksStore, trainingStore } from "../stores/app";
 
 const { t } = useI18n();
 const route = useRoute();
@@ -27,11 +27,11 @@ const shellContext = computed(() => ({
   routeName: typeof route.name === "string" ? route.name : null,
   routeParams: route.params as Record<string, unknown>,
   routeQuery: route.query as Record<string, unknown>,
-  projects: appStore.state.projects,
-  activeProject: appStore.state.activeProject,
-  lastFeedbackContext: appStore.state.lastFeedbackContext,
-  getTalkNumber: appStore.getTalkNumber,
-  formatQuestCode: appStore.formatQuestCode,
+  projects: appState.projects,
+  activeProject: appState.activeProject,
+  lastFeedbackContext: appState.lastFeedbackContext,
+  getTalkNumber: talksStore.getTalkNumber,
+  formatQuestCode: trainingStore.formatQuestCode,
 }));
 
 const primaryNavItems = computed(() => resolvePrimaryNavItems(shellContext.value, t));
@@ -106,7 +106,7 @@ watch(
 );
 
 onMounted(() => {
-  appStore.ensureBootstrapped().catch((err) => {
+  sessionStore.ensureBootstrapped().catch((err) => {
     console.error("app bootstrap failed", err);
   });
   window.addEventListener("resize", onResize);
