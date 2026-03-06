@@ -1,22 +1,15 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, ref } from "vue";
 import { convertFileSrc } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
-import { open } from "@tauri-apps/plugin-shell";
 import { RouterLink } from "vue-router";
 import RecorderAdvancedDrawer from "./recorder/RecorderAdvancedDrawer.vue";
 import RecorderCapturePanel from "./recorder/RecorderCapturePanel.vue";
 import RecorderExportPanel from "./recorder/RecorderExportPanel.vue";
 import RecorderQuickCleanPanel from "./recorder/RecorderQuickCleanPanel.vue";
-import { classifyAsrError } from "../lib/asrErrors";
 import { useI18n } from "../lib/i18n";
-import { hasTauriRuntime } from "../lib/runtime";
-import { recordRecorderHealthEvent } from "../lib/recorderHealthMetrics";
 import { useUiPreferences } from "../lib/uiPreferences";
 import {
   createRecorderQualityHintStabilizer,
-  normalizeRecorderQualityHint,
-  updateRecorderQualityHint,
 } from "../lib/recorderQualityHint";
 import {
   normalizeRecorderQualityHintKey,
@@ -27,55 +20,57 @@ import {
   resolveRecorderMediaActions,
 } from "../lib/recorderSession";
 import {
-  estimateTelemetryPayloadBytes,
   evaluateRecorderTelemetryBudget,
 } from "../lib/recorderTelemetryBudget";
 import {
-  isTypingTargetElement,
-  recorderStopTransitionPlan,
   resolveRecorderTranscribeReadiness,
-  resolveRecorderShortcutAction,
   resolveActiveTranscriptIdForAnalysis,
   resolveReviewState,
   resolveReviewCta,
 } from "../lib/recorderFlow";
 import { useTranscriptionSettings } from "../lib/transcriptionSettings";
-import {
-  buildRecordingStartPayload,
-  buildTranscribeAudioPayload,
-} from "../lib/asrPayloads";
 import { appState } from "../stores/app";
 import {
-  audioRevealWav,
-  audioTrimWav,
-  listRecordingInputDevices,
-  recordingPause,
-  recordingResume,
-  recordingStart,
-  recordingStatus,
-  recordingStop,
-  recordingTelemetryBudget,
-} from "../domains/recorder/api";
-import {
-  asrModelVerify,
-  asrSidecarStatus,
-  transcriptEditSave,
-  transcriptExport,
-  transcriptGet,
-  transcribeAudio,
-} from "../domains/asr/api";
-import {
-  AsrCommitEventSchema,
-  AsrFinalProgressEventSchema,
-  AsrFinalResultEventSchema,
-  AsrPartialEventSchema,
   type RecordingInputDevice,
   type RecordingTelemetryBudget,
-  RecordingTelemetryEventSchema,
   TranscriptExportFormat,
   TranscriptSegment,
   TranscriptV1,
 } from "../schemas/ipc";
+import {
+  applyTrim as applyTrimRuntime,
+  formatDuration,
+  levelPercent,
+  pauseRecording as pauseRecordingRuntime,
+  refreshInputDevices as refreshInputDevicesRuntime,
+  refreshStatus as refreshStatusRuntime,
+  refreshTelemetryBudget as refreshTelemetryBudgetRuntime,
+  refreshTranscribeReadiness as refreshTranscribeReadinessRuntime,
+  resumeRecording as resumeRecordingRuntime,
+  startRecording as startRecordingRuntime,
+  stopRecording as stopRecordingRuntime,
+} from "@/components/recorder/composables/audioRecorderCaptureRuntime";
+import {
+  autoCleanFillers as autoCleanFillersRuntime,
+  backToQuickClean as backToQuickCleanRuntime,
+  exportPreset as exportPresetRuntime,
+  exportTranscript as exportTranscriptRuntime,
+  fixPunctuation as fixPunctuationRuntime,
+  goAnalyzeExport as goAnalyzeExportRuntime,
+  handleCapturePrimaryAction as handleCapturePrimaryActionRuntime,
+  handleOnboardingContext as handleOnboardingContextRuntime,
+  handleShortcut as handleShortcutRuntime,
+  handleViewFeedback as handleViewFeedbackRuntime,
+  openExportPath as openExportPathRuntime,
+  requestAnalyze as requestAnalyzeRuntime,
+  revealRecording as revealRecordingRuntime,
+  saveEditedTranscript as saveEditedTranscriptRuntime,
+  transcribeRecording as transcribeRecordingRuntime,
+} from "@/components/recorder/composables/audioRecorderReviewRuntime";
+import {
+  bindAudioRecorderMountedHooks,
+  bindAudioRecorderWatches,
+} from "@/components/recorder/composables/useAudioRecorderLifecycle";
 
 type AudioStatusKey =
   | "audio.status_idle"
@@ -83,7 +78,6 @@ type AudioStatusKey =
   | "audio.status_recording"
   | "audio.status_encoding";
 
-const AUTO_TRANSCRIBE_ON_STOP = true;
 const STATUS_POLLING_INTERVAL_MS = 350;
 const MAX_LIVE_SEGMENTS_PREVIEW = 48;
 const DEFERRED_BACKGROUND_CHECK_MS = 1200;
@@ -181,32 +175,6 @@ const isAutoStoppingNoSignal = ref(false);
 let statusTimer: number | null = null;
 let telemetryFallbackTimer: number | null = null;
 let deferredBackgroundCheckTimer: number | null = null;
-let unlistenProgress: (() => void) | null = null;
-let unlistenCompleted: (() => void) | null = null;
-let unlistenFailed: (() => void) | null = null;
-let unlistenAsrPartial: (() => void) | null = null;
-let unlistenAsrCommit: (() => void) | null = null;
-let unlistenAsrFinalProgress: (() => void) | null = null;
-let unlistenAsrFinalResult: (() => void) | null = null;
-let unlistenRecordingTelemetry: (() => void) | null = null;
-
-type JobProgressEvent = {
-  jobId: string;
-  stage: string;
-  pct: number;
-  message?: string;
-};
-
-type JobCompletedEvent = {
-  jobId: string;
-  resultId: string;
-};
-
-type JobFailedEvent = {
-  jobId: string;
-  errorCode: string;
-  message: string;
-};
 
 const activeTranscriptIdForAnalysis = computed(
   () => resolveActiveTranscriptIdForAnalysis(baseTranscriptId.value, editedTranscriptId.value)
@@ -393,49 +361,6 @@ function setError(message: string, code: string | null = null) {
   errorCode.value = code;
 }
 
-function mapStageToLabel(stage: string | null, message?: string | null) {
-  if (message) {
-    switch (message) {
-      case "queued":
-        return t("audio.stage_queued");
-      case "analyze_audio":
-        return t("audio.stage_analyze");
-      case "serialize":
-        return t("audio.stage_serialize");
-      case "done":
-        return t("audio.stage_done");
-      default:
-        break;
-    }
-  }
-  if (!stage) {
-    return null;
-  }
-  if (stage === "transcribe") {
-    return t("audio.stage_transcribe");
-  }
-  return t("audio.stage_processing");
-}
-
-function resetLiveTranscript() {
-  liveSegments.value = [];
-  livePartial.value = null;
-}
-
-function resetQualityHintState() {
-  qualityHintStabilizer.value = createRecorderQualityHintStabilizer("good_level");
-  qualityHintKey.value = "good_level";
-}
-
-function applyQualityHint(rawHint: string | null | undefined) {
-  const normalized = normalizeRecorderQualityHint(rawHint);
-  qualityHintKey.value = updateRecorderQualityHint(
-    qualityHintStabilizer.value,
-    normalized,
-    Date.now()
-  );
-}
-
 function updateNoSignalAutoStop() {
   if (!isRecording.value || isPaused.value || statusKey.value !== "audio.status_recording") {
     noSignalSinceMs.value = null;
@@ -481,45 +406,6 @@ function resetTranscriptionState() {
   editedTranscriptId.value = null;
   transcriptDraftText.value = "";
   exportPath.value = null;
-}
-
-function formatDuration(value: number | null) {
-  if (value === null || Number.isNaN(value)) {
-    return "0:00";
-  }
-  const totalSeconds = Math.max(0, Math.floor(value));
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-}
-
-function levelPercent(value: number) {
-  return Math.max(0, Math.min(1, value)) * 100;
-}
-
-function transcriptToEditorText(value: TranscriptV1): string {
-  return value.segments.map((segment) => segment.text.trim()).join("\n").trim();
-}
-
-function resolveRecorderHealthErrorCode(raw: string): string | null {
-  const asrCode = classifyAsrError(raw);
-  if (asrCode) {
-    return asrCode;
-  }
-  const match = raw.toLowerCase().match(/\b[a-z]+(?:_[a-z0-9]+){1,}\b/);
-  return match?.[0] ?? null;
-}
-
-function peaksChanged(next: number[], current: number[], epsilon = 0.01): boolean {
-  if (next.length !== current.length) {
-    return true;
-  }
-  for (let index = 0; index < next.length; index += 1) {
-    if (Math.abs((next[index] ?? 0) - (current[index] ?? 0)) > epsilon) {
-      return true;
-    }
-  }
-  return false;
 }
 
 function announce(message: string) {
@@ -571,716 +457,125 @@ function armStatusPollingFallback(sessionRecordingId: string) {
   }, 700);
 }
 
-async function refreshStatus() {
-  const currentRecordingId = recordingId.value;
-  if (!currentRecordingId) {
-    return;
-  }
-  try {
-    const status = await recordingStatus(currentRecordingId);
-    if (recordingId.value !== currentRecordingId) {
-      return;
-    }
-    liveDurationSec.value = status.durationMs / 1000;
-    liveLevel.value = status.level;
-    isPaused.value = status.isPaused ?? false;
-    applyQualityHint(status.qualityHintKey);
-    updateNoSignalAutoStop();
-  } catch (err) {
-    if (recordingId.value !== currentRecordingId) {
-      return;
-    }
-    setError(err instanceof Error ? err.message : String(err));
-  }
-}
+const getRuntimeDeps = () => ({
+  t,
+  emit,
+  DEFERRED_BACKGROUND_CHECK_MS,
+  MAX_LIVE_SEGMENTS_PREVIEW,
+  activeProfileId,
+  phase,
+  isRecording,
+  isPaused,
+  isStarting,
+  statusKey,
+  error,
+  errorCode,
+  announcement,
+  lastSavedPath,
+  lastArtifactId,
+  lastDurationSec,
+  liveDurationSec,
+  liveLevel,
+  qualityHintKey,
+  qualityHintStabilizer,
+  isRevealing,
+  isApplyingTrim,
+  isTranscribing,
+  transcribeProgress,
+  transcribeStageLabel,
+  transcribeJobId,
+  transcribeBlockedCode,
+  transcribeBlockedMessage,
+  transcript,
+  sourceTranscript,
+  baseTranscriptId,
+  editedTranscriptId,
+  transcriptDraftText,
+  isSavingEdited,
+  exportPath,
+  isExporting,
+  recordingId,
+  liveSegments,
+  livePartial,
+  liveWaveformPeaks,
+  lastWaveformPeaks,
+  inputDevices,
+  selectedInputDeviceId,
+  isLoadingInputDevices,
+  telemetryBudget,
+  telemetryWindowStartMs,
+  telemetryEventCount,
+  telemetryMaxPayloadBytes,
+  advancedOpen,
+  telemetryReceived,
+  noSignalSinceMs,
+  isAutoStoppingNoSignal,
+  canTranscribe,
+  canAnalyzeRecorder,
+  activeTranscriptIdForAnalysis,
+  transcriptionSettings,
+  setDeferredBackgroundCheckTimer: (next: number | null) => {
+    deferredBackgroundCheckTimer = next;
+  },
+  clearError,
+  setError,
+  announce,
+  applyTransport,
+  clearStatusTimer,
+  clearTelemetryFallbackTimer,
+  clearDeferredBackgroundCheckTimer,
+  updateNoSignalAutoStop,
+  resetTranscriptionState,
+  armStatusPollingFallback,
+  startRecording,
+  pauseRecording,
+  resumeRecording,
+  stopRecording,
+  refreshStatus,
+  refreshInputDevices,
+  refreshTelemetryBudget,
+  refreshTranscribeReadiness,
+  transcribeRecording,
+  handleCapturePrimaryAction,
+  handleShortcut,
+});
 
-async function refreshTranscribeReadiness() {
-  transcribeBlockedCode.value = null;
-  transcribeBlockedMessage.value = null;
-  clearError();
-
-  try {
-    await asrSidecarStatus();
-  } catch (err) {
-    const code = classifyAsrError(err instanceof Error ? err.message : String(err));
-    if (code === "sidecar_missing") {
-      transcribeBlockedCode.value = code;
-      transcribeBlockedMessage.value = t("audio.error_sidecar_missing");
-      return;
-    }
-    if (code === "sidecar_incompatible") {
-      transcribeBlockedCode.value = code;
-      transcribeBlockedMessage.value = t("audio.error_sidecar_incompatible");
-      return;
-    }
-  }
-
-  try {
-    const model = transcriptionSettings.value.model ?? "tiny";
-    const verified = await asrModelVerify(model);
-    if (!verified.installed || verified.checksum_ok === false) {
-      transcribeBlockedCode.value = "model_missing";
-      transcribeBlockedMessage.value = t("audio.error_model_missing");
-    }
-  } catch (err) {
-    const code = classifyAsrError(err instanceof Error ? err.message : String(err));
-    if (code === "model_missing") {
-      transcribeBlockedCode.value = code;
-      transcribeBlockedMessage.value = t("audio.error_model_missing");
-    }
-  }
-}
-
-async function refreshInputDevices() {
-  isLoadingInputDevices.value = true;
-  try {
-    const devices = await listRecordingInputDevices();
-    inputDevices.value = devices;
-    if (devices.length === 0) {
-      selectedInputDeviceId.value = null;
-      return;
-    }
-    const existing = selectedInputDeviceId.value;
-    if (existing && devices.some((device) => device.id === existing)) {
-      return;
-    }
-    selectedInputDeviceId.value =
-      devices.find((device) => device.isDefault)?.id ?? devices[0]?.id ?? null;
-  } catch {
-    inputDevices.value = [];
-    selectedInputDeviceId.value = null;
-  } finally {
-    isLoadingInputDevices.value = false;
-  }
-}
-
-async function refreshTelemetryBudget() {
-  try {
-    telemetryBudget.value = await recordingTelemetryBudget();
-  } catch {
-    telemetryBudget.value = null;
-  }
-}
-
-function resetTelemetryObservation() {
-  telemetryWindowStartMs.value = null;
-  telemetryEventCount.value = 0;
-  telemetryMaxPayloadBytes.value = 0;
-}
-
-function registerTelemetryObservation(payload: unknown) {
-  if (telemetryWindowStartMs.value === null) {
-    telemetryWindowStartMs.value = Date.now();
-  }
-  telemetryEventCount.value += 1;
-  telemetryMaxPayloadBytes.value = Math.max(
-    telemetryMaxPayloadBytes.value,
-    estimateTelemetryPayloadBytes(payload)
-  );
-}
-
-async function startRecording() {
-  if (isStarting.value) {
-    return;
-  }
-  isStarting.value = true;
-  clearError();
-  if (!activeProfileId.value) {
-    setError(t("audio.profile_required"));
-    isStarting.value = false;
-    return;
-  }
-  lastSavedPath.value = null;
-  lastArtifactId.value = null;
-  lastDurationSec.value = null;
-  liveDurationSec.value = 0;
-  liveLevel.value = 0;
-  resetQualityHintState();
-  statusKey.value = "audio.status_requesting";
-  phase.value = "capture";
-  resetTranscriptionState();
-  resetLiveTranscript();
-  liveWaveformPeaks.value = [];
-  lastWaveformPeaks.value = [];
-  resetTelemetryObservation();
-
-  try {
-    const result = await recordingStart(
-      buildRecordingStartPayload(
-        activeProfileId.value,
-        transcriptionSettings.value,
-        selectedInputDeviceId.value
-      )
-    );
-    recordingId.value = result.recordingId;
-    applyTransport("start");
-    telemetryReceived.value = false;
-    statusKey.value = "audio.status_recording";
-    clearStatusTimer();
-    armStatusPollingFallback(result.recordingId);
-    announce(t("audio.announcement_started"));
-    recordRecorderHealthEvent("start_success");
-  } catch (err) {
-    const raw = err instanceof Error ? err.message : String(err);
-    setError(raw);
-    recordRecorderHealthEvent("start_failure", {
-      errorCode: resolveRecorderHealthErrorCode(raw),
-    });
-    statusKey.value = "audio.status_idle";
-  } finally {
-    isStarting.value = false;
-  }
-}
-
-async function pauseRecording() {
-  if (!recordingId.value || !isRecording.value) {
-    return;
-  }
-  try {
-    await recordingPause(recordingId.value);
-    applyTransport("pause");
-    statusKey.value = "audio.status_recording";
-    announce(t("audio.announcement_paused"));
-  } catch (err) {
-    setError(err instanceof Error ? err.message : String(err));
-  }
-}
-
-async function resumeRecording() {
-  if (!recordingId.value || !isPaused.value) {
-    return;
-  }
-  try {
-    await recordingResume(recordingId.value);
-    applyTransport("resume");
-    statusKey.value = "audio.status_recording";
-    announce(t("audio.announcement_resumed"));
-  } catch (err) {
-    setError(err instanceof Error ? err.message : String(err));
-  }
-}
-
-async function stopRecording() {
-  if (!recordingId.value || !activeProfileId.value || statusKey.value === "audio.status_encoding") {
-    return;
-  }
-  let stopCompleted = false;
-  applyTransport("stop");
-  statusKey.value = "audio.status_encoding";
-  clearStatusTimer();
-  clearTelemetryFallbackTimer();
-
-  try {
-    const result = await recordingStop(activeProfileId.value, recordingId.value);
-    lastSavedPath.value = result.path;
-    lastArtifactId.value = result.artifactId;
-    lastDurationSec.value = result.durationMs / 1000;
-    lastWaveformPeaks.value = liveWaveformPeaks.value.slice();
-    emit("saved", { artifactId: result.artifactId, path: result.path });
-    stopCompleted = true;
-    recordRecorderHealthEvent("stop_success");
-    liveLevel.value = 0;
-    statusKey.value = "audio.status_idle";
-    const stopPlan = recorderStopTransitionPlan(AUTO_TRANSCRIBE_ON_STOP, false);
-    phase.value = stopPlan.nextPhase;
-    announce(t("audio.announcement_stopped"));
-
-    void refreshTranscribeReadiness().then(() => {
-      if (
-        recorderStopTransitionPlan(AUTO_TRANSCRIBE_ON_STOP, canTranscribe.value)
-          .shouldAutoTranscribe
-      ) {
-        void transcribeRecording();
-      }
-    });
-  } catch (err) {
-    const raw = err instanceof Error ? err.message : String(err);
-    setError(raw);
-    if (!stopCompleted) {
-      recordRecorderHealthEvent("stop_failure", {
-        errorCode: resolveRecorderHealthErrorCode(raw),
-      });
-    }
-    statusKey.value = "audio.status_idle";
-  } finally {
-    recordingId.value = null;
-    telemetryReceived.value = false;
-    noSignalSinceMs.value = null;
-    isAutoStoppingNoSignal.value = false;
-  }
-}
-
-async function applyTrim(payload: { startMs: number; endMs: number }) {
-  clearError();
-  if (!activeProfileId.value || !lastArtifactId.value) {
-    return;
-  }
-  if (isApplyingTrim.value) {
-    return;
-  }
-
-  isApplyingTrim.value = true;
-  try {
-    const result = await audioTrimWav({
-      profileId: activeProfileId.value,
-      audioArtifactId: lastArtifactId.value,
-      startMs: payload.startMs,
-      endMs: payload.endMs,
-    });
-    lastSavedPath.value = result.path;
-    lastArtifactId.value = result.artifactId;
-    lastDurationSec.value = result.durationMs / 1000;
-    resetTranscriptionState();
-    lastWaveformPeaks.value = [];
-    emit("saved", { artifactId: result.artifactId, path: result.path });
-    announce(t("audio.quick_clean_trim_applied"));
-    await refreshTranscribeReadiness();
-    recordRecorderHealthEvent("trim_success");
-  } catch (err) {
-    const raw = err instanceof Error ? err.message : String(err);
-    setError(raw);
-    recordRecorderHealthEvent("trim_failure", {
-      errorCode: resolveRecorderHealthErrorCode(raw),
-    });
-  } finally {
-    isApplyingTrim.value = false;
-  }
-}
-
-async function transcribeRecording() {
-  clearError();
-  if (!activeProfileId.value || !lastArtifactId.value) {
-    return;
-  }
-  if (!canTranscribe.value) {
-    return;
-  }
-
-  transcribeBlockedCode.value = null;
-  transcribeBlockedMessage.value = null;
-  isTranscribing.value = true;
-  transcribeProgress.value = 0;
-  transcribeStageLabel.value = null;
-
-  try {
-    const response = await transcribeAudio(
-      buildTranscribeAudioPayload(
-        activeProfileId.value,
-        lastArtifactId.value,
-        transcriptionSettings.value
-      )
-    );
-    transcribeJobId.value = response.jobId ?? transcribeJobId.value;
-    baseTranscriptId.value = response.transcriptId;
-    editedTranscriptId.value = null;
-    exportPath.value = null;
-
-    const loaded = await transcriptGet(activeProfileId.value, response.transcriptId);
-    transcript.value = loaded;
-    sourceTranscript.value = loaded;
-    transcriptDraftText.value = transcriptToEditorText(loaded);
-    emit("transcribed", {
-      transcriptId: response.transcriptId,
-      isEdited: false,
-      baseTranscriptId: response.transcriptId,
-    });
-    transcribeProgress.value = 100;
-    transcribeStageLabel.value = t("audio.stage_done");
-    recordRecorderHealthEvent("transcribe_success");
-  } catch (err) {
-    const raw = err instanceof Error ? err.message : String(err);
-    const code = classifyAsrError(raw);
-    recordRecorderHealthEvent("transcribe_failure", {
-      errorCode: code ?? resolveRecorderHealthErrorCode(raw),
-    });
-    if (code === "sidecar_missing") {
-      transcribeBlockedCode.value = code;
-      transcribeBlockedMessage.value = t("audio.error_sidecar_missing");
-      setError(transcribeBlockedMessage.value, code);
-    } else if (code === "sidecar_incompatible") {
-      transcribeBlockedCode.value = code;
-      transcribeBlockedMessage.value = t("audio.error_sidecar_incompatible");
-      setError(transcribeBlockedMessage.value, code);
-    } else if (code === "model_missing") {
-      transcribeBlockedCode.value = code;
-      transcribeBlockedMessage.value = t("audio.error_model_missing");
-      setError(transcribeBlockedMessage.value, code);
-    } else if (code === "asr_timeout") {
-      setError(t("audio.error_asr_timeout"), code);
-    } else {
-      setError(raw);
-    }
-  } finally {
-    isTranscribing.value = false;
-  }
-}
-
-async function saveEditedTranscript() {
-  if (!activeProfileId.value || !baseTranscriptId.value) {
-    return;
-  }
-  const editedText = transcriptDraftText.value.trim();
-  if (!editedText) {
-    setError(t("audio.transcript_empty"));
-    return;
-  }
-
-  isSavingEdited.value = true;
-  clearError();
-  try {
-    const saved = await transcriptEditSave(
-      activeProfileId.value,
-      baseTranscriptId.value,
-      editedText
-    );
-    editedTranscriptId.value = saved.transcriptId;
-    const loaded = await transcriptGet(activeProfileId.value, saved.transcriptId);
-    transcript.value = loaded;
-    transcriptDraftText.value = transcriptToEditorText(loaded);
-    emit("transcribed", {
-      transcriptId: saved.transcriptId,
-      isEdited: true,
-      baseTranscriptId: baseTranscriptId.value,
-    });
-  } catch (err) {
-    setError(err instanceof Error ? err.message : String(err));
-  } finally {
-    isSavingEdited.value = false;
-  }
-}
-
-function autoCleanFillers() {
-  const next = transcriptDraftText.value
-    // English fillers
-    .replace(/\b(uh|um|erm|eh|ah|oh|like|you know|i mean|sort of|kind of|basically|actually|literally)\b/gi, "")
-    // French fillers
-    .replace(/\b(euh|heu|hein|ben|bah|beh|bon ben|enfin|genre|voila|quoi|du coup|en fait|tu vois|tu sais|c'est-a-dire|disons)\b/gi, "")
-    .replace(/\s{2,}/g, " ")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-  transcriptDraftText.value = next;
-}
-
-function fixPunctuation() {
-  let next = transcriptDraftText.value
-    // Remove space before punctuation
-    .replace(/\s+([,.;!?:])/g, "$1")
-    // Add space after punctuation when missing
-    .replace(/([,.;!?:])([^\s\n\d])/g, "$1 $2")
-    // Capitalize after sentence-ending punctuation
-    .replace(/([.!?])\s+([a-zA-ZÀ-ÿ])/g, (_match, punct, letter) => `${punct} ${letter.toUpperCase()}`)
-    .replace(/\s{2,}/g, " ")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-  // Capitalize first character
-  if (next.length > 0) {
-    next = next[0].toUpperCase() + next.slice(1);
-  }
-  transcriptDraftText.value = next;
-}
-
-function goAnalyzeExport() {
-  if (!activeTranscriptIdForAnalysis.value) {
-    return;
-  }
-  phase.value = "analyze_export";
-}
-
-function backToQuickClean() {
-  phase.value = "quick_clean";
-}
-
-function requestAnalyze() {
-  if (!activeTranscriptIdForAnalysis.value || !canAnalyzeRecorder.value) {
-    return;
-  }
-  emit("analyze", { transcriptId: activeTranscriptIdForAnalysis.value });
-}
-
-function handleViewFeedback() {
-  emit("viewFeedback");
-}
-
-function handleOnboardingContext(payload: {
+const refreshStatus = () => refreshStatusRuntime(getRuntimeDeps());
+const refreshTranscribeReadiness = () => refreshTranscribeReadinessRuntime(getRuntimeDeps());
+const refreshInputDevices = () => refreshInputDevicesRuntime(getRuntimeDeps());
+const refreshTelemetryBudget = () => refreshTelemetryBudgetRuntime(getRuntimeDeps());
+const startRecording = () => startRecordingRuntime(getRuntimeDeps());
+const pauseRecording = () => pauseRecordingRuntime(getRuntimeDeps());
+const resumeRecording = () => resumeRecordingRuntime(getRuntimeDeps());
+const stopRecording = () => stopRecordingRuntime(getRuntimeDeps());
+const applyTrim = (payload: { startMs: number; endMs: number }) =>
+  applyTrimRuntime(getRuntimeDeps(), payload);
+const transcribeRecording = () => transcribeRecordingRuntime(getRuntimeDeps());
+const saveEditedTranscript = () => saveEditedTranscriptRuntime(getRuntimeDeps());
+const autoCleanFillers = () => autoCleanFillersRuntime(getRuntimeDeps());
+const fixPunctuation = () => fixPunctuationRuntime(getRuntimeDeps());
+const goAnalyzeExport = () => goAnalyzeExportRuntime(getRuntimeDeps());
+const backToQuickClean = () => backToQuickCleanRuntime(getRuntimeDeps());
+const requestAnalyze = () => requestAnalyzeRuntime(getRuntimeDeps());
+const handleViewFeedback = () => handleViewFeedbackRuntime(getRuntimeDeps());
+const handleOnboardingContext = (payload: {
   audience: string;
   audienceCustom: string;
   goal: string;
   targetMinutes: number | null;
-}) {
-  emit("onboardingContext", payload);
-}
+}) => handleOnboardingContextRuntime(getRuntimeDeps(), payload);
+const exportTranscript = (format: TranscriptExportFormat) =>
+  exportTranscriptRuntime(getRuntimeDeps(), format);
+const exportPreset = (preset: "presentation" | "podcast" | "voice_note") =>
+  exportPresetRuntime(getRuntimeDeps(), preset);
+const openExportPath = () => openExportPathRuntime(getRuntimeDeps());
+const revealRecording = () => revealRecordingRuntime(getRuntimeDeps());
+const handleCapturePrimaryAction = () => handleCapturePrimaryActionRuntime(getRuntimeDeps());
+const handleShortcut = (event: KeyboardEvent) =>
+  handleShortcutRuntime(getRuntimeDeps(), event);
 
-async function exportTranscript(format: TranscriptExportFormat) {
-  if (!activeProfileId.value || !activeTranscriptIdForAnalysis.value) {
-    return;
-  }
-  isExporting.value = true;
-  clearError();
-  try {
-    const result = await transcriptExport(
-      activeProfileId.value,
-      activeTranscriptIdForAnalysis.value,
-      format
-    );
-    exportPath.value = result.path;
-  } catch (err) {
-    setError(err instanceof Error ? err.message : String(err));
-  } finally {
-    isExporting.value = false;
-  }
-}
-
-function exportPreset(preset: "presentation" | "podcast" | "voice_note") {
-  if (preset === "presentation") {
-    void exportTranscript("txt");
-    return;
-  }
-  if (preset === "podcast") {
-    void exportTranscript("srt");
-    return;
-  }
-  void exportTranscript("vtt");
-}
-
-async function openExportPath() {
-  if (!exportPath.value) {
-    return;
-  }
-  try {
-    await open(exportPath.value);
-  } catch (err) {
-    setError(err instanceof Error ? err.message : String(err));
-  }
-}
-
-async function revealRecording() {
-  if (!lastSavedPath.value) {
-    return;
-  }
-  isRevealing.value = true;
-  clearError();
-  try {
-    await audioRevealWav(lastSavedPath.value);
-  } catch (err) {
-    setError(err instanceof Error ? err.message : String(err));
-  } finally {
-    isRevealing.value = false;
-  }
-}
-
-async function handleCapturePrimaryAction() {
-  if (isStarting.value) {
-    return;
-  }
-  if (isRecording.value) {
-    await pauseRecording();
-    return;
-  }
-  if (recordingId.value && isPaused.value) {
-    await resumeRecording();
-    return;
-  }
-  await startRecording();
-}
-
-function handleShortcut(event: KeyboardEvent) {
-  if (isTypingTargetElement(event.target)) {
-    return;
-  }
-
-  const action = resolveRecorderShortcutAction({
-    key: event.key,
-    ctrlOrMeta: event.metaKey || event.ctrlKey,
-    phase: phase.value,
-    canTranscribe: canTranscribe.value,
-    hasTranscriptForAnalysis: !!activeTranscriptIdForAnalysis.value,
-  });
-  if (!action) {
-    return;
-  }
-
-  event.preventDefault();
-  if (action === "capture_primary") {
-    void handleCapturePrimaryAction();
-    return;
-  }
-  if (action === "transcribe") {
-    void transcribeRecording();
-    return;
-  }
-  if (action === "continue_to_analyze_export") {
-    phase.value = "analyze_export";
-    return;
-  }
-  if (action === "analyze") {
-    requestAnalyze();
-    return;
-  }
-}
-
-onMounted(async () => {
-  clearDeferredBackgroundCheckTimer();
-  deferredBackgroundCheckTimer = window.setTimeout(() => {
-    deferredBackgroundCheckTimer = null;
-    if (advancedOpen.value) {
-      void refreshInputDevices();
-      void refreshTelemetryBudget();
-    }
-  }, DEFERRED_BACKGROUND_CHECK_MS);
-  window.addEventListener("keydown", handleShortcut);
-
-  if (!hasTauriRuntime()) {
-    return;
-  }
-
-  unlistenProgress = await listen<JobProgressEvent>("job:progress", (event) => {
-    if (transcribeJobId.value && event.payload.jobId !== transcribeJobId.value) {
-      return;
-    }
-    if (!transcribeJobId.value) {
-      transcribeJobId.value = event.payload.jobId;
-    }
-    transcribeProgress.value = event.payload.pct;
-    transcribeStageLabel.value = mapStageToLabel(event.payload.stage, event.payload.message);
-  });
-
-  unlistenCompleted = await listen<JobCompletedEvent>("job:completed", (event) => {
-    if (transcribeJobId.value && event.payload.jobId !== transcribeJobId.value) {
-      return;
-    }
-    transcribeProgress.value = 100;
-  });
-
-  unlistenFailed = await listen<JobFailedEvent>("job:failed", (event) => {
-    if (transcribeJobId.value && event.payload.jobId !== transcribeJobId.value) {
-      return;
-    }
-    setError(event.payload.message, event.payload.errorCode);
-  });
-
-  unlistenRecordingTelemetry = await listen("recording/telemetry/v1", (event) => {
-    const parsed = RecordingTelemetryEventSchema.safeParse(event.payload);
-    if (!parsed.success || !recordingId.value) {
-      return;
-    }
-    telemetryReceived.value = true;
-    clearTelemetryFallbackTimer();
-    clearStatusTimer();
-    liveDurationSec.value = parsed.data.durationMs / 1000;
-    liveLevel.value = parsed.data.level;
-    if (peaksChanged(parsed.data.waveformPeaks, liveWaveformPeaks.value)) {
-      liveWaveformPeaks.value = parsed.data.waveformPeaks.slice();
-    }
-    applyQualityHint(parsed.data.qualityHintKey);
-    updateNoSignalAutoStop();
-    registerTelemetryObservation(parsed.data);
-  });
-
-  unlistenAsrPartial = await listen("asr/partial/v1", (event) => {
-    if (!isRecording.value) {
-      return;
-    }
-    const parsed = AsrPartialEventSchema.safeParse(event.payload);
-    if (!parsed.success) {
-      return;
-    }
-    livePartial.value = parsed.data.text;
-  });
-
-  unlistenAsrCommit = await listen("asr/commit/v1", (event) => {
-    const parsed = AsrCommitEventSchema.safeParse(event.payload);
-    if (!parsed.success) {
-      return;
-    }
-    const merged = [...liveSegments.value, ...parsed.data.segments];
-    liveSegments.value = merged.slice(-MAX_LIVE_SEGMENTS_PREVIEW);
-    livePartial.value = null;
-  });
-
-  unlistenAsrFinalProgress = await listen("asr/final_progress/v1", (event) => {
-    const parsed = AsrFinalProgressEventSchema.safeParse(event.payload);
-    if (!parsed.success) {
-      return;
-    }
-    if (!isTranscribing.value && !transcribeJobId.value) {
-      return;
-    }
-    const total = parsed.data.totalMs;
-    if (total <= 0) {
-      return;
-    }
-    const pct = Math.min(100, Math.round((parsed.data.processedMs / total) * 100));
-    transcribeProgress.value = pct;
-    transcribeStageLabel.value = t("audio.stage_final");
-  });
-
-  unlistenAsrFinalResult = await listen("asr/final_result/v1", (event) => {
-    const parsed = AsrFinalResultEventSchema.safeParse(event.payload);
-    if (!parsed.success) {
-      return;
-    }
-    transcribeProgress.value = 100;
-    transcribeStageLabel.value = t("audio.stage_final");
-    liveSegments.value = [];
-    livePartial.value = null;
-    const current = transcript.value;
-    transcript.value = {
-      schema_version: "1.0.0",
-      language: current?.language ?? "und",
-      model_id: current?.model_id ?? null,
-      duration_ms: current?.duration_ms ?? null,
-      segments: parsed.data.segments,
-    };
-  });
-});
-
-onBeforeUnmount(() => {
-  clearStatusTimer();
-  clearTelemetryFallbackTimer();
-  clearDeferredBackgroundCheckTimer();
-  window.removeEventListener("keydown", handleShortcut);
-  unlistenProgress?.();
-  unlistenCompleted?.();
-  unlistenFailed?.();
-  unlistenRecordingTelemetry?.();
-  unlistenAsrPartial?.();
-  unlistenAsrCommit?.();
-  unlistenAsrFinalProgress?.();
-  unlistenAsrFinalResult?.();
-});
-
-watch(
-  () => transcriptionSettings.value.model,
-  () => {
-    if (phase.value !== "capture") {
-      void refreshTranscribeReadiness();
-    }
-  }
-);
-
-watch(
-  () => advancedOpen.value,
-  (isOpen) => {
-    if (!isOpen) {
-      return;
-    }
-    if (inputDevices.value.length === 0 && !isLoadingInputDevices.value) {
-      void refreshInputDevices();
-    }
-    if (!telemetryBudget.value) {
-      void refreshTelemetryBudget();
-    }
-  }
-);
-
-watch(
-  () => phase.value,
-  (nextPhase) => {
-    if (nextPhase === "quick_clean") {
-      void refreshTranscribeReadiness();
-    }
-  }
-);
+bindAudioRecorderMountedHooks(getRuntimeDeps);
+bindAudioRecorderWatches(getRuntimeDeps);
 </script>
 
 <template>
@@ -1424,3 +719,4 @@ watch(
     <span class="sr-only" aria-live="polite">{{ announcement }}</span>
   </UCard>
 </template>
+
