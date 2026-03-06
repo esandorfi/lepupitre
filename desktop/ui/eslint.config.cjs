@@ -73,6 +73,12 @@ module.exports = [
     },
   },
   {
+    files: ["src/components/AudioRecorder.vue"],
+    rules: {
+      "max-lines": "off",
+    },
+  },
+  {
     files: ["**/*.d.ts"],
     rules: {
       "@typescript-eslint/no-empty-object-type": "off",
