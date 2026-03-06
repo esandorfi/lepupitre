@@ -67,6 +67,12 @@ module.exports = [
     },
   },
   {
+    files: ["src/lib/i18n.messages.*.ts"],
+    rules: {
+      "max-lines": "off",
+    },
+  },
+  {
     files: ["**/*.d.ts"],
     rules: {
       "@typescript-eslint/no-empty-object-type": "off",
