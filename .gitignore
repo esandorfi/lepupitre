@@ -16,6 +16,9 @@ target
 # macOS
 .DS_Store
 
+# Local agent workspace
+.codex/
+
 # Website (Astro)
 website/node_modules
 website/dist

@@ -1,5 +1,4 @@
-﻿/* eslint-disable @typescript-eslint/no-explicit-any */
-import { onBeforeUnmount, onMounted, watch } from "vue";
+﻿import { onBeforeUnmount, onMounted, watch } from "vue";
 import { listen } from "@tauri-apps/api/event";
 import { hasTauriRuntime } from "@/lib/runtime";
 import {
@@ -15,10 +14,7 @@ import {
   applyQualityHint,
   registerTelemetryObservation,
 } from "@/components/recorder/composables/audioRecorderCaptureRuntime";
-
-type RuntimeDeps = {
-  [key: string]: any;
-};
+import type { AudioRecorderRuntimeDeps } from "@/components/recorder/composables/audioRecorderRuntimeDeps";
 
 type CleanupSet = {
   unlistenProgress: (() => void) | null;
@@ -31,7 +27,10 @@ type CleanupSet = {
   unlistenRecordingTelemetry: (() => void) | null;
 };
 
-async function registerRuntimeListeners(getDeps: () => RuntimeDeps, cleanups: CleanupSet) {
+async function registerRuntimeListeners(
+  getDeps: () => AudioRecorderRuntimeDeps,
+  cleanups: CleanupSet
+) {
   if (!hasTauriRuntime()) {
     return;
   }
@@ -148,7 +147,7 @@ async function registerRuntimeListeners(getDeps: () => RuntimeDeps, cleanups: Cl
   });
 }
 
-export function bindAudioRecorderMountedHooks(getDeps: () => RuntimeDeps) {
+export function bindAudioRecorderMountedHooks(getDeps: () => AudioRecorderRuntimeDeps) {
   const cleanups: CleanupSet = {
     unlistenProgress: null,
     unlistenCompleted: null,
@@ -163,14 +162,16 @@ export function bindAudioRecorderMountedHooks(getDeps: () => RuntimeDeps) {
   onMounted(async () => {
     const deps = getDeps();
     deps.clearDeferredBackgroundCheckTimer();
-    deps.setDeferredBackgroundCheckTimer(window.setTimeout(() => {
-      const scopedDeps = getDeps();
-      scopedDeps.setDeferredBackgroundCheckTimer(null);
-      if (scopedDeps.advancedOpen.value) {
-        void scopedDeps.refreshInputDevices();
-        void scopedDeps.refreshTelemetryBudget();
-      }
-    }, deps.DEFERRED_BACKGROUND_CHECK_MS));
+    deps.setDeferredBackgroundCheckTimer(
+      window.setTimeout(() => {
+        const scopedDeps = getDeps();
+        scopedDeps.setDeferredBackgroundCheckTimer(null);
+        if (scopedDeps.advancedOpen.value) {
+          void scopedDeps.refreshInputDevices();
+          void scopedDeps.refreshTelemetryBudget();
+        }
+      }, deps.DEFERRED_BACKGROUND_CHECK_MS)
+    );
     window.addEventListener("keydown", deps.handleShortcut);
     await registerRuntimeListeners(getDeps, cleanups);
   });
@@ -192,7 +193,7 @@ export function bindAudioRecorderMountedHooks(getDeps: () => RuntimeDeps) {
   });
 }
 
-export function bindAudioRecorderWatches(getDeps: () => RuntimeDeps) {
+export function bindAudioRecorderWatches(getDeps: () => AudioRecorderRuntimeDeps) {
   watch(
     () => getDeps().transcriptionSettings.value.model,
     () => {
@@ -228,6 +229,4 @@ export function bindAudioRecorderWatches(getDeps: () => RuntimeDeps) {
     }
   );
 }
-
-
 

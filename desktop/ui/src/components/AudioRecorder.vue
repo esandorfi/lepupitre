@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import { convertFileSrc } from "@tauri-apps/api/core";
+import { computed } from "vue";
 import { RouterLink } from "vue-router";
 import RecorderAdvancedDrawer from "./recorder/RecorderAdvancedDrawer.vue";
 import RecorderCapturePanel from "./recorder/RecorderCapturePanel.vue";
@@ -8,35 +7,9 @@ import RecorderExportPanel from "./recorder/RecorderExportPanel.vue";
 import RecorderQuickCleanPanel from "./recorder/RecorderQuickCleanPanel.vue";
 import { useI18n } from "../lib/i18n";
 import { useUiPreferences } from "../lib/uiPreferences";
-import {
-  createRecorderQualityHintStabilizer,
-} from "../lib/recorderQualityHint";
-import {
-  normalizeRecorderQualityHintKey,
-  qualityGuidanceMessageKeys,
-} from "../lib/recorderCalibration";
-import {
-  applyRecorderTransportAction,
-  resolveRecorderMediaActions,
-} from "../lib/recorderSession";
-import {
-  evaluateRecorderTelemetryBudget,
-} from "../lib/recorderTelemetryBudget";
-import {
-  resolveRecorderTranscribeReadiness,
-  resolveActiveTranscriptIdForAnalysis,
-  resolveReviewState,
-  resolveReviewCta,
-} from "../lib/recorderFlow";
+import { applyRecorderTransportAction } from "../lib/recorderSession";
 import { useTranscriptionSettings } from "../lib/transcriptionSettings";
-import { appState } from "../stores/app";
-import {
-  type RecordingInputDevice,
-  type RecordingTelemetryBudget,
-  TranscriptExportFormat,
-  TranscriptSegment,
-  TranscriptV1,
-} from "../schemas/ipc";
+import { TranscriptExportFormat } from "../schemas/ipc";
 import {
   applyTrim as applyTrimRuntime,
   formatDuration,
@@ -71,12 +44,11 @@ import {
   bindAudioRecorderMountedHooks,
   bindAudioRecorderWatches,
 } from "@/components/recorder/composables/useAudioRecorderLifecycle";
-
-type AudioStatusKey =
-  | "audio.status_idle"
-  | "audio.status_requesting"
-  | "audio.status_recording"
-  | "audio.status_encoding";
+import { useAudioRecorderState } from "@/components/recorder/composables/useAudioRecorderState";
+import { useAudioRecorderPresentation } from "@/components/recorder/composables/useAudioRecorderPresentation";
+import type {
+  AudioRecorderRuntimeDeps,
+} from "@/components/recorder/composables/audioRecorderRuntimeDeps";
 
 const STATUS_POLLING_INTERVAL_MS = 350;
 const MAX_LIVE_SEGMENTS_PREVIEW = 48;
@@ -123,216 +95,85 @@ const emit = defineEmits<{
   ): void;
 }>();
 
-const activeProfileId = computed(() => appState.activeProfileId);
-const phase = ref<"capture" | "quick_clean" | "analyze_export">("capture");
-const isRecording = ref(false);
-const isPaused = ref(false);
-const isStarting = ref(false);
-const statusKey = ref<AudioStatusKey>("audio.status_idle");
-const error = ref<string | null>(null);
-const errorCode = ref<string | null>(null);
-const announcement = ref("");
-const lastSavedPath = ref<string | null>(null);
-const lastArtifactId = ref<string | null>(null);
-const lastDurationSec = ref<number | null>(null);
-const liveDurationSec = ref<number>(0);
-const liveLevel = ref<number>(0);
-const qualityHintKey = ref("good_level");
-const qualityHintStabilizer = ref(createRecorderQualityHintStabilizer("good_level"));
-const isRevealing = ref(false);
-const isApplyingTrim = ref(false);
-const isTranscribing = ref(false);
-const transcribeProgress = ref<number>(0);
-const transcribeStageLabel = ref<string | null>(null);
-const transcribeJobId = ref<string | null>(null);
-const transcribeBlockedCode = ref<string | null>(null);
-const transcribeBlockedMessage = ref<string | null>(null);
-const transcript = ref<TranscriptV1 | null>(null);
-const sourceTranscript = ref<TranscriptV1 | null>(null);
-const baseTranscriptId = ref<string | null>(null);
-const editedTranscriptId = ref<string | null>(null);
-const transcriptDraftText = ref("");
-const isSavingEdited = ref(false);
-const exportPath = ref<string | null>(null);
-const isExporting = ref(false);
-const recordingId = ref<string | null>(null);
-const liveSegments = ref<TranscriptSegment[]>([]);
-const livePartial = ref<string | null>(null);
-const liveWaveformPeaks = ref<number[]>([]);
-const lastWaveformPeaks = ref<number[]>([]);
-const inputDevices = ref<RecordingInputDevice[]>([]);
-const selectedInputDeviceId = ref<string | null>(null);
-const isLoadingInputDevices = ref(false);
-const telemetryBudget = ref<RecordingTelemetryBudget | null>(null);
-const telemetryWindowStartMs = ref<number | null>(null);
-const telemetryEventCount = ref(0);
-const telemetryMaxPayloadBytes = ref(0);
-const advancedOpen = ref(false);
-const telemetryReceived = ref(false);
-const noSignalSinceMs = ref<number | null>(null);
-const isAutoStoppingNoSignal = ref(false);
+const state = useAudioRecorderState();
+const {
+  phase,
+  isRecording,
+  isPaused,
+  statusKey,
+  error,
+  errorCode,
+  announcement,
+  lastSavedPath,
+  lastDurationSec,
+  liveDurationSec,
+  liveLevel,
+  qualityHintKey,
+  isRevealing,
+  isApplyingTrim,
+  isTranscribing,
+  transcribeProgress,
+  transcribeStageLabel,
+  transcribeJobId,
+  transcribeBlockedCode,
+  transcribeBlockedMessage,
+  transcript,
+  sourceTranscript,
+  baseTranscriptId,
+  editedTranscriptId,
+  transcriptDraftText,
+  isSavingEdited,
+  exportPath,
+  isExporting,
+  recordingId,
+  liveWaveformPeaks,
+  lastWaveformPeaks,
+  inputDevices,
+  selectedInputDeviceId,
+  isLoadingInputDevices,
+  advancedOpen,
+  telemetryReceived,
+  noSignalSinceMs,
+  isAutoStoppingNoSignal,
+} = state;
+
+const canAnalyzeRef = computed(() => !!props.canAnalyze);
+const hasAnalysisResultRef = computed(() => !!props.hasAnalysisResult);
+const {
+  activeTranscriptIdForAnalysis,
+  canAnalyzeRecorder,
+  reviewState,
+  reviewCta,
+  waveformStyle,
+  qualityGuidanceMessages,
+  canExport,
+  transcribeReadiness,
+  canTranscribe,
+  canOpenOriginal,
+  recorderMediaActions,
+  audioPreviewSources,
+  telemetryBudgetSummary,
+  livePreviewLines,
+  recBadgeLabel,
+  showRecBadge,
+  qualityLabel,
+  qualityTone,
+  capturePrimaryAction,
+  capturePrimaryLabel,
+  captureStopLabel,
+  captureCanPrimary,
+  captureCanStop,
+} = useAudioRecorderPresentation({
+  state,
+  t,
+  uiSettings,
+  canAnalyze: canAnalyzeRef,
+  hasAnalysisResult: hasAnalysisResultRef,
+});
 
 let statusTimer: number | null = null;
 let telemetryFallbackTimer: number | null = null;
 let deferredBackgroundCheckTimer: number | null = null;
-
-const activeTranscriptIdForAnalysis = computed(
-  () => resolveActiveTranscriptIdForAnalysis(baseTranscriptId.value, editedTranscriptId.value)
-);
-
-const canAnalyzeRecorder = computed(
-  () => !!activeTranscriptIdForAnalysis.value && !!props.canAnalyze
-);
-const reviewState = computed(() =>
-  resolveReviewState({
-    hasTranscript: !!baseTranscriptId.value,
-    isTranscribing: isTranscribing.value,
-    hasAnalysisResult: props.hasAnalysisResult,
-  })
-);
-const reviewCta = computed(() =>
-  resolveReviewCta({
-    reviewState: reviewState.value,
-    canTranscribe: canTranscribe.value,
-    canAnalyze: canAnalyzeRecorder.value,
-    transcribeProgress: transcribeProgress.value,
-  })
-);
-const waveformStyle = computed(() => uiSettings.value.waveformStyle);
-const qualityGuidanceMessages = computed(() => {
-  const hint = normalizeRecorderQualityHintKey(qualityHintKey.value);
-  return qualityGuidanceMessageKeys(hint).map((key) => t(key));
-});
-
-const canExport = computed(() => !!activeTranscriptIdForAnalysis.value);
-const transcribeReadiness = computed(() =>
-  resolveRecorderTranscribeReadiness({
-    hasAudioArtifact: !!lastArtifactId.value,
-    isTranscribing: isTranscribing.value,
-    isApplyingTrim: isApplyingTrim.value,
-    transcribeBlockedCode: transcribeBlockedCode.value,
-  })
-);
-const canTranscribe = computed(() => transcribeReadiness.value.canTranscribe);
-const canOpenOriginal = computed(() => !!lastSavedPath.value);
-const recorderMediaActions = computed(() =>
-  resolveRecorderMediaActions({
-    hasAudioArtifact: !!lastArtifactId.value,
-    isApplyingTrim: isApplyingTrim.value,
-  })
-);
-function pathToFileUrl(pathValue: string): string {
-  const normalized = pathValue.replace(/\\/g, "/");
-  if (/^[a-zA-Z]:\//.test(normalized)) {
-    return `file:///${encodeURI(normalized)}`;
-  }
-  if (normalized.startsWith("/")) {
-    return `file://${encodeURI(normalized)}`;
-  }
-  return `file://${encodeURI(normalized)}`;
-}
-const audioPreviewSources = computed(() => {
-  if (!lastSavedPath.value) {
-    return [] as string[];
-  }
-  const filePath = lastSavedPath.value;
-  return [convertFileSrc(filePath), pathToFileUrl(filePath)];
-});
-const telemetryBudgetSummary = computed(() => {
-  const report = evaluateRecorderTelemetryBudget(telemetryBudget.value, {
-    eventCount: telemetryEventCount.value,
-    windowMs:
-      telemetryWindowStartMs.value === null
-        ? 0
-        : Math.max(1, Date.now() - telemetryWindowStartMs.value),
-    maxPayloadBytes: telemetryMaxPayloadBytes.value,
-  });
-  if (report.status === "unknown" || !telemetryBudget.value) {
-    return null;
-  }
-  const statusLabel =
-    report.status === "ok"
-      ? t("audio.telemetry_budget_ok")
-      : t("audio.telemetry_budget_warn");
-  return `${statusLabel}: ${report.eventsPerSecond.toFixed(1)} evt/s, ${report.maxPayloadBytes} B`;
-});
-const livePreviewLines = computed(() => {
-  const committed = liveSegments.value
-    .map((segment) => segment.text.trim())
-    .filter((segment) => segment.length > 0);
-  const partial = livePartial.value?.trim() ?? "";
-  const previous = committed.length >= 2 ? committed[committed.length - 2] : null;
-  const latestCommitted = committed.length > 0 ? committed[committed.length - 1] : null;
-  const current =
-    latestCommitted && partial
-      ? `${latestCommitted} ${partial}`.trim()
-      : latestCommitted || partial || null;
-  return { previous, current };
-});
-const recBadgeLabel = computed(() => t("audio.rec_badge"));
-const showRecBadge = computed(() => isRecording.value && !isPaused.value);
-const qualityLabel = computed(() => {
-  if (qualityHintKey.value === "no_signal") {
-    return t("audio.quality_no_signal");
-  }
-  if (qualityHintKey.value === "too_loud") {
-    return t("audio.quality_too_loud");
-  }
-  if (qualityHintKey.value === "noisy_room") {
-    return t("audio.quality_noisy_room");
-  }
-  if (qualityHintKey.value === "too_quiet") {
-    return t("audio.quality_too_quiet");
-  }
-  return t("audio.quality_good_level");
-});
-const qualityTone = computed<"good" | "warn" | "danger" | "muted">(() => {
-  if (qualityHintKey.value === "good_level") {
-    return "good";
-  }
-  if (qualityHintKey.value === "too_loud") {
-    return "danger";
-  }
-  if (
-    qualityHintKey.value === "too_quiet" ||
-    qualityHintKey.value === "noisy_room" ||
-    qualityHintKey.value === "no_signal"
-  ) {
-    return "warn";
-  }
-  return "muted";
-});
-const capturePrimaryAction = computed<"start" | "pause" | "resume">(() => {
-  if (isRecording.value) {
-    return "pause";
-  }
-  if (recordingId.value && isPaused.value) {
-    return "resume";
-  }
-  return "start";
-});
-const capturePrimaryLabel = computed(() => {
-  if (capturePrimaryAction.value === "pause") {
-    return t("audio.pause");
-  }
-  if (capturePrimaryAction.value === "resume") {
-    return t("audio.resume");
-  }
-  return t("audio.start");
-});
-const captureStopLabel = computed(() => t("audio.stop"));
-const captureCanPrimary = computed(() => {
-  if (!activeProfileId.value) {
-    return false;
-  }
-  if (isStarting.value || statusKey.value.includes("encoding")) {
-    return false;
-  }
-  return true;
-});
-const captureCanStop = computed(
-  () => !!recordingId.value && !statusKey.value.includes("encoding") && !isStarting.value
-);
 
 function setAdvancedOpen(next: boolean) {
   advancedOpen.value = next;
@@ -457,59 +298,12 @@ function armStatusPollingFallback(sessionRecordingId: string) {
   }, 700);
 }
 
-const getRuntimeDeps = () => ({
+const getRuntimeDeps = (): AudioRecorderRuntimeDeps => ({
   t,
   emit,
   DEFERRED_BACKGROUND_CHECK_MS,
   MAX_LIVE_SEGMENTS_PREVIEW,
-  activeProfileId,
-  phase,
-  isRecording,
-  isPaused,
-  isStarting,
-  statusKey,
-  error,
-  errorCode,
-  announcement,
-  lastSavedPath,
-  lastArtifactId,
-  lastDurationSec,
-  liveDurationSec,
-  liveLevel,
-  qualityHintKey,
-  qualityHintStabilizer,
-  isRevealing,
-  isApplyingTrim,
-  isTranscribing,
-  transcribeProgress,
-  transcribeStageLabel,
-  transcribeJobId,
-  transcribeBlockedCode,
-  transcribeBlockedMessage,
-  transcript,
-  sourceTranscript,
-  baseTranscriptId,
-  editedTranscriptId,
-  transcriptDraftText,
-  isSavingEdited,
-  exportPath,
-  isExporting,
-  recordingId,
-  liveSegments,
-  livePartial,
-  liveWaveformPeaks,
-  lastWaveformPeaks,
-  inputDevices,
-  selectedInputDeviceId,
-  isLoadingInputDevices,
-  telemetryBudget,
-  telemetryWindowStartMs,
-  telemetryEventCount,
-  telemetryMaxPayloadBytes,
-  advancedOpen,
-  telemetryReceived,
-  noSignalSinceMs,
-  isAutoStoppingNoSignal,
+  ...state,
   canTranscribe,
   canAnalyzeRecorder,
   activeTranscriptIdForAnalysis,
