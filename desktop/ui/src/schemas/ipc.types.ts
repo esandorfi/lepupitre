@@ -1,0 +1,43 @@
+import { z } from "zod";
+import { ExportResultSchema, MascotMessageSchema, OutlineDocSchema, PackInspectResponseSchema, PeerReviewDetailSchema, PeerReviewSummarySchema, ProfileSummarySchema, ProgressSnapshotSchema, ProjectListItemSchema, ProjectSummarySchema, ProjectUpdatePayloadSchema, QuestAttemptSummarySchema, QuestDailySchema, QuestReportItemSchema, QuestSchema, RunSummarySchema, TalksBlueprintSchema } from "./ipc.core";
+import { AsrCommitEventSchema, AsrFinalProgressEventSchema, AsrFinalResultEventSchema, AsrModelDownloadProgressEventSchema, AsrModelDownloadResultSchema, AsrModelStatusSchema, AsrPartialEventSchema, FeedbackContextSchema, FeedbackTimelineItemSchema, FeedbackV1Schema, RecordingInputDeviceSchema, RecordingStartResponseSchema, RecordingStatusResponseSchema, RecordingStopResponseSchema, RecordingTelemetryBudgetResponseSchema, RecordingTelemetryEventSchema, TranscriptEditSaveResponseSchema, TranscriptExportFormatSchema, TranscriptSegmentSchema, TranscriptV1Schema } from "./ipc.runtime";
+export type AsrPartialEvent = z.infer<typeof AsrPartialEventSchema>;
+export type AsrCommitEvent = z.infer<typeof AsrCommitEventSchema>;
+export type AsrFinalProgressEvent = z.infer<typeof AsrFinalProgressEventSchema>;
+export type AsrFinalResultEvent = z.infer<typeof AsrFinalResultEventSchema>;
+export type RecordingTelemetryEvent = z.infer<typeof RecordingTelemetryEventSchema>;
+export type RecordingInputDevice = z.infer<typeof RecordingInputDeviceSchema>;
+export type RecordingTelemetryBudget = z.infer<typeof RecordingTelemetryBudgetResponseSchema>;
+
+export type RecordingStartResponse = z.infer<typeof RecordingStartResponseSchema>;
+export type RecordingStatusResponse = z.infer<typeof RecordingStatusResponseSchema>;
+export type RecordingStopResponse = z.infer<typeof RecordingStopResponseSchema>;
+export type TranscriptEditSaveResponse = z.infer<typeof TranscriptEditSaveResponseSchema>;
+
+export type ProfileSummary = z.infer<typeof ProfileSummarySchema>;
+export type ProjectSummary = z.infer<typeof ProjectSummarySchema>;
+export type ProjectListItem = z.infer<typeof ProjectListItemSchema>;
+export type ProjectUpdatePayload = z.infer<typeof ProjectUpdatePayloadSchema>;
+export type OutlineDoc = z.infer<typeof OutlineDocSchema>;
+export type ExportResult = z.infer<typeof ExportResultSchema>;
+export type PackInspectResponse = z.infer<typeof PackInspectResponseSchema>;
+export type PeerReviewSummary = z.infer<typeof PeerReviewSummarySchema>;
+export type PeerReviewDetail = z.infer<typeof PeerReviewDetailSchema>;
+export type RunSummary = z.infer<typeof RunSummarySchema>;
+export type Quest = z.infer<typeof QuestSchema>;
+export type QuestDaily = z.infer<typeof QuestDailySchema>;
+export type ProgressSnapshot = z.infer<typeof ProgressSnapshotSchema>;
+export type MascotMessage = z.infer<typeof MascotMessageSchema>;
+export type TalksBlueprint = z.infer<typeof TalksBlueprintSchema>;
+export type QuestAttemptSummary = z.infer<typeof QuestAttemptSummarySchema>;
+export type QuestReportItem = z.infer<typeof QuestReportItemSchema>;
+export type TranscriptSegment = z.infer<typeof TranscriptSegmentSchema>;
+export type TranscriptV1 = z.infer<typeof TranscriptV1Schema>;
+export type TranscriptExportFormat = z.infer<typeof TranscriptExportFormatSchema>;
+export type AsrModelStatus = z.infer<typeof AsrModelStatusSchema>;
+export type AsrModelDownloadResult = z.infer<typeof AsrModelDownloadResultSchema>;
+export type AsrModelDownloadProgressEvent = z.infer<typeof AsrModelDownloadProgressEventSchema>;
+export type FeedbackV1 = z.infer<typeof FeedbackV1Schema>;
+export type FeedbackContext = z.infer<typeof FeedbackContextSchema>;
+export type FeedbackTimelineItem = z.infer<typeof FeedbackTimelineItemSchema>;
+
