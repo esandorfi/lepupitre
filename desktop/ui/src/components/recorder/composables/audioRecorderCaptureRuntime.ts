@@ -1,5 +1,4 @@
-﻿/* eslint-disable @typescript-eslint/no-explicit-any */
-import { classifyAsrError } from "@/lib/asrErrors";
+﻿import { classifyAsrError } from "@/lib/asrErrors";
 import { recordRecorderHealthEvent } from "@/lib/recorderHealthMetrics";
 import {
   createRecorderQualityHintStabilizer,
@@ -21,14 +20,10 @@ import {
 } from "@/domains/recorder/api";
 import { asrModelVerify, asrSidecarStatus } from "@/domains/asr/api";
 import type { TranscriptV1 } from "@/schemas/ipc";
-
-type RuntimeDeps = {
-  [key: string]: any;
-};
-
+import type { AudioRecorderRuntimeDeps } from "@/components/recorder/composables/audioRecorderRuntimeDeps";
 const AUTO_TRANSCRIBE_ON_STOP = true;
 
-export function mapStageToLabel(deps: RuntimeDeps, stage: string | null, message?: string | null) {
+export function mapStageToLabel(deps: AudioRecorderRuntimeDeps, stage: string | null, message?: string | null) {
   if (message) {
     switch (message) {
       case "queued":
@@ -52,17 +47,17 @@ export function mapStageToLabel(deps: RuntimeDeps, stage: string | null, message
   return deps.t("audio.stage_processing");
 }
 
-export function resetLiveTranscript(deps: RuntimeDeps) {
+export function resetLiveTranscript(deps: AudioRecorderRuntimeDeps) {
   deps.liveSegments.value = [];
   deps.livePartial.value = null;
 }
 
-export function resetQualityHintState(deps: RuntimeDeps) {
+export function resetQualityHintState(deps: AudioRecorderRuntimeDeps) {
   deps.qualityHintStabilizer.value = createRecorderQualityHintStabilizer("good_level");
   deps.qualityHintKey.value = "good_level";
 }
 
-export function applyQualityHint(deps: RuntimeDeps, rawHint: string | null | undefined) {
+export function applyQualityHint(deps: AudioRecorderRuntimeDeps, rawHint: string | null | undefined) {
   const normalized = normalizeRecorderQualityHint(rawHint);
   deps.qualityHintKey.value = updateRecorderQualityHint(
     deps.qualityHintStabilizer.value,
@@ -110,7 +105,7 @@ export function peaksChanged(next: number[], current: number[], epsilon = 0.01):
   return false;
 }
 
-export async function refreshStatus(deps: RuntimeDeps) {
+export async function refreshStatus(deps: AudioRecorderRuntimeDeps) {
   const currentRecordingId = deps.recordingId.value;
   if (!currentRecordingId) {
     return;
@@ -133,7 +128,7 @@ export async function refreshStatus(deps: RuntimeDeps) {
   }
 }
 
-export async function refreshTranscribeReadiness(deps: RuntimeDeps) {
+export async function refreshTranscribeReadiness(deps: AudioRecorderRuntimeDeps) {
   deps.transcribeBlockedCode.value = null;
   deps.transcribeBlockedMessage.value = null;
   deps.clearError();
@@ -170,7 +165,7 @@ export async function refreshTranscribeReadiness(deps: RuntimeDeps) {
   }
 }
 
-export async function refreshInputDevices(deps: RuntimeDeps) {
+export async function refreshInputDevices(deps: AudioRecorderRuntimeDeps) {
   deps.isLoadingInputDevices.value = true;
   try {
     const devices = await listRecordingInputDevices();
@@ -193,7 +188,7 @@ export async function refreshInputDevices(deps: RuntimeDeps) {
   }
 }
 
-export async function refreshTelemetryBudget(deps: RuntimeDeps) {
+export async function refreshTelemetryBudget(deps: AudioRecorderRuntimeDeps) {
   try {
     deps.telemetryBudget.value = await recordingTelemetryBudget();
   } catch {
@@ -201,13 +196,13 @@ export async function refreshTelemetryBudget(deps: RuntimeDeps) {
   }
 }
 
-export function resetTelemetryObservation(deps: RuntimeDeps) {
+export function resetTelemetryObservation(deps: AudioRecorderRuntimeDeps) {
   deps.telemetryWindowStartMs.value = null;
   deps.telemetryEventCount.value = 0;
   deps.telemetryMaxPayloadBytes.value = 0;
 }
 
-export function registerTelemetryObservation(deps: RuntimeDeps, payload: unknown) {
+export function registerTelemetryObservation(deps: AudioRecorderRuntimeDeps, payload: unknown) {
   if (deps.telemetryWindowStartMs.value === null) {
     deps.telemetryWindowStartMs.value = Date.now();
   }
@@ -218,7 +213,7 @@ export function registerTelemetryObservation(deps: RuntimeDeps, payload: unknown
   );
 }
 
-export async function startRecording(deps: RuntimeDeps) {
+export async function startRecording(deps: AudioRecorderRuntimeDeps) {
   if (deps.isStarting.value) {
     return;
   }
@@ -271,7 +266,7 @@ export async function startRecording(deps: RuntimeDeps) {
   }
 }
 
-export async function pauseRecording(deps: RuntimeDeps) {
+export async function pauseRecording(deps: AudioRecorderRuntimeDeps) {
   if (!deps.recordingId.value || !deps.isRecording.value) {
     return;
   }
@@ -285,7 +280,7 @@ export async function pauseRecording(deps: RuntimeDeps) {
   }
 }
 
-export async function resumeRecording(deps: RuntimeDeps) {
+export async function resumeRecording(deps: AudioRecorderRuntimeDeps) {
   if (!deps.recordingId.value || !deps.isPaused.value) {
     return;
   }
@@ -299,7 +294,7 @@ export async function resumeRecording(deps: RuntimeDeps) {
   }
 }
 
-export async function stopRecording(deps: RuntimeDeps) {
+export async function stopRecording(deps: AudioRecorderRuntimeDeps) {
   if (
     !deps.recordingId.value
     || !deps.activeProfileId.value
@@ -350,7 +345,7 @@ export async function stopRecording(deps: RuntimeDeps) {
   }
 }
 
-export async function applyTrim(deps: RuntimeDeps, payload: { startMs: number; endMs: number }) {
+export async function applyTrim(deps: AudioRecorderRuntimeDeps, payload: { startMs: number; endMs: number }) {
   deps.clearError();
   if (!deps.activeProfileId.value || !deps.lastArtifactId.value) {
     return;
@@ -386,5 +381,7 @@ export async function applyTrim(deps: RuntimeDeps, payload: { startMs: number; e
     deps.isApplyingTrim.value = false;
   }
 }
+
+
 
 

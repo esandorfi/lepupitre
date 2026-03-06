@@ -1,32 +1,18 @@
-﻿/* eslint-disable @typescript-eslint/no-explicit-any */
-import { open } from "@tauri-apps/plugin-shell";
+﻿import { open } from "@tauri-apps/plugin-shell";
 import { classifyAsrError } from "@/lib/asrErrors";
 import { recordRecorderHealthEvent } from "@/lib/recorderHealthMetrics";
 import { buildTranscribeAudioPayload } from "@/lib/asrPayloads";
-import {
-  isTypingTargetElement,
-  resolveRecorderShortcutAction,
-} from "@/lib/recorderFlow";
-import {
-  audioRevealWav,
-} from "@/domains/recorder/api";
-import {
-  transcriptEditSave,
-  transcriptExport,
-  transcriptGet,
-  transcribeAudio,
-} from "@/domains/asr/api";
+import { isTypingTargetElement, resolveRecorderShortcutAction } from "@/lib/recorderFlow";
+import { audioRevealWav } from "@/domains/recorder/api";
+import { transcriptEditSave, transcriptExport, transcriptGet, transcribeAudio } from "@/domains/asr/api";
 import type { TranscriptExportFormat } from "@/schemas/ipc";
 import {
   resolveRecorderHealthErrorCode,
   transcriptToEditorText,
 } from "@/components/recorder/composables/audioRecorderCaptureRuntime";
+import type { AudioRecorderRuntimeDeps } from "@/components/recorder/composables/audioRecorderRuntimeDeps";
 
-type RuntimeDeps = {
-  [key: string]: any;
-};
-
-export async function transcribeRecording(deps: RuntimeDeps) {
+export async function transcribeRecording(deps: AudioRecorderRuntimeDeps) {
   deps.clearError();
   if (!deps.activeProfileId.value || !deps.lastArtifactId.value) {
     return;
@@ -94,7 +80,7 @@ export async function transcribeRecording(deps: RuntimeDeps) {
   }
 }
 
-export async function saveEditedTranscript(deps: RuntimeDeps) {
+export async function saveEditedTranscript(deps: AudioRecorderRuntimeDeps) {
   if (!deps.activeProfileId.value || !deps.baseTranscriptId.value) {
     return;
   }
@@ -128,7 +114,7 @@ export async function saveEditedTranscript(deps: RuntimeDeps) {
   }
 }
 
-export function autoCleanFillers(deps: RuntimeDeps) {
+export function autoCleanFillers(deps: AudioRecorderRuntimeDeps) {
   const next = deps.transcriptDraftText.value
     .replace(/\b(uh|um|erm|eh|ah|oh|like|you know|i mean|sort of|kind of|basically|actually|literally)\b/gi, "")
     .replace(/\b(euh|heu|hein|ben|bah|beh|bon ben|enfin|genre|voila|quoi|du coup|en fait|tu vois|tu sais|c'est-a-dire|disons)\b/gi, "")
@@ -138,11 +124,14 @@ export function autoCleanFillers(deps: RuntimeDeps) {
   deps.transcriptDraftText.value = next;
 }
 
-export function fixPunctuation(deps: RuntimeDeps) {
+export function fixPunctuation(deps: AudioRecorderRuntimeDeps) {
   let next = deps.transcriptDraftText.value
     .replace(/\s+([,.;!?:])/g, "$1")
     .replace(/([,.;!?:])([^\s\n\d])/g, "$1 $2")
-    .replace(/([.!?])\s+([a-zA-ZÀ-ÿ])/g, (_match: string, punct: string, letter: string) => `${punct} ${letter.toUpperCase()}`)
+    .replace(
+      /([.!?])\s+([a-zA-Z\u00C0-\u00FF])/g,
+      (_match: string, punct: string, letter: string) => `${punct} ${letter.toUpperCase()}`
+    )
     .replace(/\s{2,}/g, " ")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
@@ -152,30 +141,30 @@ export function fixPunctuation(deps: RuntimeDeps) {
   deps.transcriptDraftText.value = next;
 }
 
-export function goAnalyzeExport(deps: RuntimeDeps) {
+export function goAnalyzeExport(deps: AudioRecorderRuntimeDeps) {
   if (!deps.activeTranscriptIdForAnalysis.value) {
     return;
   }
   deps.phase.value = "analyze_export";
 }
 
-export function backToQuickClean(deps: RuntimeDeps) {
+export function backToQuickClean(deps: AudioRecorderRuntimeDeps) {
   deps.phase.value = "quick_clean";
 }
 
-export function requestAnalyze(deps: RuntimeDeps) {
+export function requestAnalyze(deps: AudioRecorderRuntimeDeps) {
   if (!deps.activeTranscriptIdForAnalysis.value || !deps.canAnalyzeRecorder.value) {
     return;
   }
   deps.emit("analyze", { transcriptId: deps.activeTranscriptIdForAnalysis.value });
 }
 
-export function handleViewFeedback(deps: RuntimeDeps) {
+export function handleViewFeedback(deps: AudioRecorderRuntimeDeps) {
   deps.emit("viewFeedback");
 }
 
 export function handleOnboardingContext(
-  deps: RuntimeDeps,
+  deps: AudioRecorderRuntimeDeps,
   payload: {
     audience: string;
     audienceCustom: string;
@@ -186,7 +175,7 @@ export function handleOnboardingContext(
   deps.emit("onboardingContext", payload);
 }
 
-export async function exportTranscript(deps: RuntimeDeps, format: TranscriptExportFormat) {
+export async function exportTranscript(deps: AudioRecorderRuntimeDeps, format: TranscriptExportFormat) {
   if (!deps.activeProfileId.value || !deps.activeTranscriptIdForAnalysis.value) {
     return;
   }
@@ -206,7 +195,10 @@ export async function exportTranscript(deps: RuntimeDeps, format: TranscriptExpo
   }
 }
 
-export function exportPreset(deps: RuntimeDeps, preset: "presentation" | "podcast" | "voice_note") {
+export function exportPreset(
+  deps: AudioRecorderRuntimeDeps,
+  preset: "presentation" | "podcast" | "voice_note"
+) {
   if (preset === "presentation") {
     void exportTranscript(deps, "txt");
     return;
@@ -218,7 +210,7 @@ export function exportPreset(deps: RuntimeDeps, preset: "presentation" | "podcas
   void exportTranscript(deps, "vtt");
 }
 
-export async function openExportPath(deps: RuntimeDeps) {
+export async function openExportPath(deps: AudioRecorderRuntimeDeps) {
   if (!deps.exportPath.value) {
     return;
   }
@@ -229,7 +221,7 @@ export async function openExportPath(deps: RuntimeDeps) {
   }
 }
 
-export async function revealRecording(deps: RuntimeDeps) {
+export async function revealRecording(deps: AudioRecorderRuntimeDeps) {
   if (!deps.lastSavedPath.value) {
     return;
   }
@@ -244,7 +236,7 @@ export async function revealRecording(deps: RuntimeDeps) {
   }
 }
 
-export async function handleCapturePrimaryAction(deps: RuntimeDeps) {
+export async function handleCapturePrimaryAction(deps: AudioRecorderRuntimeDeps) {
   if (deps.isStarting.value) {
     return;
   }
@@ -259,7 +251,7 @@ export async function handleCapturePrimaryAction(deps: RuntimeDeps) {
   await deps.startRecording();
 }
 
-export function handleShortcut(deps: RuntimeDeps, event: KeyboardEvent) {
+export function handleShortcut(deps: AudioRecorderRuntimeDeps, event: KeyboardEvent) {
   if (isTypingTargetElement(event.target)) {
     return;
   }
@@ -292,6 +284,4 @@ export function handleShortcut(deps: RuntimeDeps, event: KeyboardEvent) {
     requestAnalyze(deps);
   }
 }
-
-
 
