@@ -21,7 +21,7 @@ import {
   TranscribeAudioPayloadSchema,
 } from "./ipc";
 
-describe("ipc schemas", () => {
+describe("ipc schemas: transcribe and audio payloads", () => {
   it("accepts transcribe payload with camelCase UI fields", () => {
     const parsed = TranscribeAudioPayloadSchema.safeParse({
       profileId: "p-1",
@@ -102,6 +102,17 @@ describe("ipc schemas", () => {
     expect(parsed.success).toBe(true);
   });
 
+  it("accepts transcript edit save payload in camelCase", () => {
+    const parsed = TranscriptEditSavePayloadSchema.safeParse({
+      profileId: "prof-1",
+      transcriptId: "art-1",
+      editedText: "Hello world",
+    });
+    expect(parsed.success).toBe(true);
+  });
+});
+
+describe("ipc schemas: ASR sidecar and diagnostics", () => {
   it("accepts final progress events in camelCase event format", () => {
     const parsed = AsrFinalProgressEventSchema.safeParse({
       schemaVersion: "1.0.0",
@@ -138,7 +149,9 @@ describe("ipc schemas", () => {
     });
     expect(parsed.success).toBe(true);
   });
+});
 
+describe("ipc schemas: preferences and security", () => {
   it("accepts feedback context in backend snake_case format", () => {
     const parsed = FeedbackContextSchema.safeParse({
       subject_type: "attempt",
@@ -174,6 +187,23 @@ describe("ipc schemas", () => {
     expect(PreferenceKeySchema.safeParse("lepupitre.locale").success).toBe(true);
   });
 
+  it("accepts security fs probe payload and response", () => {
+    expect(SecurityProbeFsPayloadSchema.safeParse({ path: "C:/safe/path.txt" }).success).toBe(
+      true
+    );
+    expect(SecurityProbeFsResponseSchema.safeParse("allowed:file").success).toBe(true);
+  });
+
+  it("accepts security appdata prepare response", () => {
+    expect(
+      SecurityPrepareAppdataFileResponseSchema.safeParse(
+        "C:/Users/name/AppData/Roaming/LePupitre/probe/allow.txt"
+      ).success
+    ).toBe(true);
+  });
+});
+
+describe("ipc schemas: recorder status and telemetry", () => {
   it("accepts recorder status with quality flags", () => {
     const parsed = RecordingStatusResponseSchema.safeParse({
       durationMs: 1200,
@@ -229,29 +259,5 @@ describe("ipc schemas", () => {
       estimatedPayloadBytes: 1024,
     });
     expect(parsed.success).toBe(true);
-  });
-
-  it("accepts transcript edit save payload in camelCase", () => {
-    const parsed = TranscriptEditSavePayloadSchema.safeParse({
-      profileId: "prof-1",
-      transcriptId: "art-1",
-      editedText: "Hello world",
-    });
-    expect(parsed.success).toBe(true);
-  });
-
-  it("accepts security fs probe payload and response", () => {
-    expect(SecurityProbeFsPayloadSchema.safeParse({ path: "C:/safe/path.txt" }).success).toBe(
-      true
-    );
-    expect(SecurityProbeFsResponseSchema.safeParse("allowed:file").success).toBe(true);
-  });
-
-  it("accepts security appdata prepare response", () => {
-    expect(
-      SecurityPrepareAppdataFileResponseSchema.safeParse(
-        "C:/Users/name/AppData/Roaming/LePupitre/probe/allow.txt"
-      ).success
-    ).toBe(true);
   });
 });

@@ -9,7 +9,7 @@ import {
   resolveReviewCta,
 } from "./recorderFlow";
 
-describe("recorderFlow", () => {
+describe("recorderFlow core selectors", () => {
   it("prefers edited transcript id for analysis/export", () => {
     expect(resolveActiveTranscriptIdForAnalysis("base-1", "edited-1")).toBe("edited-1");
     expect(resolveActiveTranscriptIdForAnalysis("base-1", null)).toBe("base-1");
@@ -58,7 +58,9 @@ describe("recorderFlow", () => {
     expect(isTypingTargetElement(editable)).toBe(true);
     expect(isTypingTargetElement(div)).toBe(false);
   });
+});
 
+describe("recorderFlow shortcuts", () => {
   it("maps keyboard shortcuts to context-aware recorder actions", () => {
     expect(
       resolveRecorderShortcutAction({
@@ -122,7 +124,9 @@ describe("recorderFlow", () => {
       })
     ).toBeNull();
   });
+});
 
+describe("recorderFlow review state", () => {
   it("resolves review state with priority: analysis > transcript > transcribing > none", () => {
     expect(
       resolveReviewState({ hasTranscript: false, isTranscribing: false, hasAnalysisResult: false })
@@ -152,7 +156,9 @@ describe("recorderFlow", () => {
       resolveReviewState({ hasTranscript: false, isTranscribing: false, hasAnalysisResult: true })
     ).toBe("review_no_transcript");
   });
+});
 
+describe("recorderFlow review CTA", () => {
   it("resolves review CTA for no-transcript state", () => {
     const enabled = resolveReviewCta({
       reviewState: "review_no_transcript",
