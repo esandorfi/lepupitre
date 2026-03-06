@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import RecorderWaveformTimelineSvg from "@/components/recorder/RecorderWaveformTimelineSvg.vue";
 import {
   normalizeWaveformPeaks,
   resolveWaveformStyle,
@@ -118,33 +119,11 @@ function barStyle(peak: number, index: number) {
     class="app-meter-bg flex h-16 w-full rounded-lg px-2 py-2"
     :class="styleMode === 'ribbon' ? 'items-center gap-1' : 'items-end gap-1'"
   >
-    <template v-if="styleMode === 'timeline'">
-      <svg
-        class="h-full w-full"
-        viewBox="0 0 100 40"
-        preserveAspectRatio="none"
-        role="img"
-        aria-label="Audio waveform timeline"
-      >
-        <line x1="0" y1="20" x2="100" y2="20" stroke="var(--app-border)" stroke-opacity="0.5" stroke-width="0.8" />
-        <path d="M 0,12 L 100,12 M 0,28 L 100,28" stroke="var(--app-border)" stroke-opacity="0.25" stroke-width="0.5" />
-        <path
-          :d="timelinePath"
-          fill="var(--app-info)"
-          fill-opacity="0.2"
-          stroke="none"
-        />
-        <polyline
-          :points="timelineLine"
-          fill="none"
-          stroke="var(--app-info)"
-          stroke-width="1.2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        />
-        <line x1="99.2" y1="3" x2="99.2" y2="37" stroke="var(--app-info)" stroke-width="1.2" />
-      </svg>
-    </template>
+    <RecorderWaveformTimelineSvg
+      v-if="styleMode === 'timeline'"
+      :timeline-path="timelinePath"
+      :timeline-line="timelineLine"
+    />
     <span
       v-for="(peak, index) in bars"
       v-else
