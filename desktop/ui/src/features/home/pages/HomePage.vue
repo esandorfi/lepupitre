@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
-import { RouterLink } from "vue-router";
-import HomeQuestPickerPanel from "../components/HomeQuestPickerPanel.vue";
+import HomeTrainingHeroHighlights from "../components/HomeTrainingHeroHighlights.vue";
+import HomeQuestAlternatePanel from "../components/HomeQuestAlternatePanel.vue";
+import HomeTrainingSidebar from "../components/HomeTrainingSidebar.vue";
+import { useHomeQuestSelection } from "@/features/home/composables/useHomeQuestSelection";
 import { useI18n } from "@/lib/i18n";
 import {
   writeStoredHeroQuestCode,
@@ -24,19 +26,10 @@ import type {
   QuestAttemptSummary,
   QuestDaily,
 } from "@/schemas/ipc";
-
 const { t, locale } = useI18n();
 const {
-  attemptStatus,
-  dailyLoopStepClass,
   estimatedMinutesLabel,
-  formatDate,
-  mascotToneClass,
   outputLabel,
-  questMapConnectorClass,
-  questMapNodeAriaLabel,
-  questMapNodeClass,
-  rewardBadgeClass,
   toError,
 } = useHomePresentation(t);
 const { settings: uiSettings } = useUiPreferences();
@@ -55,10 +48,8 @@ const questPickerError = ref<string | null>(null);
 const questPickerSearch = ref("");
 const questPickerCategory = ref("all");
 const questPickerSort = ref<"recent" | "az" | "category">("recent");
-const trainingActivityTab = ref<"feedback" | "history">("feedback");
 const availableQuests = ref<Quest[]>([]);
 const achievementPulse = ref<AchievementPulse | null>(null);
-
 const feedbackAttempts = computed(() =>
   recentAttempts.value.filter((attempt) => Boolean(attempt.feedback_id))
 );
@@ -67,6 +58,9 @@ const hasFeedbackInRecent = computed(() =>
 );
 const heroQuest = computed(() => selectedHeroQuest.value ?? trainingDailyQuest.value?.quest ?? null);
 const heroQuestIsOverride = computed(() => Boolean(selectedHeroQuest.value));
+const heroQuestRoute = computed(() =>
+  heroQuest.value ? questRoute(heroQuest.value.code) : "/training"
+);
 const questCategories = computed(() => {
   const categories = Array.from(
     new Set(availableQuests.value.map((quest) => quest.category))
@@ -310,7 +304,20 @@ const pickerVisibleQuests = computed(() => [
   ...recentPickerQuests.value,
   ...pickerMainQuests.value,
 ]);
-
+const {
+  questCodeLabel,
+  questRoute,
+  closeQuestPicker,
+  selectHeroQuest,
+  resetHeroQuestToDaily,
+} = useHomeQuestSelection({
+  trainingProjectId,
+  selectedHeroQuest,
+  isQuestPickerOpen,
+  activeProfileId: computed(() => state.value.activeProfileId),
+  writeStoredHeroQuestCode,
+  formatQuestCode: trainingStore.formatQuestCode,
+});
 const {
   activeCode: questPickerActiveCode,
   onKeydown: onQuestPickerKeydown,
@@ -324,38 +331,6 @@ const {
   onClose: closeQuestPicker,
   onSelect: selectHeroQuest,
 });
-
-function questCodeLabel(code: string) {
-  const projectId = trainingProjectId.value ?? "";
-  return trainingStore.formatQuestCode(projectId, code);
-}
-
-function questRoute(code: string) {
-  if (!trainingProjectId.value) {
-    return "/training";
-  }
-  return `/quest/${code}?projectId=${trainingProjectId.value}&from=training`;
-}
-
-function selectHeroQuest(quest: Quest) {
-  selectedHeroQuest.value = quest;
-  if (state.value.activeProfileId) {
-    writeStoredHeroQuestCode(state.value.activeProfileId, quest.code);
-  }
-  closeQuestPicker();
-}
-
-function resetHeroQuestToDaily() {
-  selectedHeroQuest.value = null;
-  if (state.value.activeProfileId) {
-    writeStoredHeroQuestCode(state.value.activeProfileId, null);
-  }
-}
-
-function closeQuestPicker() {
-  isQuestPickerOpen.value = false;
-}
-
 const {
   focusQuestMapNode,
   loadTrainingData,
@@ -386,12 +361,10 @@ const {
   t,
   toError,
 });
-
 onMounted(async () => {
   await sessionStore.bootstrap();
   await loadTrainingData();
 });
-
 watch(
   () => state.value.activeProfileId,
   async () => {
@@ -400,13 +373,11 @@ watch(
     questPickerSearch.value = "";
     questPickerCategory.value = "all";
     questPickerSort.value = "recent";
-    trainingActivityTab.value = "feedback";
     selectedHeroQuest.value = null;
     achievementPulse.value = null;
     await loadTrainingData();
   }
 );
-
 watch(
   [isQuestPickerOpen, pickerVisibleQuests],
   () => {
@@ -414,7 +385,6 @@ watch(
   },
   { deep: false }
 );
-
 watch(
   () => locale.value,
   async () => {
@@ -432,7 +402,6 @@ watch(
     }
   }
 );
-
 watch(
   () => [uiSettings.value.mascotEnabled, uiSettings.value.mascotIntensity, uiSettings.value.gamificationMode] as const,
   async ([mascotEnabled]) => {
@@ -455,429 +424,74 @@ watch(
   }
 );
 </script>
-
 <template>
   <section class="app-page-shell">
     <div class="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(0,0.95fr)] xl:items-start">
       <div class="space-y-4">
-        <UCard class="app-panel app-panel-hero" variant="outline">
-          <div class="app-text-eyebrow">{{ t("training.hero_label") }}</div>
-          <div v-if="trainingError" class="app-danger-text app-text-meta mt-2">{{ trainingError }}</div>
-          <div v-else-if="isTrainingLoading" class="app-muted app-text-body mt-2">{{ t("talks.loading") }}</div>
-          <div v-else-if="heroQuest" class="mt-2 space-y-2">
-            <div class="flex flex-wrap items-center gap-2">
-              <UBadge color="neutral" variant="solid">
-                {{ heroQuestIsOverride ? t("training.hero_selected_badge") : t("training.hero_daily_badge") }}
-              </UBadge>
-              <UButton
-                v-if="heroQuestIsOverride && trainingDailyQuest"
-                class="app-link app-text-meta underline !px-0 !py-0 !font-normal"
-                size="sm"
-               
-                color="neutral"
-               variant="ghost" @click="resetHeroQuestToDaily">
-                {{ t("training.use_daily_quest") }}
-              </UButton>
-            </div>
-            <div class="app-text app-text-page-title">{{ heroQuest.title }}</div>
-            <div class="app-muted app-text-body">{{ heroQuest.prompt }}</div>
-            <div class="flex flex-wrap items-center gap-2 app-text-meta">
-              <UBadge color="neutral" variant="solid">
-                {{ outputLabel(heroQuest.output_type) }}
-              </UBadge>
-              <UBadge color="neutral" variant="solid">
-                {{ heroQuest.category }}
-              </UBadge>
-              <UBadge color="neutral" variant="solid">
-                {{ estimatedMinutesLabel(heroQuest.estimated_sec) }} {{ t("talks.minutes") }}
-              </UBadge>
-            </div>
-            <div class="pt-1">
-              <UButton size="lg" :to="questRoute(heroQuest.code)" color="primary">
-                {{ t("training.start") }}
-              </UButton>
-            </div>
-          </div>
-          <div v-else class="app-muted app-text-body mt-2">
-            {{ t("home.quest_empty") }}
-          </div>
-        </UCard>
-
-        <UCard
-          v-if="achievementPulse && !trainingError"
-          class="app-panel app-panel-compact border border-[var(--color-success)] bg-[color-mix(in_srgb,var(--color-success)_12%,var(--color-surface))]"
-         
-         variant="outline">
-          <div class="flex flex-wrap items-start justify-between gap-3">
-            <div class="min-w-0 flex-1">
-              <div class="app-text-eyebrow">{{ t("training.achievement_title") }}</div>
-              <div class="app-text app-text-subheadline mt-1">{{ achievementPulse.title }}</div>
-              <div class="app-muted app-text-body mt-1">{{ achievementPulse.body }}</div>
-            </div>
-            <div class="flex items-center gap-2">
-              <UButton size="sm" :to="achievementPulse.ctaRoute" color="neutral" variant="outline">
-                {{ achievementPulse.ctaLabel }}
-              </UButton>
-              <UButton size="sm" color="neutral" variant="ghost" @click="achievementPulse = null">
-                {{ t("training.achievement_dismiss") }}
-              </UButton>
-            </div>
-          </div>
-        </UCard>
-
-        <UCard
-          v-if="showMascotCard && mascotMessage && !trainingError"
-          class="app-panel app-panel-compact border"
-          :class="mascotToneClass(mascotMessage.kind)"
-         
-         variant="outline">
-          <div class="flex flex-wrap items-start justify-between gap-3">
-            <div class="min-w-0 flex-1">
-              <div class="app-text-eyebrow">{{ t("training.mascot_label") }}</div>
-              <div class="app-text app-text-subheadline mt-1">{{ mascotMessage.title }}</div>
-              <div v-if="mascotBody" class="app-muted app-text-body mt-1">{{ mascotBody }}</div>
-            </div>
-            <UButton
-              v-if="mascotMessage.cta_route && mascotMessage.cta_label"
-              size="md"
-             
-              :to="mascotMessage.cta_route"
-             color="neutral" variant="outline">
-              {{ mascotMessage.cta_label }}
-            </UButton>
-          </div>
-        </UCard>
-
-        <UCard
-          v-if="trainingProgress"
-          class="app-panel app-panel-compact border"
-          :class="dailyLoopIsComplete ? 'border-[var(--color-success)] bg-[color-mix(in_srgb,var(--color-success)_10%,var(--color-surface))]' : ''"
-         
-         variant="outline">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <div class="app-text-eyebrow">{{ t("training.daily_loop_title") }}</div>
-              <div class="app-muted app-text-meta mt-1">{{ t("training.daily_loop_subtitle") }}</div>
-            </div>
-            <UBadge color="neutral" variant="solid">
-              {{ dailyLoopCompletedCount }} / {{ dailyLoopSteps.length }}
-            </UBadge>
-          </div>
-          <div class="mt-3 space-y-2">
-            <div
-              v-for="step in dailyLoopSteps"
-              :key="step.id"
-              class="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2"
-              :class="dailyLoopStepClass(step.done)"
-            >
-              <div class="app-text app-text-body-strong text-sm">{{ step.title }}</div>
-              <div class="flex items-center gap-2">
-                <UBadge :color="step.done ? 'success' : 'neutral'" class="py-0.5" variant="solid">
-                  {{ step.done ? t("training.daily_loop_done") : t("training.daily_loop_pending") }}
-                </UBadge>
-                <RouterLink
-                  v-if="!step.done"
-                  class="app-link app-text-meta underline"
-                  :to="step.ctaRoute"
-                >
-                  {{ t("training.daily_loop_open") }}
-                </RouterLink>
-              </div>
-            </div>
-          </div>
-          <div class="app-muted app-text-meta mt-2">
-            {{ dailyLoopIsComplete ? t("training.daily_loop_hint_complete") : t("training.daily_loop_hint_pending") }}
-          </div>
-        </UCard>
-
-        <UCard class="app-panel" variant="outline">
-          <div class="app-text-eyebrow">{{ t("training.alternate_title") }}</div>
-          <p class="app-muted app-text-body mt-2">{{ t("training.alternate_subtitle") }}</p>
-          <div class="mt-3 flex flex-wrap gap-2">
-            <UButton
-              v-if="trainingProjectId"
-              size="lg"
-             
-              :to="`/quest/FREE?projectId=${trainingProjectId}&from=training`"
-             color="neutral" variant="outline">
-              {{ t("training.free_quest") }}
-            </UButton>
-            <UButton
-              v-if="trainingProjectId"
-              size="lg"
-             
-              color="neutral"
-             variant="outline" @click="openQuestPicker">
-              {{ t("training.change_quest") }}
-            </UButton>
-            <RouterLink
-              class="app-link app-text-meta inline-flex items-center underline"
-              to="/talks"
-            >
-              {{ t("training.go_talks") }}
-            </RouterLink>
-          </div>
-
-          <HomeQuestPickerPanel
-            :open="isQuestPickerOpen"
-            :is-loading="isQuestPickerLoading"
-            :error="questPickerError"
-            :search="questPickerSearch"
-            :category="questPickerCategory"
-            :sort="questPickerSort"
-            :categories="questCategories"
-            :has-filtered-quests="filteredQuests.length > 0"
-            :show-recent-section="showRecentQuestSection"
-            :recent-quests="recentPickerQuests"
-            :main-quests="pickerMainQuests"
-            :selected-quest-code="heroQuest?.code ?? null"
-            :active-quest-code="questPickerActiveCode"
-            :project-id="trainingProjectId"
-            :quest-code-label="questCodeLabel"
-            :output-label="outputLabel"
-            :estimated-minutes-label="estimatedMinutesLabel"
-            @update:search="questPickerSearch = $event"
-            @update:category="questPickerCategory = $event"
-            @update:sort="questPickerSort = $event"
-            @close="closeQuestPicker"
-            @select-quest="selectHeroQuest"
-            @keydown="onQuestPickerKeydown"
-          />
-        </UCard>
+        <HomeTrainingHeroHighlights
+          :training-error="trainingError"
+          :is-training-loading="isTrainingLoading"
+          :hero-quest="heroQuest"
+          :hero-quest-is-override="heroQuestIsOverride"
+          :training-daily-quest="trainingDailyQuest"
+          :hero-quest-route="heroQuestRoute"
+          :achievement-pulse="achievementPulse"
+          :show-mascot-card="showMascotCard"
+          :mascot-message="mascotMessage"
+          :mascot-body="mascotBody"
+          :training-progress="trainingProgress"
+          :daily-loop-steps="dailyLoopSteps"
+          :daily-loop-completed-count="dailyLoopCompletedCount"
+          :daily-loop-is-complete="dailyLoopIsComplete"
+          @reset-hero-quest-to-daily="resetHeroQuestToDaily"
+          @dismiss-achievement="achievementPulse = null"
+        />
+        <HomeQuestAlternatePanel
+          :training-project-id="trainingProjectId"
+          :is-quest-picker-open="isQuestPickerOpen"
+          :is-quest-picker-loading="isQuestPickerLoading"
+          :quest-picker-error="questPickerError"
+          :quest-picker-search="questPickerSearch"
+          :quest-picker-category="questPickerCategory"
+          :quest-picker-sort="questPickerSort"
+          :quest-categories="questCategories"
+          :has-filtered-quests="filteredQuests.length > 0"
+          :show-recent-quest-section="showRecentQuestSection"
+          :recent-picker-quests="recentPickerQuests"
+          :picker-main-quests="pickerMainQuests"
+          :selected-hero-quest-code="heroQuest?.code ?? null"
+          :quest-picker-active-code="questPickerActiveCode"
+          :quest-code-label="questCodeLabel"
+          :output-label="outputLabel"
+          :estimated-minutes-label="estimatedMinutesLabel"
+          @open-quest-picker="openQuestPicker"
+          @update:search="questPickerSearch = $event"
+          @update:category="questPickerCategory = $event"
+          @update:sort="questPickerSort = $event"
+          @close="closeQuestPicker"
+          @select-quest="selectHeroQuest"
+          @keydown="onQuestPickerKeydown"
+        />
       </div>
-
-      <UCard class="app-panel xl:sticky xl:top-4" variant="outline">
-      <div
-        class="rounded-xl border border-[var(--app-border)] p-3"
-        :class="isQuestWorldMode ? 'bg-[color-mix(in_srgb,var(--color-accent-soft)_30%,var(--color-surface))]' : ''"
-      >
-        <div class="app-text-eyebrow">{{ t("training.progress_title") }}</div>
-        <div v-if="isTrainingLoading" class="app-muted app-text-meta mt-2">{{ t("talks.loading") }}</div>
-        <div v-else-if="trainingProgress" class="mt-2 space-y-2">
-          <div class="grid gap-2" :class="showCredits ? 'sm:grid-cols-2' : 'sm:grid-cols-1'">
-            <div class="rounded-lg border border-[var(--app-border)] bg-[var(--color-surface-elevated)] px-3 py-2">
-              <div class="app-muted app-text-caption">{{ t("training.progress_streak") }}</div>
-              <div class="app-text app-text-section-title mt-1">
-                {{ trainingProgress.streak_days }}
-              </div>
-            </div>
-            <div
-              v-if="showCredits"
-              class="rounded-lg border border-[var(--app-border)] bg-[var(--color-surface-elevated)] px-3 py-2"
-            >
-              <div class="app-muted app-text-caption">{{ t("training.progress_credits") }}</div>
-              <div class="app-text app-text-section-title mt-1">
-                {{ trainingProgress.credits }}
-              </div>
-            </div>
-          </div>
-          <div>
-            <div class="flex items-center justify-between gap-2 app-text-meta">
-              <span class="app-muted">{{ t("training.progress_weekly") }}</span>
-              <span class="app-text">
-                {{ trainingProgress.weekly_completed }} / {{ trainingProgress.weekly_target }}
-              </span>
-            </div>
-            <div class="mt-1 h-2 overflow-hidden rounded-full app-meter-bg">
-              <div
-                class="h-full rounded-full bg-[var(--color-accent)] transition-all"
-                :style="{ width: `${weeklyProgressPercent}%` }"
-              ></div>
-            </div>
-          </div>
-          <div v-if="showCredits" class="app-muted app-text-meta">
-            {{ t("training.progress_next") }}: {{ trainingProgress.next_milestone }}
-            ({{ creditsToMilestone }} {{ t("training.progress_to_next") }})
-          </div>
-
-          <div
-            v-if="showQuestMap && questMapNodes.length > 0"
-            class="rounded-xl border border-[var(--app-border)] p-3"
-            :class="isQuestWorldMode ? 'bg-[color-mix(in_srgb,var(--color-accent-soft)_20%,var(--color-surface))]' : 'bg-[var(--color-surface-elevated)]'"
-          >
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <div class="app-text-eyebrow">{{ t("training.quest_map_title") }}</div>
-              <UBadge color="neutral" variant="solid">
-                {{ trainingProgress.weekly_completed }} / {{ trainingProgress.weekly_target }}
-              </UBadge>
-            </div>
-            <div class="mt-3 overflow-x-auto pb-1">
-              <div class="flex min-w-[440px] items-start gap-2 pr-1">
-                <template v-for="(node, index) in questMapNodes" :key="node.id">
-                  <div class="flex items-start gap-2">
-                    <UButton
-                      class="min-h-0 w-[76px] flex-col items-center text-center transition !px-0 !py-0"
-                      :style="{ marginTop: `${node.offsetPx}px` }"
-                      size="sm"
-                     
-                      :aria-label="questMapNodeAriaLabel(node)"
-                      color="neutral"
-                     variant="ghost" @click="focusQuestMapNode(node)">
-                      <div
-                        class="flex h-9 w-9 items-center justify-center rounded-full border text-sm font-semibold transition"
-                        :class="questMapNodeClass(node)"
-                      >
-                        {{ index + 1 }}
-                      </div>
-                      <div class="app-text app-text-caption mt-1 leading-tight">
-                        {{ node.label }}
-                      </div>
-                      <div class="app-muted app-text-meta mt-1">
-                        +{{ node.reward }} {{ t("training.progress_credits") }}
-                      </div>
-                      <UBadge class="mt-1 py-0.5" color="neutral" variant="solid">
-                        {{ node.category ?? t("training.quest_map_any_category") }}
-                      </UBadge>
-                    </UButton>
-                    <div
-                      v-if="index < questMapNodes.length - 1"
-                      class="mt-4 h-[2px] w-8 rounded-full transition"
-                      :class="questMapConnectorClass(node.done)"
-                    ></div>
-                  </div>
-                </template>
-              </div>
-            </div>
-            <div class="app-muted app-text-meta mt-2">
-              {{ questMapHint }}
-            </div>
-          </div>
-
-          <div
-            v-if="showCredits && rewardBadges.length > 0"
-            class="rounded-xl border border-[var(--app-border)] bg-[var(--color-surface-elevated)] p-3"
-          >
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <div class="app-text-eyebrow">{{ t("training.rewards_title") }}</div>
-              <UBadge color="neutral" variant="solid">
-                {{ unlockedRewardCount }} / {{ rewardBadges.length }} {{ t("training.rewards_unlocked") }}
-              </UBadge>
-            </div>
-            <div class="mt-3 grid gap-2 sm:grid-cols-2">
-              <div
-                v-for="badge in rewardBadges"
-                :key="badge.id"
-                class="rounded-lg border px-3 py-2"
-                :class="rewardBadgeClass(badge.unlocked, nextRewardBadge?.id === badge.id)"
-              >
-                <div class="flex items-center justify-between gap-2">
-                  <div class="app-text app-text-body-strong text-sm">{{ badge.title }}</div>
-                  <UBadge
-                    class="py-0.5"
-                    :color="badge.unlocked ? 'success' : 'neutral'"
-                    variant="solid"
-                  >
-                    {{ badge.unlocked ? t("training.rewards_status_unlocked") : t("training.rewards_status_locked") }}
-                  </UBadge>
-                </div>
-                <div class="app-muted app-text-meta mt-1">
-                  {{ Math.min(badge.current, badge.target) }} / {{ badge.target }}
-                </div>
-              </div>
-            </div>
-            <div v-if="nextRewardBadge" class="app-muted app-text-meta mt-2">
-              {{ t("training.rewards_next") }}: {{ nextRewardBadge.title }}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <div class="app-text-eyebrow">
-          {{ t("training.history_title") }}
-        </div>
-        <div class="flex flex-wrap gap-2">
-          <UButton
-            size="sm"
-            color="neutral" :variant="trainingActivityTab === 'feedback' ? 'outline' : 'ghost'"
-            @click="trainingActivityTab = 'feedback'"
-          >
-            {{ t("training.feedback_title") }} Â· {{ feedbackAttempts.length }}
-          </UButton>
-          <UButton
-            size="sm"
-            color="neutral" :variant="trainingActivityTab === 'history' ? 'outline' : 'ghost'"
-            @click="trainingActivityTab = 'history'"
-          >
-            {{ t("training.history_title") }} Â· {{ recentAttempts.length }}
-          </UButton>
-        </div>
-      </div>
-
-      <div v-if="isTrainingLoading" class="app-muted app-text-body mt-3">{{ t("talks.loading") }}</div>
-
-      <template v-else-if="trainingActivityTab === 'feedback'">
-        <div v-if="feedbackAttempts.length === 0" class="app-muted app-text-body mt-3">
-          {{ t("training.feedback_empty") }}
-        </div>
-        <div v-else class="mt-3 space-y-3">
-          <div class="space-y-2 app-text-meta">
-            <div
-              v-for="attempt in feedbackAttempts"
-              :key="attempt.id"
-              class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--app-border)] px-3 py-2"
-            >
-              <div>
-                <div class="app-text text-sm">{{ attempt.quest_title }}</div>
-                <div class="app-muted app-text-meta">
-                  {{ formatDate(attempt.created_at) }} Â· {{ outputLabel(attempt.output_type) }} Â·
-                  {{ questCodeLabel(attempt.quest_code) }}
-                </div>
-              </div>
-              <div class="flex items-center gap-2">
-                <UBadge color="success" variant="solid">
-                  {{ t("training.feedback_ready") }}
-                </UBadge>
-                <RouterLink
-                  v-if="attempt.feedback_id"
-                  class="app-link app-text-meta underline"
-                  :to="`/feedback/${attempt.feedback_id}`"
-                >
-                  {{ t("home.quest_followup_feedback") }}
-                </RouterLink>
-              </div>
-            </div>
-          </div>
-        </div>
-      </template>
-
-      <template v-else>
-        <div v-if="recentAttempts.length === 0" class="app-muted app-text-body mt-3">
-          {{ t("training.history_empty") }}
-        </div>
-        <div v-else class="mt-3 space-y-2 app-text-meta">
-          <div
-            v-for="attempt in recentAttempts"
-            :key="attempt.id"
-            class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--app-border)] px-3 py-2"
-          >
-            <div>
-              <div class="app-text text-sm">{{ attempt.quest_title }}</div>
-              <div class="app-muted app-text-meta">
-                {{ formatDate(attempt.created_at) }} Â· {{ attemptStatus(attempt) }} Â·
-                {{ questCodeLabel(attempt.quest_code) }}
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              <RouterLink
-                class="app-link app-text-meta underline"
-                :to="`/quest/${attempt.quest_code}?projectId=${trainingProjectId}&from=training`"
-              >
-                {{ t("home.quest_followup_replay") }}
-              </RouterLink>
-              <RouterLink
-                v-if="attempt.feedback_id"
-                class="app-link app-text-meta underline"
-                :to="`/feedback/${attempt.feedback_id}`"
-              >
-                {{ t("home.quest_followup_feedback") }}
-              </RouterLink>
-            </div>
-          </div>
-        </div>
-      </template>
-      </UCard>
+      <HomeTrainingSidebar
+        :is-training-loading="isTrainingLoading"
+        :training-progress="trainingProgress"
+        :show-credits="showCredits"
+        :show-quest-map="showQuestMap"
+        :is-quest-world-mode="isQuestWorldMode"
+        :weekly-progress-percent="weeklyProgressPercent"
+        :credits-to-milestone="creditsToMilestone"
+        :quest-map-nodes="questMapNodes"
+        :quest-map-hint="questMapHint"
+        :reward-badges="rewardBadges"
+        :unlocked-reward-count="unlockedRewardCount"
+        :next-reward-badge="nextRewardBadge"
+        :feedback-attempts="feedbackAttempts"
+        :recent-attempts="recentAttempts"
+        :training-project-id="trainingProjectId"
+        :quest-code-label="questCodeLabel"
+        @focus-quest-map-node="focusQuestMapNode"
+      />
     </div>
   </section>
 </template>
-
