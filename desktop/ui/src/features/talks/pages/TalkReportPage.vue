@@ -1,244 +1,35 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
-import { useRoute, RouterLink } from "vue-router";
+import { RouterLink } from "vue-router";
 import TalkStepPageShell from "@/components/TalkStepPageShell.vue";
-import { audioRevealWav } from "@/domains/recorder/api";
-import { useI18n } from "@/lib/i18n";
-import {
-  appState,
-  packStore,
-  runStore,
-  sessionStore,
-  talksStore,
-  trainingStore,
-} from "@/stores/app";
-import type {
-  PeerReviewSummary,
-  QuestAttemptSummary,
-  QuestReportItem,
-  RunSummary,
-} from "@/schemas/ipc";
+import { useTalkReportPageState } from "@/features/talks/composables/useTalkReportPageState";
 
-const { t } = useI18n();
-const route = useRoute();
-const projectId = computed(() => String(route.params.projectId || ""));
-
-const error = ref<string | null>(null);
-const isLoading = ref(false);
-const report = ref<QuestReportItem[]>([]);
-const attempts = ref<QuestAttemptSummary[]>([]);
-const runs = ref<RunSummary[]>([]);
-const peerReviews = ref<PeerReviewSummary[]>([]);
-const isActivating = ref(false);
-const exportPath = ref<string | null>(null);
-const exportingRunId = ref<string | null>(null);
-const isRevealing = ref(false);
-const exportError = ref<string | null>(null);
-
-const project = computed(() =>
-  appState.projects.find((item) => item.id === projectId.value) ?? null
-);
-const isActive = computed(() => appState.activeProject?.id === projectId.value);
-const talkNumber = computed(() => project.value?.talk_number ?? null);
-const activeStep = computed<"train" | "export">(() => {
-  if (route.name === "talk-export") {
-    return "export";
-  }
-  return "train";
-});
-
-function toError(err: unknown) {
-  return err instanceof Error ? err.message : String(err);
-}
-
-function formatDate(value: string | null | undefined) {
-  if (!value) {
-    return "--";
-  }
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-  return date.toLocaleDateString();
-}
-
-function attemptStatus(item: { has_feedback: boolean; has_transcript: boolean; has_audio: boolean }) {
-  if (item.has_feedback) {
-    return t("quest.status_feedback");
-  }
-  if (item.has_transcript) {
-    return t("quest.status_transcribed");
-  }
-  if (item.has_audio) {
-    return t("quest.status_recorded");
-  }
-  return t("quest.status_not_started");
-}
-
-function runStatus(run: RunSummary) {
-  if (run.feedback_id) {
-    return t("talk_report.timeline_feedback");
-  }
-  if (run.transcript_id) {
-    return t("talk_report.timeline_transcribed");
-  }
-  if (run.audio_artifact_id) {
-    return t("talk_report.timeline_recorded");
-  }
-  return t("talk_report.timeline_started");
-}
-
-async function exportPack(runId: string) {
-  exportPath.value = null;
-  exportingRunId.value = runId;
-  exportError.value = null;
-  try {
-    const result = await packStore.exportPack(runId);
-    exportPath.value = result.path;
-  } catch (err) {
-    exportError.value = toError(err);
-  } finally {
-    exportingRunId.value = null;
-  }
-}
-
-async function revealExport() {
-  if (!exportPath.value) {
-    return;
-  }
-  isRevealing.value = true;
-  exportError.value = null;
-  try {
-    await audioRevealWav(exportPath.value);
-  } catch (err) {
-    exportError.value = toError(err);
-  } finally {
-    isRevealing.value = false;
-  }
-}
-
-function outputLabel(outputType: string) {
-  const type = outputType.toLowerCase();
-  if (type === "audio") {
-    return t("quest.output_audio");
-  }
-  if (type === "text") {
-    return t("quest.output_text");
-  }
-  return outputType;
-}
-
-function questCodeLabel(code: string) {
-  return trainingStore.formatQuestCode(projectId.value, code);
-}
-
-const timeline = computed(() => {
-  const items: {
-    id: string;
-    label: string;
-    date: string;
-    status: string;
-    to?: string;
-    meta?: string;
-  }[] = [];
-
-  for (const attempt of attempts.value) {
-    items.push({
-      id: attempt.id,
-      label: attempt.quest_title,
-      date: attempt.created_at,
-      status: attemptStatus(attempt),
-      to: `/quest/${attempt.quest_code}?from=talk&projectId=${projectId.value}`,
-      meta: questCodeLabel(attempt.quest_code),
-    });
-  }
-
-  for (const run of runs.value) {
-    items.push({
-      id: run.id,
-      label: t("talk_report.timeline_boss_run"),
-      date: run.created_at,
-      status: runStatus(run),
-      to: `/boss-run?runId=${run.id}`,
-    });
-  }
-
-  for (const review of peerReviews.value) {
-    items.push({
-      id: review.id,
-      label: t("talk_report.timeline_peer_review"),
-      date: review.created_at,
-      status: t("talk_report.timeline_peer_review_status"),
-      to: `/peer-review/${review.id}?projectId=${projectId.value}`,
-      meta: review.reviewer_tag ?? undefined,
-    });
-  }
-
-  items.sort((a, b) => {
-    const aTime = new Date(a.date).getTime();
-    const bTime = new Date(b.date).getTime();
-    if (Number.isNaN(aTime) || Number.isNaN(bTime)) {
-      return 0;
-    }
-    return bTime - aTime;
-  });
-
-  return items;
-});
-
-const summary = computed(() => {
-  const total = report.value.length;
-  const started = report.value.filter((item) => item.attempt_id).length;
-  const feedbackCount = report.value.filter((item) => item.has_feedback).length;
-  const last = report.value
-    .map((item) => item.attempt_created_at)
-    .filter((value): value is string => Boolean(value))
-    .sort()
-    .pop();
-  return {
-    total,
-    started,
-    feedbackCount,
-    last,
-  };
-});
-
-async function loadReport() {
-  error.value = null;
-  isLoading.value = true;
-  try {
-    await sessionStore.bootstrap();
-    await talksStore.loadProjects();
-    if (!projectId.value) {
-      throw new Error("project_missing");
-    }
-    report.value = await trainingStore.getQuestReport(projectId.value);
-    attempts.value = await trainingStore.getQuestAttempts(projectId.value, 12);
-    runs.value = await runStore.getRuns(projectId.value, 12);
-    peerReviews.value = await packStore.getPeerReviews(projectId.value, 12);
-  } catch (err) {
-    error.value = toError(err);
-  } finally {
-    isLoading.value = false;
-  }
-}
-
-async function setActive() {
-  if (!projectId.value) {
-    return;
-  }
-  isActivating.value = true;
-  error.value = null;
-  try {
-    await talksStore.setActiveProject(projectId.value);
-  } catch (err) {
-    error.value = toError(err);
-  } finally {
-    isActivating.value = false;
-  }
-}
-
-onMounted(loadReport);
+const {
+  t,
+  projectId,
+  error,
+  isLoading,
+  report,
+  runs,
+  isActivating,
+  exportPath,
+  exportingRunId,
+  isRevealing,
+  exportError,
+  project,
+  isActive,
+  talkNumber,
+  activeStep,
+  summary,
+  timeline,
+  formatDate,
+  attemptStatus,
+  runStatus,
+  outputLabel,
+  questCodeLabel,
+  exportPack,
+  revealExport,
+  setActive,
+} = useTalkReportPageState();
 </script>
 
 <template>
@@ -277,10 +68,11 @@ onMounted(loadReport);
       <UButton
         v-else
         size="sm"
-       
         :disabled="isActivating"
         color="neutral"
-       variant="outline" @click="setActive">
+        variant="outline"
+        @click="setActive"
+      >
         {{ t("talk_report.set_active") }}
       </UButton>
     </template>
@@ -322,12 +114,13 @@ onMounted(loadReport);
           v-for="(quest, index) in report"
           :key="quest.quest_code"
           as="div"
-         
-         class="app-panel app-panel-compact" variant="outline">
+          class="app-panel app-panel-compact"
+          variant="outline"
+        >
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
               <div class="app-text-eyebrow">
-                {{ t("talk_report.quest_label") }} {{ index + 1 }} · {{ questCodeLabel(quest.quest_code) }}
+                {{ t("talk_report.quest_label") }} {{ index + 1 }} - {{ questCodeLabel(quest.quest_code) }}
               </div>
               <div class="app-text mt-1 text-sm font-semibold">{{ quest.quest_title }}</div>
               <div class="app-muted app-text-meta mt-1">{{ quest.quest_prompt }}</div>
@@ -340,10 +133,10 @@ onMounted(loadReport);
           </div>
           <div class="mt-3 flex flex-wrap items-center gap-2">
             <UButton
-             
               size="sm"
               :to="`/quest/${quest.quest_code}?from=talk&projectId=${projectId}`"
-             color="info">
+              color="info"
+            >
               {{ t("talk_report.open_quest") }}
             </UButton>
             <RouterLink
@@ -372,16 +165,17 @@ onMounted(loadReport);
           <div>
             <div class="app-text text-sm">{{ t("talk_report.timeline_boss_run") }}</div>
             <div class="app-muted app-text-meta">
-              {{ formatDate(run.created_at) }} · {{ runStatus(run) }}
+              {{ formatDate(run.created_at) }} - {{ runStatus(run) }}
             </div>
           </div>
           <div class="flex items-center gap-2">
             <UButton
-             
               size="sm"
               :disabled="exportingRunId === run.id"
               color="neutral"
-             variant="outline" @click="exportPack(run.id)">
+              variant="outline"
+              @click="exportPack(run.id)"
+            >
               {{ t("packs.export") }}
             </UButton>
           </div>
@@ -393,11 +187,12 @@ onMounted(loadReport);
           {{ exportPath }}
         </span>
         <UButton
-         
           size="sm"
           :disabled="isRevealing"
           color="neutral"
-         variant="ghost" @click="revealExport">
+          variant="ghost"
+          @click="revealExport"
+        >
           {{ t("packs.export_reveal") }}
         </UButton>
         <span class="app-subtle app-text-meta">{{ t("packs.export_ready") }}</span>
@@ -421,8 +216,8 @@ onMounted(loadReport);
           <div>
             <div class="app-text text-sm">{{ item.label }}</div>
             <div class="app-muted app-text-meta">
-              {{ formatDate(item.date) }} · {{ item.status }}
-              <span v-if="item.meta">· {{ item.meta }}</span>
+              {{ formatDate(item.date) }} - {{ item.status }}
+              <span v-if="item.meta">- {{ item.meta }}</span>
             </div>
           </div>
           <div class="flex items-center gap-2">
@@ -435,4 +230,3 @@ onMounted(loadReport);
     </UCard>
   </TalkStepPageShell>
 </template>
-
