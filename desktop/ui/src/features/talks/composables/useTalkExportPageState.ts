@@ -40,18 +40,26 @@ export function useTalkExportPageState() {
     loadData,
     setActive,
   } = createTalkExportRuntime({
-    projectId,
-    error,
-    isLoading,
-    isActivating,
-    report,
-    runs,
-    peerReviews,
-    exportPath,
-    exportingRunId,
-    isExportingOutline,
-    isRevealing,
-    exportError,
+    state: {
+      identity: {
+        projectId,
+      },
+      model: {
+        report,
+        runs,
+        peerReviews,
+      },
+      ui: {
+        error,
+        isLoading,
+        isActivating,
+        exportPath,
+        exportingRunId,
+        isExportingOutline,
+        isRevealing,
+        exportError,
+      },
+    },
   });
 
   onMounted(() => {
