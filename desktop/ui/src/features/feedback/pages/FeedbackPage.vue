@@ -1,207 +1,51 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
-import { useRoute, RouterLink } from "vue-router";
-import { resolveFeedbackBackLink, resolveFeedbackContextLabel } from "@/lib/feedbackContext";
-import { useI18n } from "@/lib/i18n";
-import { useUiPreferences } from "@/lib/uiPreferences";
-import { isFeedbackReviewed, markFeedbackReviewed } from "@/lib/feedbackReviewState";
-import {
-  appState,
-  coachStore,
-  feedbackStore,
-  sessionStore,
-  trainingStore,
-} from "@/stores/app";
-import type { FeedbackContext, FeedbackV1, MascotMessage } from "@/schemas/ipc";
+import { RouterLink } from "vue-router";
+import FeedbackActionsCard from "@/features/feedback/components/FeedbackActionsCard.vue";
+import FeedbackCommentsCard from "@/features/feedback/components/FeedbackCommentsCard.vue";
+import FeedbackMascotCard from "@/features/feedback/components/FeedbackMascotCard.vue";
+import FeedbackMetricsCard from "@/features/feedback/components/FeedbackMetricsCard.vue";
+import FeedbackNotesCard from "@/features/feedback/components/FeedbackNotesCard.vue";
+import FeedbackRecommendedQuestsCard from "@/features/feedback/components/FeedbackRecommendedQuestsCard.vue";
+import { useFeedbackPageState } from "@/features/feedback/composables/useFeedbackPageState";
 
-const { t, locale } = useI18n();
-const { settings: uiSettings } = useUiPreferences();
-const route = useRoute();
-const feedbackId = computed(() => String(route.params.feedbackId || ""));
-const feedback = ref<FeedbackV1 | null>(null);
-const context = ref<FeedbackContext | null>(null);
-const mascotMessage = ref<MascotMessage | null>(null);
-const error = ref<string | null>(null);
-const isLoading = ref(false);
-const note = ref("");
-const lastSavedNote = ref("");
-const noteStatus = ref<"idle" | "saving" | "saved" | "error">("idle");
-const reviewMarked = ref(false);
-const showMascotCard = computed(() => uiSettings.value.mascotEnabled);
-const isQuestWorldMode = computed(() => uiSettings.value.gamificationMode === "quest-world");
-const mascotBody = computed(() =>
-  uiSettings.value.mascotIntensity === "minimal" ? "" : mascotMessage.value?.body ?? ""
-);
-const isReviewed = computed(() => {
-  const profileId = appState.activeProfileId;
-  if (!profileId || !feedbackId.value) {
-    return false;
-  }
-  return isFeedbackReviewed(profileId, feedbackId.value);
-});
-const recommendedQuestCodes = computed(() => {
-  const list = feedback.value?.top_actions.flatMap((action) => action.target_quest_codes) ?? [];
-  return Array.from(new Set(list.filter((code) => typeof code === "string" && code.trim().length > 0)));
-});
-const recommendedQuestLinks = computed(() => {
-  const projectId = context.value?.project_id ?? "";
-  if (!projectId) {
-    return [];
-  }
-  return recommendedQuestCodes.value.map((code) => ({
-    code,
-    label: trainingStore.formatQuestCode(projectId, code),
-    to: `/quest/${code}?projectId=${projectId}&from=talk`,
-  }));
-});
-const backLink = computed(() => {
-  return resolveFeedbackBackLink(context.value, appState.activeProject?.id ?? null);
-});
-const contextLabel = computed(() => {
-  return resolveFeedbackContextLabel(context.value, trainingStore.formatQuestCode, t("feedback.run_label"));
-});
-
-function toError(err: unknown) {
-  return err instanceof Error ? err.message : String(err);
-}
-
-function mascotToneClass(kind: string | null | undefined) {
-  if (kind === "celebrate") {
-    return "border-[var(--color-success)] bg-[color-mix(in_srgb,var(--color-success)_15%,var(--color-surface))]";
-  }
-  if (kind === "nudge") {
-    return "border-[var(--color-accent)] bg-[color-mix(in_srgb,var(--color-accent-soft)_35%,var(--color-surface))]";
-  }
-  return "border-[var(--color-border)] bg-[var(--color-surface-elevated)]";
-}
-
-async function refreshMascotMessage() {
-  if (!showMascotCard.value || !appState.activeProfileId) {
-    mascotMessage.value = null;
-    return;
-  }
-  try {
-    mascotMessage.value = await coachStore.getMascotContextMessage({
-      routeName: "feedback",
-      projectId: context.value?.project_id ?? null,
-      locale: locale.value,
-    });
-  } catch {
-    mascotMessage.value = null;
-  }
-}
-
-async function loadNote() {
-  if (!feedbackId.value) {
-    return;
-  }
-  try {
-    const existing = await feedbackStore.getFeedbackNote(feedbackId.value);
-    note.value = existing ?? "";
-    lastSavedNote.value = note.value;
-  } catch {
-    noteStatus.value = "error";
-  }
-}
-
-async function saveNote() {
-  if (!feedbackId.value) {
-    return;
-  }
-  if (note.value === lastSavedNote.value) {
-    return;
-  }
-  noteStatus.value = "saving";
-  try {
-    await feedbackStore.setFeedbackNote(feedbackId.value, note.value);
-    lastSavedNote.value = note.value;
-    noteStatus.value = "saved";
-    setTimeout(() => {
-      noteStatus.value = "idle";
-    }, 1200);
-  } catch {
-    noteStatus.value = "error";
-  }
-}
-
-onMounted(async () => {
-  if (!feedbackId.value) {
-    return;
-  }
-  isLoading.value = true;
-  error.value = null;
-  try {
-    await sessionStore.bootstrap();
-    feedback.value = await feedbackStore.getFeedback(feedbackId.value);
-    context.value = await feedbackStore.getFeedbackContext(feedbackId.value);
-    if (appState.activeProfileId && feedbackId.value) {
-      const alreadyReviewed = isFeedbackReviewed(appState.activeProfileId, feedbackId.value);
-      if (!alreadyReviewed) {
-        markFeedbackReviewed(appState.activeProfileId, feedbackId.value);
-        reviewMarked.value = true;
-      } else {
-        reviewMarked.value = false;
-      }
-    }
-    await loadNote();
-    await refreshMascotMessage();
-  } catch (err) {
-    error.value = toError(err);
-  } finally {
-    isLoading.value = false;
-  }
-});
-
-watch(
-  () => [locale.value, uiSettings.value.mascotEnabled, uiSettings.value.mascotIntensity] as const,
-  async () => {
-    if (!feedbackId.value || !context.value) {
-      return;
-    }
-    await refreshMascotMessage();
-  }
-);
+const {
+  t,
+  feedback,
+  mascotMessage,
+  error,
+  isLoading,
+  note,
+  noteStatus,
+  reviewMarked,
+  showMascotCard,
+  isQuestWorldMode,
+  mascotBody,
+  isReviewed,
+  recommendedQuestLinks,
+  backLink,
+  contextLabel,
+  saveNote,
+} = useFeedbackPageState();
 </script>
 
 <template>
   <section class="space-y-6">
     <p class="app-muted text-sm font-semibold">{{ t("feedback.subtitle") }}</p>
     <p v-if="isReviewed || reviewMarked" class="app-subtle text-xs font-semibold">
-      {{
-        reviewMarked
-          ? t("feedback.review_marked")
-          : t("feedback.review_already")
-      }}
+      {{ reviewMarked ? t("feedback.review_marked") : t("feedback.review_already") }}
     </p>
 
-    <UCard
+    <FeedbackMascotCard
       v-if="showMascotCard && mascotMessage"
-      class="app-panel app-panel-compact border"
-      :class="mascotToneClass(mascotMessage.kind)"
-     
-     variant="outline">
-      <div class="flex flex-wrap items-start justify-between gap-3">
-        <div class="min-w-0 flex-1">
-          <div class="app-text-eyebrow">{{ t("feedback.mascot_label") }}</div>
-          <div class="app-text app-text-subheadline mt-1">{{ mascotMessage.title }}</div>
-          <div v-if="mascotBody" class="app-muted app-text-body mt-1">{{ mascotBody }}</div>
-        </div>
-        <UButton
-          v-if="mascotMessage.cta_route && mascotMessage.cta_label"
-          size="md"
-         
-          :to="mascotMessage.cta_route"
-         color="neutral" variant="outline">
-          {{ mascotMessage.cta_label }}
-        </UButton>
-      </div>
-    </UCard>
+      :message="mascotMessage"
+      :body="mascotBody"
+    />
 
     <UCard
       class="app-panel app-panel-compact text-sm"
       :class="isQuestWorldMode ? 'bg-[color-mix(in_srgb,var(--color-accent-soft)_20%,var(--color-surface))]' : ''"
-     
-     variant="outline">
+      variant="outline"
+    >
       <div class="app-subtle text-xs uppercase tracking-[0.2em]">
         {{ t("feedback.score") }}
       </div>
@@ -220,110 +64,11 @@ watch(
       </div>
 
       <div v-else-if="feedback" class="mt-4 space-y-4">
-        <UCard class="app-panel app-panel-compact" variant="outline">
-          <div class="app-subtle text-xs uppercase tracking-[0.2em]">
-            {{ t("feedback.actions") }}
-          </div>
-          <div v-if="feedback.top_actions.length === 0" class="app-muted mt-2 text-xs">
-            {{ t("feedback.no_actions") }}
-          </div>
-          <div v-else class="mt-2 space-y-2">
-            <div v-for="action in feedback.top_actions" :key="action.action_id">
-              <div class="app-text text-sm font-semibold">{{ action.title }}</div>
-              <div class="app-muted text-xs">{{ action.why_it_matters }}</div>
-              <div class="app-text mt-1 text-xs">{{ action.how_to_fix }}</div>
-            </div>
-          </div>
-        </UCard>
-
-        <UCard v-if="recommendedQuestLinks.length > 0" class="app-panel app-panel-compact" variant="outline">
-          <div class="app-subtle text-xs uppercase tracking-[0.2em]">
-            {{ t("feedback.practice_next_title") }}
-          </div>
-          <div class="app-muted mt-1 text-xs">
-            {{ t("feedback.practice_next_subtitle") }}
-          </div>
-          <div class="mt-2 flex flex-wrap gap-2">
-            <UButton
-              v-for="item in recommendedQuestLinks"
-              :key="item.code"
-              size="sm"
-              :to="item.to"
-              color="neutral"
-              variant="outline"
-            >
-              {{ item.label }}
-            </UButton>
-            <RouterLink
-              class="app-link app-text-meta inline-flex items-center underline"
-              to="/training"
-            >
-              {{ t("feedback.practice_next_training") }}
-            </RouterLink>
-          </div>
-        </UCard>
-
-        <UCard class="app-panel app-panel-compact" variant="outline">
-          <div class="app-subtle text-xs uppercase tracking-[0.2em]">
-            {{ t("feedback.metrics") }}
-          </div>
-          <div class="mt-2 grid gap-2 text-xs">
-            <div>
-              {{ t("feedback.metric_wpm") }}:
-              <span class="app-text">{{ feedback.metrics.wpm.toFixed(1) }}</span>
-            </div>
-            <div>
-              {{ t("feedback.metric_fillers") }}:
-              <span class="app-text">{{ feedback.metrics.filler_per_min.toFixed(1) }}</span>
-            </div>
-            <div>
-              {{ t("feedback.metric_pause") }}:
-              <span class="app-text">{{ feedback.metrics.pause_count }}</span>
-            </div>
-            <div>
-              {{ t("feedback.metric_sentence") }}:
-              <span class="app-text">{{ feedback.metrics.avg_sentence_words.toFixed(1) }}</span>
-            </div>
-            <div v-if="feedback.metrics.repeat_terms.length > 0">
-              {{ t("feedback.metric_repeat") }}:
-              <span class="app-text">{{ feedback.metrics.repeat_terms.join(", ") }}</span>
-            </div>
-          </div>
-        </UCard>
-
-        <UCard v-if="feedback.comments.length > 0" class="app-panel app-panel-compact" variant="outline">
-          <div class="app-subtle text-xs uppercase tracking-[0.2em]">
-            {{ t("feedback.comments") }}
-          </div>
-          <div class="mt-2 space-y-2 text-xs">
-            <div v-for="(comment, index) in feedback.comments" :key="index">
-              <div class="app-text font-semibold">{{ comment.label }}</div>
-              <div class="app-muted">{{ comment.suggestion }}</div>
-            </div>
-          </div>
-        </UCard>
-
-        <UCard class="app-panel app-panel-compact" variant="outline">
-          <div class="app-subtle text-xs uppercase tracking-[0.2em]">
-            {{ t("feedback.notes_title") }}
-          </div>
-          <UTextarea
-            v-model="note"
-            rows="4"
-            class="mt-2 w-full"
-            :placeholder="t('feedback.notes_placeholder')"
-            @blur="saveNote"
-          />
-          <div v-if="noteStatus === 'saving'" class="app-muted mt-2 text-xs">
-            {{ t("feedback.notes_saving") }}
-          </div>
-          <div v-else-if="noteStatus === 'saved'" class="app-subtle mt-2 text-xs">
-            {{ t("feedback.notes_saved") }}
-          </div>
-          <div v-else-if="noteStatus === 'error'" class="app-danger-text mt-2 text-xs">
-            {{ t("feedback.notes_error") }}
-          </div>
-        </UCard>
+        <FeedbackActionsCard :actions="feedback.top_actions" />
+        <FeedbackRecommendedQuestsCard :links="recommendedQuestLinks" />
+        <FeedbackMetricsCard :metrics="feedback.metrics" />
+        <FeedbackCommentsCard :comments="feedback.comments" />
+        <FeedbackNotesCard v-model:note="note" :status="noteStatus" @save="saveNote" />
       </div>
       <div v-else class="app-muted mt-4 text-xs">
         {{ t("feedback.empty") }}
@@ -335,4 +80,3 @@ watch(
     </UCard>
   </section>
 </template>
-
