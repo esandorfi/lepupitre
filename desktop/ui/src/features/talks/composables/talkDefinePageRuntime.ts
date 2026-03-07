@@ -14,58 +14,82 @@ function toError(err: unknown) {
   return err instanceof Error ? err.message : String(err);
 }
 
-type TalkDefineRuntimeArgs = {
+export type TalkDefineRuntimeState = {
+  identity: {
+    activeProfileId: Ref<string | null>;
+  };
+  model: {
+    project: Ref<TalkProject | null>;
+    nextAction: Ref<DefineNextAction | null>;
+  };
+  draft: {
+    form: DefineFormState;
+  };
+  ui: {
+    saveError: Ref<string | null>;
+    saveState: Ref<"idle" | "saving" | "saved" | "error">;
+    error: Ref<string | null>;
+    isLoading: Ref<boolean>;
+  };
+};
+
+export type TalkDefineRuntimeDeps = {
   t: (key: string) => string;
-  project: Ref<TalkProject | null>;
-  activeProfileId: Ref<string | null>;
-  form: DefineFormState;
-  nextAction: Ref<DefineNextAction | null>;
-  setSaveError: (value: string | null) => void;
-  setSaveState: (value: "idle" | "saving" | "saved" | "error") => void;
-  setError: (value: string | null) => void;
-  setLoading: (value: boolean) => void;
+  bootstrapSession: () => Promise<void>;
+  loadProjects: () => Promise<void>;
+  updateProject: (projectId: string, payload: DefinePayload) => Promise<void>;
+  pushRoute: (to: string) => Promise<void>;
+};
+
+function createDefaultTalkDefineRuntimeDeps(
+  t: (key: string) => string,
+  pushRoute: (to: string) => Promise<void>
+): TalkDefineRuntimeDeps {
+  return {
+    t,
+    bootstrapSession: () => sessionStore.bootstrap(),
+    loadProjects: () => talksStore.loadProjects(),
+    updateProject: (projectId, payload) => talksStore.updateProject(projectId, payload),
+    pushRoute,
+  };
+}
+
+type TalkDefineRuntimeArgs = {
+  state: TalkDefineRuntimeState;
+  deps?: TalkDefineRuntimeDeps;
+  t: (key: string) => string;
   pushRoute: (to: string) => Promise<void>;
 };
 
 export function createTalkDefineRuntime(args: TalkDefineRuntimeArgs) {
-  const {
-    t,
-    project,
-    activeProfileId,
-    form,
-    nextAction,
-    setSaveError,
-    setSaveState,
-    setError,
-    setLoading,
-    pushRoute,
-  } = args;
+  const deps = args.deps ?? createDefaultTalkDefineRuntimeDeps(args.t, args.pushRoute);
+  const { identity, model, draft, ui } = args.state;
 
   async function persistDefine(stageOverride?: string) {
-    if (!project.value || !activeProfileId.value) {
+    if (!model.project.value || !identity.activeProfileId.value) {
       return false;
     }
-    setSaveError(null);
+    ui.saveError.value = null;
     let payload: DefinePayload;
     try {
-      payload = buildPayload(t, project.value, form, stageOverride);
+      payload = buildPayload(deps.t, model.project.value, draft.form, stageOverride);
     } catch (err) {
-      setSaveState("error");
-      setSaveError(toError(err));
+      ui.saveState.value = "error";
+      ui.saveError.value = toError(err);
       return false;
     }
-    if (payloadMatchesProject(project.value, payload)) {
-      setSaveState("saved");
+    if (payloadMatchesProject(model.project.value, payload)) {
+      ui.saveState.value = "saved";
       return true;
     }
-    setSaveState("saving");
+    ui.saveState.value = "saving";
     try {
-      await talksStore.updateProject(project.value.id, payload);
-      setSaveState("saved");
+      await deps.updateProject(model.project.value.id, payload);
+      ui.saveState.value = "saved";
       return true;
     } catch (err) {
-      setSaveState("error");
-      setSaveError(toError(err));
+      ui.saveState.value = "error";
+      ui.saveError.value = toError(err);
       return false;
     }
   }
@@ -75,33 +99,33 @@ export function createTalkDefineRuntime(args: TalkDefineRuntimeArgs) {
   }
 
   async function setStage(stage: string) {
-    if (!project.value || stage === project.value.stage) {
+    if (!model.project.value || stage === model.project.value.stage) {
       return;
     }
     await persistDefine(stage);
   }
 
   async function runNextAction() {
-    if (!nextAction.value) {
+    if (!model.nextAction.value) {
       return;
     }
-    const didSave = await persistDefine(nextAction.value.nextStage);
+    const didSave = await persistDefine(model.nextAction.value.nextStage);
     if (!didSave) {
       return;
     }
-    await pushRoute(nextAction.value.route);
+    await deps.pushRoute(model.nextAction.value.route);
   }
 
   async function bootstrap() {
-    setLoading(true);
-    setError(null);
+    ui.isLoading.value = true;
+    ui.error.value = null;
     try {
-      await sessionStore.bootstrap();
-      await talksStore.loadProjects();
+      await deps.bootstrapSession();
+      await deps.loadProjects();
     } catch (err) {
-      setError(toError(err));
+      ui.error.value = toError(err);
     } finally {
-      setLoading(false);
+      ui.isLoading.value = false;
     }
   }
 
