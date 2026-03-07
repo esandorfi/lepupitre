@@ -1,175 +1,33 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
-import { RouterLink, useRoute } from "vue-router";
+import { RouterLink } from "vue-router";
 import TalkStepPageShell from "@/components/TalkStepPageShell.vue";
-import { audioRevealWav } from "@/domains/recorder/api";
-import { useI18n } from "@/lib/i18n";
-import {
-  appState,
-  packStore,
-  runStore,
-  sessionStore,
-  talksStore,
-  trainingStore,
-} from "@/stores/app";
-import type { PeerReviewSummary, QuestReportItem, RunSummary } from "@/schemas/ipc";
+import { useTalkExportPageState } from "@/features/talks/composables/useTalkExportPageState";
 
-const { t } = useI18n();
-const route = useRoute();
-const projectId = computed(() => String(route.params.projectId || ""));
-
-const error = ref<string | null>(null);
-const isLoading = ref(false);
-const isActivating = ref(false);
-const report = ref<QuestReportItem[]>([]);
-const runs = ref<RunSummary[]>([]);
-const peerReviews = ref<PeerReviewSummary[]>([]);
-const exportPath = ref<string | null>(null);
-const exportingRunId = ref<string | null>(null);
-const isExportingOutline = ref(false);
-const isRevealing = ref(false);
-const exportError = ref<string | null>(null);
-
-const project = computed(() =>
-  appState.projects.find((item) => item.id === projectId.value) ?? null
-);
-const isActive = computed(() => appState.activeProject?.id === projectId.value);
-const talkNumber = computed(() => project.value?.talk_number ?? null);
-
-function toError(err: unknown) {
-  return err instanceof Error ? err.message : String(err);
-}
-
-function formatDate(value: string | null | undefined) {
-  if (!value) {
-    return "--";
-  }
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-  return date.toLocaleDateString();
-}
-
-function runStatus(run: RunSummary) {
-  if (run.feedback_id) {
-    return t("talk_report.timeline_feedback");
-  }
-  if (run.transcript_id) {
-    return t("talk_report.timeline_transcribed");
-  }
-  if (run.audio_artifact_id) {
-    return t("talk_report.timeline_recorded");
-  }
-  return t("talk_report.timeline_started");
-}
-
-async function markExportStage() {
-  if (!projectId.value) {
-    return;
-  }
-  try {
-    await talksStore.ensureProjectStageAtLeast(projectId.value, "export");
-  } catch {
-    // keep export actions non-blocking
-  }
-}
-
-const summary = computed(() => {
-  const total = report.value.length;
-  const started = report.value.filter((item) => item.attempt_id).length;
-  const feedbackCount = report.value.filter((item) => item.has_feedback).length;
-  const last = report.value
-    .map((item) => item.attempt_created_at)
-    .filter((value): value is string => Boolean(value))
-    .sort()
-    .pop();
-  return { total, started, feedbackCount, last };
-});
-
-async function exportPack(runId: string) {
-  exportPath.value = null;
-  exportingRunId.value = runId;
-  exportError.value = null;
-  try {
-    await markExportStage();
-    const result = await packStore.exportPack(runId);
-    exportPath.value = result.path;
-  } catch (err) {
-    exportError.value = toError(err);
-  } finally {
-    exportingRunId.value = null;
-  }
-}
-
-async function exportOutline() {
-  if (!projectId.value) {
-    return;
-  }
-  exportPath.value = null;
-  isExportingOutline.value = true;
-  exportError.value = null;
-  try {
-    await markExportStage();
-    const result = await talksStore.exportOutline(projectId.value);
-    exportPath.value = result.path;
-  } catch (err) {
-    exportError.value = toError(err);
-  } finally {
-    isExportingOutline.value = false;
-  }
-}
-
-async function revealExport() {
-  if (!exportPath.value) {
-    return;
-  }
-  isRevealing.value = true;
-  exportError.value = null;
-  try {
-    await audioRevealWav(exportPath.value);
-  } catch (err) {
-    exportError.value = toError(err);
-  } finally {
-    isRevealing.value = false;
-  }
-}
-
-async function loadData() {
-  error.value = null;
-  isLoading.value = true;
-  try {
-    await sessionStore.bootstrap();
-    await talksStore.loadProjects();
-    if (!projectId.value) {
-      throw new Error("project_missing");
-    }
-    report.value = await trainingStore.getQuestReport(projectId.value);
-    runs.value = await runStore.getRuns(projectId.value, 12);
-    peerReviews.value = await packStore.getPeerReviews(projectId.value, 12);
-  } catch (err) {
-    error.value = toError(err);
-  } finally {
-    isLoading.value = false;
-  }
-}
-
-async function setActive() {
-  if (!projectId.value) {
-    return;
-  }
-  isActivating.value = true;
-  error.value = null;
-  try {
-    await talksStore.setActiveProject(projectId.value);
-  } catch (err) {
-    error.value = toError(err);
-  } finally {
-    isActivating.value = false;
-  }
-}
-
-onMounted(loadData);
+const {
+  t,
+  projectId,
+  error,
+  isLoading,
+  isActivating,
+  runs,
+  peerReviews,
+  exportPath,
+  exportingRunId,
+  isExportingOutline,
+  isRevealing,
+  exportError,
+  project,
+  isActive,
+  talkNumber,
+  summary,
+  formatDate,
+  runStatus,
+  exportPack,
+  exportOutline,
+  revealExport,
+  setActive,
+  markExportStage,
+} = useTalkExportPageState();
 </script>
 
 <template>
@@ -204,10 +62,11 @@ onMounted(loadData);
       <UButton
         v-else
         size="sm"
-       
         :disabled="isActivating"
         color="neutral"
-       variant="outline" @click="setActive">
+        variant="outline"
+        @click="setActive"
+      >
         {{ t("talk_report.set_active") }}
       </UButton>
     </template>
@@ -240,11 +99,12 @@ onMounted(loadData);
       <p class="app-muted app-text-body mt-2">{{ t("builder.subtitle") }}</p>
       <div class="mt-3 flex flex-wrap items-center gap-2">
         <UButton
-         
           size="lg"
           :disabled="isExportingOutline"
           color="neutral"
-         variant="outline" @click="exportOutline">
+          variant="outline"
+          @click="exportOutline"
+        >
           {{ t("builder.export") }}
         </UButton>
         <RouterLink class="app-link app-text-meta underline" :to="`/talks/${projectId}/builder`">
@@ -265,16 +125,17 @@ onMounted(loadData);
           <div>
             <div class="app-text text-sm">{{ t("talk_report.timeline_boss_run") }}</div>
             <div class="app-muted app-text-meta">
-              {{ formatDate(run.created_at) }} · {{ runStatus(run) }}
+              {{ formatDate(run.created_at) }} - {{ runStatus(run) }}
             </div>
           </div>
           <div class="flex items-center gap-2">
             <UButton
-             
               size="sm"
               :disabled="exportingRunId === run.id"
               color="neutral"
-             variant="outline" @click="exportPack(run.id)">
+              variant="outline"
+              @click="exportPack(run.id)"
+            >
               {{ t("packs.export") }}
             </UButton>
           </div>
@@ -286,11 +147,12 @@ onMounted(loadData);
           {{ exportPath }}
         </span>
         <UButton
-         
           size="sm"
           :disabled="isRevealing"
           color="neutral"
-         variant="ghost" @click="revealExport">
+          variant="ghost"
+          @click="revealExport"
+        >
           {{ t("packs.export_reveal") }}
         </UButton>
         <span class="app-subtle app-text-meta">{{ t("packs.export_ready") }}</span>
@@ -311,7 +173,7 @@ onMounted(loadData);
             <div class="app-text text-sm">{{ t("talk_report.timeline_peer_review") }}</div>
             <div class="app-muted app-text-meta">
               {{ formatDate(review.created_at) }}
-              <span v-if="review.reviewer_tag"> · {{ review.reviewer_tag }}</span>
+              <span v-if="review.reviewer_tag"> - {{ review.reviewer_tag }}</span>
             </div>
           </div>
           <RouterLink class="app-link app-text-meta underline" :to="`/peer-review/${review.id}?projectId=${projectId}`">
@@ -327,4 +189,3 @@ onMounted(loadData);
     </UCard>
   </TalkStepPageShell>
 </template>
-
