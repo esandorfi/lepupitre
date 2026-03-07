@@ -6,16 +6,9 @@ function toError(err: unknown) {
   return err instanceof Error ? err.message : String(err);
 }
 
-type TalksRuntimeArgs<State> = {
-  locale: Ref<string>;
-  showMascotCard: Ref<boolean>;
-  state: Ref<State>;
-  setError: (message: string | null) => void;
-  setLoading: (value: boolean) => void;
-  setBlueprintLoading: (value: boolean) => void;
-  setSwitching: (id: string | null) => void;
-  setMascotMessage: (value: MascotMessage | null) => void;
-  setTalksBlueprint: (value: TalksBlueprint | null) => void;
+type TalksRuntimeStateModel = {
+  activeProfileId: string | null;
+  activeProject?: { id: string } | null;
 };
 
 type TalksLifecycleArgs = {
@@ -28,83 +21,127 @@ type TalksLifecycleArgs = {
   refreshMascotMessage: () => Promise<void>;
 };
 
-type TalksRuntimeState = {
-  activeProfileId: string | null;
-  activeProject?: { id: string } | null;
+export type TalksRuntimeState = {
+  identity: {
+    locale: Ref<string>;
+    showMascotCard: Ref<boolean>;
+  };
+  model: {
+    appState: Ref<TalksRuntimeStateModel>;
+    mascotMessage: Ref<MascotMessage | null>;
+    talksBlueprint: Ref<TalksBlueprint | null>;
+  };
+  ui: {
+    error: Ref<string | null>;
+    isLoading: Ref<boolean>;
+    isBlueprintLoading: Ref<boolean>;
+    isSwitching: Ref<string | null>;
+  };
 };
 
-export function createTalksRuntime<State extends TalksRuntimeState>(args: TalksRuntimeArgs<State>) {
-  const {
-    locale,
-    showMascotCard,
-    state,
-    setError,
-    setLoading,
-    setBlueprintLoading,
-    setSwitching,
-    setMascotMessage,
-    setTalksBlueprint,
-  } = args;
+export type TalksRuntimeDeps = {
+  getTalksBlueprint: (projectId: string, locale: string) => Promise<TalksBlueprint>;
+  getMascotContextMessage: (args: {
+    routeName: "talks";
+    projectId: string | null;
+    locale: string;
+  }) => Promise<MascotMessage | null>;
+  bootstrapSession: () => Promise<void>;
+  loadProjects: () => Promise<void>;
+  setActiveProject: (projectId: string) => Promise<void>;
+};
+
+function createDefaultTalksRuntimeDeps(): TalksRuntimeDeps {
+  return {
+    getTalksBlueprint: (projectId, locale) => coachStore.getTalksBlueprint(projectId, locale),
+    getMascotContextMessage: (args) => coachStore.getMascotContextMessage(args),
+    bootstrapSession: () => sessionStore.bootstrap(),
+    loadProjects: () => talksStore.loadProjects(),
+    setActiveProject: (projectId) => talksStore.setActiveProject(projectId),
+  };
+}
+
+type TalksRuntimeArgs = {
+  state: TalksRuntimeState;
+  deps?: TalksRuntimeDeps;
+};
+
+export function createTalksRuntime(args: TalksRuntimeArgs) {
+  const deps = args.deps ?? createDefaultTalksRuntimeDeps();
+  const { identity, model, ui } = args.state;
+  let blueprintSequence = 0;
 
   async function refreshTalksBlueprint() {
-    if (!state.value.activeProfileId || !state.value.activeProject?.id) {
-      setTalksBlueprint(null);
+    const requestId = ++blueprintSequence;
+    if (!model.appState.value.activeProfileId || !model.appState.value.activeProject?.id) {
+      model.talksBlueprint.value = null;
       return;
     }
-    setBlueprintLoading(true);
+    ui.isBlueprintLoading.value = true;
     try {
-      const result = await coachStore.getTalksBlueprint(state.value.activeProject.id, locale.value);
-      setTalksBlueprint(result);
+      const result = await deps.getTalksBlueprint(
+        model.appState.value.activeProject.id,
+        identity.locale.value
+      );
+      if (requestId !== blueprintSequence) {
+        return;
+      }
+      model.talksBlueprint.value = result;
     } catch {
-      setTalksBlueprint(null);
+      if (requestId !== blueprintSequence) {
+        return;
+      }
+      model.talksBlueprint.value = null;
     } finally {
-      setBlueprintLoading(false);
+      if (requestId === blueprintSequence) {
+        ui.isBlueprintLoading.value = false;
+      }
     }
   }
 
   async function refreshMascotMessage() {
-    if (!showMascotCard.value || !state.value.activeProfileId) {
-      setMascotMessage(null);
+    if (!identity.showMascotCard.value || !model.appState.value.activeProfileId) {
+      model.mascotMessage.value = null;
       return;
     }
     try {
-      const result = await coachStore.getMascotContextMessage({
+      const result = await deps.getMascotContextMessage({
         routeName: "talks",
-        projectId: state.value.activeProject?.id ?? null,
-        locale: locale.value,
+        projectId: model.appState.value.activeProject?.id ?? null,
+        locale: identity.locale.value,
       });
-      setMascotMessage(result);
+      model.mascotMessage.value = result;
     } catch {
-      setMascotMessage(null);
+      model.mascotMessage.value = null;
     }
   }
 
   async function bootstrap() {
-    setLoading(true);
-    setError(null);
+    ui.isLoading.value = true;
+    ui.error.value = null;
     try {
-      await sessionStore.bootstrap();
-      await talksStore.loadProjects();
+      await deps.bootstrapSession();
+      await deps.loadProjects();
       await refreshTalksBlueprint();
       await refreshMascotMessage();
     } catch (err) {
-      setError(toError(err));
+      ui.error.value = toError(err);
     } finally {
-      setLoading(false);
+      ui.isLoading.value = false;
     }
   }
 
   async function setActive(projectId: string) {
-    setSwitching(projectId);
-    setError(null);
+    ui.isSwitching.value = projectId;
+    ui.error.value = null;
     try {
-      await talksStore.setActiveProject(projectId);
+      await deps.setActiveProject(projectId);
       await refreshTalksBlueprint();
       await refreshMascotMessage();
     } catch (err) {
-      setError(toError(err));
+      ui.error.value = toError(err);
     } finally {
-      setSwitching(null);
+      ui.isSwitching.value = null;
     }
   }
 
