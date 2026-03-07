@@ -1,7 +1,9 @@
 <script setup lang="ts">
-/* eslint-disable vue/no-v-html */
 import { computed, nextTick, ref, watch } from "vue";
-import { RouterLink, useRoute, useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
+import HelpActionsSection from "@/features/support/components/help/HelpActionsSection.vue";
+import HelpDevSection from "@/features/support/components/help/HelpDevSection.vue";
+import HelpTopicSection from "@/features/support/components/help/HelpTopicSection.vue";
 import {
   getHelpContentById,
   listHelpContentByAudience,
@@ -146,9 +148,9 @@ async function restartOnboarding() {
           v-for="item in faqs"
           :key="item.q"
           as="article"
-         
           class="app-panel app-panel-compact app-radius-panel-lg"
-         variant="outline">
+          variant="outline"
+        >
           <h3 class="app-text text-sm font-semibold">{{ item.q }}</h3>
           <p class="app-muted mt-2 text-sm leading-6">{{ item.a }}</p>
         </UCard>
@@ -167,102 +169,39 @@ async function restartOnboarding() {
           class="rounded-full px-3 py-2 text-sm"
           :class="selectedAudience === option.id ? 'app-pill-active' : 'app-pill'"
           size="sm"
-         
           color="neutral"
-         variant="ghost" @click="setAudience(option.id)">
+          variant="ghost"
+          @click="setAudience(option.id)"
+        >
           {{ option.label }}
         </UButton>
       </div>
     </UCard>
 
-    <UCard class="app-panel space-y-4" variant="outline">
-      <div>
-        <h2 class="app-text text-base font-semibold">{{ t("help.onboarding_tracks_title") }}</h2>
-        <p class="app-muted mt-1 text-sm">{{ t("help.onboarding_tracks_subtitle") }}</p>
-      </div>
-      <div class="grid gap-3 lg:grid-cols-3">
-        <UCard
-          v-for="entry in onboardingEntries"
-          :id="topicDomId(entry.id)"
-          :key="entry.id"
-          as="article"
-         
-          class="app-panel app-panel-compact app-radius-panel-lg transition-colors"
-          :style="topicCardStyle(entry.id)"
-         variant="outline">
-          <h3 class="app-text text-sm font-semibold">{{ entry.title }}</h3>
-          <!-- eslint-disable-next-line vue/no-v-html -->
-          <div class="app-markdown app-muted mt-2 text-sm leading-6" v-html="entry.html" />
-          <RouterLink
-            class="app-link app-text-meta mt-3 inline-block underline"
-            :to="topicDeepLink(entry.id)"
-          >
-            {{ t("help.open_deep_link") }}
-          </RouterLink>
-        </UCard>
-      </div>
-    </UCard>
+    <HelpTopicSection
+      :t="t"
+      :title="t('help.onboarding_tracks_title')"
+      :subtitle="t('help.onboarding_tracks_subtitle')"
+      :entries="onboardingEntries"
+      :topic-dom-id="topicDomId"
+      :topic-card-style="topicCardStyle"
+      :topic-deep-link="topicDeepLink"
+      grid-class="grid gap-3 lg:grid-cols-3"
+    />
 
-    <UCard class="app-panel space-y-4" variant="outline">
-      <div>
-        <h2 class="app-text text-base font-semibold">{{ t("help.contextual_title") }}</h2>
-        <p class="app-muted mt-1 text-sm">{{ t("help.contextual_subtitle") }}</p>
-      </div>
-      <p v-if="unknownTopic" class="app-muted text-sm">{{ t("help.contextual_unknown_topic") }}</p>
-      <div class="grid gap-3">
-        <UCard
-          v-for="entry in contextualEntries"
-          :id="topicDomId(entry.id)"
-          :key="entry.id"
-          as="article"
-         
-          class="app-panel app-panel-compact app-radius-panel-lg transition-colors"
-          :style="topicCardStyle(entry.id)"
-         variant="outline">
-          <h3 class="app-text text-sm font-semibold">{{ entry.title }}</h3>
-          <!-- eslint-disable-next-line vue/no-v-html -->
-          <div class="app-markdown app-muted mt-2 text-sm leading-6" v-html="entry.html" />
-          <RouterLink
-            class="app-link app-text-meta mt-3 inline-block underline"
-            :to="topicDeepLink(entry.id)"
-          >
-            {{ t("help.open_deep_link") }}
-          </RouterLink>
-        </UCard>
-      </div>
-    </UCard>
+    <HelpTopicSection
+      :t="t"
+      :title="t('help.contextual_title')"
+      :subtitle="t('help.contextual_subtitle')"
+      :entries="contextualEntries"
+      :unknown-topic="unknownTopic"
+      :topic-dom-id="topicDomId"
+      :topic-card-style="topicCardStyle"
+      :topic-deep-link="topicDeepLink"
+    />
 
-    <UCard class="app-panel" variant="outline">
-      <h2 class="app-text text-base font-semibold">{{ t("help.dev_title") }}</h2>
-      <p class="app-muted mt-2 text-sm leading-6">{{ t("help.dev_subtitle") }}</p>
-      <div class="mt-3 grid gap-3 lg:grid-cols-2">
-        <UCard as="article" class="app-panel app-panel-compact app-radius-panel-lg" variant="outline">
-          <h3 class="app-text text-sm font-semibold">{{ t("help.dev_ui_only_title") }}</h3>
-          <p class="app-muted mt-2 text-sm">{{ t("help.dev_ui_only_body") }}</p>
-          <pre class="app-radius-panel-md mt-3 overflow-x-auto border bg-[var(--color-surface-elevated)] p-3 text-xs">{{ t("help.dev_ui_only_command") }}</pre>
-        </UCard>
-        <UCard as="article" class="app-panel app-panel-compact app-radius-panel-lg" variant="outline">
-          <h3 class="app-text text-sm font-semibold">{{ t("help.dev_tauri_title") }}</h3>
-          <p class="app-muted mt-2 text-sm">{{ t("help.dev_tauri_body") }}</p>
-          <pre class="app-radius-panel-md mt-3 overflow-x-auto border bg-[var(--color-surface-elevated)] p-3 text-xs">{{ t("help.dev_tauri_command") }}</pre>
-        </UCard>
-      </div>
-    </UCard>
+    <HelpDevSection :t="t" />
 
-    <UCard class="app-panel app-panel-compact" variant="outline">
-      <h2 class="app-text text-base font-semibold">{{ t("help.actions_title") }}</h2>
-      <div class="mt-3 flex flex-wrap items-center gap-3">
-        <UButton size="md" color="neutral" variant="outline" @click="restartOnboarding">
-          {{ t("help.action_restart_onboarding") }}
-        </UButton>
-        <RouterLink class="app-link app-text-meta underline" to="/settings">
-          {{ t("help.action_settings") }}
-        </RouterLink>
-        <RouterLink class="app-link app-text-meta underline" to="/about">
-          {{ t("help.action_about") }}
-        </RouterLink>
-      </div>
-    </UCard>
+    <HelpActionsSection :t="t" :restart-onboarding="restartOnboarding" />
   </section>
 </template>
-
