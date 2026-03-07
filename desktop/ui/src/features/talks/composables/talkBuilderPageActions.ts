@@ -2,130 +2,187 @@ import type { Ref } from "vue";
 import { audioRevealWav } from "@/domains/recorder/api";
 import { coachStore, sessionStore, talksStore } from "@/stores/app";
 import { templateSections } from "@/features/talks/composables/talkBuilderPageHelpers";
-import type { BuilderState } from "@/features/talks/composables/talkBuilderPageState";
+import type { TalksBlueprint } from "@/schemas/ipc";
 
 function toError(err: unknown) {
   return err instanceof Error ? err.message : String(err);
 }
 
-type BuilderActionsArgs = {
+export type BuilderActionsState = {
+  identity: {
+    selectedProjectId: Ref<string>;
+    activeProfileId: Ref<string | null | undefined>;
+  };
+  model: {
+    outline: Ref<string>;
+    exportPath: Ref<string | null>;
+    blueprint: Ref<TalksBlueprint | null>;
+  };
+  ui: {
+    error: Ref<string | null>;
+    isLoading: Ref<boolean>;
+    isSaving: Ref<boolean>;
+    saveStatus: Ref<"idle" | "saving" | "saved" | "error">;
+    isExporting: Ref<boolean>;
+    isRevealing: Ref<boolean>;
+    isApplyingTemplate: Ref<boolean>;
+  };
+};
+
+export type BuilderActionsDeps = {
   t: (key: string) => string;
-  state: BuilderState;
-  selectedProjectId: Ref<string>;
-  activeProfileId: Ref<string | null | undefined>;
+  bootstrapSession: () => Promise<void>;
+  loadProjects: () => Promise<void>;
+  getOutline: (projectId: string) => Promise<{ markdown: string }>;
+  getTalksBlueprint: (projectId: string) => Promise<TalksBlueprint | null>;
+  saveOutline: (projectId: string, markdown: string) => Promise<void>;
+  ensureProjectStageAtLeast: (
+    projectId: string,
+    stage: "draft" | "builder" | "train" | "export"
+  ) => Promise<void>;
+  exportOutline: (projectId: string) => Promise<{ path: string }>;
+  revealPath: (path: string) => Promise<void>;
+  confirm: (message: string) => boolean;
+  scheduleTimeout: (fn: () => void, delayMs: number) => void;
+};
+
+function createDefaultBuilderActionsDeps(t: (key: string) => string): BuilderActionsDeps {
+  return {
+    t,
+    bootstrapSession: () => sessionStore.bootstrap(),
+    loadProjects: () => talksStore.loadProjects(),
+    getOutline: (projectId) => talksStore.getOutline(projectId),
+    getTalksBlueprint: (projectId) => coachStore.getTalksBlueprint(projectId),
+    saveOutline: (projectId, markdown) => talksStore.saveOutline(projectId, markdown),
+    ensureProjectStageAtLeast: (projectId, stage) =>
+      talksStore.ensureProjectStageAtLeast(projectId, stage),
+    exportOutline: (projectId) => talksStore.exportOutline(projectId),
+    revealPath: (path) => audioRevealWav(path),
+    confirm: (message) => window.confirm(message),
+    scheduleTimeout: (fn, delayMs) => {
+      setTimeout(fn, delayMs);
+    },
+  };
+}
+
+type BuilderActionsArgs = {
+  state: BuilderActionsState;
+  t: (key: string) => string;
+  deps?: BuilderActionsDeps;
 };
 
 export function createBuilderActions(args: BuilderActionsArgs) {
-  const { t, state, selectedProjectId, activeProfileId } = args;
+  const deps = args.deps ?? createDefaultBuilderActionsDeps(args.t);
+  const { identity, model, ui } = args.state;
 
   async function markBuilderStage() {
-    if (!selectedProjectId.value) {
+    if (!identity.selectedProjectId.value) {
       return;
     }
     try {
-      await talksStore.ensureProjectStageAtLeast(selectedProjectId.value, "builder");
+      await deps.ensureProjectStageAtLeast(identity.selectedProjectId.value, "builder");
     } catch {
       // keep save/export non-blocking
     }
   }
 
   async function loadOutline() {
-    state.error.value = null;
-    state.exportPath.value = null;
-    state.outline.value = "";
-    state.blueprint.value = null;
-    state.isLoading.value = true;
+    ui.error.value = null;
+    model.exportPath.value = null;
+    model.outline.value = "";
+    model.blueprint.value = null;
+    ui.isLoading.value = true;
     try {
-      await sessionStore.bootstrap();
-      await talksStore.loadProjects();
-      const projectId = selectedProjectId.value;
-      if (!projectId || !activeProfileId.value) {
+      await deps.bootstrapSession();
+      await deps.loadProjects();
+      const projectId = identity.selectedProjectId.value;
+      if (!projectId || !identity.activeProfileId.value) {
         return;
       }
-      const doc = await talksStore.getOutline(projectId);
-      state.outline.value = doc.markdown;
-      state.blueprint.value = await coachStore.getTalksBlueprint(projectId);
-      state.saveStatus.value = "idle";
+      const doc = await deps.getOutline(projectId);
+      model.outline.value = doc.markdown;
+      model.blueprint.value = await deps.getTalksBlueprint(projectId);
+      ui.saveStatus.value = "idle";
     } catch (err) {
-      state.error.value = toError(err);
+      ui.error.value = toError(err);
     } finally {
-      state.isLoading.value = false;
+      ui.isLoading.value = false;
     }
   }
 
   async function saveOutline() {
-    if (!selectedProjectId.value) {
-      state.error.value = t("builder.no_talk");
+    if (!identity.selectedProjectId.value) {
+      ui.error.value = deps.t("builder.no_talk");
       return;
     }
-    state.isSaving.value = true;
-    state.saveStatus.value = "saving";
-    state.error.value = null;
+    ui.isSaving.value = true;
+    ui.saveStatus.value = "saving";
+    ui.error.value = null;
     try {
-      await talksStore.saveOutline(selectedProjectId.value, state.outline.value);
+      await deps.saveOutline(identity.selectedProjectId.value, model.outline.value);
       await markBuilderStage();
-      state.saveStatus.value = "saved";
-      setTimeout(() => {
-        state.saveStatus.value = "idle";
+      ui.saveStatus.value = "saved";
+      deps.scheduleTimeout(() => {
+        ui.saveStatus.value = "idle";
       }, 1200);
     } catch (err) {
-      state.saveStatus.value = "error";
-      state.error.value = toError(err);
+      ui.saveStatus.value = "error";
+      ui.error.value = toError(err);
     } finally {
-      state.isSaving.value = false;
+      ui.isSaving.value = false;
     }
   }
 
   async function applyFrameworkTemplate() {
-    if (!state.blueprint.value) {
+    if (!model.blueprint.value) {
       return;
     }
-    const sections = templateSections(t, state.blueprint.value.framework_id);
+    const sections = templateSections(deps.t, model.blueprint.value.framework_id);
     const template = sections.map((section) => `${section}\n`).join("\n");
 
-    if (state.outline.value.trim().length > 0) {
-      const confirmed = window.confirm(t("builder.template_confirm_overwrite"));
+    if (model.outline.value.trim().length > 0) {
+      const confirmed = deps.confirm(deps.t("builder.template_confirm_overwrite"));
       if (!confirmed) {
         return;
       }
     }
 
-    state.isApplyingTemplate.value = true;
-    state.outline.value = template;
+    ui.isApplyingTemplate.value = true;
+    model.outline.value = template;
     await saveOutline();
-    state.isApplyingTemplate.value = false;
+    ui.isApplyingTemplate.value = false;
   }
 
   async function exportOutline() {
-    if (!selectedProjectId.value) {
-      state.error.value = t("builder.no_talk");
+    if (!identity.selectedProjectId.value) {
+      ui.error.value = deps.t("builder.no_talk");
       return;
     }
-    state.isExporting.value = true;
-    state.error.value = null;
+    ui.isExporting.value = true;
+    ui.error.value = null;
     try {
       await markBuilderStage();
-      const result = await talksStore.exportOutline(selectedProjectId.value);
-      state.exportPath.value = result.path;
+      const result = await deps.exportOutline(identity.selectedProjectId.value);
+      model.exportPath.value = result.path;
     } catch (err) {
-      state.error.value = toError(err);
+      ui.error.value = toError(err);
     } finally {
-      state.isExporting.value = false;
+      ui.isExporting.value = false;
     }
   }
 
   async function revealExport() {
-    if (!state.exportPath.value) {
+    if (!model.exportPath.value) {
       return;
     }
-    state.isRevealing.value = true;
-    state.error.value = null;
+    ui.isRevealing.value = true;
+    ui.error.value = null;
     try {
-      await audioRevealWav(state.exportPath.value);
+      await deps.revealPath(model.exportPath.value);
     } catch (err) {
-      state.error.value = toError(err);
+      ui.error.value = toError(err);
     } finally {
-      state.isRevealing.value = false;
+      ui.isRevealing.value = false;
     }
   }
 
