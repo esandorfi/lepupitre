@@ -8,13 +8,31 @@ import { bindAsrModelLifecycle } from "@/features/support/composables/settings/s
 
 type Translate = (key: string) => string;
 
-export function useAsrModelRuntime(t: Translate, state: AsrModelState) {
+type AsrModelRuntimeDeps = {
+  openUrl: (url: string) => Promise<void>;
+};
+
+function createDefaultAsrModelRuntimeDeps(): AsrModelRuntimeDeps {
+  return {
+    openUrl: (url) => open(url),
+  };
+}
+
+type AsrModelRuntimeArgs = {
+  t: Translate;
+  state: AsrModelState;
+  deps?: AsrModelRuntimeDeps;
+};
+
+export function useAsrModelRuntime(args: AsrModelRuntimeArgs) {
+  const deps = args.deps ?? createDefaultAsrModelRuntimeDeps();
+  const { t, state } = args;
   const progressQueue = createDownloadProgressQueue(state.downloadProgress);
   const actions = createAsrModelActions(t, state, progressQueue);
 
   async function openSourceUrl(url: string) {
     try {
-      await open(url);
+      await deps.openUrl(url);
     } catch (err) {
       state.downloadError.value = err instanceof Error ? err.message : String(err);
     }

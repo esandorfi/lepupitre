@@ -10,7 +10,10 @@ type Translate = (key: string) => string;
 export function useSettingsAsrModels(t: Translate) {
   const state = createAsrModelState();
   const view = createAsrModelView(t, state);
-  const { openSourceUrl, removeModel, verifyModel, downloadModel } = useAsrModelRuntime(t, state);
+  const { openSourceUrl, removeModel, verifyModel, downloadModel } = useAsrModelRuntime({
+    t,
+    state,
+  });
 
   return {
     ...view,
