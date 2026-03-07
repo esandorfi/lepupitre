@@ -69,24 +69,26 @@ export function useTalkDefinePageState() {
 
   const { saveDefine, setStage, runNextAction, bootstrap } = createTalkDefineRuntime({
     t,
-    project,
-    activeProfileId,
-    form,
-    nextAction,
-    setSaveError: (value) => {
-      saveError.value = value;
-    },
-    setSaveState: (value) => {
-      saveState.value = value;
-    },
-    setError: (value) => {
-      error.value = value;
-    },
-    setLoading: (value) => {
-      isLoading.value = value;
-    },
     pushRoute: async (to) => {
       await router.push(to);
+    },
+    state: {
+      identity: {
+        activeProfileId,
+      },
+      model: {
+        project,
+        nextAction,
+      },
+      draft: {
+        form,
+      },
+      ui: {
+        saveError,
+        saveState,
+        error,
+        isLoading,
+      },
     },
   });
 
