@@ -1,6 +1,6 @@
 # Documentation Status Ledger
 
-Snapshot date: 2026-03-01
+Snapshot date: 2026-03-07
 
 This file tracks what is canonical, proposal-only, and archived.
 
@@ -49,6 +49,7 @@ This file tracks what is canonical, proposal-only, and archived.
 | [spec/active/DECISIONS.md](../spec/active/DECISIONS.md) | Current decision log | accepted | Maintainers | Use for all new major decisions |
 | [spec/active/product/SPEC-VOICEUP.md](../spec/active/product/SPEC-VOICEUP.md) | Product direction | proposed | Product | Convert approved parts into executable plan items |
 | [spec/active/ui/SPEC-UI-AUDIO-RECORDER-CURRENT.md](../spec/active/ui/SPEC-UI-AUDIO-RECORDER-CURRENT.md) | Current audio recorder UI contract | proposed | UI/ASR | Promote stable recorder rules to canonical docs when finalized |
+| [spec/active/ui/SPEC-UI-RUNTIME-INPUT-CONTRACT.md](../spec/active/ui/SPEC-UI-RUNTIME-INPUT-CONTRACT.md) | Runtime composable input contract refactor proposal | proposed | UI/Maintainers | Run feedback pilot and decide whether to accept global decision entry `DEC-20260307-ui-runtime-input-contract` |
 | [spec/active/ui/SPEC-UI-HELP-CONTEXTUAL-ASSISTANCE.md](../spec/active/ui/SPEC-UI-HELP-CONTEXTUAL-ASSISTANCE.md) | Help/onboarding architecture proposal | proposed | UI/Product | Keep as proposal for now |
 | [spec/active/help-content/](../spec/active/help-content/) | Help/onboarding editorial drafts | in_progress | Product | Keep `desktop/ui/src/content/help/` synchronized with active markdown drafts |
 | [spec/active/site/github-pages.md](../spec/active/site/github-pages.md) | Project website + GitHub Pages proposal | in_progress | Product/Engineering | Keep Astro website and Pages workflow aligned with release asset contract |
