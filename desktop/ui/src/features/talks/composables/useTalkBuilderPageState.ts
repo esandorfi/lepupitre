@@ -44,9 +44,26 @@ export function useTalkBuilderPageState() {
 
   const actions = createBuilderActions({
     t,
-    state,
-    selectedProjectId,
-    activeProfileId,
+    state: {
+      identity: {
+        selectedProjectId,
+        activeProfileId,
+      },
+      model: {
+        outline: state.outline,
+        exportPath: state.exportPath,
+        blueprint: state.blueprint,
+      },
+      ui: {
+        error: state.error,
+        isLoading: state.isLoading,
+        isSaving: state.isSaving,
+        saveStatus: state.saveStatus,
+        isExporting: state.isExporting,
+        isRevealing: state.isRevealing,
+        isApplyingTemplate: state.isApplyingTemplate,
+      },
+    },
   });
 
   onMounted(() => {
