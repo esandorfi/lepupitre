@@ -7,108 +7,179 @@ function toError(err: unknown) {
   return err instanceof Error ? err.message : String(err);
 }
 
+export type FeedbackPageRuntimeState = {
+  identity: {
+    feedbackId: Ref<string>;
+    locale: Ref<string>;
+  };
+  model: {
+    feedback: Ref<FeedbackV1 | null>;
+    context: Ref<FeedbackContext | null>;
+    mascotMessage: Ref<MascotMessage | null>;
+    reviewMarked: Ref<boolean>;
+  };
+  draft: {
+    note: Ref<string>;
+    lastSavedNote: Ref<string>;
+  };
+  ui: {
+    showMascotCard: Ref<boolean>;
+    error: Ref<string | null>;
+    isLoading: Ref<boolean>;
+    noteStatus: Ref<"idle" | "saving" | "saved" | "error">;
+  };
+};
+
+export type FeedbackPageRuntimeDeps = {
+  getActiveProfileId: () => string | null;
+  bootstrapSession: () => Promise<void>;
+  getFeedback: (feedbackId: string) => Promise<FeedbackV1 | null>;
+  getFeedbackContext: (feedbackId: string) => Promise<FeedbackContext | null>;
+  getFeedbackNote: (feedbackId: string) => Promise<string | null>;
+  setFeedbackNote: (feedbackId: string, note: string) => Promise<void>;
+  getMascotContextMessage: (args: {
+    routeName: "feedback";
+    projectId: string | null;
+    locale: string;
+  }) => Promise<MascotMessage | null>;
+  isFeedbackReviewed: (profileId: string, feedbackId: string) => boolean;
+  markFeedbackReviewed: (profileId: string, feedbackId: string) => void;
+  scheduleTimeout: (fn: () => void, delayMs: number) => void;
+};
+
+function createDefaultFeedbackPageRuntimeDeps(): FeedbackPageRuntimeDeps {
+  return {
+    getActiveProfileId: () => appState.activeProfileId,
+    bootstrapSession: () => sessionStore.bootstrap(),
+    getFeedback: (feedbackId) => feedbackStore.getFeedback(feedbackId),
+    getFeedbackContext: (feedbackId) => feedbackStore.getFeedbackContext(feedbackId),
+    getFeedbackNote: (feedbackId) => feedbackStore.getFeedbackNote(feedbackId),
+    setFeedbackNote: (feedbackId, note) => feedbackStore.setFeedbackNote(feedbackId, note),
+    getMascotContextMessage: (args) => coachStore.getMascotContextMessage(args),
+    isFeedbackReviewed,
+    markFeedbackReviewed,
+    scheduleTimeout: (fn, delayMs) => {
+      setTimeout(fn, delayMs);
+    },
+  };
+}
+
 type FeedbackPageRuntimeArgs = {
-  feedbackId: Ref<string>;
-  locale: Ref<string>;
-  showMascotCard: Ref<boolean>;
-  feedback: Ref<FeedbackV1 | null>;
-  context: Ref<FeedbackContext | null>;
-  mascotMessage: Ref<MascotMessage | null>;
-  error: Ref<string | null>;
-  isLoading: Ref<boolean>;
-  note: Ref<string>;
-  lastSavedNote: Ref<string>;
-  noteStatus: Ref<"idle" | "saving" | "saved" | "error">;
-  reviewMarked: Ref<boolean>;
+  state: FeedbackPageRuntimeState;
+  deps?: FeedbackPageRuntimeDeps;
 };
 
 export function createFeedbackPageRuntime(args: FeedbackPageRuntimeArgs) {
-  const {
-    feedbackId,
-    locale,
-    showMascotCard,
-    feedback,
-    context,
-    mascotMessage,
-    error,
-    isLoading,
-    note,
-    lastSavedNote,
-    noteStatus,
-    reviewMarked,
-  } = args;
+  const deps = args.deps ?? createDefaultFeedbackPageRuntimeDeps();
+  const { identity, model, draft, ui } = args.state;
+  let loadSequence = 0;
+  let saveSequence = 0;
 
   async function refreshMascotMessage() {
-    if (!showMascotCard.value || !appState.activeProfileId) {
-      mascotMessage.value = null;
+    if (!ui.showMascotCard.value || !deps.getActiveProfileId()) {
+      model.mascotMessage.value = null;
       return;
     }
     try {
-      mascotMessage.value = await coachStore.getMascotContextMessage({
+      model.mascotMessage.value = await deps.getMascotContextMessage({
         routeName: "feedback",
-        projectId: context.value?.project_id ?? null,
-        locale: locale.value,
+        projectId: model.context.value?.project_id ?? null,
+        locale: identity.locale.value,
       });
     } catch {
-      mascotMessage.value = null;
+      model.mascotMessage.value = null;
     }
   }
 
-  async function loadNote() {
-    if (!feedbackId.value) {
+  async function loadNote(requestId: number) {
+    if (!identity.feedbackId.value) {
       return;
     }
     try {
-      const existing = await feedbackStore.getFeedbackNote(feedbackId.value);
-      note.value = existing ?? "";
-      lastSavedNote.value = note.value;
+      const existing = await deps.getFeedbackNote(identity.feedbackId.value);
+      if (requestId !== loadSequence) {
+        return;
+      }
+      draft.note.value = existing ?? "";
+      draft.lastSavedNote.value = draft.note.value;
     } catch {
-      noteStatus.value = "error";
+      if (requestId !== loadSequence) {
+        return;
+      }
+      ui.noteStatus.value = "error";
     }
   }
 
   async function saveNote() {
-    if (!feedbackId.value || note.value === lastSavedNote.value) {
+    if (!identity.feedbackId.value || draft.note.value === draft.lastSavedNote.value) {
       return;
     }
-    noteStatus.value = "saving";
+    const requestId = ++saveSequence;
+    ui.noteStatus.value = "saving";
     try {
-      await feedbackStore.setFeedbackNote(feedbackId.value, note.value);
-      lastSavedNote.value = note.value;
-      noteStatus.value = "saved";
-      setTimeout(() => {
-        noteStatus.value = "idle";
+      await deps.setFeedbackNote(identity.feedbackId.value, draft.note.value);
+      if (requestId !== saveSequence) {
+        return;
+      }
+      draft.lastSavedNote.value = draft.note.value;
+      ui.noteStatus.value = "saved";
+      deps.scheduleTimeout(() => {
+        if (requestId === saveSequence && ui.noteStatus.value === "saved") {
+          ui.noteStatus.value = "idle";
+        }
       }, 1200);
     } catch {
-      noteStatus.value = "error";
+      if (requestId !== saveSequence) {
+        return;
+      }
+      ui.noteStatus.value = "error";
     }
   }
 
   async function loadPage() {
-    if (!feedbackId.value) {
+    if (!identity.feedbackId.value) {
       return;
     }
-    isLoading.value = true;
-    error.value = null;
+    const requestId = ++loadSequence;
+    ui.isLoading.value = true;
+    ui.error.value = null;
     try {
-      await sessionStore.bootstrap();
-      feedback.value = await feedbackStore.getFeedback(feedbackId.value);
-      context.value = await feedbackStore.getFeedbackContext(feedbackId.value);
-      if (appState.activeProfileId && feedbackId.value) {
-        const alreadyReviewed = isFeedbackReviewed(appState.activeProfileId, feedbackId.value);
+      await deps.bootstrapSession();
+      if (requestId !== loadSequence) {
+        return;
+      }
+      model.feedback.value = await deps.getFeedback(identity.feedbackId.value);
+      if (requestId !== loadSequence) {
+        return;
+      }
+      model.context.value = await deps.getFeedbackContext(identity.feedbackId.value);
+      if (requestId !== loadSequence) {
+        return;
+      }
+      const activeProfileId = deps.getActiveProfileId();
+      if (activeProfileId && identity.feedbackId.value) {
+        const alreadyReviewed = deps.isFeedbackReviewed(activeProfileId, identity.feedbackId.value);
         if (!alreadyReviewed) {
-          markFeedbackReviewed(appState.activeProfileId, feedbackId.value);
-          reviewMarked.value = true;
+          deps.markFeedbackReviewed(activeProfileId, identity.feedbackId.value);
+          model.reviewMarked.value = true;
         } else {
-          reviewMarked.value = false;
+          model.reviewMarked.value = false;
         }
       }
-      await loadNote();
+      await loadNote(requestId);
+      if (requestId !== loadSequence) {
+        return;
+      }
       await refreshMascotMessage();
     } catch (err) {
-      error.value = toError(err);
+      if (requestId !== loadSequence) {
+        return;
+      }
+      ui.error.value = toError(err);
     } finally {
-      isLoading.value = false;
+      if (requestId === loadSequence) {
+        ui.isLoading.value = false;
+      }
     }
   }
 
