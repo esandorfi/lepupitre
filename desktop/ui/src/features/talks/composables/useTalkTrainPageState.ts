@@ -47,14 +47,22 @@ export function useTalkTrainPageState() {
   );
 
   const { loadData, setActive, markTrainStage } = createTalkTrainRuntime({
-    projectId,
-    error,
-    isLoading,
-    isActivating,
-    report,
-    attempts,
-    runs,
-    peerReviews,
+    state: {
+      identity: {
+        projectId,
+      },
+      model: {
+        report,
+        attempts,
+        runs,
+        peerReviews,
+      },
+      ui: {
+        error,
+        isLoading,
+        isActivating,
+      },
+    },
   });
 
   onMounted(() => {
