@@ -1,248 +1,36 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { RouterLink } from "vue-router";
 import AudioRecorder from "@/components/AudioRecorder.vue";
-import { useI18n } from "@/lib/i18n";
-import {
-  canAnalyzeQuest,
-  canLeaveQuestWithoutFeedback,
-  canSubmitQuestText,
-  questAnalysisHintKey,
-} from "@/lib/questFlow";
-import { appState, feedbackStore, sessionStore, trainingStore } from "@/stores/app";
-import type { Quest } from "@/schemas/ipc";
+import { useQuestPageState } from "@/features/training/composables/useQuestPageState";
 
-const { t } = useI18n();
-const route = useRoute();
-const router = useRouter();
-
-const questCode = computed(() => String(route.params.questCode || ""));
-const routeProjectId = computed(() => String(route.query.projectId || ""));
-const contextProjectId = computed(() => routeProjectId.value || appState.activeProject?.id || "");
-const backLink = computed(() => {
-  if (route.query.from === "training") {
-    return "/training";
-  }
-  if (route.query.projectId) {
-    return `/talks/${route.query.projectId}/train`;
-  }
-  if (appState.activeProject?.id) {
-    return `/talks/${appState.activeProject.id}/train`;
-  }
-  return "/training";
-});
-const displayQuestCode = computed(() => {
-  const code = questCode.value;
-  if (!code) {
-    return t("quest.daily");
-  }
-  const projectId =
-    String(route.query.projectId || "") || appState.activeProject?.id || "";
-  return trainingStore.formatQuestCode(projectId, code);
-});
-const text = ref("");
-const error = ref<string | null>(null);
-const isSubmitting = ref(false);
-const isAnalyzing = ref(false);
-const isLoading = ref(false);
-const submittedTextSnapshot = ref<string | null>(null);
-
-const quest = ref<Quest | null>(null);
-const attemptId = ref<string | null>(null);
-const audioArtifactId = ref<string | null>(null);
-const transcriptId = ref<string | null>(null);
-
-const isAudioQuest = computed(
-  () => quest.value?.output_type.toLowerCase() === "audio"
-);
-const flowState = computed(() => ({
-  isAudioQuest: isAudioQuest.value,
-  isSubmitting: isSubmitting.value,
-  text: text.value,
-  submittedTextSnapshot: submittedTextSnapshot.value,
-  attemptId: attemptId.value,
-  transcriptId: transcriptId.value,
-  audioArtifactId: audioArtifactId.value,
-}));
-const canSubmitText = computed(() => canSubmitQuestText(flowState.value));
-const canAnalyze = computed(() => canAnalyzeQuest(flowState.value));
-const submitTextLabel = computed(() => {
-  if (submittedTextSnapshot.value && text.value.trim() !== submittedTextSnapshot.value) {
-    return t("quest.submit_update");
-  }
-  return t("quest.submit");
-});
-const analyzeLabel = computed(() =>
-  isAudioQuest.value && attemptId.value && !transcriptId.value
-    ? t("quest.transcribe_first")
-    : t("quest.analyze")
-);
-const captureStatusLabel = computed(() => {
-  if (!attemptId.value) {
-    return null;
-  }
-  if (!isAudioQuest.value) {
-    return t("quest.capture_saved_text");
-  }
-  if (transcriptId.value) {
-    return t("quest.capture_ready_audio");
-  }
-  return t("quest.capture_saved_audio");
-});
-const analysisHint = computed(() => {
-  return t(questAnalysisHintKey(flowState.value));
-});
-const canLeaveWithoutFeedback = computed(() => canLeaveQuestWithoutFeedback(flowState.value));
-
-function toError(err: unknown) {
-  return err instanceof Error ? err.message : String(err);
-}
-
-async function bootstrap() {
-  await sessionStore.bootstrap();
-}
-
-async function loadQuest() {
-  error.value = null;
-  quest.value = null;
-  attemptId.value = null;
-  audioArtifactId.value = null;
-  transcriptId.value = null;
-  text.value = "";
-  submittedTextSnapshot.value = null;
-
-  const code = questCode.value.trim();
-  if (!code) {
-    error.value = t("quest.empty");
-    return;
-  }
-
-  isLoading.value = true;
-  try {
-    await bootstrap();
-    if (!appState.activeProfileId || !contextProjectId.value) {
-      error.value = t("home.quest_empty");
-      return;
-    }
-
-    if (appState.dailyQuest?.quest.code === code) {
-      quest.value = appState.dailyQuest.quest;
-    } else {
-      quest.value = await trainingStore.getQuestByCode(code);
-    }
-  } catch (err) {
-    error.value = toError(err);
-  } finally {
-    isLoading.value = false;
-  }
-}
-
-async function submit() {
-  if (!quest.value) {
-    error.value = t("quest.empty");
-    return;
-  }
-  if (!text.value.trim()) {
-    error.value = t("quest.response_required");
-    return;
-  }
-  isSubmitting.value = true;
-  error.value = null;
-  try {
-    const attempt = await trainingStore.submitQuestTextForProject(
-      contextProjectId.value,
-      quest.value.code,
-      text.value.trim()
-    );
-    attemptId.value = attempt;
-    submittedTextSnapshot.value = text.value.trim();
-  } catch (err) {
-    error.value = toError(err);
-  } finally {
-    isSubmitting.value = false;
-  }
-}
-
-async function handleAudioSaved(payload: { artifactId: string }) {
-  if (!quest.value) {
-    return;
-  }
-  error.value = null;
-  transcriptId.value = null;
-  audioArtifactId.value = payload.artifactId;
-  try {
-    const attempt = await trainingStore.submitQuestAudioForProject(contextProjectId.value, {
-      questCode: quest.value.code,
-      audioArtifactId: payload.artifactId,
-      transcriptId: null,
-    });
-    attemptId.value = attempt;
-  } catch (err) {
-    error.value = toError(err);
-  }
-}
-
-async function handleTranscribed(payload: { transcriptId: string }) {
-  if (!quest.value || !audioArtifactId.value) {
-    return;
-  }
-  error.value = null;
-  transcriptId.value = payload.transcriptId;
-  try {
-    const attempt = await trainingStore.submitQuestAudioForProject(contextProjectId.value, {
-      questCode: quest.value.code,
-      audioArtifactId: audioArtifactId.value,
-      transcriptId: payload.transcriptId,
-    });
-    attemptId.value = attempt;
-  } catch (err) {
-    error.value = toError(err);
-  }
-}
-
-async function requestFeedback() {
-  if (!attemptId.value) {
-    error.value = t("quest.empty");
-    return;
-  }
-  if (isAudioQuest.value && !transcriptId.value) {
-    error.value = t("quest.transcribe_first");
-    return;
-  }
-  isAnalyzing.value = true;
-  error.value = null;
-  try {
-    const feedbackId = await feedbackStore.analyzeAttempt(attemptId.value);
-    await router.push(`/feedback?focus=${feedbackId}&source=quest`);
-  } catch (err) {
-    error.value = toError(err);
-  } finally {
-    isAnalyzing.value = false;
-  }
-}
-
-function handleRecorderAnalyze() {
-  void requestFeedback();
-}
-
-async function skipTranscription() {
-  await router.push(backLink.value);
-}
-
-onMounted(loadQuest);
-watch([questCode, routeProjectId], loadQuest);
-watch(text, (nextValue) => {
-  if (isAudioQuest.value) {
-    return;
-  }
-  if (!attemptId.value || submittedTextSnapshot.value === null) {
-    return;
-  }
-  if (nextValue.trim() !== submittedTextSnapshot.value) {
-    attemptId.value = null;
-    submittedTextSnapshot.value = null;
-  }
-});
+const {
+  t,
+  backLink,
+  displayQuestCode,
+  text,
+  error,
+  isAnalyzing,
+  isLoading,
+  quest,
+  attemptId,
+  submittedTextSnapshot,
+  audioArtifactId,
+  transcriptId,
+  isAudioQuest,
+  canSubmitText,
+  canAnalyze,
+  submitTextLabel,
+  analyzeLabel,
+  captureStatusLabel,
+  analysisHint,
+  canLeaveWithoutFeedback,
+  submit,
+  handleAudioSaved,
+  handleTranscribed,
+  requestFeedback,
+  handleRecorderAnalyze,
+  skipTranscription,
+} = useQuestPageState();
 </script>
 
 <template>
@@ -299,22 +87,14 @@ watch(text, (nextValue) => {
           />
 
           <div class="flex flex-wrap items-center gap-3">
-            <UButton
-             
-              size="lg"
-              :disabled="!canSubmitText"
-              color="primary"
-             @click="submit">
+            <UButton size="lg" :disabled="!canSubmitText" color="primary" @click="submit">
               {{ submitTextLabel }}
             </UButton>
             <UBadge v-if="attemptId" color="success" variant="solid">
               {{ t("quest.capture_saved") }}
             </UBadge>
           </div>
-          <p
-            v-if="submittedTextSnapshot"
-            class="app-muted app-text-meta"
-          >
+          <p v-if="submittedTextSnapshot" class="app-muted app-text-meta">
             {{
               text.trim() === submittedTextSnapshot
                 ? t("quest.text_submitted_hint")
@@ -329,19 +109,20 @@ watch(text, (nextValue) => {
         <div class="mt-3 flex flex-wrap items-center gap-3">
           <UButton
             v-if="!isAudioQuest"
-           
             size="lg"
             :disabled="!canAnalyze || isAnalyzing"
             color="info"
-           @click="requestFeedback">
+            @click="requestFeedback"
+          >
             {{ analyzeLabel }}
           </UButton>
           <UButton
             v-if="canLeaveWithoutFeedback"
-           
             size="lg"
             color="neutral"
-           variant="outline" @click="skipTranscription">
+            variant="outline"
+            @click="skipTranscription"
+          >
             {{ t("quest.keep_without_feedback") }}
           </UButton>
           <RouterLink class="app-muted app-text-meta underline" :to="backLink">
@@ -360,4 +141,3 @@ watch(text, (nextValue) => {
     </UCard>
   </section>
 </template>
-

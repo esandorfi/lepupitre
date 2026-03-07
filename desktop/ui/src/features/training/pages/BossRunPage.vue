@@ -1,176 +1,26 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
-import { useRoute, useRouter, RouterLink } from "vue-router";
+import { RouterLink } from "vue-router";
 import AudioRecorder from "@/components/AudioRecorder.vue";
-import { useI18n } from "@/lib/i18n";
-import { appState, runStore, sessionStore, talksStore } from "@/stores/app";
-import type { RunSummary } from "@/schemas/ipc";
+import { useBossRunPageState } from "@/features/training/composables/useBossRunPageState";
 
-const { t } = useI18n();
-const router = useRouter();
-const route = useRoute();
-
-const error = ref<string | null>(null);
-const isLoading = ref(false);
-const isSaving = ref(false);
-const isAnalyzing = ref(false);
-const run = ref<RunSummary | null>(null);
-const pendingTranscriptId = ref<string | null>(null);
-const requestedRunId = computed(() => String(route.query.runId || ""));
-
-const activeProfileId = computed(() => appState.activeProfileId);
-const activeProject = computed(() => appState.activeProject);
-const talkLabel = computed(() => {
-  if (!activeProject.value) {
-    return "";
-  }
-  const number = talksStore.getTalkNumber(activeProject.value.id);
-  const prefix = number ? `T${number} - ` : "";
-  return `${prefix}${activeProject.value.title}`;
-});
-
-function toError(err: unknown) {
-  return err instanceof Error ? err.message : String(err);
-}
-
-function formatDate(value: string | null | undefined) {
-  if (!value) {
-    return "--";
-  }
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-  return date.toLocaleDateString();
-}
-
-const runStatus = computed(() => {
-  if (!run.value) {
-    return t("boss_run.status_empty");
-  }
-  if (run.value.feedback_id) {
-    return t("boss_run.status_feedback");
-  }
-  if (run.value.transcript_id) {
-    return t("boss_run.status_transcribed");
-  }
-  if (run.value.audio_artifact_id) {
-    return t("boss_run.status_recorded");
-  }
-  return t("boss_run.status_empty");
-});
-
-async function loadLatest() {
-  run.value = null;
-  if (!activeProject.value) {
-    return;
-  }
-  isLoading.value = true;
-  error.value = null;
-  try {
-    if (requestedRunId.value) {
-      run.value = await runStore.getRun(requestedRunId.value);
-      if (!run.value) {
-        run.value = await runStore.getLatestRun(activeProject.value.id);
-      }
-    } else {
-      run.value = await runStore.getLatestRun(activeProject.value.id);
-    }
-  } catch (err) {
-    error.value = toError(err);
-  } finally {
-    isLoading.value = false;
-  }
-}
-
-async function handleAudioSaved(payload: { artifactId: string }) {
-  if (!activeProject.value) {
-    error.value = t("boss_run.need_talk");
-    return;
-  }
-  pendingTranscriptId.value = null;
-  isSaving.value = true;
-  error.value = null;
-  try {
-    const runId = await runStore.createRun(activeProject.value.id);
-    await runStore.finishRun(runId, payload.artifactId);
-    if (pendingTranscriptId.value) {
-      await runStore.setRunTranscript(runId, pendingTranscriptId.value);
-      pendingTranscriptId.value = null;
-    }
-    run.value = await runStore.getLatestRun(activeProject.value.id);
-  } catch (err) {
-    error.value = toError(err);
-  } finally {
-    isSaving.value = false;
-  }
-}
-
-async function handleTranscribed(payload: { transcriptId: string }) {
-  if (!activeProject.value) {
-    error.value = t("boss_run.need_talk");
-    return;
-  }
-  if (!run.value) {
-    pendingTranscriptId.value = payload.transcriptId;
-    return;
-  }
-  error.value = null;
-  try {
-    await runStore.setRunTranscript(run.value.id, payload.transcriptId);
-    run.value = await runStore.getLatestRun(activeProject.value.id);
-  } catch (err) {
-    error.value = toError(err);
-  }
-}
-
-async function requestFeedback() {
-  if (!run.value) {
-    error.value = t("boss_run.run_missing");
-    return;
-  }
-  isAnalyzing.value = true;
-  error.value = null;
-  try {
-    const feedbackId = await runStore.analyzeRun(run.value.id);
-    await router.push(`/feedback?focus=${feedbackId}&source=boss-run`);
-  } catch (err) {
-    error.value = toError(err);
-  } finally {
-    isAnalyzing.value = false;
-  }
-}
-
-function handleRecorderAnalyze() {
-  void requestFeedback();
-}
-
-const hasAnalysisResult = computed(() => !!run.value?.feedback_id);
-
-function handleViewFeedback() {
-  if (run.value?.feedback_id) {
-    void router.push(`/feedback/${run.value.feedback_id}`);
-  }
-}
-
-onMounted(async () => {
-  await sessionStore.bootstrap();
-  await loadLatest();
-});
-
-watch(
-  () => activeProject.value?.id,
-  async () => {
-    await loadLatest();
-  }
-);
-
-watch(
-  () => requestedRunId.value,
-  () => {
-    loadLatest();
-  }
-);
+const {
+  t,
+  error,
+  isLoading,
+  isSaving,
+  isAnalyzing,
+  run,
+  activeProfileId,
+  activeProject,
+  talkLabel,
+  runStatus,
+  hasAnalysisResult,
+  formatDate,
+  handleAudioSaved,
+  handleTranscribed,
+  handleRecorderAnalyze,
+  handleViewFeedback,
+} = useBossRunPageState();
 </script>
 
 <template>
@@ -252,4 +102,3 @@ watch(
     </div>
   </section>
 </template>
-
