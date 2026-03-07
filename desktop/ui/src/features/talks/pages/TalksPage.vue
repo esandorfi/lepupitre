@@ -1,207 +1,32 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
-import { RouterLink, useRouter } from "vue-router";
+import { RouterLink } from "vue-router";
 import EntityRow from "@/components/EntityRow.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import PageShell from "@/components/PageShell.vue";
 import SectionPanel from "@/components/SectionPanel.vue";
-import { useI18n } from "@/lib/i18n";
-import { useUiPreferences } from "@/lib/uiPreferences";
-import { appState, coachStore, sessionStore, talksStore } from "@/stores/app";
-import type { MascotMessage, TalksBlueprint } from "@/schemas/ipc";
+import { useTalksPageState } from "@/features/talks/composables/useTalksPageState";
 
-const { t, locale } = useI18n();
-const { settings: uiSettings } = useUiPreferences();
-const state = computed(() => appState);
-const error = ref<string | null>(null);
-const isLoading = ref(false);
-const isBlueprintLoading = ref(false);
-const isSwitching = ref<string | null>(null);
-const mascotMessage = ref<MascotMessage | null>(null);
-const talksBlueprint = ref<TalksBlueprint | null>(null);
-const router = useRouter();
-const showMascotCard = computed(() => uiSettings.value.mascotEnabled);
-const mascotBody = computed(() =>
-  uiSettings.value.mascotIntensity === "minimal" ? "" : mascotMessage.value?.body ?? ""
-);
-
-function mascotToneClass(kind: string | null | undefined) {
-  if (kind === "celebrate") {
-    return "border-[var(--color-success)] bg-[color-mix(in_srgb,var(--color-success)_15%,var(--color-surface))]";
-  }
-  if (kind === "nudge") {
-    return "border-[var(--color-accent)] bg-[color-mix(in_srgb,var(--color-accent-soft)_35%,var(--color-surface))]";
-  }
-  return "border-[var(--color-border)] bg-[var(--color-surface-elevated)]";
-}
-
-function blueprintPercentClass(percent: number) {
-  if (percent >= 100) {
-    return "bg-[var(--color-success)]";
-  }
-  if (percent >= 60) {
-    return "bg-[var(--color-accent)]";
-  }
-  return "bg-[var(--color-warning)]";
-}
-
-function blueprintStepClass(done: boolean) {
-  if (done) {
-    return "border-[var(--color-success)] bg-[color-mix(in_srgb,var(--color-success)_14%,var(--color-surface))]";
-  }
-  return "border-[var(--app-border)] bg-[var(--color-surface-elevated)]";
-}
-
-function toError(err: unknown) {
-  return err instanceof Error ? err.message : String(err);
-}
-
-function formatDuration(seconds: number | null | undefined) {
-  if (!seconds || seconds <= 0) {
-    return "--";
-  }
-  return Math.round(seconds / 60).toString();
-}
-
-function formatLastActivity(value: string | null | undefined) {
-  if (!value) {
-    return t("talks.last_activity_unknown");
-  }
-  const date = new Date(value);
-  const now = Date.now();
-  const time = date.getTime();
-  if (Number.isNaN(time)) {
-    return t("talks.last_activity_unknown");
-  }
-  const diffMs = Math.max(0, now - time);
-  const minutes = Math.floor(diffMs / 60000);
-  if (minutes < 1) {
-    return t("talks.last_activity_just_now");
-  }
-  if (minutes < 60) {
-    return `${minutes}m`;
-  }
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) {
-    return `${hours}h`;
-  }
-  const days = Math.floor(hours / 24);
-  if (days < 7) {
-    return `${days}d`;
-  }
-  return date.toLocaleDateString();
-}
-
-function talkNumberLabel(number: number | null | undefined) {
-  if (!number) {
-    return null;
-  }
-  return `T${number}`;
-}
-
-function normalizedStage(stage: string | null | undefined) {
-  if (stage === "builder" || stage === "train" || stage === "export") {
-    return stage;
-  }
-  return "draft";
-}
-
-function talkStageLabel(stage: string | null | undefined) {
-  const key = normalizedStage(stage);
-  if (key === "draft") {
-    return t("talk_steps.define");
-  }
-  if (key === "builder") {
-    return t("talk_steps.builder");
-  }
-  if (key === "train") {
-    return t("talk_steps.train");
-  }
-  return t("talk_steps.export");
-}
-
-async function bootstrap() {
-  isLoading.value = true;
-  error.value = null;
-  try {
-    await sessionStore.bootstrap();
-    await talksStore.loadProjects();
-    await refreshTalksBlueprint();
-    await refreshMascotMessage();
-  } catch (err) {
-    error.value = toError(err);
-  } finally {
-    isLoading.value = false;
-  }
-}
-
-async function refreshTalksBlueprint() {
-  if (!state.value.activeProfileId || !state.value.activeProject?.id) {
-    talksBlueprint.value = null;
-    return;
-  }
-  isBlueprintLoading.value = true;
-  try {
-    talksBlueprint.value = await coachStore.getTalksBlueprint(
-      state.value.activeProject.id,
-      locale.value
-    );
-  } catch {
-    talksBlueprint.value = null;
-  } finally {
-    isBlueprintLoading.value = false;
-  }
-}
-
-async function refreshMascotMessage() {
-  if (!showMascotCard.value || !state.value.activeProfileId) {
-    mascotMessage.value = null;
-    return;
-  }
-  try {
-    mascotMessage.value = await coachStore.getMascotContextMessage({
-      routeName: "talks",
-      projectId: state.value.activeProject?.id ?? null,
-      locale: locale.value,
-    });
-  } catch {
-    mascotMessage.value = null;
-  }
-}
-
-async function setActive(projectId: string) {
-  isSwitching.value = projectId;
-  error.value = null;
-  try {
-    await talksStore.setActiveProject(projectId);
-    await refreshTalksBlueprint();
-    await refreshMascotMessage();
-  } catch (err) {
-    error.value = toError(err);
-  } finally {
-    isSwitching.value = null;
-  }
-}
-
-function goToReport(projectId: string) {
-  router.push(`/talks/${projectId}/define`);
-}
-
-onMounted(bootstrap);
-
-watch(
-  () =>
-    [
-      locale.value,
-      uiSettings.value.mascotEnabled,
-      uiSettings.value.mascotIntensity,
-      state.value.activeProject?.id ?? "",
-    ] as const,
-  async () => {
-    await refreshTalksBlueprint();
-    await refreshMascotMessage();
-  }
-);
+const {
+  t,
+  state,
+  error,
+  isLoading,
+  isBlueprintLoading,
+  isSwitching,
+  mascotMessage,
+  talksBlueprint,
+  showMascotCard,
+  mascotBody,
+  mascotToneClass,
+  blueprintPercentClass,
+  blueprintStepClass,
+  formatDuration,
+  formatLastActivity,
+  talkNumberLabel,
+  talkStageLabel,
+  setActive,
+  goToDefine,
+} = useTalksPageState();
 </script>
 
 <template>
@@ -229,19 +54,16 @@ watch(
         <UButton
           v-if="mascotMessage.cta_route && mascotMessage.cta_label"
           size="md"
-         
           :to="mascotMessage.cta_route"
-         color="neutral" variant="outline">
+          color="neutral"
+          variant="outline"
+        >
           {{ mascotMessage.cta_label }}
         </UButton>
       </div>
     </SectionPanel>
 
-    <SectionPanel
-      v-if="state.activeProfileId && state.activeProject"
-      variant="compact"
-      class="border"
-    >
+    <SectionPanel v-if="state.activeProfileId && state.activeProject" variant="compact" class="border">
       <div v-if="isBlueprintLoading" class="app-muted app-text-meta">
         {{ t("talks.loading") }}
       </div>
@@ -319,9 +141,9 @@ watch(
           interactive
           role="button"
           tabindex="0"
-          @click="goToReport(project.id)"
-          @keydown.enter.prevent="goToReport(project.id)"
-          @keydown.space.prevent="goToReport(project.id)"
+          @click="goToDefine(project.id)"
+          @keydown.enter.prevent="goToDefine(project.id)"
+          @keydown.space.prevent="goToDefine(project.id)"
         >
           <template #main>
             <div class="flex flex-wrap items-center gap-2">
@@ -338,19 +160,21 @@ watch(
             </div>
             <div class="app-subtle app-text-meta mt-1">
               {{ t("talks.duration") }}: {{ formatDuration(project.duration_target_sec) }}
-              {{ t("talks.minutes") }} Â·
+              {{ t("talks.minutes") }} -
               {{ t("talks.last_activity") }}: {{ formatLastActivity(project.updated_at) }}
             </div>
           </template>
 
           <template #actions>
             <UButton
-             
-             
               :aria-label="t('talks.view_report')"
               :title="t('talks.view_report')"
               color="neutral"
-             variant="outline" size="md" square="true" @click.stop="goToReport(project.id)">
+              variant="outline"
+              size="md"
+              square
+              @click.stop="goToDefine(project.id)"
+            >
               <svg
                 class="h-4 w-4"
                 viewBox="0 0 24 24"
@@ -374,10 +198,11 @@ watch(
             <UButton
               v-else
               size="sm"
-             
               :disabled="isSwitching === project.id"
               color="neutral"
-             variant="outline" @click.stop="setActive(project.id)">
+              variant="outline"
+              @click.stop="setActive(project.id)"
+            >
               {{ t("talks.set_active") }}
             </UButton>
           </template>
@@ -386,4 +211,3 @@ watch(
     </SectionPanel>
   </PageShell>
 </template>
-
