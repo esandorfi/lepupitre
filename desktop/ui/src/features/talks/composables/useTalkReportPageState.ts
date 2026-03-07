@@ -52,18 +52,26 @@ export function useTalkReportPageState() {
   );
 
   const { exportPack, revealExport, loadReport, setActive } = createTalkReportRuntime({
-    projectId,
-    error,
-    isLoading,
-    isActivating,
-    report,
-    attempts,
-    runs,
-    peerReviews,
-    exportPath,
-    exportingRunId,
-    isRevealing,
-    exportError,
+    state: {
+      identity: {
+        projectId,
+      },
+      model: {
+        report,
+        attempts,
+        runs,
+        peerReviews,
+      },
+      ui: {
+        error,
+        isLoading,
+        isActivating,
+        exportPath,
+        exportingRunId,
+        isRevealing,
+        exportError,
+      },
+    },
   });
 
   onMounted(() => {
