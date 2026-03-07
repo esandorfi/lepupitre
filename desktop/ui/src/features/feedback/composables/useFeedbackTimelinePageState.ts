@@ -57,19 +57,27 @@ export function useFeedbackTimelinePageState() {
   });
 
   const runtime = createTimelineRuntime({
-    locale,
-    state,
-    scope,
-    activeProjectId,
-    showMascotCard,
-    focusedFeedbackId,
-    sourceContext,
-    entries,
-    reviewedIds,
-    isLoading,
-    error,
-    mascotMessage,
-    filterType,
+    state: {
+      identity: {
+        locale,
+        scope,
+        activeProjectId,
+        showMascotCard,
+        focusedFeedbackId,
+        sourceContext,
+      },
+      model: {
+        appState: state,
+        entries,
+        reviewedIds,
+        mascotMessage,
+      },
+      ui: {
+        isLoading,
+        error,
+        filterType,
+      },
+    },
   });
 
   bindTimelineLifecycle({

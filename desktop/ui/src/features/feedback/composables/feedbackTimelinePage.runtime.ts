@@ -9,110 +9,132 @@ import type {
 } from "@/features/feedback/composables/feedbackTimelinePage.types";
 import { toError } from "@/features/feedback/composables/feedbackTimelinePage.utils";
 
-export function createTimelineRuntime(options: {
-  locale: Ref<string>;
-  state: ComputedRef<TimelineState>;
-  scope: Ref<FeedbackTimelineScope>;
-  activeProjectId: ComputedRef<string | null>;
-  showMascotCard: ComputedRef<boolean>;
-  focusedFeedbackId: ComputedRef<string>;
-  sourceContext: ComputedRef<string>;
-  entries: Ref<FeedbackTimelineItem[]>;
-  reviewedIds: Ref<Set<string>>;
-  isLoading: Ref<boolean>;
-  error: Ref<string | null>;
-  mascotMessage: Ref<MascotMessage | null>;
-  filterType: Ref<FeedbackTimelineFilterType>;
-}) {
-  const {
-    locale,
-    state,
-    scope,
-    activeProjectId,
-    showMascotCard,
-    focusedFeedbackId,
-    sourceContext,
-    entries,
-    reviewedIds,
-    isLoading,
-    error,
-    mascotMessage,
-    filterType,
-  } = options;
+export type TimelineRuntimeState = {
+  identity: {
+    locale: Ref<string>;
+    scope: Ref<FeedbackTimelineScope>;
+    activeProjectId: ComputedRef<string | null>;
+    showMascotCard: ComputedRef<boolean>;
+    focusedFeedbackId: ComputedRef<string>;
+    sourceContext: ComputedRef<string>;
+  };
+  model: {
+    appState: ComputedRef<TimelineState>;
+    entries: Ref<FeedbackTimelineItem[]>;
+    reviewedIds: Ref<Set<string>>;
+    mascotMessage: Ref<MascotMessage | null>;
+  };
+  ui: {
+    isLoading: Ref<boolean>;
+    error: Ref<string | null>;
+    filterType: Ref<FeedbackTimelineFilterType>;
+  };
+};
+
+export type TimelineRuntimeDeps = {
+  getMascotContextMessage: (args: {
+    routeName: "feedback";
+    projectId: string | null;
+    locale: string;
+  }) => Promise<MascotMessage | null>;
+  getFeedbackTimeline: (
+    projectId: string | null,
+    limit: number
+  ) => Promise<FeedbackTimelineItem[]>;
+  readReviewedIds: (profileId: string) => Set<string>;
+};
+
+function createDefaultTimelineRuntimeDeps(): TimelineRuntimeDeps {
+  return {
+    getMascotContextMessage: (args) => coachStore.getMascotContextMessage(args),
+    getFeedbackTimeline: (projectId, limit) => feedbackStore.getFeedbackTimeline(projectId, limit),
+    readReviewedIds: (profileId) => readReviewedFeedbackIds(profileId),
+  };
+}
+
+type TimelineRuntimeArgs = {
+  state: TimelineRuntimeState;
+  deps?: TimelineRuntimeDeps;
+};
+
+export function createTimelineRuntime(args: TimelineRuntimeArgs) {
+  const deps = args.deps ?? createDefaultTimelineRuntimeDeps();
+  const { identity, model, ui } = args.state;
 
   let timelineLoadSeq = 0;
 
   function applyFocusedContextFilters() {
-    if (!focusedFeedbackId.value) {
+    if (!identity.focusedFeedbackId.value) {
       return;
     }
-    if (sourceContext.value === "quest") {
-      filterType.value = "quest_attempt";
-    } else if (sourceContext.value === "boss-run") {
-      filterType.value = "run";
+    if (identity.sourceContext.value === "quest") {
+      ui.filterType.value = "quest_attempt";
+    } else if (identity.sourceContext.value === "boss-run") {
+      ui.filterType.value = "run";
     } else {
-      filterType.value = "all";
+      ui.filterType.value = "all";
     }
   }
 
   async function refreshMascotMessage(expectedSeq?: number) {
-    if (!showMascotCard.value || !state.value.activeProfileId) {
+    if (!identity.showMascotCard.value || !model.appState.value.activeProfileId) {
       if (expectedSeq == null || expectedSeq === timelineLoadSeq) {
-        mascotMessage.value = null;
+        model.mascotMessage.value = null;
       }
       return;
     }
     try {
-      const message = await coachStore.getMascotContextMessage({
+      const message = await deps.getMascotContextMessage({
         routeName: "feedback",
-        projectId: scope.value === "talk" ? activeProjectId.value : null,
-        locale: locale.value,
+        projectId:
+          identity.scope.value === "talk" ? identity.activeProjectId.value : null,
+        locale: identity.locale.value,
       });
       if (expectedSeq != null && expectedSeq !== timelineLoadSeq) {
         return;
       }
-      mascotMessage.value = message;
+      model.mascotMessage.value = message;
     } catch {
       if (expectedSeq != null && expectedSeq !== timelineLoadSeq) {
         return;
       }
-      mascotMessage.value = null;
+      model.mascotMessage.value = null;
     }
   }
 
   async function loadTimeline() {
     const requestSeq = ++timelineLoadSeq;
-    if (!state.value.activeProfileId) {
-      entries.value = [];
-      error.value = null;
-      mascotMessage.value = null;
-      reviewedIds.value = new Set();
+    if (!model.appState.value.activeProfileId) {
+      model.entries.value = [];
+      ui.error.value = null;
+      model.mascotMessage.value = null;
+      model.reviewedIds.value = new Set();
       return;
     }
-    isLoading.value = true;
-    error.value = null;
+    ui.isLoading.value = true;
+    ui.error.value = null;
     try {
-      const timeline = await feedbackStore.getFeedbackTimeline(
-        scope.value === "talk" ? activeProjectId.value : null,
+      const timeline = await deps.getFeedbackTimeline(
+        identity.scope.value === "talk" ? identity.activeProjectId.value : null,
         48
       );
-      const reviewed = readReviewedFeedbackIds(state.value.activeProfileId);
+      const reviewed = deps.readReviewedIds(model.appState.value.activeProfileId);
       if (requestSeq !== timelineLoadSeq) {
         return;
       }
-      entries.value = timeline;
-      reviewedIds.value = reviewed;
+      model.entries.value = timeline;
+      model.reviewedIds.value = reviewed;
       await refreshMascotMessage(requestSeq);
     } catch (err) {
       if (requestSeq !== timelineLoadSeq) {
         return;
       }
-      entries.value = [];
-      error.value = toError(err);
-      mascotMessage.value = null;
+      model.entries.value = [];
+      ui.error.value = toError(err);
+      model.mascotMessage.value = null;
     } finally {
       if (requestSeq === timelineLoadSeq) {
-        isLoading.value = false;
+        ui.isLoading.value = false;
       }
     }
   }
