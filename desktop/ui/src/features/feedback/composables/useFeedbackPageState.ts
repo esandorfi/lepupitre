@@ -1,18 +1,15 @@
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { resolveFeedbackBackLink, resolveFeedbackContextLabel } from "@/lib/feedbackContext";
-import { isFeedbackReviewed, markFeedbackReviewed } from "@/lib/feedbackReviewState";
+import { isFeedbackReviewed } from "@/lib/feedbackReviewState";
 import { useI18n } from "@/lib/i18n";
 import { useUiPreferences } from "@/lib/uiPreferences";
-import { appState, coachStore, feedbackStore, sessionStore, trainingStore } from "@/stores/app";
+import { appState, trainingStore } from "@/stores/app";
 import type { FeedbackContext, FeedbackV1, MascotMessage } from "@/schemas/ipc";
+import { createFeedbackPageRuntime } from "@/features/feedback/composables/feedbackPageRuntime";
 
 export type FeedbackNoteStatus = "idle" | "saving" | "saved" | "error";
 export type FeedbackQuestLink = { code: string; label: string; to: string };
-
-function toError(err: unknown) {
-  return err instanceof Error ? err.message : String(err);
-}
 
 export function useFeedbackPageState() {
   const { t, locale } = useI18n();
@@ -66,78 +63,23 @@ export function useFeedbackPageState() {
     resolveFeedbackContextLabel(context.value, trainingStore.formatQuestCode, t("feedback.run_label"))
   );
 
-  async function refreshMascotMessage() {
-    if (!showMascotCard.value || !appState.activeProfileId) {
-      mascotMessage.value = null;
-      return;
-    }
-    try {
-      mascotMessage.value = await coachStore.getMascotContextMessage({
-        routeName: "feedback",
-        projectId: context.value?.project_id ?? null,
-        locale: locale.value,
-      });
-    } catch {
-      mascotMessage.value = null;
-    }
-  }
+  const { refreshMascotMessage, saveNote, loadPage } = createFeedbackPageRuntime({
+    feedbackId,
+    locale,
+    showMascotCard,
+    feedback,
+    context,
+    mascotMessage,
+    error,
+    isLoading,
+    note,
+    lastSavedNote,
+    noteStatus,
+    reviewMarked,
+  });
 
-  async function loadNote() {
-    if (!feedbackId.value) {
-      return;
-    }
-    try {
-      const existing = await feedbackStore.getFeedbackNote(feedbackId.value);
-      note.value = existing ?? "";
-      lastSavedNote.value = note.value;
-    } catch {
-      noteStatus.value = "error";
-    }
-  }
-
-  async function saveNote() {
-    if (!feedbackId.value || note.value === lastSavedNote.value) {
-      return;
-    }
-    noteStatus.value = "saving";
-    try {
-      await feedbackStore.setFeedbackNote(feedbackId.value, note.value);
-      lastSavedNote.value = note.value;
-      noteStatus.value = "saved";
-      setTimeout(() => {
-        noteStatus.value = "idle";
-      }, 1200);
-    } catch {
-      noteStatus.value = "error";
-    }
-  }
-
-  onMounted(async () => {
-    if (!feedbackId.value) {
-      return;
-    }
-    isLoading.value = true;
-    error.value = null;
-    try {
-      await sessionStore.bootstrap();
-      feedback.value = await feedbackStore.getFeedback(feedbackId.value);
-      context.value = await feedbackStore.getFeedbackContext(feedbackId.value);
-      if (appState.activeProfileId && feedbackId.value) {
-        const alreadyReviewed = isFeedbackReviewed(appState.activeProfileId, feedbackId.value);
-        if (!alreadyReviewed) {
-          markFeedbackReviewed(appState.activeProfileId, feedbackId.value);
-          reviewMarked.value = true;
-        } else {
-          reviewMarked.value = false;
-        }
-      }
-      await loadNote();
-      await refreshMascotMessage();
-    } catch (err) {
-      error.value = toError(err);
-    } finally {
-      isLoading.value = false;
-    }
+  onMounted(() => {
+    void loadPage();
   });
 
   watch(
