@@ -1,0 +1,236 @@
+# UI Runtime Input Contract Refactor (SOTA Target)
+
+- Date: 2026-03-07
+- Status: proposed
+- Scope: `desktop/ui/src/features/**/composables/*Runtime*.ts`, `*PageRuntime.ts`, runtime-like helpers
+- Related decision candidate: `DEC-20260307-ui-runtime-input-contract`
+
+## Context
+
+Several feature runtimes currently use wide flat parameter objects with many refs:
+
+- `feedbackPageRuntime.ts`: 12 inputs
+- `talkExportPageRuntime.ts`: 12 inputs
+- `talkReportPageRuntime.ts`: 12 inputs
+- `talkDefinePageRuntime.ts`: 10 inputs
+- `talkTrainPageRuntime.ts`: 8 inputs
+
+This works functionally but weakens long-term scalability:
+
+1. signatures are wide and noisy,
+2. domain intent is implicit,
+3. naming can collide with schema entities,
+4. diff quality drops when many fields move together.
+
+## Goal
+
+Define a SOTA-grade runtime contract that is deterministic, typed, testable, and auditable while preserving existing IPC/store boundaries.
+
+## Non-goals
+
+- No backend IPC command/payload/schema change.
+- No mandatory store public API rewrite.
+- No big-bang migration across all features.
+
+## Help: Runtime vs State
+
+## State
+
+`state` is reactive page data consumed by template/computed selectors.
+
+- It represents current UI truth.
+- It does not execute privileged side effects itself.
+- It is split into explicit data planes (defined below).
+
+## Runtime
+
+`runtime` is the imperative orchestration layer.
+
+- It receives commands (`loadPage`, `saveNote`, `setActive`, ...).
+- It calls side-effect dependencies (`deps`).
+- It mutates `state` through deterministic transitions.
+
+## Mental model
+
+- `state` = data container
+- `runtime` = command executor
+
+## SOTA Contract (Normative)
+
+The following rules are normative for new or touched runtime modules.
+
+## 1. Data planes are explicit
+
+Runtime input must be grouped and explicit:
+
+```ts
+createXRuntime({
+  state: {
+    identity, // route/profile/project/locale ids and selectors
+    model,    // schema-aligned domain entities
+    draft,    // editable transient values
+    ui,       // loading/error/status and view flags
+  },
+  deps,       // stores/domain adapters/navigation/clock/logger
+})
+```
+
+Required constraints:
+
+- `model` fields are schema-aligned domain entities only.
+- `ui` fields never duplicate domain entity data.
+- `draft` holds user-editable transient values only.
+- `identity` holds routing/context keys only.
+
+## 2. Domain model normalization policy
+
+Normalization must be used when either condition is true:
+
+- entity collections are read in multiple places, or
+- runtime performs repeated entity lookups/merges by id.
+
+Preferred shape:
+
+- `model.entities.<entity>ById: Ref<Record<string, Entity>>`
+- `model.order.<entity>Ids: Ref<string[]>`
+- selectors derive read views from `entities + ids`.
+
+Small single-entity pages may keep direct refs.
+
+## 3. Command and transition model
+
+Runtime APIs must be command-shaped, not raw mutation APIs.
+
+- Good: `loadPage`, `saveNote`, `refreshMascotMessage`.
+- Avoid: exporting low-level setters as public runtime API.
+
+Each command must define:
+
+- preconditions,
+- transition intent (`idle -> loading -> success/error`),
+- postconditions on `state`.
+
+## 4. Concurrency and race policy
+
+Each async command must explicitly choose one policy:
+
+- `takeLatest` (sequence guard),
+- `singleFlight` (dedupe concurrent calls),
+- `queue` (ordered execution),
+- `parallel` (explicitly independent operations).
+
+Default for page loading commands: `takeLatest`.
+
+Minimum protections:
+
+- stale response must not overwrite newer state,
+- save actions must avoid stale-write regressions,
+- timer-based status reset must not clobber active in-flight status.
+
+## 5. Error model and mapping
+
+Runtime must classify errors into stable categories:
+
+- `validation`
+- `domain`
+- `infrastructure`
+- `unknown`
+
+Mapping rules:
+
+- critical command failure updates primary `ui.error`,
+- non-critical optional features update local status and degrade gracefully,
+- raw unknown errors are normalized before state assignment.
+
+## 6. Side-effect boundary
+
+Runtime side effects must go through `deps` only.
+
+- No direct import of unrelated global singletons inside runtime body when dependency can be injected.
+- IPC remains behind domain/store layers (unchanged by this spec).
+
+## 7. Naming contract
+
+- Group names should be domain explicit (`noteDraft`, `projectIdentity`, `timelineUi`).
+- Avoid ambiguous names that shadow schema entities.
+- Schema entity names remain stable inside `model`.
+
+## 8. Flat args exception policy
+
+Flat argument objects are allowed only if:
+
+- runtime has up to 7 primitive inputs, and
+- grouping would not improve domain clarity.
+
+Exception must be documented in file-level comment or spec note.
+
+## Store Alignment Challenge
+
+Should runtime contracts mirror store contracts exactly?
+
+- Alignment target: design intent (`state + deps`, explicit boundaries).
+- Not required: exact identical shape.
+
+Reason:
+
+- stores are domain/application boundaries,
+- runtimes are view orchestration boundaries.
+
+Forcing 1:1 shape would over-couple pages to global store structure.
+
+## Testing Obligations (SOTA Minimum)
+
+For each new or changed runtime command:
+
+1. transition test for success path,
+2. transition test for failure path,
+3. concurrency test for chosen async policy,
+4. one invariant test asserting no cross-plane pollution (`model` vs `ui` vs `draft`).
+
+If command semantics change, update related feature tests in the same MR.
+
+## Auditability and CI candidates
+
+Candidate checks for future enforcement:
+
+1. runtime signature grouping check (`state + deps`).
+2. max flat runtime input threshold.
+3. forbidden cross-plane assignment patterns.
+4. async race guard presence for load/save commands.
+5. required runtime command tests in touched feature scope.
+
+## Migration Path (Incremental)
+
+## Phase 1: pilot
+
+- Refactor `feedbackPageRuntime.ts` to full grouped contract with explicit async policy.
+- Keep behavior unchanged.
+- Add transition and concurrency tests.
+
+## Phase 2: talks family
+
+- Apply contract to:
+  - `talkTrainPageRuntime.ts`
+  - `talkReportPageRuntime.ts`
+  - `talkExportPageRuntime.ts`
+- Consolidate shared loading logic only after parity is proven.
+
+## Phase 3: broader consistency
+
+- Apply to remaining runtime-like modules exceeding threshold.
+- Keep exceptions explicit and tracked.
+
+## ADR recommendation
+
+Keep decision as proposed until pilot evidence is complete.
+
+- Decision scope: UI runtime/composable input contracts.
+- Excluded scope: IPC contract redesign and store API redesign.
+
+## Acceptance Criteria (SOTA readiness)
+
+1. New/touched runtimes implement explicit data planes (`identity`, `model`, `draft`, `ui`) plus `deps`.
+2. Commands define deterministic transitions and explicit concurrency policy.
+3. Error mapping follows category model and critical/non-critical rules.
+4. Runtime tests include transition, failure, concurrency, and invariants.
+5. No IPC boundary changes are required to adopt this contract.

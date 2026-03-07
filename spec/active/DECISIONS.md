@@ -125,3 +125,27 @@ Use this file for new architecture, security, IPC, and release decisions.
   - `spec/active/help-content/`
   - `spec/active/site/github-pages.md`
   - `docs/operations/release.md`
+
+### DEC-20260307-ui-runtime-input-contract
+- Status: proposed
+- Context:
+  - UI feature runtimes frequently use wide flat `RuntimeArgs` signatures with many refs.
+  - This pattern is functional but causes readability drift and weak domain intent signaling when signatures grow.
+  - UI stores already use a grouped model (`state` + optional `dependencies`), which demonstrates a stable boundary style.
+- Decision:
+  - For new or touched UI runtime/composable orchestration modules, adopt a grouped input contract by default:
+    - `identity` (route/profile/project/locale keys),
+    - `model` (schema-aligned entities),
+    - `draft` (editable/transient inputs),
+    - `ui` (loading/error/status/toggle flags),
+    - `deps` (stores/domain actions/navigation/side-effect helpers).
+  - Keep flat args acceptable only for small runtimes (up to 7 primitive inputs) or when grouping adds no clarity.
+  - Do not require a store API rewrite as part of this decision.
+- Consequences:
+  - Runtime contracts become easier to review and evolve while preserving behavior.
+  - Naming collisions between schema entities and runtime argument namespaces are reduced.
+  - Migration can proceed incrementally per feature without cross-cutting breaking changes.
+- Related specs/docs:
+  - `spec/active/ui/SPEC-UI-RUNTIME-INPUT-CONTRACT.md`
+  - `docs/architecture/reports/desktop-ui.discovery.md`
+  - `docs/architecture/reports/desktop-ui.future.md`
