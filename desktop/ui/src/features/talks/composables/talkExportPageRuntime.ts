@@ -13,127 +13,177 @@ function toError(err: unknown) {
   return err instanceof Error ? err.message : String(err);
 }
 
+export type TalkExportRuntimeState = {
+  identity: {
+    projectId: Ref<string>;
+  };
+  model: {
+    report: Ref<QuestReportItem[]>;
+    runs: Ref<RunSummary[]>;
+    peerReviews: Ref<PeerReviewSummary[]>;
+  };
+  ui: {
+    error: Ref<string | null>;
+    isLoading: Ref<boolean>;
+    isActivating: Ref<boolean>;
+    exportPath: Ref<string | null>;
+    exportingRunId: Ref<string | null>;
+    isExportingOutline: Ref<boolean>;
+    isRevealing: Ref<boolean>;
+    exportError: Ref<string | null>;
+  };
+};
+
+export type TalkExportRuntimeDeps = {
+  revealPath: (path: string) => Promise<void>;
+  exportPack: (runId: string) => Promise<{ path: string }>;
+  exportOutline: (projectId: string) => Promise<{ path: string }>;
+  bootstrapSession: () => Promise<void>;
+  loadProjects: () => Promise<void>;
+  getQuestReport: (projectId: string) => Promise<QuestReportItem[]>;
+  getRuns: (projectId: string, limit: number) => Promise<RunSummary[]>;
+  getPeerReviews: (projectId: string, limit: number) => Promise<PeerReviewSummary[]>;
+  setActiveProject: (projectId: string) => Promise<void>;
+  ensureProjectStageAtLeast: (
+    projectId: string,
+    stage: "draft" | "builder" | "train" | "export"
+  ) => Promise<void>;
+};
+
+function createDefaultTalkExportRuntimeDeps(): TalkExportRuntimeDeps {
+  return {
+    revealPath: (path) => audioRevealWav(path),
+    exportPack: (runId) => packStore.exportPack(runId),
+    exportOutline: (projectId) => talksStore.exportOutline(projectId),
+    bootstrapSession: () => sessionStore.bootstrap(),
+    loadProjects: () => talksStore.loadProjects(),
+    getQuestReport: (projectId) => trainingStore.getQuestReport(projectId),
+    getRuns: (projectId, limit) => runStore.getRuns(projectId, limit),
+    getPeerReviews: (projectId, limit) => packStore.getPeerReviews(projectId, limit),
+    setActiveProject: (projectId) => talksStore.setActiveProject(projectId),
+    ensureProjectStageAtLeast: (projectId, stage) =>
+      talksStore.ensureProjectStageAtLeast(projectId, stage),
+  };
+}
+
 type TalkExportRuntimeArgs = {
-  projectId: Ref<string>;
-  error: Ref<string | null>;
-  isLoading: Ref<boolean>;
-  isActivating: Ref<boolean>;
-  report: Ref<QuestReportItem[]>;
-  runs: Ref<RunSummary[]>;
-  peerReviews: Ref<PeerReviewSummary[]>;
-  exportPath: Ref<string | null>;
-  exportingRunId: Ref<string | null>;
-  isExportingOutline: Ref<boolean>;
-  isRevealing: Ref<boolean>;
-  exportError: Ref<string | null>;
+  state: TalkExportRuntimeState;
+  deps?: TalkExportRuntimeDeps;
 };
 
 export function createTalkExportRuntime(args: TalkExportRuntimeArgs) {
-  const {
-    projectId,
-    error,
-    isLoading,
-    isActivating,
-    report,
-    runs,
-    peerReviews,
-    exportPath,
-    exportingRunId,
-    isExportingOutline,
-    isRevealing,
-    exportError,
-  } = args;
+  const deps = args.deps ?? createDefaultTalkExportRuntimeDeps();
+  const { identity, model, ui } = args.state;
+  let loadSequence = 0;
 
   async function markExportStage() {
-    if (!projectId.value) {
+    if (!identity.projectId.value) {
       return;
     }
     try {
-      await talksStore.ensureProjectStageAtLeast(projectId.value, "export");
+      await deps.ensureProjectStageAtLeast(identity.projectId.value, "export");
     } catch {
       // keep export actions non-blocking
     }
   }
 
   async function exportPack(runId: string) {
-    exportPath.value = null;
-    exportingRunId.value = runId;
-    exportError.value = null;
+    ui.exportPath.value = null;
+    ui.exportingRunId.value = runId;
+    ui.exportError.value = null;
     try {
       await markExportStage();
-      const result = await packStore.exportPack(runId);
-      exportPath.value = result.path;
+      const result = await deps.exportPack(runId);
+      ui.exportPath.value = result.path;
     } catch (err) {
-      exportError.value = toError(err);
+      ui.exportError.value = toError(err);
     } finally {
-      exportingRunId.value = null;
+      ui.exportingRunId.value = null;
     }
   }
 
   async function exportOutline() {
-    if (!projectId.value) {
+    if (!identity.projectId.value) {
       return;
     }
-    exportPath.value = null;
-    isExportingOutline.value = true;
-    exportError.value = null;
+    ui.exportPath.value = null;
+    ui.isExportingOutline.value = true;
+    ui.exportError.value = null;
     try {
       await markExportStage();
-      const result = await talksStore.exportOutline(projectId.value);
-      exportPath.value = result.path;
+      const result = await deps.exportOutline(identity.projectId.value);
+      ui.exportPath.value = result.path;
     } catch (err) {
-      exportError.value = toError(err);
+      ui.exportError.value = toError(err);
     } finally {
-      isExportingOutline.value = false;
+      ui.isExportingOutline.value = false;
     }
   }
 
   async function revealExport() {
-    if (!exportPath.value) {
+    if (!ui.exportPath.value) {
       return;
     }
-    isRevealing.value = true;
-    exportError.value = null;
+    ui.isRevealing.value = true;
+    ui.exportError.value = null;
     try {
-      await audioRevealWav(exportPath.value);
+      await deps.revealPath(ui.exportPath.value);
     } catch (err) {
-      exportError.value = toError(err);
+      ui.exportError.value = toError(err);
     } finally {
-      isRevealing.value = false;
+      ui.isRevealing.value = false;
     }
   }
 
   async function loadData() {
-    error.value = null;
-    isLoading.value = true;
+    const requestId = ++loadSequence;
+    ui.error.value = null;
+    ui.isLoading.value = true;
     try {
-      await sessionStore.bootstrap();
-      await talksStore.loadProjects();
-      if (!projectId.value) {
+      await deps.bootstrapSession();
+      if (requestId !== loadSequence) {
+        return;
+      }
+      await deps.loadProjects();
+      if (requestId !== loadSequence) {
+        return;
+      }
+      if (!identity.projectId.value) {
         throw new Error("project_missing");
       }
-      report.value = await trainingStore.getQuestReport(projectId.value);
-      runs.value = await runStore.getRuns(projectId.value, 12);
-      peerReviews.value = await packStore.getPeerReviews(projectId.value, 12);
+      model.report.value = await deps.getQuestReport(identity.projectId.value);
+      if (requestId !== loadSequence) {
+        return;
+      }
+      model.runs.value = await deps.getRuns(identity.projectId.value, 12);
+      if (requestId !== loadSequence) {
+        return;
+      }
+      model.peerReviews.value = await deps.getPeerReviews(identity.projectId.value, 12);
     } catch (err) {
-      error.value = toError(err);
+      if (requestId !== loadSequence) {
+        return;
+      }
+      ui.error.value = toError(err);
     } finally {
-      isLoading.value = false;
+      if (requestId === loadSequence) {
+        ui.isLoading.value = false;
+      }
     }
   }
 
   async function setActive() {
-    if (!projectId.value) {
+    if (!identity.projectId.value) {
       return;
     }
-    isActivating.value = true;
-    error.value = null;
+    ui.isActivating.value = true;
+    ui.error.value = null;
     try {
-      await talksStore.setActiveProject(projectId.value);
+      await deps.setActiveProject(identity.projectId.value);
     } catch (err) {
-      error.value = toError(err);
+      ui.error.value = toError(err);
     } finally {
-      isActivating.value = false;
+      ui.isActivating.value = false;
     }
   }
 
