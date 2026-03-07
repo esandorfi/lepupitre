@@ -1,243 +1,32 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { RouterLink } from "vue-router";
 import TalkStepPageShell from "@/components/TalkStepPageShell.vue";
-import { useI18n } from "@/lib/i18n";
-import { appState, sessionStore, talksStore } from "@/stores/app";
+import { useTalkDefinePageState } from "@/features/talks/composables/useTalkDefinePageState";
 
-const { t } = useI18n();
-const route = useRoute();
-const router = useRouter();
-
-const error = ref<string | null>(null);
-const isLoading = ref(false);
-const saveError = ref<string | null>(null);
-const saveState = ref<"idle" | "saving" | "saved" | "error">("idle");
-
-const form = reactive({
-  title: "",
-  audience: "",
-  goal: "",
-  durationMinutes: "",
-});
-
-const projectId = computed(() => String(route.params.projectId || ""));
-const activeProfileId = computed(() => appState.activeProfileId);
-const project = computed(() =>
-  appState.projects.find((item) => item.id === projectId.value) ?? null
-);
-const stageOptions = computed(() => [
-  { value: "draft", label: t("talk_steps.define") },
-  { value: "builder", label: t("talk_steps.builder") },
-  { value: "train", label: t("talk_steps.train") },
-  { value: "export", label: t("talk_steps.export") },
-]);
-const projectStage = computed(() => {
-  const stage = project.value?.stage || "draft";
-  return ["draft", "builder", "train", "export"].includes(stage) ? stage : "draft";
-});
-const defineChecklist = computed(() => {
-  const titleDone = form.title.trim().length > 0;
-  const audienceDone = form.audience.trim().length > 0;
-  const goalDone = form.goal.trim().length > 0;
-  const durationDone = Number(form.durationMinutes.trim()) > 0;
-  return [
-    { id: "title", label: t("talk_define.check_title"), done: titleDone },
-    { id: "audience", label: t("talk_define.check_audience"), done: audienceDone },
-    { id: "goal", label: t("talk_define.check_goal"), done: goalDone },
-    { id: "duration", label: t("talk_define.check_duration"), done: durationDone },
-  ];
-});
-const defineCompletedCount = computed(
-  () => defineChecklist.value.filter((item) => item.done).length
-);
-const defineCompletionPercent = computed(() =>
-  Math.round((defineCompletedCount.value / defineChecklist.value.length) * 100)
-);
-const defineReady = computed(
-  () => defineCompletedCount.value >= defineChecklist.value.length
-);
-const nextMissingDefineItem = computed(
-  () => defineChecklist.value.find((item) => !item.done)?.label ?? null
-);
-const nextAction = computed(() => {
-  const id = project.value?.id;
-  if (!id) {
-    return null;
-  }
-  if (projectStage.value === "draft") {
-    return {
-      nextStage: "builder",
-      route: `/talks/${id}/builder`,
-      label: t("talk_define.continue_builder"),
-    };
-  }
-  if (projectStage.value === "builder") {
-    return {
-      nextStage: "train",
-      route: `/talks/${id}/train`,
-      label: t("talk_define.continue_train"),
-    };
-  }
-  if (projectStage.value === "train") {
-    return {
-      nextStage: "export",
-      route: `/talks/${id}/export`,
-      label: t("talk_define.continue_export"),
-    };
-  }
-  return {
-    nextStage: "export",
-    route: `/talks/${id}/export`,
-    label: t("talk_define.open_export"),
-  };
-});
-
-function toError(err: unknown) {
-  return err instanceof Error ? err.message : String(err);
-}
-
-function minutesLabel(seconds: number | null | undefined) {
-  if (!seconds || seconds <= 0) {
-    return t("talk_define.duration_missing");
-  }
-  return `${Math.round(seconds / 60)} ${t("talks.minutes")}`;
-}
-
-function checklistRowClass(done: boolean) {
-  return done
-    ? "border-[var(--color-success)] bg-[color-mix(in_srgb,var(--color-success)_12%,var(--color-surface))]"
-    : "border-[var(--app-border)] bg-[var(--color-surface-elevated)]";
-}
-
-function syncForm() {
-  if (!project.value) {
-    form.title = "";
-    form.audience = "";
-    form.goal = "";
-    form.durationMinutes = "";
-    return;
-  }
-  form.title = project.value.title ?? "";
-  form.audience = project.value.audience ?? "";
-  form.goal = project.value.goal ?? "";
-  form.durationMinutes = project.value.duration_target_sec
-    ? String(Math.round(project.value.duration_target_sec / 60))
-    : "";
-}
-
-function normalizeOptional(value: string) {
-  const trimmed = value.trim();
-  return trimmed.length ? trimmed : null;
-}
-
-function buildPayload(stageOverride?: string) {
-  if (!project.value) {
-    throw new Error("project_not_found");
-  }
-  const title = form.title.trim();
-  if (!title) {
-    throw new Error(t("talk.title_required"));
-  }
-  let duration_target_sec: number | null = null;
-  const durationRaw = form.durationMinutes.trim();
-  if (durationRaw) {
-    const minutes = Number(durationRaw);
-    if (!Number.isFinite(minutes) || minutes <= 0) {
-      throw new Error(t("talk_define.duration_invalid"));
-    }
-    duration_target_sec = Math.round(minutes * 60);
-  }
-  return {
-    title,
-    audience: normalizeOptional(form.audience),
-    goal: normalizeOptional(form.goal),
-    duration_target_sec,
-    stage: stageOverride ?? project.value.stage,
-  };
-}
-
-function payloadMatchesProject(payload: ReturnType<typeof buildPayload>) {
-  if (!project.value) {
-    return true;
-  }
-  return (
-    payload.title === project.value.title &&
-    (payload.audience ?? null) === (project.value.audience ?? null) &&
-    (payload.goal ?? null) === (project.value.goal ?? null) &&
-    (payload.duration_target_sec ?? null) === (project.value.duration_target_sec ?? null) &&
-    payload.stage === project.value.stage
-  );
-}
-
-async function persistDefine(stageOverride?: string) {
-  if (!project.value || !activeProfileId.value) {
-    return false;
-  }
-  saveError.value = null;
-  let payload: ReturnType<typeof buildPayload>;
-  try {
-    payload = buildPayload(stageOverride);
-  } catch (err) {
-    saveState.value = "error";
-    saveError.value = toError(err);
-    return false;
-  }
-  if (payloadMatchesProject(payload)) {
-    saveState.value = "saved";
-    return true;
-  }
-  saveState.value = "saving";
-  try {
-    await talksStore.updateProject(project.value.id, payload);
-    saveState.value = "saved";
-    return true;
-  } catch (err) {
-    saveState.value = "error";
-    saveError.value = toError(err);
-    return false;
-  }
-}
-
-async function saveDefine() {
-  await persistDefine();
-}
-
-async function setStage(stage: string) {
-  if (!project.value || stage === project.value.stage) {
-    return;
-  }
-  await persistDefine(stage);
-}
-
-async function runNextAction() {
-  if (!nextAction.value) {
-    return;
-  }
-  const didSave = await persistDefine(nextAction.value.nextStage);
-  if (!didSave) {
-    return;
-  }
-  await router.push(nextAction.value.route);
-}
-
-async function bootstrap() {
-  isLoading.value = true;
-  error.value = null;
-  try {
-    await sessionStore.bootstrap();
-    await talksStore.loadProjects();
-  } catch (err) {
-    error.value = toError(err);
-  } finally {
-    isLoading.value = false;
-  }
-}
-
-onMounted(bootstrap);
-watch(project, () => {
-  syncForm();
-}, { immediate: true });
+const {
+  t,
+  projectId,
+  activeProfileId,
+  project,
+  error,
+  isLoading,
+  saveError,
+  saveState,
+  form,
+  stageOptions,
+  projectStage,
+  defineChecklist,
+  defineCompletedCount,
+  defineCompletionPercent,
+  defineReady,
+  nextMissingDefineItem,
+  nextAction,
+  minutesLabel,
+  checklistRowClass,
+  saveDefine,
+  setStage,
+  runNextAction,
+} = useTalkDefinePageState();
 </script>
 
 <template>
