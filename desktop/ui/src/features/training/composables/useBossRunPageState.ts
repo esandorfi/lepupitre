@@ -54,11 +54,24 @@ export function useBossRunPageState() {
 
   const actions = createBossRunActions({
     t,
-    refs,
-    activeProjectId,
-    requestedRunId,
     routerPush: async (path) => {
       await router.push(path);
+    },
+    state: {
+      identity: {
+        activeProjectId,
+        requestedRunId,
+      },
+      model: {
+        run: refs.run,
+        pendingTranscriptId: refs.pendingTranscriptId,
+      },
+      ui: {
+        error: refs.error,
+        isLoading: refs.isLoading,
+        isSaving: refs.isSaving,
+        isAnalyzing: refs.isAnalyzing,
+      },
     },
   });
 
