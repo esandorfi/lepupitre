@@ -1,8 +1,9 @@
-import { computed, ref } from "vue";
+import { computed } from "vue";
 import { useI18n } from "@/lib/i18n";
 import { writeStoredHeroQuestCode } from "@/lib/trainingPreferences";
 import { useUiPreferences } from "@/lib/uiPreferences";
 import { appState, trainingStore } from "@/stores/app";
+import { createHomePageStateRefs } from "@/features/home/composables/homePageState.refs";
 import { useHomePresentation } from "@/features/home/composables/useHomePresentation";
 import { useHomeQuestSelection } from "@/features/home/composables/useHomeQuestSelection";
 import { useHomeTrainingOrchestration } from "@/features/home/composables/useHomeTrainingOrchestration";
@@ -12,38 +13,31 @@ import {
   createGamificationState,
   createHeroState,
   createQuestPickerState,
-  type QuestSort,
 } from "@/features/home/composables/useHomePageModels";
-import type {
-  MascotMessage,
-  ProgressSnapshot,
-  Quest,
-  QuestAttemptSummary,
-  QuestDaily,
-} from "@/schemas/ipc";
-import type { AchievementPulse } from "@/features/home/composables/useAchievementPulse";
 
 export function useHomePageState() {
   const { t, locale } = useI18n();
   const { estimatedMinutesLabel, outputLabel, toError } = useHomePresentation(t);
   const { settings: uiSettings } = useUiPreferences();
   const state = computed(() => appState);
-  const trainingProjectId = ref<string | null>(null);
-  const trainingDailyQuest = ref<QuestDaily | null>(null);
-  const selectedHeroQuest = ref<Quest | null>(null);
-  const recentAttempts = ref<QuestAttemptSummary[]>([]);
-  const trainingProgress = ref<ProgressSnapshot | null>(null);
-  const mascotMessage = ref<MascotMessage | null>(null);
-  const trainingError = ref<string | null>(null);
-  const isTrainingLoading = ref(false);
-  const isQuestPickerOpen = ref(false);
-  const isQuestPickerLoading = ref(false);
-  const questPickerError = ref<string | null>(null);
-  const questPickerSearch = ref("");
-  const questPickerCategory = ref("all");
-  const questPickerSort = ref<QuestSort>("recent");
-  const availableQuests = ref<Quest[]>([]);
-  const achievementPulse = ref<AchievementPulse | null>(null);
+  const {
+    trainingProjectId,
+    trainingDailyQuest,
+    selectedHeroQuest,
+    recentAttempts,
+    trainingProgress,
+    mascotMessage,
+    trainingError,
+    isTrainingLoading,
+    isQuestPickerOpen,
+    isQuestPickerLoading,
+    questPickerError,
+    questPickerSearch,
+    questPickerCategory,
+    questPickerSort,
+    availableQuests,
+    achievementPulse,
+  } = createHomePageStateRefs();
   const { questCodeLabel, questRoute, closeQuestPicker, selectHeroQuest, resetHeroQuestToDaily } =
     useHomeQuestSelection({
       trainingProjectId,
