@@ -79,13 +79,30 @@ export function useQuestPageState() {
 
   const actions = createQuestActions({
     t,
-    refs,
-    questCode,
-    contextProjectId,
-    backLink,
-    isAudioQuest,
     routerPush: async (path) => {
       await router.push(path);
+    },
+    state: {
+      identity: {
+        questCode,
+        contextProjectId,
+        backLink,
+        isAudioQuest,
+      },
+      model: {
+        quest: refs.quest,
+        attemptId: refs.attemptId,
+        audioArtifactId: refs.audioArtifactId,
+        transcriptId: refs.transcriptId,
+        text: refs.text,
+        submittedTextSnapshot: refs.submittedTextSnapshot,
+      },
+      ui: {
+        error: refs.error,
+        isSubmitting: refs.isSubmitting,
+        isAnalyzing: refs.isAnalyzing,
+        isLoading: refs.isLoading,
+      },
     },
   });
 
