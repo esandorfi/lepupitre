@@ -16,6 +16,7 @@ const {
   languageOptions,
   waveformStyleOptions,
   inputDeviceOptions,
+  selectedInputDeviceValue,
   updateModel,
   updateMode,
   updateLanguage,
@@ -81,7 +82,7 @@ const {
       <UFormField :label="t('settings.recorder.input_device_label')" class="app-text-meta md:col-span-2">
         <div class="flex flex-wrap items-center gap-2">
           <USelect
-            :model-value="props.selectedInputDeviceId ?? ''"
+            :model-value="selectedInputDeviceValue"
             class="min-w-[220px] flex-1"
             :items="inputDeviceOptions"
             value-key="value"

@@ -16,17 +16,20 @@ export async function stopRecording(deps: AudioRecorderRuntimeDeps) {
     return;
   }
   let stopCompleted = false;
+  const previousPhase = deps.phase.value;
   deps.applyTransport("stop");
   deps.statusKey.value = "audio.status_encoding";
   deps.clearStatusTimer();
   deps.clearTelemetryFallbackTimer();
+  deps.phase.value = "quick_clean";
+  deps.lastWaveformPeaks.value = deps.liveWaveformPeaks.value.slice();
+  deps.announce(deps.t("audio.announcement_stopping"));
 
   try {
     const result = await recordingStop(deps.activeProfileId.value, deps.recordingId.value);
     deps.lastSavedPath.value = result.path;
     deps.lastArtifactId.value = result.artifactId;
     deps.lastDurationSec.value = result.durationMs / 1000;
-    deps.lastWaveformPeaks.value = deps.liveWaveformPeaks.value.slice();
     deps.emit("saved", { artifactId: result.artifactId, path: result.path });
     stopCompleted = true;
     recordRecorderHealthEvent("stop_success");
@@ -53,6 +56,7 @@ export async function stopRecording(deps: AudioRecorderRuntimeDeps) {
       });
     }
     deps.statusKey.value = "audio.status_idle";
+    deps.phase.value = previousPhase;
   } finally {
     deps.recordingId.value = null;
     deps.telemetryReceived.value = false;

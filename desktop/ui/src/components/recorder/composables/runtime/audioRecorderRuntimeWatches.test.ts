@@ -12,6 +12,7 @@ function createDeps() {
   const deps = {
     transcriptionSettings: ref({ model: "tiny" } as TranscriptionSettings),
     phase: ref<"capture" | "quick_clean" | "analyze_export">("capture"),
+    statusKey: ref("audio.status_idle"),
     refreshTranscribeReadiness,
     advancedOpen: ref(false),
     inputDevices: ref<Array<{ id: string; label: string; isDefault: boolean }>>([]),
@@ -83,5 +84,20 @@ describe("audioRecorderRuntimeWatches", () => {
     await nextTick();
 
     expect(refreshTranscribeReadiness).toHaveBeenCalled();
+  });
+
+  it("skips quick-clean refresh while capture stop is still encoding", async () => {
+    const { deps, refreshTranscribeReadiness } = createDeps();
+    bindAudioRecorderRuntimeWatches(() => deps);
+
+    deps.phase.value = "analyze_export";
+    await nextTick();
+    refreshTranscribeReadiness.mockClear();
+
+    deps.statusKey.value = "audio.status_encoding";
+    deps.phase.value = "quick_clean";
+    await nextTick();
+
+    expect(refreshTranscribeReadiness).not.toHaveBeenCalled();
   });
 });

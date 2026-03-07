@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from "vue";
 import { useI18n } from "@/lib/i18n";
 import RecorderWaveform from "@/components/recorder/RecorderWaveform.vue";
 import QuickCleanActionBar from "@/components/recorder/quick-clean/QuickCleanActionBar.vue";
@@ -14,6 +15,7 @@ import {
 const props = defineProps<RecorderQuickCleanPanelProps>();
 const emit = defineEmits<RecorderQuickCleanPanelEmit>();
 const { t } = useI18n();
+const isAudioBuffering = ref(false);
 
 const {
   AUDIENCE_OPTIONS,
@@ -59,12 +61,25 @@ function handleTargetMinutesUpdate(value: number | null) {
   onboardingTargetMinutes.value = value;
   emitOnboardingContext();
 }
+
+function handleAudioLoadStart() {
+  isAudioBuffering.value = true;
+}
+
+function handleAudioCanPlay() {
+  isAudioBuffering.value = false;
+}
 </script>
 
 <template>
   <div class="space-y-4">
     <div class="flex items-center gap-3">
-      <UButton size="lg" :disabled="props.reviewCta.disabled" color="info" @click="handlePrimaryCta">
+      <UButton
+        size="lg"
+        :disabled="props.reviewCta.disabled || !!props.isFinalizingCapture"
+        color="info"
+        @click="handlePrimaryCta"
+      >
         {{ t(props.reviewCta.labelKey) }}
         <span v-if="props.reviewCta.progressPercent !== null" class="ml-2 app-text-meta">
           {{ props.reviewCta.progressPercent }}%
@@ -80,6 +95,13 @@ function handleTargetMinutesUpdate(value: number | null) {
         {{ props.transcribeBlockedMessage }}
       </p>
     </div>
+    <UAlert
+      v-if="props.isFinalizingCapture"
+      color="info"
+      variant="soft"
+      :title="t('audio.finalizing_title')"
+      :description="t('audio.finalizing_hint')"
+    />
 
     <div class="grid gap-4" :class="showTranscriptWorkspace ? 'md:grid-cols-2' : 'md:grid-cols-1'">
       <div class="space-y-4">
@@ -96,7 +118,11 @@ function handleTargetMinutesUpdate(value: number | null) {
               :key="props.audioPreviewSources.join('|')"
               class="w-full"
               controls
-              preload="metadata"
+              preload="auto"
+              @loadstart="handleAudioLoadStart"
+              @waiting="handleAudioLoadStart"
+              @canplay="handleAudioCanPlay"
+              @playing="handleAudioCanPlay"
             >
               <source
                 v-for="source in props.audioPreviewSources"
@@ -105,6 +131,9 @@ function handleTargetMinutesUpdate(value: number | null) {
                 type="audio/wav"
               />
             </audio>
+            <p v-if="isAudioBuffering" class="app-muted app-text-meta">
+              {{ t("audio.playback_buffering") }}
+            </p>
           </div>
         </UCard>
 

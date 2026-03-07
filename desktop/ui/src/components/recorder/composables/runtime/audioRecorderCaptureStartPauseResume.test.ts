@@ -66,6 +66,7 @@ function createDeps(
     clearStatusTimer: vi.fn(),
     armStatusPollingFallback: vi.fn(),
     resetTranscriptionState: vi.fn(),
+    refreshInputDevices: vi.fn(async () => {}),
     activeProfileId: ref(activeProfileId),
     isStarting: ref(isStarting),
     recordingId: ref<string | null>(recordingId),
@@ -73,6 +74,8 @@ function createDeps(
     isPaused: ref(isPaused),
     transcriptionSettings: ref({} as TranscriptionSettings),
     selectedInputDeviceId: ref<string | null>("mic-1"),
+    inputDevices: ref([{ id: "mic-1", label: "Mic", isDefault: true }]),
+    isLoadingInputDevices: ref(false),
     lastSavedPath: ref<string | null>("C:/tmp/prev.wav"),
     lastArtifactId: ref<string | null>("artifact-prev"),
     lastDurationSec: ref<number | null>(120),
@@ -134,6 +137,18 @@ describe("audioRecorderCaptureStartPauseResume", () => {
     expect(deps.armStatusPollingFallback).toHaveBeenCalledWith("rec-1");
     expect(deps.announce).toHaveBeenCalledWith("audio.announcement_started");
     expect(startPauseResumeMocks.recordRecorderHealthEvent).toHaveBeenCalledWith("start_success");
+  });
+
+  it("fails fast when no microphone device is available", async () => {
+    const deps = createDeps({ activeProfileId: "profile-1" });
+    deps.inputDevices.value = [];
+
+    await startRecording(deps);
+
+    expect(deps.refreshInputDevices).toHaveBeenCalled();
+    expect(deps.setError).toHaveBeenCalledWith("settings.recorder.input_device_none");
+    expect(startPauseResumeMocks.recordingStart).not.toHaveBeenCalled();
+    expect(deps.isStarting.value).toBe(false);
   });
 
   it("surfaces start failures and records failure metric", async () => {
