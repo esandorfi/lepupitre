@@ -37,26 +37,22 @@ export function useTalksPageState() {
   );
 
   const { refreshTalksBlueprint, refreshMascotMessage, bootstrap, setActive } = createTalksRuntime({
-    locale,
-    showMascotCard,
-    state,
-    setError: (message) => {
-      error.value = message;
-    },
-    setLoading: (value) => {
-      isLoading.value = value;
-    },
-    setBlueprintLoading: (value) => {
-      isBlueprintLoading.value = value;
-    },
-    setSwitching: (id) => {
-      isSwitching.value = id;
-    },
-    setMascotMessage: (value) => {
-      mascotMessage.value = value;
-    },
-    setTalksBlueprint: (value) => {
-      talksBlueprint.value = value;
+    state: {
+      identity: {
+        locale,
+        showMascotCard,
+      },
+      model: {
+        appState: state,
+        mascotMessage,
+        talksBlueprint,
+      },
+      ui: {
+        error,
+        isLoading,
+        isBlueprintLoading,
+        isSwitching,
+      },
     },
   });
 
