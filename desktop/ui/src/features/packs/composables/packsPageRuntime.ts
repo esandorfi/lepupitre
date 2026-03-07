@@ -8,134 +8,161 @@ import { hasTauriRuntime } from "@/lib/runtime";
 import { packStore, sessionStore } from "@/stores/app";
 import { toError } from "@/features/packs/composables/packsPageHelpers";
 
+type PackImportResult = { projectId: string; runId: string; peerReviewId: string };
+
+export type PacksPageRuntimeState = {
+  identity: {
+    t: (key: string) => string;
+  };
+  model: {
+    importPath: Ref<string>;
+    importResult: Ref<PackImportResult | null>;
+    importDetails: Ref<PackInspectResponse | null>;
+  };
+  ui: {
+    error: Ref<string | null>;
+    importStatus: Ref<"idle" | "importing" | "success" | "error">;
+    isInspecting: Ref<boolean>;
+    isPicking: Ref<boolean>;
+    isDragging: Ref<boolean>;
+  };
+};
+
+export type PacksPageRuntimeDeps = {
+  openPackDialog: () => Promise<string | string[] | null>;
+  inspectPack: (path: string) => Promise<PackInspectResponse>;
+  importPeerReview: (
+    path: string
+  ) => Promise<{ projectId: string; runId: string; peerReviewId: string }>;
+  bootstrapSession: () => Promise<void>;
+  listenDragDrop: (handler: (payload: DragDropEvent) => void) => Promise<UnlistenFn | null>;
+};
+
+function createDefaultPacksPageRuntimeDeps(): PacksPageRuntimeDeps {
+  return {
+    openPackDialog: () =>
+      open({
+        multiple: false,
+        directory: false,
+        filters: [{ name: "Pack", extensions: ["zip"] }],
+      }),
+    inspectPack: (path) => packStore.inspectPack(path),
+    importPeerReview: (path) => packStore.importPeerReview(path),
+    bootstrapSession: () => sessionStore.bootstrap(),
+    listenDragDrop: async (handler) => {
+      if (!hasTauriRuntime()) {
+        return null;
+      }
+      const unlisten = await getCurrentWindow().onDragDropEvent((event) => {
+        handler(event.payload);
+      });
+      return unlisten as UnlistenFn;
+    },
+  };
+}
+
 type PacksPageRuntimeArgs = {
-  t: (key: string) => string;
-  error: Ref<string | null>;
-  importPath: Ref<string>;
-  importStatus: Ref<"idle" | "importing" | "success" | "error">;
-  importResult: Ref<{ projectId: string; runId: string; peerReviewId: string } | null>;
-  importDetails: Ref<PackInspectResponse | null>;
-  isInspecting: Ref<boolean>;
-  isPicking: Ref<boolean>;
-  isDragging: Ref<boolean>;
+  state: PacksPageRuntimeState;
+  deps?: PacksPageRuntimeDeps;
 };
 
 export function createPacksPageRuntime(args: PacksPageRuntimeArgs) {
-  const {
-    t,
-    error,
-    importPath,
-    importStatus,
-    importResult,
-    importDetails,
-    isInspecting,
-    isPicking,
-    isDragging,
-  } = args;
+  const deps = args.deps ?? createDefaultPacksPageRuntimeDeps();
+  const { identity, model, ui } = args.state;
 
   async function inspectPack(path: string) {
-    isInspecting.value = true;
-    importDetails.value = null;
-    error.value = null;
+    ui.isInspecting.value = true;
+    model.importDetails.value = null;
+    ui.error.value = null;
     try {
-      importDetails.value = await packStore.inspectPack(path);
+      model.importDetails.value = await deps.inspectPack(path);
     } catch (err) {
-      error.value = toError(err);
+      ui.error.value = toError(err);
     } finally {
-      isInspecting.value = false;
+      ui.isInspecting.value = false;
     }
   }
 
   async function pickPack() {
-    isPicking.value = true;
-    error.value = null;
+    ui.isPicking.value = true;
+    ui.error.value = null;
     try {
-      const selection = await open({
-        multiple: false,
-        directory: false,
-        filters: [{ name: "Pack", extensions: ["zip"] }],
-      });
+      const selection = await deps.openPackDialog();
       if (!selection || Array.isArray(selection)) {
         return;
       }
-      importPath.value = selection;
-      importStatus.value = "idle";
-      importResult.value = null;
+      model.importPath.value = selection;
+      ui.importStatus.value = "idle";
+      model.importResult.value = null;
       await inspectPack(selection);
     } catch (err) {
-      error.value = toError(err);
+      ui.error.value = toError(err);
     } finally {
-      isPicking.value = false;
+      ui.isPicking.value = false;
     }
   }
 
   async function importReview() {
-    if (!importPath.value.trim()) {
-      error.value = t("packs.import_no_path");
+    if (!model.importPath.value.trim()) {
+      ui.error.value = identity.t("packs.import_no_path");
       return;
     }
-    if (!importDetails.value) {
-      error.value = t("packs.import_invalid");
+    if (!model.importDetails.value) {
+      ui.error.value = identity.t("packs.import_invalid");
       return;
     }
-    importStatus.value = "importing";
-    error.value = null;
-    importResult.value = null;
+    ui.importStatus.value = "importing";
+    ui.error.value = null;
+    model.importResult.value = null;
     try {
-      const result = await packStore.importPeerReview(importPath.value.trim());
-      importStatus.value = "success";
-      importResult.value = {
+      const result = await deps.importPeerReview(model.importPath.value.trim());
+      ui.importStatus.value = "success";
+      model.importResult.value = {
         projectId: result.projectId,
         runId: result.runId,
         peerReviewId: result.peerReviewId,
       };
     } catch (err) {
-      importStatus.value = "error";
-      error.value = toError(err);
+      ui.importStatus.value = "error";
+      ui.error.value = toError(err);
     }
   }
 
   function onDragDrop(event: DragDropEvent) {
     if (event.type === "enter" || event.type === "over") {
-      isDragging.value = true;
+      ui.isDragging.value = true;
       return;
     }
     if (event.type === "leave") {
-      isDragging.value = false;
+      ui.isDragging.value = false;
       return;
     }
     if (event.type !== "drop") {
       return;
     }
-    isDragging.value = false;
+    ui.isDragging.value = false;
     const zipPath = event.paths.find((path) => path.toLowerCase().endsWith(".zip"));
     if (!zipPath) {
-      error.value = t("packs.import_no_path");
+      ui.error.value = identity.t("packs.import_no_path");
       return;
     }
-    importPath.value = zipPath;
-    importStatus.value = "idle";
-    importResult.value = null;
-    error.value = null;
+    model.importPath.value = zipPath;
+    ui.importStatus.value = "idle";
+    model.importResult.value = null;
+    ui.error.value = null;
     void inspectPack(zipPath);
   }
 
   async function bootstrap() {
     try {
-      await sessionStore.bootstrap();
+      await deps.bootstrapSession();
     } catch (err) {
-      error.value = toError(err);
+      ui.error.value = toError(err);
     }
   }
 
   async function attachDragDropListener() {
-    if (!hasTauriRuntime()) {
-      return null;
-    }
-    const unlisten = await getCurrentWindow().onDragDropEvent((event) => {
-      onDragDrop(event.payload);
-    });
-    return unlisten as UnlistenFn;
+    return deps.listenDragDrop(onDragDrop);
   }
 
   return {

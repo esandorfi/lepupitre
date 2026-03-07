@@ -23,15 +23,23 @@ export function usePacksPageState() {
   const activeProfileId = computed(() => appState.activeProfileId);
 
   const { pickPack, importReview, bootstrap, attachDragDropListener } = createPacksPageRuntime({
-    t,
-    error,
-    importPath,
-    importStatus,
-    importResult,
-    importDetails,
-    isInspecting,
-    isPicking,
-    isDragging,
+    state: {
+      identity: {
+        t,
+      },
+      model: {
+        importPath,
+        importResult,
+        importDetails,
+      },
+      ui: {
+        error,
+        importStatus,
+        isInspecting,
+        isPicking,
+        isDragging,
+      },
+    },
   });
 
   onMounted(async () => {
