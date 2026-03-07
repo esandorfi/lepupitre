@@ -28,7 +28,11 @@ export function useAsrModelRuntime(args: AsrModelRuntimeArgs) {
   const deps = args.deps ?? createDefaultAsrModelRuntimeDeps();
   const { t, state } = args;
   const progressQueue = createDownloadProgressQueue(state.downloadProgress);
-  const actions = createAsrModelActions(t, state, progressQueue);
+  const actions = createAsrModelActions({
+    t,
+    state,
+    progressQueue,
+  });
 
   async function openSourceUrl(url: string) {
     try {
