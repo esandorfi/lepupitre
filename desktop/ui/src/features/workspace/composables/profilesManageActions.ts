@@ -8,97 +8,143 @@ import {
   type Translate,
 } from "@/features/workspace/composables/profilesPageHelpers";
 
-type ProfilesManageArgs = {
+export type ProfilesManageState = {
+  identity: {
+    routeName: { value: string | symbol | null | undefined };
+  };
+  model: {
+    renameValue: ProfilesState["renameValue"];
+    renameOriginal: ProfilesState["renameOriginal"];
+    deleteTarget: ProfilesState["deleteTarget"];
+  };
+  ui: {
+    error: ProfilesState["error"];
+    isRenaming: ProfilesState["isRenaming"];
+    deletingId: ProfilesState["deletingId"];
+    editingId: ProfilesState["editingId"];
+  };
+};
+
+export type ProfilesManageDeps = {
   t: Translate;
-  state: ProfilesState;
-  routeName: string | symbol | null | undefined;
+  nextTick: typeof nextTick;
   focusRenameInput: (profileId: string) => void;
+  hasDuplicateName: typeof hasDuplicateName;
+  renameProfile: (profileId: string, name: string) => Promise<void>;
+  deleteProfile: (profileId: string) => Promise<void>;
+  toLocalizedError: typeof toLocalizedError;
   pushHome: () => Promise<void>;
 };
 
+function createDefaultProfilesManageDeps(
+  t: Translate,
+  focusRenameInput: (profileId: string) => void,
+  pushHome: () => Promise<void>
+): ProfilesManageDeps {
+  return {
+    t,
+    nextTick,
+    focusRenameInput,
+    hasDuplicateName,
+    renameProfile: (profileId, name) => workspaceStore.renameProfile(profileId, name),
+    deleteProfile: (profileId) => workspaceStore.deleteProfile(profileId),
+    toLocalizedError,
+    pushHome,
+  };
+}
+
+type ProfilesManageArgs = {
+  state: ProfilesManageState;
+  t: Translate;
+  focusRenameInput: (profileId: string) => void;
+  pushHome: () => Promise<void>;
+  deps?: ProfilesManageDeps;
+};
+
 export function createProfilesManageActions(args: ProfilesManageArgs) {
-  const { t, state, routeName, focusRenameInput, pushHome } = args;
+  const deps = args.deps ?? createDefaultProfilesManageDeps(args.t, args.focusRenameInput, args.pushHome);
+  const { identity, model, ui } = args.state;
 
   function startRename(profileId: string, currentName: string) {
-    state.editingId.value = profileId;
-    state.renameValue.value = currentName;
-    state.renameOriginal.value = currentName;
-    nextTick(() => {
-      focusRenameInput(profileId);
+    ui.editingId.value = profileId;
+    model.renameValue.value = currentName;
+    model.renameOriginal.value = currentName;
+    deps.nextTick(() => {
+      deps.focusRenameInput(profileId);
     });
   }
 
   function cancelRename() {
-    state.editingId.value = null;
-    state.renameValue.value = "";
-    state.renameOriginal.value = "";
+    ui.editingId.value = null;
+    model.renameValue.value = "";
+    model.renameOriginal.value = "";
   }
 
   async function confirmRename(profileId: string) {
-    const nextName = state.renameValue.value.trim();
-    const originalTrimmed = state.renameOriginal.value.trim();
+    const nextName = model.renameValue.value.trim();
+    const originalTrimmed = model.renameOriginal.value.trim();
     if (!nextName || nextName === originalTrimmed) {
       cancelRename();
       return;
     }
-    if (hasDuplicateName(nextName, profileId)) {
-      state.error.value = t("profiles.name_exists");
+    if (deps.hasDuplicateName(nextName, profileId)) {
+      ui.error.value = deps.t("profiles.name_exists");
       return;
     }
 
-    state.isRenaming.value = true;
-    state.error.value = null;
+    ui.isRenaming.value = true;
+    ui.error.value = null;
     try {
-      await workspaceStore.renameProfile(profileId, nextName);
+      await deps.renameProfile(profileId, nextName);
       cancelRename();
     } catch (err) {
-      state.error.value = toLocalizedError(t, err);
+      ui.error.value = deps.toLocalizedError(deps.t, err);
     } finally {
-      state.isRenaming.value = false;
+      ui.isRenaming.value = false;
     }
   }
 
   function requestDelete(profile: ProfileSummary) {
-    state.deleteTarget.value = profile;
+    model.deleteTarget.value = profile;
   }
 
   function profileMenuItems(profile: ProfileSummary) {
     return [
       {
-        label: t("profiles.rename"),
-        disabled: state.isRenaming.value,
+        label: deps.t("profiles.rename"),
+        disabled: ui.isRenaming.value,
         onSelect: () => startRename(profile.id, profile.name),
       },
       {
-        label: t("profiles.delete"),
+        label: deps.t("profiles.delete"),
         color: "error" as const,
-        disabled: state.deletingId.value === profile.id,
+        disabled: ui.deletingId.value === profile.id,
         onSelect: () => requestDelete(profile),
       },
     ];
   }
 
   function cancelDelete() {
-    state.deleteTarget.value = null;
+    model.deleteTarget.value = null;
   }
 
   async function confirmDelete() {
-    if (!state.deleteTarget.value) {
+    if (!model.deleteTarget.value) {
       return;
     }
-    const target = state.deleteTarget.value;
-    state.deletingId.value = target.id;
-    state.error.value = null;
+    const target = model.deleteTarget.value;
+    ui.deletingId.value = target.id;
+    ui.error.value = null;
     try {
-      await workspaceStore.deleteProfile(target.id);
-      state.deleteTarget.value = null;
-      if (routeName === "profiles") {
-        await pushHome();
+      await deps.deleteProfile(target.id);
+      model.deleteTarget.value = null;
+      if (identity.routeName.value === "profiles") {
+        await deps.pushHome();
       }
     } catch (err) {
-      state.error.value = `${target.name}: ${toLocalizedError(t, err)}`;
+      ui.error.value = `${target.name}: ${deps.toLocalizedError(deps.t, err)}`;
     } finally {
-      state.deletingId.value = null;
+      ui.deletingId.value = null;
     }
   }
 

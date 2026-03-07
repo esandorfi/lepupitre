@@ -10,41 +10,60 @@ import { createProfilesCreateSwitchActions } from "@/features/workspace/composab
 import { createProfilesManageActions } from "@/features/workspace/composables/profilesManageActions";
 
 type ProfilesActionsArgs = {
+  state: {
+    identity: {
+      routeName: Ref<string | symbol | null | undefined>;
+      createInput: Ref<InputRefTarget>;
+      createSection: Ref<HTMLElement | null>;
+      activeProfileId: Ref<string | null | undefined>;
+    };
+    model: ProfilesState;
+  };
   t: Translate;
-  routeName: Ref<string | symbol | null | undefined>;
-  state: ProfilesState;
-  createInput: Ref<InputRefTarget>;
-  createSection: Ref<HTMLElement | null>;
-  activeProfileId: Ref<string | null | undefined>;
   focusRenameInput: (profileId: string) => void;
   pushHome: () => Promise<void>;
 };
 
 export function createProfilesActions(args: ProfilesActionsArgs) {
-  const {
-    t,
-    routeName,
-    state,
-    createInput,
-    createSection,
-    activeProfileId,
-    focusRenameInput,
-    pushHome,
-  } = args;
+  const { state, t, focusRenameInput, pushHome } = args;
   const createSwitchActions = createProfilesCreateSwitchActions({
     t,
-    state,
-    createInput,
-    createSection,
-    activeProfileId,
     pushHome,
+    state: {
+      identity: {
+        createInput: state.identity.createInput,
+        createSection: state.identity.createSection,
+        activeProfileId: state.identity.activeProfileId,
+      },
+      model: {
+        name: state.model.name,
+      },
+      ui: {
+        error: state.model.error,
+        isSaving: state.model.isSaving,
+      },
+    },
   });
   const manageActions = createProfilesManageActions({
     t,
-    state,
-    routeName: routeName.value,
     focusRenameInput,
     pushHome,
+    state: {
+      identity: {
+        routeName: state.identity.routeName,
+      },
+      model: {
+        renameValue: state.model.renameValue,
+        renameOriginal: state.model.renameOriginal,
+        deleteTarget: state.model.deleteTarget,
+      },
+      ui: {
+        error: state.model.error,
+        isRenaming: state.model.isRenaming,
+        deletingId: state.model.deletingId,
+        editingId: state.model.editingId,
+      },
+    },
   });
 
   return {
@@ -54,24 +73,40 @@ export function createProfilesActions(args: ProfilesActionsArgs) {
 }
 
 type LifecycleArgs = {
+  state: {
+    identity: {
+      createQuery: Ref<unknown>;
+    };
+    ui: {
+      error: ProfilesState["error"];
+    };
+  };
+  deps?: {
+    ensureBootstrapped: () => Promise<void>;
+    toLocalizedError: typeof toLocalizedError;
+    t: Translate;
+  };
   t: Translate;
-  createQuery: Ref<unknown>;
   focusCreateForm: () => Promise<void>;
-  setError: (message: string) => void;
 };
 
 export function bindProfilesLifecycle(args: LifecycleArgs) {
-  const { t, createQuery, focusCreateForm, setError } = args;
+  const deps = args.deps ?? {
+    ensureBootstrapped: () => sessionStore.ensureBootstrapped(),
+    toLocalizedError,
+    t: args.t,
+  };
+  const { state, focusCreateForm } = args;
 
   async function maybeFocusCreateFromRoute() {
-    if (!createQuery.value) {
+    if (!state.identity.createQuery.value) {
       return;
     }
     await focusCreateForm();
   }
 
   watch(
-    () => createQuery.value,
+    () => state.identity.createQuery.value,
     () => {
       void maybeFocusCreateFromRoute();
     }
@@ -79,9 +114,9 @@ export function bindProfilesLifecycle(args: LifecycleArgs) {
 
   onMounted(async () => {
     try {
-      await sessionStore.ensureBootstrapped();
+      await deps.ensureBootstrapped();
     } catch (err) {
-      setError(toLocalizedError(t, err));
+      state.ui.error.value = deps.toLocalizedError(deps.t, err);
     }
     await maybeFocusCreateFromRoute();
   });

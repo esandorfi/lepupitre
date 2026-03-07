@@ -46,23 +46,31 @@ export function useProfilesPageState() {
 
   const actions = createProfilesActions({
     t,
-    routeName,
-    state,
-    createInput,
-    createSection,
-    activeProfileId,
     focusRenameInput,
     pushHome: async () => {
       await router.push("/");
+    },
+    state: {
+      identity: {
+        routeName,
+        createInput,
+        createSection,
+        activeProfileId,
+      },
+      model: state,
     },
   });
 
   bindProfilesLifecycle({
     t,
-    createQuery,
     focusCreateForm: actions.focusCreateForm,
-    setError: (message) => {
-      state.error.value = message;
+    state: {
+      identity: {
+        createQuery,
+      },
+      ui: {
+        error: state.error,
+      },
     },
   });
 
