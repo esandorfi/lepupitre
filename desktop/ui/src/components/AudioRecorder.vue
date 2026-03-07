@@ -170,6 +170,12 @@ const {
   canAnalyze: canAnalyzeRef,
   hasAnalysisResult: hasAnalysisResultRef,
 });
+const isFinalizingCapture = computed(
+  () =>
+    phase.value === "quick_clean" &&
+    statusKey.value === "audio.status_encoding" &&
+    !lastSavedPath.value
+);
 
 let statusTimer: number | null = null;
 let telemetryFallbackTimer: number | null = null;
@@ -414,6 +420,7 @@ bindAudioRecorderWatches(getRuntimeDeps);
     <RecorderQuickCleanPanel
       v-if="phase === 'quick_clean'"
       v-model:transcript-text="transcriptDraftText"
+      :is-finalizing-capture="isFinalizingCapture"
       :source-duration-sec="lastDurationSec"
       :has-transcript="!!baseTranscriptId"
       :raw-transcript-segments="sourceTranscript?.segments ?? transcript?.segments ?? []"

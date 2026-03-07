@@ -65,6 +65,7 @@ function createDeps(
     emit: vi.fn(),
     clearError: vi.fn(),
     setError: vi.fn(),
+    refreshTranscribeReadiness: vi.fn(async () => {}),
     activeProfileId: ref(activeProfileId),
     lastArtifactId: ref(lastArtifactId),
     canTranscribe: ref(canTranscribe),

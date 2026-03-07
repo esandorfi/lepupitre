@@ -31,8 +31,9 @@ export function bindAudioRecorderRuntimeWatches(getDeps: () => AudioRecorderRunt
   watch(
     () => getDeps().phase.value,
     (nextPhase) => {
-      if (nextPhase === "quick_clean") {
-        void getDeps().refreshTranscribeReadiness();
+      const deps = getDeps();
+      if (nextPhase === "quick_clean" && deps.statusKey.value !== "audio.status_encoding") {
+        void deps.refreshTranscribeReadiness();
       }
     }
   );

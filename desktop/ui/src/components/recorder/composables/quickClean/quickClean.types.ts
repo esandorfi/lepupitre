@@ -16,6 +16,7 @@ export type CleanAnchor = { line: string; startMs: number; endMs: number };
 export type LineAnchor = CleanAnchor | null;
 
 export type RecorderQuickCleanPanelProps = {
+  isFinalizingCapture?: boolean;
   transcriptText: string;
   rawTranscriptSegments: TranscriptSegment[];
   sourceDurationSec: number | null;

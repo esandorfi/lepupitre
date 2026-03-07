@@ -13,6 +13,7 @@ export async function transcribeRecording(deps: AudioRecorderRuntimeDeps) {
   if (!deps.activeProfileId.value || !deps.lastArtifactId.value) {
     return;
   }
+  await deps.refreshTranscribeReadiness();
   if (!deps.canTranscribe.value) {
     return;
   }

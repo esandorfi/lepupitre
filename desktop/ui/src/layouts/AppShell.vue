@@ -64,6 +64,12 @@ function onNavigateIntent(payload: { source: "top" | "sidebar-icon"; itemId: str
   recordNavIntent(payload.source, payload.itemId);
 }
 
+function prewarmRecorderRouteChunk() {
+  window.setTimeout(() => {
+    void import("../features/training/pages/QuickRecordPage.vue");
+  }, 0);
+}
+
 const onboardingExemptRoutes = new Set(["onboarding", "help", "about"]);
 
 function maybeRedirectToOnboarding() {
@@ -109,6 +115,7 @@ onMounted(() => {
   sessionStore.ensureBootstrapped().catch((err) => {
     console.error("app bootstrap failed", err);
   });
+  prewarmRecorderRouteChunk();
   window.addEventListener("resize", onResize);
 });
 

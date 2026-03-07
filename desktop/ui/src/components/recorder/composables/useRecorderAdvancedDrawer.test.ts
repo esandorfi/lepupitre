@@ -69,15 +69,16 @@ describe("useRecorderAdvancedDrawer", () => {
     });
 
     expect(drawer.inputDeviceOptions.value).toEqual([
-      { label: "settings.recorder.input_device_none", value: "" },
+      { label: "settings.recorder.input_device_none", value: "__no_input_device__" },
     ]);
+    expect(drawer.selectedInputDeviceValue.value).toBe("__no_input_device__");
 
     drawer.updateModel("base");
     drawer.updateMode("final-only");
     drawer.updateLanguage("fr");
     drawer.updateWaveformStyle("spark");
     drawer.updateInputDevice("mic-2");
-    drawer.updateInputDevice("");
+    drawer.updateInputDevice("__no_input_device__");
 
     expect(emit).toHaveBeenCalledWith("update:model", "base");
     expect(emit).toHaveBeenCalledWith("update:mode", "final-only");

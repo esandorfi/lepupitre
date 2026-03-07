@@ -115,7 +115,7 @@ export function createVisualPresentation(params: AudioRecorderPresentationParams
       return [] as string[];
     }
     const filePath = state.lastSavedPath.value;
-    return [convertFileSrc(filePath), pathToFileUrl(filePath)];
+    return [pathToFileUrl(filePath), convertFileSrc(filePath)];
   });
   const telemetryBudgetSummary = computed(() => {
     const report = evaluateRecorderTelemetryBudget(state.telemetryBudget.value, {

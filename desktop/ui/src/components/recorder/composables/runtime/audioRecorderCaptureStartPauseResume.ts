@@ -20,6 +20,14 @@ export async function startRecording(deps: AudioRecorderRuntimeDeps) {
     deps.isStarting.value = false;
     return;
   }
+  if (deps.inputDevices.value.length === 0 && !deps.isLoadingInputDevices.value) {
+    await deps.refreshInputDevices();
+  }
+  if (deps.inputDevices.value.length === 0) {
+    deps.setError(deps.t("settings.recorder.input_device_none"));
+    deps.isStarting.value = false;
+    return;
+  }
   deps.lastSavedPath.value = null;
   deps.lastArtifactId.value = null;
   deps.lastDurationSec.value = null;

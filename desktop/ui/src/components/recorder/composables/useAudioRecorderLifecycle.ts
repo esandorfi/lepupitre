@@ -19,8 +19,8 @@ export function bindAudioRecorderMountedHooks(getDeps: () => AudioRecorderRuntim
       window.setTimeout(() => {
         const scopedDeps = getDeps();
         scopedDeps.setDeferredBackgroundCheckTimer(null);
+        void scopedDeps.refreshInputDevices();
         if (scopedDeps.advancedOpen.value) {
-          void scopedDeps.refreshInputDevices();
           void scopedDeps.refreshTelemetryBudget();
         }
       }, deps.DEFERRED_BACKGROUND_CHECK_MS)

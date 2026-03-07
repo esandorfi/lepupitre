@@ -13,7 +13,9 @@ export async function registerAudioRecorderRuntimeListeners(
     return;
   }
 
-  await registerJobLifecycleListeners(getDeps, cleanups);
-  await registerRecordingTelemetryListener(getDeps, cleanups);
-  await registerAsrListeners(getDeps, cleanups);
+  await Promise.all([
+    registerJobLifecycleListeners(getDeps, cleanups),
+    registerRecordingTelemetryListener(getDeps, cleanups),
+    registerAsrListeners(getDeps, cleanups),
+  ]);
 }

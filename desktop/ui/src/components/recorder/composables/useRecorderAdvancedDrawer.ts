@@ -31,6 +31,8 @@ export type RecorderAdvancedDrawerEmit = {
   (event: "refreshInputDevices"): void;
 };
 
+const INPUT_DEVICE_NONE_SENTINEL = "__no_input_device__";
+
 export function useRecorderAdvancedDrawer(options: {
   t: (key: string) => string;
   props: RecorderAdvancedDrawerProps;
@@ -65,7 +67,7 @@ export function useRecorderAdvancedDrawer(options: {
 
   const inputDeviceOptions = computed(() => {
     if (props.inputDevices.length === 0) {
-      return [{ label: t("settings.recorder.input_device_none"), value: "" }];
+      return [{ label: t("settings.recorder.input_device_none"), value: INPUT_DEVICE_NONE_SENTINEL }];
     }
     return props.inputDevices.map((device) => ({
       label: device.isDefault
@@ -74,6 +76,9 @@ export function useRecorderAdvancedDrawer(options: {
       value: device.id,
     }));
   });
+  const selectedInputDeviceValue = computed(
+    () => props.selectedInputDeviceId ?? INPUT_DEVICE_NONE_SENTINEL
+  );
 
   function updateModel(value: string) {
     emit("update:model", value as RecorderAdvancedAsrModel);
@@ -92,7 +97,10 @@ export function useRecorderAdvancedDrawer(options: {
   }
 
   function updateInputDevice(value: string) {
-    emit("update:selectedInputDeviceId", value || null);
+    emit(
+      "update:selectedInputDeviceId",
+      !value || value === INPUT_DEVICE_NONE_SENTINEL ? null : value
+    );
   }
 
   return {
@@ -101,6 +109,7 @@ export function useRecorderAdvancedDrawer(options: {
     languageOptions,
     waveformStyleOptions,
     inputDeviceOptions,
+    selectedInputDeviceValue,
     updateModel,
     updateMode,
     updateLanguage,

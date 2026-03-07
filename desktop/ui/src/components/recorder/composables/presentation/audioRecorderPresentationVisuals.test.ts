@@ -113,8 +113,8 @@ describe("audioRecorderPresentationVisuals", () => {
     });
 
     expect(presentation.audioPreviewSources.value).toEqual([
-      "tauri://C:\\recordings\\take 1.wav",
       "file:///C:/recordings/take%201.wav",
+      "tauri://C:\\recordings\\take 1.wav",
     ]);
     expect(visualsMocks.convertFileSrc).toHaveBeenCalledWith("C:\\recordings\\take 1.wav");
     expect(presentation.telemetryBudgetSummary.value).toBe("audio.telemetry_budget_ok: 5.0 evt/s, 50 B");

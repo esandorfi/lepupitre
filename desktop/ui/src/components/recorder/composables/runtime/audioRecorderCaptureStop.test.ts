@@ -101,6 +101,8 @@ describe("audioRecorderCaptureStop", () => {
     expect(deps.lastWaveformPeaks.value).toEqual([0.1, 0.2, 0.3]);
     expect(deps.phase.value).toBe("quick_clean");
     expect(deps.liveLevel.value).toBe(0);
+    expect(deps.announce).toHaveBeenCalledWith("audio.announcement_stopping");
+    expect(deps.announce).toHaveBeenCalledWith("audio.announcement_stopped");
     expect(deps.emit).toHaveBeenCalledWith("saved", {
       artifactId: "artifact-1",
       path: "C:/tmp/recording.wav",
@@ -125,6 +127,7 @@ describe("audioRecorderCaptureStop", () => {
       errorCode: "stop_error",
     });
     expect(deps.statusKey.value).toBe("audio.status_idle");
+    expect(deps.phase.value).toBe("capture");
     expect(deps.recordingId.value).toBeNull();
     expect(deps.telemetryReceived.value).toBe(false);
   });
