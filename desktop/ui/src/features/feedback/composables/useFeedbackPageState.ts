@@ -64,18 +64,28 @@ export function useFeedbackPageState() {
   );
 
   const { refreshMascotMessage, saveNote, loadPage } = createFeedbackPageRuntime({
-    feedbackId,
-    locale,
-    showMascotCard,
-    feedback,
-    context,
-    mascotMessage,
-    error,
-    isLoading,
-    note,
-    lastSavedNote,
-    noteStatus,
-    reviewMarked,
+    state: {
+      identity: {
+        feedbackId,
+        locale,
+      },
+      model: {
+        feedback,
+        context,
+        mascotMessage,
+        reviewMarked,
+      },
+      draft: {
+        note,
+        lastSavedNote,
+      },
+      ui: {
+        showMascotCard,
+        error,
+        isLoading,
+        noteStatus,
+      },
+    },
   });
 
   onMounted(() => {
