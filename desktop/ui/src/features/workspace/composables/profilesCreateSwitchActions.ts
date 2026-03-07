@@ -9,60 +9,101 @@ import {
   type Translate,
 } from "@/features/workspace/composables/profilesPageHelpers";
 
-type ProfilesCreateSwitchArgs = {
+export type ProfilesCreateSwitchState = {
+  identity: {
+    createInput: Ref<InputRefTarget>;
+    createSection: Ref<HTMLElement | null>;
+    activeProfileId: Ref<string | null | undefined>;
+  };
+  model: {
+    name: ProfilesState["name"];
+  };
+  ui: {
+    error: ProfilesState["error"];
+    isSaving: ProfilesState["isSaving"];
+  };
+};
+
+export type ProfilesCreateSwitchDeps = {
   t: Translate;
-  state: ProfilesState;
-  createInput: Ref<InputRefTarget>;
-  createSection: Ref<HTMLElement | null>;
-  activeProfileId: Ref<string | null | undefined>;
+  nextTick: typeof nextTick;
+  resolveInputElement: typeof resolveInputElement;
+  hasDuplicateName: typeof hasDuplicateName;
+  createProfile: (name: string) => Promise<unknown>;
+  switchProfile: (profileId: string) => Promise<void>;
+  toLocalizedError: typeof toLocalizedError;
   pushHome: () => Promise<void>;
 };
 
+function createDefaultProfilesCreateSwitchDeps(
+  t: Translate,
+  pushHome: () => Promise<void>
+): ProfilesCreateSwitchDeps {
+  return {
+    t,
+    nextTick,
+    resolveInputElement,
+    hasDuplicateName,
+    createProfile: (name) => workspaceStore.createProfile(name),
+    switchProfile: (profileId) => workspaceStore.switchProfile(profileId),
+    toLocalizedError,
+    pushHome,
+  };
+}
+
+type ProfilesCreateSwitchArgs = {
+  state: ProfilesCreateSwitchState;
+  t: Translate;
+  pushHome: () => Promise<void>;
+  deps?: ProfilesCreateSwitchDeps;
+};
+
 export function createProfilesCreateSwitchActions(args: ProfilesCreateSwitchArgs) {
-  const { t, state, createInput, createSection, activeProfileId, pushHome } = args;
+  const deps = args.deps ?? createDefaultProfilesCreateSwitchDeps(args.t, args.pushHome);
+  const { identity, model, ui } = args.state;
 
   async function focusCreateForm() {
-    await nextTick();
-    createSection.value?.scrollIntoView({ behavior: "smooth", block: "start" });
-    const input = resolveInputElement(createInput.value);
+    await deps.nextTick();
+    identity.createSection.value?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const input = deps.resolveInputElement(identity.createInput.value);
     input?.focus();
     input?.select();
   }
 
   async function createProfile() {
-    const trimmed = state.name.value.trim();
+    const trimmed = model.name.value.trim();
     if (!trimmed) {
-      state.error.value = t("profiles.name_required");
+      ui.error.value = deps.t("profiles.name_required");
       return;
     }
-    if (hasDuplicateName(trimmed)) {
-      state.error.value = t("profiles.name_exists");
+    if (deps.hasDuplicateName(trimmed)) {
+      ui.error.value = deps.t("profiles.name_exists");
       return;
     }
 
-    state.isSaving.value = true;
-    state.error.value = null;
+    ui.isSaving.value = true;
+    ui.error.value = null;
     try {
-      await workspaceStore.createProfile(trimmed);
-      state.name.value = "";
-      await pushHome();
+      await deps.createProfile(trimmed);
+      model.name.value = "";
+      await deps.pushHome();
     } catch (err) {
-      state.error.value = toLocalizedError(t, err);
+      ui.error.value = deps.toLocalizedError(deps.t, err);
     } finally {
-      state.isSaving.value = false;
+      ui.isSaving.value = false;
     }
   }
 
   async function switchProfile(profileId: string) {
-    if (profileId === activeProfileId.value) {
+    if (profileId === identity.activeProfileId.value) {
       return;
     }
-    state.error.value = null;
+    ui.error.value = null;
     try {
-      await workspaceStore.switchProfile(profileId);
-      await pushHome();
+      await deps.switchProfile(profileId);
+      await deps.pushHome();
     } catch (err) {
-      state.error.value = toLocalizedError(t, err);
+      ui.error.value = deps.toLocalizedError(deps.t, err);
     }
   }
 
