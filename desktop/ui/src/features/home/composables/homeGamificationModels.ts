@@ -1,129 +1,13 @@
 import { computed, type Ref } from "vue";
-import type {
-  DailyLoopStep,
-  QuestMapNode,
-  RewardBadge,
-} from "@/features/home/composables/useHomePresentation";
+import { buildDailyLoopState } from "@/features/home/composables/homeDailyLoopModels";
+import { buildQuestMapState } from "@/features/home/composables/homeQuestMapModels";
+import { buildRewardState } from "@/features/home/composables/homeRewardModels";
 import type {
   MascotMessage,
   ProgressSnapshot,
   Quest,
   QuestDaily,
 } from "@/schemas/ipc";
-
-function buildQuestMapState(options: {
-  t: (key: string) => string;
-  trainingProgress: Ref<ProgressSnapshot | null>;
-  questCategoryPool: Ref<string[]>;
-  practicedToday: Ref<boolean>;
-}) {
-  const { t, trainingProgress, questCategoryPool, practicedToday } = options;
-  const questMapNodes = computed<QuestMapNode[]>(() => {
-    const progress = trainingProgress.value;
-    if (!progress) {
-      return [];
-    }
-    const checkpoints = Math.max(3, Math.min(7, progress.weekly_target));
-    const completed = Math.min(progress.weekly_completed, checkpoints);
-    return Array.from({ length: checkpoints }, (_, index) => {
-      const order = index + 1;
-      const isDone = order <= completed;
-      const isCurrent = !isDone && order === completed + 1;
-      const category =
-        questCategoryPool.value.length > 0
-          ? questCategoryPool.value[index % questCategoryPool.value.length]
-          : null;
-      return {
-        id: `weekly-${order}`,
-        label: `${t("training.quest_map_checkpoint")} ${order}`,
-        reward: order === checkpoints ? 20 : 10,
-        category,
-        done: isDone,
-        current: isCurrent,
-        offsetPx: order % 2 === 0 ? 14 : 0,
-      };
-    });
-  });
-
-  const questMapHint = computed(() => {
-    const progress = trainingProgress.value;
-    if (!progress) {
-      return t("training.quest_map_empty");
-    }
-    if (progress.weekly_completed >= progress.weekly_target) {
-      return t("training.quest_map_hint_complete");
-    }
-    if (practicedToday.value) {
-      return t("training.quest_map_hint_today");
-    }
-    if (progress.weekly_completed === 0) {
-      return t("training.quest_map_hint_start");
-    }
-    return t("training.quest_map_hint_continue");
-  });
-
-  return {
-    questMapNodes,
-    questMapHint,
-  };
-}
-
-function buildRewardState(options: {
-  t: (key: string) => string;
-  trainingProgress: Ref<ProgressSnapshot | null>;
-}) {
-  const { t, trainingProgress } = options;
-  const rewardBadges = computed<RewardBadge[]>(() => {
-    const progress = trainingProgress.value;
-    if (!progress) {
-      return [];
-    }
-    const weeklyTarget = Math.max(1, progress.weekly_target);
-    return [
-      {
-        id: "streak-3",
-        title: t("training.reward_streak_3"),
-        unlocked: progress.streak_days >= 3,
-        current: progress.streak_days,
-        target: 3,
-      },
-      {
-        id: "credits-100",
-        title: t("training.reward_credits_100"),
-        unlocked: progress.credits >= 100,
-        current: progress.credits,
-        target: 100,
-      },
-      {
-        id: "weekly-target",
-        title: `${t("training.reward_weekly_habit")} ${weeklyTarget}`,
-        unlocked: progress.weekly_completed >= weeklyTarget,
-        current: progress.weekly_completed,
-        target: weeklyTarget,
-      },
-      {
-        id: "streak-7",
-        title: t("training.reward_streak_7"),
-        unlocked: progress.streak_days >= 7,
-        current: progress.streak_days,
-        target: 7,
-      },
-    ];
-  });
-
-  const unlockedRewardCount = computed(
-    () => rewardBadges.value.filter((badge) => badge.unlocked).length
-  );
-  const nextRewardBadge = computed(
-    () => rewardBadges.value.find((badge) => !badge.unlocked) ?? null
-  );
-
-  return {
-    rewardBadges,
-    unlockedRewardCount,
-    nextRewardBadge,
-  };
-}
 
 export function createGamificationState(params: {
   t: (key: string) => string;
@@ -213,35 +97,14 @@ export function createGamificationState(params: {
     trainingProgress,
   });
 
-  const dailyLoopSteps = computed<DailyLoopStep[]>(() => {
-    const practiceRoute = heroQuest.value ? questRoute(heroQuest.value.code) : "/training";
-    return [
-      {
-        id: "practice",
-        title: t("training.daily_loop_step_practice"),
-        done: practicedToday.value,
-        ctaRoute: practiceRoute,
-      },
-      {
-        id: "feedback",
-        title: t("training.daily_loop_step_feedback"),
-        done: hasFeedbackInRecent.value,
-        ctaRoute: "/feedback",
-      },
-      {
-        id: "momentum",
-        title: t("training.daily_loop_step_momentum"),
-        done: (trainingProgress.value?.streak_days ?? 0) >= 3,
-        ctaRoute: "/training",
-      },
-    ];
+  const { dailyLoopSteps, dailyLoopCompletedCount, dailyLoopIsComplete } = buildDailyLoopState({
+    t,
+    trainingProgress,
+    heroQuest,
+    questRoute,
+    hasFeedbackInRecent,
+    practicedToday,
   });
-  const dailyLoopCompletedCount = computed(
-    () => dailyLoopSteps.value.filter((step) => step.done).length
-  );
-  const dailyLoopIsComplete = computed(
-    () => dailyLoopCompletedCount.value >= dailyLoopSteps.value.length
-  );
 
   return {
     showMascotCard,
