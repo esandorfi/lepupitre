@@ -2,10 +2,11 @@ import type { Ref } from "vue";
 import { isFeedbackReviewed, markFeedbackReviewed } from "@/lib/feedbackReviewState";
 import { appState, coachStore, feedbackStore, sessionStore } from "@/stores/app";
 import type { FeedbackContext, FeedbackV1, MascotMessage } from "@/schemas/ipc";
-
-function toError(err: unknown) {
-  return err instanceof Error ? err.message : String(err);
-}
+import {
+  clearRuntimeUiError,
+  setRuntimeUiError,
+  type RuntimeErrorCategory,
+} from "@/features/shared/runtime/runtimeContract";
 
 export type FeedbackPageRuntimeState = {
   identity: {
@@ -25,8 +26,10 @@ export type FeedbackPageRuntimeState = {
   ui: {
     showMascotCard: Ref<boolean>;
     error: Ref<string | null>;
+    errorCategory?: Ref<RuntimeErrorCategory | null>;
     isLoading: Ref<boolean>;
     noteStatus: Ref<"idle" | "saving" | "saved" | "error">;
+    noteErrorCategory?: Ref<RuntimeErrorCategory | null>;
   };
 };
 
@@ -72,7 +75,9 @@ type FeedbackPageRuntimeArgs = {
 export function createFeedbackPageRuntime(args: FeedbackPageRuntimeArgs) {
   const deps = args.deps ?? createDefaultFeedbackPageRuntimeDeps();
   const { identity, model, draft, ui } = args.state;
+  // Policy: loadPage uses takeLatest to avoid stale response writes.
   let loadSequence = 0;
+  // Policy: saveNote uses takeLatest status semantics with stale-write guards.
   let saveSequence = 0;
 
   async function refreshMascotMessage() {
@@ -107,6 +112,9 @@ export function createFeedbackPageRuntime(args: FeedbackPageRuntimeArgs) {
         return;
       }
       ui.noteStatus.value = "error";
+      if (ui.noteErrorCategory) {
+        ui.noteErrorCategory.value = "unknown";
+      }
     }
   }
 
@@ -116,6 +124,9 @@ export function createFeedbackPageRuntime(args: FeedbackPageRuntimeArgs) {
     }
     const requestId = ++saveSequence;
     ui.noteStatus.value = "saving";
+    if (ui.noteErrorCategory) {
+      ui.noteErrorCategory.value = null;
+    }
     try {
       await deps.setFeedbackNote(identity.feedbackId.value, draft.note.value);
       if (requestId !== saveSequence) {
@@ -133,6 +144,9 @@ export function createFeedbackPageRuntime(args: FeedbackPageRuntimeArgs) {
         return;
       }
       ui.noteStatus.value = "error";
+      if (ui.noteErrorCategory) {
+        ui.noteErrorCategory.value = "infrastructure";
+      }
     }
   }
 
@@ -142,7 +156,7 @@ export function createFeedbackPageRuntime(args: FeedbackPageRuntimeArgs) {
     }
     const requestId = ++loadSequence;
     ui.isLoading.value = true;
-    ui.error.value = null;
+    clearRuntimeUiError(ui);
     try {
       await deps.bootstrapSession();
       if (requestId !== loadSequence) {
@@ -175,7 +189,7 @@ export function createFeedbackPageRuntime(args: FeedbackPageRuntimeArgs) {
       if (requestId !== loadSequence) {
         return;
       }
-      ui.error.value = toError(err);
+      setRuntimeUiError(ui, err);
     } finally {
       if (requestId === loadSequence) {
         ui.isLoading.value = false;

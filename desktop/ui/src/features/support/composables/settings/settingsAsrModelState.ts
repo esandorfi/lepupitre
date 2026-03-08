@@ -1,5 +1,6 @@
 import { ref, type Ref } from "vue";
 import type { AsrModelStatus } from "@/schemas/ipc";
+import type { RuntimeErrorCategory } from "@/features/shared/runtime/runtimeContract";
 
 type Translate = (key: string) => string;
 export type SidecarStatus = "ready" | "missing" | "incompatible" | "unknown";
@@ -13,6 +14,7 @@ export type AsrModelState = {
   sidecarMessage: Ref<string | null>;
   verifyingModelId: Ref<string | null>;
   downloadError: Ref<string | null>;
+  downloadErrorCategory: Ref<RuntimeErrorCategory | null>;
   downloadProgress: Ref<Record<string, DownloadProgress>>;
 };
 
@@ -25,6 +27,7 @@ export function createAsrModelState(): AsrModelState {
     sidecarMessage: ref<string | null>(null),
     verifyingModelId: ref<string | null>(null),
     downloadError: ref<string | null>(null),
+    downloadErrorCategory: ref<RuntimeErrorCategory | null>(null),
     downloadProgress: ref<Record<string, DownloadProgress>>({}),
   };
 }

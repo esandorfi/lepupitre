@@ -61,8 +61,10 @@ function setup(overrides: Partial<FeedbackPageRuntimeDeps> = {}) {
     ui: {
       showMascotCard: ref(true),
       error: ref<string | null>(null),
+      errorCategory: ref<"validation" | "domain" | "infrastructure" | "unknown" | null>(null),
       isLoading: ref(false),
       noteStatus: ref<"idle" | "saving" | "saved" | "error">("idle"),
+      noteErrorCategory: ref<"validation" | "domain" | "infrastructure" | "unknown" | null>(null),
     },
   };
 
@@ -124,6 +126,7 @@ describe("feedbackPageRuntime", () => {
     await ctx.runtime.loadPage();
 
     expect(ctx.state.ui.error.value).toBe("feedback-load-failed");
+    expect(ctx.state.ui.errorCategory.value).toBe("unknown");
     expect(ctx.state.ui.isLoading.value).toBe(false);
   });
 
@@ -182,6 +185,7 @@ describe("feedbackPageRuntime", () => {
       await ctx.runtime.saveNote();
       expect(ctx.state.ui.noteStatus.value).toBe("saved");
       expect(ctx.state.draft.lastSavedNote.value).toBe("new note");
+      expect(ctx.state.ui.error.value).toBeNull();
 
       vi.advanceTimersByTime(1200);
       expect(ctx.state.ui.noteStatus.value).toBe("idle");

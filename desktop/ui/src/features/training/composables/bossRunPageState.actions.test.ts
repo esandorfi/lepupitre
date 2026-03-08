@@ -27,6 +27,7 @@ function setup(overrides: Partial<BossRunActionsDeps> = {}) {
     },
     ui: {
       error: ref<string | null>(null),
+      errorCategory: ref<"validation" | "domain" | "infrastructure" | "unknown" | null>(null),
       isLoading: ref(false),
       isSaving: ref(false),
       isAnalyzing: ref(false),
@@ -35,6 +36,7 @@ function setup(overrides: Partial<BossRunActionsDeps> = {}) {
 
   const deps: BossRunActionsDeps = {
     t: (key: string) => key,
+    bootstrapSession: async () => {},
     getRun: async (runId) => createRun(runId),
     getLatestRun: async () => createRun("latest-run"),
     createRun: async () => "new-run",
@@ -81,6 +83,7 @@ describe("bossRunPageState.actions", () => {
     await ctx.actions.handleAudioSaved({ artifactId: "artifact-x" });
 
     expect(ctx.state.ui.error.value).toBe("boss_run.need_talk");
+    expect(ctx.state.ui.errorCategory.value).toBe("validation");
   });
 
   it("stores pending transcript when run is not yet created", async () => {

@@ -1,7 +1,7 @@
 import { computed, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "@/lib/i18n";
-import { appState, sessionStore, talksStore } from "@/stores/app";
+import { appState, talksStore } from "@/stores/app";
 import { createBossRunActions } from "@/features/training/composables/bossRunPageState.actions";
 import { createBossRunRefs } from "@/features/training/composables/bossRunPageState.refs";
 
@@ -76,7 +76,7 @@ export function useBossRunPageState() {
   });
 
   onMounted(async () => {
-    await sessionStore.bootstrap();
+    await actions.bootstrap();
     await actions.loadLatest();
   });
 

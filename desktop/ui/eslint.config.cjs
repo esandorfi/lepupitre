@@ -57,9 +57,36 @@ module.exports = [
         {
           patterns: [
             {
+              group: ["@/stores/app", "../stores/app", "**/stores/app"],
+              message:
+                "Do not import stores directly in feature pages. Use feature composables/runtime controllers.",
+            },
+            {
               group: ["@/composables/useIpc", "../composables/useIpc", "**/composables/useIpc"],
               message:
                 "Do not invoke IPC directly from feature pages. Use domain APIs and store/composable controllers.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["src/features/**/components/**/*.vue"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["@/stores/app", "../stores/app", "**/stores/app"],
+              message:
+                "Do not import stores directly in feature components. Pass data/events through composables and props.",
+            },
+            {
+              group: ["@/composables/useIpc", "../composables/useIpc", "**/composables/useIpc"],
+              message:
+                "Do not invoke IPC directly from feature components. Keep side effects in composables/runtime modules.",
             },
           ],
         },

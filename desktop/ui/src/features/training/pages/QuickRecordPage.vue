@@ -1,12 +1,9 @@
 <script setup lang="ts">
-import { computed } from "vue";
 import { RouterLink } from "vue-router";
 import AudioRecorder from "@/components/AudioRecorder.vue";
-import { useI18n } from "@/lib/i18n";
-import { appState } from "@/stores/app";
+import { useQuickRecordPageState } from "@/features/training/composables/useQuickRecordPageState";
 
-const { t } = useI18n();
-const activeProfileId = computed(() => appState.activeProfileId);
+const { t, activeProfileId } = useQuickRecordPageState();
 </script>
 
 <template>

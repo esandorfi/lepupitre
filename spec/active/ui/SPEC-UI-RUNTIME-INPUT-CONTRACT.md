@@ -1,9 +1,9 @@
 # UI Runtime Input Contract Refactor (SOTA Target)
 
 - Date: 2026-03-07
-- Status: proposed
+- Status: accepted
 - Scope: `desktop/ui/src/features/**/composables/*Runtime*.ts`, `*PageRuntime.ts`, runtime-like helpers
-- Related decision candidate: `DEC-20260307-ui-runtime-input-contract`
+- Related decision: `DEC-20260307-ui-runtime-input-contract`
 
 ## Context
 
@@ -220,11 +220,11 @@ Candidate checks for future enforcement:
 - Apply to remaining runtime-like modules exceeding threshold.
 - Keep exceptions explicit and tracked.
 
-## ADR recommendation
+## Decision status
 
-Keep decision as proposed until pilot evidence is complete.
+Decision is accepted based on end-to-end implementation evidence (runtime modules + runtime-like action modules + page orchestration extraction + tests).
 
-- Decision scope: UI runtime/composable input contracts.
+- Decision scope: UI runtime/composable input contracts and runtime-like feature actions.
 - Excluded scope: IPC contract redesign and store API redesign.
 
 ## Acceptance Criteria (SOTA readiness)
@@ -234,3 +234,20 @@ Keep decision as proposed until pilot evidence is complete.
 3. Error mapping follows category model and critical/non-critical rules.
 4. Runtime tests include transition, failure, concurrency, and invariants.
 5. No IPC boundary changes are required to adopt this contract.
+
+## Implementation Evidence (2026-03-08)
+
+- Runtime contract helpers added under `desktop/ui/src/features/shared/runtime/runtimeContract.ts`.
+- Runtime modules aligned with categorized error mapping and explicit async policy markers:
+  - feedback: `feedbackPageRuntime`, `feedbackTimelinePage.runtime`, `peerReviewPageRuntime`
+  - talks: `talkTrainPageRuntime`, `talkReportPageRuntime`, `talkExportPageRuntime`, `talkDefinePageRuntime`, `talksPageRuntime`, `projectSetupPageRuntime`
+  - packs: `packsPageRuntime`
+  - support: `settingsAsrModelRuntime`
+  - workspace lifecycle boundary: `profilesPageRuntime`
+  - training runtime-like actions: `questPageState.actions`, `bossRunPageState.actions`
+- Feature page direct store side effects removed for:
+  - `ProjectSetupPage.vue`
+  - `PeerReviewPage.vue`
+  - `QuickRecordPage.vue`
+- Lint guard rails added to block direct store/IPC imports in feature pages/components.
+- Runtime tests expanded with categorized-error and concurrency assertions; full UI lint/typecheck/test gates pass.

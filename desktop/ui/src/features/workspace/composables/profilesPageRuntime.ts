@@ -8,6 +8,7 @@ import {
 } from "@/features/workspace/composables/profilesPageHelpers";
 import { createProfilesCreateSwitchActions } from "@/features/workspace/composables/profilesCreateSwitchActions";
 import { createProfilesManageActions } from "@/features/workspace/composables/profilesManageActions";
+import type { RuntimeErrorCategory } from "@/features/shared/runtime/runtimeContract";
 
 type ProfilesActionsArgs = {
   state: {
@@ -79,6 +80,7 @@ type LifecycleArgs = {
     };
     ui: {
       error: ProfilesState["error"];
+      errorCategory?: Ref<RuntimeErrorCategory | null>;
     };
   };
   deps?: {
@@ -117,6 +119,9 @@ export function bindProfilesLifecycle(args: LifecycleArgs) {
       await deps.ensureBootstrapped();
     } catch (err) {
       state.ui.error.value = deps.toLocalizedError(deps.t, err);
+      if (state.ui.errorCategory) {
+        state.ui.errorCategory.value = "infrastructure";
+      }
     }
     await maybeFocusCreateFromRoute();
   });

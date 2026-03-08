@@ -1,10 +1,11 @@
 import { onMounted, watch, type Ref } from "vue";
 import type { MascotMessage, TalksBlueprint } from "@/schemas/ipc";
 import { coachStore, sessionStore, talksStore } from "@/stores/app";
-
-function toError(err: unknown) {
-  return err instanceof Error ? err.message : String(err);
-}
+import {
+  clearRuntimeUiError,
+  setRuntimeUiError,
+  type RuntimeErrorCategory,
+} from "@/features/shared/runtime/runtimeContract";
 
 type TalksRuntimeStateModel = {
   activeProfileId: string | null;
@@ -31,8 +32,10 @@ export type TalksRuntimeState = {
     mascotMessage: Ref<MascotMessage | null>;
     talksBlueprint: Ref<TalksBlueprint | null>;
   };
+  draft: Record<string, never>;
   ui: {
     error: Ref<string | null>;
+    errorCategory?: Ref<RuntimeErrorCategory | null>;
     isLoading: Ref<boolean>;
     isBlueprintLoading: Ref<boolean>;
     isSwitching: Ref<string | null>;
@@ -69,7 +72,10 @@ type TalksRuntimeArgs = {
 export function createTalksRuntime(args: TalksRuntimeArgs) {
   const deps = args.deps ?? createDefaultTalksRuntimeDeps();
   const { identity, model, ui } = args.state;
+  // Policy: refreshTalksBlueprint uses takeLatest.
   let blueprintSequence = 0;
+  // Policy: setActive uses singleFlight.
+  let setActiveInFlight: Promise<void> | null = null;
 
   async function refreshTalksBlueprint() {
     const requestId = ++blueprintSequence;
@@ -118,31 +124,42 @@ export function createTalksRuntime(args: TalksRuntimeArgs) {
 
   async function bootstrap() {
     ui.isLoading.value = true;
-    ui.error.value = null;
+    clearRuntimeUiError(ui);
     try {
       await deps.bootstrapSession();
       await deps.loadProjects();
       await refreshTalksBlueprint();
       await refreshMascotMessage();
     } catch (err) {
-      ui.error.value = toError(err);
+      setRuntimeUiError(ui, err);
     } finally {
       ui.isLoading.value = false;
     }
   }
 
   async function setActive(projectId: string) {
-    ui.isSwitching.value = projectId;
-    ui.error.value = null;
-    try {
-      await deps.setActiveProject(projectId);
-      await refreshTalksBlueprint();
-      await refreshMascotMessage();
-    } catch (err) {
-      ui.error.value = toError(err);
-    } finally {
-      ui.isSwitching.value = null;
+    if (setActiveInFlight) {
+      return setActiveInFlight;
     }
+    const run = (async () => {
+      ui.isSwitching.value = projectId;
+      clearRuntimeUiError(ui);
+      try {
+        await deps.setActiveProject(projectId);
+        await refreshTalksBlueprint();
+        await refreshMascotMessage();
+      } catch (err) {
+        setRuntimeUiError(ui, err);
+      } finally {
+        ui.isSwitching.value = null;
+      }
+    })();
+    setActiveInFlight = run;
+    await run.finally(() => {
+      if (setActiveInFlight === run) {
+        setActiveInFlight = null;
+      }
+    });
   }
 
   return { refreshTalksBlueprint, refreshMascotMessage, bootstrap, setActive };

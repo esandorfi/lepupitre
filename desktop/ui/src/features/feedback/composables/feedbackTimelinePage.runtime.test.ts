@@ -30,6 +30,7 @@ function setup(overrides: Partial<TimelineRuntimeDeps> = {}) {
   const mascotMessage = ref<MascotMessage | null>(null);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
+  const errorCategory = ref<"validation" | "domain" | "infrastructure" | "unknown" | null>(null);
   const filterType = ref<"all" | "quest_attempt" | "run">("all");
 
   const deps: TimelineRuntimeDeps = {
@@ -67,6 +68,7 @@ function setup(overrides: Partial<TimelineRuntimeDeps> = {}) {
       ui: {
         isLoading,
         error,
+        errorCategory,
         filterType,
       },
     },
@@ -84,6 +86,7 @@ function setup(overrides: Partial<TimelineRuntimeDeps> = {}) {
     mascotMessage,
     isLoading,
     error,
+    errorCategory,
     filterType,
     runtime,
   };
@@ -155,5 +158,19 @@ describe("feedbackTimelinePage.runtime", () => {
     await Promise.all([firstLoad, secondLoad]);
 
     expect(ctx.entries.value[0]?.id).toBe("latest");
+  });
+
+  it("maps runtime failures to categorized ui error", async () => {
+    const ctx = setup({
+      getFeedbackTimeline: async () => {
+        throw new Error("timeline-failed");
+      },
+    });
+
+    await ctx.runtime.loadTimeline();
+
+    expect(ctx.error.value).toBe("timeline-failed");
+    expect(ctx.errorCategory.value).toBe("unknown");
+    expect(ctx.entries.value).toEqual([]);
   });
 });

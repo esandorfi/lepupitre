@@ -1,10 +1,11 @@
 import type { Ref } from "vue";
 import { appState, feedbackStore, sessionStore, trainingStore } from "@/stores/app";
 import type { Quest } from "@/schemas/ipc";
-
-function toError(err: unknown) {
-  return err instanceof Error ? err.message : String(err);
-}
+import {
+  clearRuntimeUiError,
+  setRuntimeUiError,
+  type RuntimeErrorCategory,
+} from "@/features/shared/runtime/runtimeContract";
 
 export type QuestActionsState = {
   identity: {
@@ -23,6 +24,7 @@ export type QuestActionsState = {
   };
   ui: {
     error: Ref<string | null>;
+    errorCategory?: Ref<RuntimeErrorCategory | null>;
     isSubmitting: Ref<boolean>;
     isAnalyzing: Ref<boolean>;
     isLoading: Ref<boolean>;
@@ -79,13 +81,18 @@ type QuestActionsArgs = {
 export function createQuestActions(args: QuestActionsArgs) {
   const deps = args.deps ?? createDefaultQuestActionsDeps(args.t, args.routerPush);
   const { identity, model, ui } = args.state;
+  // Policy: loadQuest uses takeLatest; submit/requestFeedback use singleFlight.
+  let loadSequence = 0;
+  let submitInFlight: Promise<void> | null = null;
+  let feedbackInFlight: Promise<void> | null = null;
 
   async function bootstrap() {
     await deps.bootstrapSession();
   }
 
   async function loadQuest() {
-    ui.error.value = null;
+    const requestId = ++loadSequence;
+    clearRuntimeUiError(ui);
     model.quest.value = null;
     model.attemptId.value = null;
     model.audioArtifactId.value = null;
@@ -96,14 +103,23 @@ export function createQuestActions(args: QuestActionsArgs) {
     const code = identity.questCode.value.trim();
     if (!code) {
       ui.error.value = deps.t("quest.empty");
+      if (ui.errorCategory) {
+        ui.errorCategory.value = "validation";
+      }
       return;
     }
 
     ui.isLoading.value = true;
     try {
       await bootstrap();
+      if (requestId !== loadSequence) {
+        return;
+      }
       if (!deps.getActiveProfileId() || !identity.contextProjectId.value) {
         ui.error.value = deps.t("home.quest_empty");
+        if (ui.errorCategory) {
+          ui.errorCategory.value = "validation";
+        }
         return;
       }
 
@@ -113,44 +129,74 @@ export function createQuestActions(args: QuestActionsArgs) {
         model.quest.value = await deps.getQuestByCode(code);
       }
     } catch (err) {
-      ui.error.value = toError(err);
+      if (requestId !== loadSequence) {
+        return;
+      }
+      setRuntimeUiError(ui, err);
     } finally {
-      ui.isLoading.value = false;
+      if (requestId === loadSequence) {
+        ui.isLoading.value = false;
+      }
     }
   }
 
   async function submit() {
+    if (submitInFlight) {
+      return submitInFlight;
+    }
     if (!model.quest.value) {
       ui.error.value = deps.t("quest.empty");
+      if (ui.errorCategory) {
+        ui.errorCategory.value = "validation";
+      }
       return;
     }
     if (!model.text.value.trim()) {
       ui.error.value = deps.t("quest.response_required");
+      if (ui.errorCategory) {
+        ui.errorCategory.value = "validation";
+      }
       return;
     }
-    ui.isSubmitting.value = true;
-    ui.error.value = null;
-    try {
-      const trimmed = model.text.value.trim();
-      const attempt = await deps.submitQuestTextForProject(
-        identity.contextProjectId.value,
-        model.quest.value.code,
-        trimmed
-      );
-      model.attemptId.value = attempt;
-      model.submittedTextSnapshot.value = trimmed;
-    } catch (err) {
-      ui.error.value = toError(err);
-    } finally {
-      ui.isSubmitting.value = false;
-    }
+    const run = (async () => {
+      const quest = model.quest.value;
+      if (!quest) {
+        ui.error.value = deps.t("quest.empty");
+        if (ui.errorCategory) {
+          ui.errorCategory.value = "validation";
+        }
+        return;
+      }
+      ui.isSubmitting.value = true;
+      clearRuntimeUiError(ui);
+      try {
+        const trimmed = model.text.value.trim();
+        const attempt = await deps.submitQuestTextForProject(
+          identity.contextProjectId.value,
+          quest.code,
+          trimmed
+        );
+        model.attemptId.value = attempt;
+        model.submittedTextSnapshot.value = trimmed;
+      } catch (err) {
+        setRuntimeUiError(ui, err);
+      } finally {
+        ui.isSubmitting.value = false;
+      }
+    })();
+    submitInFlight = run;
+    await run.finally(() => {
+      if (submitInFlight === run) {
+        submitInFlight = null;
+      }
+    });
   }
 
   async function handleAudioSaved(payload: { artifactId: string }) {
     if (!model.quest.value) {
       return;
     }
-    ui.error.value = null;
+    clearRuntimeUiError(ui);
     model.transcriptId.value = null;
     model.audioArtifactId.value = payload.artifactId;
     try {
@@ -161,7 +207,7 @@ export function createQuestActions(args: QuestActionsArgs) {
       });
       model.attemptId.value = attempt;
     } catch (err) {
-      ui.error.value = toError(err);
+      setRuntimeUiError(ui, err);
     }
   }
 
@@ -169,7 +215,7 @@ export function createQuestActions(args: QuestActionsArgs) {
     if (!model.quest.value || !model.audioArtifactId.value) {
       return;
     }
-    ui.error.value = null;
+    clearRuntimeUiError(ui);
     model.transcriptId.value = payload.transcriptId;
     try {
       const attempt = await deps.submitQuestAudioForProject(identity.contextProjectId.value, {
@@ -179,29 +225,50 @@ export function createQuestActions(args: QuestActionsArgs) {
       });
       model.attemptId.value = attempt;
     } catch (err) {
-      ui.error.value = toError(err);
+      setRuntimeUiError(ui, err);
     }
   }
 
   async function requestFeedback() {
+    if (feedbackInFlight) {
+      return feedbackInFlight;
+    }
     if (!model.attemptId.value) {
       ui.error.value = deps.t("quest.empty");
+      if (ui.errorCategory) {
+        ui.errorCategory.value = "validation";
+      }
       return;
     }
     if (identity.isAudioQuest.value && !model.transcriptId.value) {
       ui.error.value = deps.t("quest.transcribe_first");
+      if (ui.errorCategory) {
+        ui.errorCategory.value = "validation";
+      }
       return;
     }
-    ui.isAnalyzing.value = true;
-    ui.error.value = null;
-    try {
-      const feedbackId = await deps.analyzeAttempt(model.attemptId.value);
-      await deps.routerPush(`/feedback?focus=${feedbackId}&source=quest`);
-    } catch (err) {
-      ui.error.value = toError(err);
-    } finally {
-      ui.isAnalyzing.value = false;
+    const attemptId = model.attemptId.value;
+    if (!attemptId) {
+      return;
     }
+    const run = (async () => {
+      ui.isAnalyzing.value = true;
+      clearRuntimeUiError(ui);
+      try {
+        const feedbackId = await deps.analyzeAttempt(attemptId);
+        await deps.routerPush(`/feedback?focus=${feedbackId}&source=quest`);
+      } catch (err) {
+        setRuntimeUiError(ui, err);
+      } finally {
+        ui.isAnalyzing.value = false;
+      }
+    })();
+    feedbackInFlight = run;
+    await run.finally(() => {
+      if (feedbackInFlight === run) {
+        feedbackInFlight = null;
+      }
+    });
   }
 
   function handleRecorderAnalyze() {

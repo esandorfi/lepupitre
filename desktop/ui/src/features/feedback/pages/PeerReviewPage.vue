@@ -1,86 +1,18 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
-import { useRoute, RouterLink } from "vue-router";
-import { useI18n } from "@/lib/i18n";
-import { packStore, sessionStore } from "@/stores/app";
-import type { PeerReviewDetail } from "@/schemas/ipc";
+import { RouterLink } from "vue-router";
+import { usePeerReviewPageState } from "@/features/feedback/composables/usePeerReviewPageState";
 
-const { t } = useI18n();
-const route = useRoute();
-const peerReviewId = computed(() => String(route.params.peerReviewId || ""));
-const reviewDetail = ref<PeerReviewDetail | null>(null);
-const error = ref<string | null>(null);
-const isLoading = ref(false);
-
-const projectId = computed(() => {
-  if (reviewDetail.value?.project_id) {
-    return reviewDetail.value.project_id;
-  }
-  return String(route.query.projectId || "");
-});
-
-const backLink = computed(() => {
-  if (projectId.value) {
-    return `/talks/${projectId.value}`;
-  }
-  return "/talks";
-});
-
-const reviewerLabel = computed(() => {
-  const fromDetail = reviewDetail.value?.reviewer_tag;
-  const fromReview = reviewDetail.value?.review.reviewer_tag;
-  return fromDetail || fromReview || t("peer_review.reviewer_unknown");
-});
-
-const scoreEntries = computed(() => {
-  const scores = reviewDetail.value?.review.scores ?? {};
-  return Object.entries(scores);
-});
-
-const freeTextEntries = computed(() => {
-  const notes = reviewDetail.value?.review.free_text ?? {};
-  return Object.entries(notes);
-});
-
-function toError(err: unknown) {
-  return err instanceof Error ? err.message : String(err);
-}
-
-function formatValue(value: unknown) {
-  if (typeof value === "string") {
-    return value;
-  }
-  if (typeof value === "number") {
-    return value.toString();
-  }
-  if (typeof value === "boolean") {
-    return value ? "true" : "false";
-  }
-  if (value == null) {
-    return "--";
-  }
-  try {
-    return JSON.stringify(value);
-  } catch {
-    return String(value);
-  }
-}
-
-onMounted(async () => {
-  if (!peerReviewId.value) {
-    return;
-  }
-  isLoading.value = true;
-  error.value = null;
-  try {
-    await sessionStore.bootstrap();
-    reviewDetail.value = await packStore.getPeerReview(peerReviewId.value);
-  } catch (err) {
-    error.value = toError(err);
-  } finally {
-    isLoading.value = false;
-  }
-});
+const {
+  t,
+  reviewDetail,
+  error,
+  isLoading,
+  backLink,
+  reviewerLabel,
+  scoreEntries,
+  freeTextEntries,
+  formatValue,
+} = usePeerReviewPageState();
 </script>
 
 <template>

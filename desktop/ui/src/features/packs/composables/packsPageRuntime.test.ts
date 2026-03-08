@@ -46,6 +46,7 @@ function setup(overrides: Partial<PacksPageRuntimeDeps> = {}) {
     },
     ui: {
       error: ref<string | null>(null),
+      errorCategory: ref<"validation" | "domain" | "infrastructure" | "unknown" | null>(null),
       importStatus: ref<"idle" | "importing" | "success" | "error">("idle"),
       isInspecting: ref(false),
       isPicking: ref(false),
@@ -80,6 +81,7 @@ describe("packsPageRuntime", () => {
     await ctx.runtime.importReview();
 
     expect(ctx.state.ui.error.value).toBe("packs.import_no_path");
+    expect(ctx.state.ui.errorCategory.value).toBe("validation");
     expect(ctx.state.ui.importStatus.value).toBe("idle");
   });
 
@@ -144,5 +146,6 @@ describe("packsPageRuntime", () => {
     await ctx.runtime.bootstrap();
 
     expect(ctx.state.ui.error.value).toBe("bootstrap-failed");
+    expect(ctx.state.ui.errorCategory.value).toBe("unknown");
   });
 });

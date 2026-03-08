@@ -49,8 +49,10 @@ function setup(
     },
     ui: {
       saveError: ref<string | null>(null),
+      saveErrorCategory: ref<"validation" | "domain" | "infrastructure" | "unknown" | null>(null),
       saveState: ref<"idle" | "saving" | "saved" | "error">("idle"),
       error: ref<string | null>(null),
+      errorCategory: ref<"validation" | "domain" | "infrastructure" | "unknown" | null>(null),
       isLoading: ref(false),
     },
   };
@@ -112,6 +114,7 @@ describe("talkDefinePageRuntime", () => {
 
     expect(ctx.state.ui.saveState.value).toBe("error");
     expect(ctx.state.ui.saveError.value).toBe("talk.title_required");
+    expect(ctx.state.ui.saveErrorCategory.value).toBe("validation");
   });
 
   it("runs next action by persisting stage then routing", async () => {
@@ -148,6 +151,7 @@ describe("talkDefinePageRuntime", () => {
     await ctx.runtime.bootstrap();
 
     expect(ctx.state.ui.error.value).toBe("bootstrap-failed");
+    expect(ctx.state.ui.errorCategory.value).toBe("unknown");
     expect(ctx.state.ui.isLoading.value).toBe(false);
   });
 });

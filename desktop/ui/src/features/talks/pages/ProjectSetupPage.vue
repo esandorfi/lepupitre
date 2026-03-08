@@ -1,57 +1,18 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
-import { useRouter } from "vue-router";
-import { useI18n } from "@/lib/i18n";
-import { appState, sessionStore, talksStore } from "@/stores/app";
+import { useProjectSetupPageState } from "@/features/talks/composables/useProjectSetupPageState";
 
-const { t } = useI18n();
-const title = ref("");
-const audience = ref("");
-const goal = ref("");
-const duration = ref("");
-const error = ref<string | null>(null);
-const isSaving = ref(false);
-
-const activeProfileId = computed(() => appState.activeProfileId);
-const activeProject = computed(() => appState.activeProject);
-
-const router = useRouter();
-
-function toError(err: unknown) {
-  return err instanceof Error ? err.message : String(err);
-}
-
-async function bootstrap() {
-  try {
-    await sessionStore.bootstrap();
-  } catch (err) {
-    error.value = toError(err);
-  }
-}
-
-async function saveProject() {
-  if (!title.value.trim()) {
-    error.value = t("talk.title_required");
-    return;
-  }
-  isSaving.value = true;
-  error.value = null;
-  try {
-    await talksStore.createProject({
-      title: title.value.trim(),
-      audience: audience.value.trim() || null,
-      goal: goal.value.trim() || null,
-      duration_target_sec: duration.value ? Number(duration.value) * 60 : null,
-    });
-    await router.push("/");
-  } catch (err) {
-    error.value = toError(err);
-  } finally {
-    isSaving.value = false;
-  }
-}
-
-onMounted(bootstrap);
+const {
+  t,
+  title,
+  audience,
+  goal,
+  duration,
+  error,
+  isSaving,
+  activeProfileId,
+  activeProject,
+  saveProject,
+} = useProjectSetupPageState();
 </script>
 
 <template>
