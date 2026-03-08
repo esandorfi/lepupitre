@@ -2,7 +2,7 @@
 
 Status: active  
 Owner: maintainers  
-Last updated: 2026-02-28
+Last updated: 2026-03-08
 
 This is the single testing source of truth for product behavior contracts.
 It is intentionally domain-first and implementation-light.
@@ -49,4 +49,5 @@ If a test becomes hard to read or requires heavy ad hoc setup, treat it as a cod
 ## Enforcement
 
 CI enforces selected high-risk backend and UI obligations.
+For talks UI, orchestration modules (`*Runtime`, builder actions, shared runtime loaders) must be updated with matching tests when touched.
 Enforcement mechanics live in repository scripts/workflows and may evolve without changing this domain contract document.

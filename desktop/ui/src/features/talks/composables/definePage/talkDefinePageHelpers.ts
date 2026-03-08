@@ -1,4 +1,9 @@
 import { appState } from "@/stores/app";
+import {
+  talkBuilderRoute,
+  talkExportRoute,
+  talkTrainRoute,
+} from "@/features/talks/composables/shared/talkRoutes";
 
 type TranslateFn = (key: string) => string;
 
@@ -122,27 +127,27 @@ export function createNextAction(
   if (projectStage === "draft") {
     return {
       nextStage: "builder",
-      route: `/talks/${projectId}/builder`,
+      route: talkBuilderRoute(projectId),
       label: t("talk_define.continue_builder"),
     };
   }
   if (projectStage === "builder") {
     return {
       nextStage: "train",
-      route: `/talks/${projectId}/train`,
+      route: talkTrainRoute(projectId),
       label: t("talk_define.continue_train"),
     };
   }
   if (projectStage === "train") {
     return {
       nextStage: "export",
-      route: `/talks/${projectId}/export`,
+      route: talkExportRoute(projectId),
       label: t("talk_define.continue_export"),
     };
   }
   return {
     nextStage: "export",
-    route: `/talks/${projectId}/export`,
+    route: talkExportRoute(projectId),
     label: t("talk_define.open_export"),
   };
 }

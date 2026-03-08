@@ -22,6 +22,7 @@ function setup(overrides: Partial<BuilderActionsDeps> = {}) {
     },
     ui: {
       error: ref<string | null>(null),
+      errorCategory: ref<"validation" | "domain" | "infrastructure" | "unknown" | null>(null),
       isLoading: ref(false),
       isSaving: ref(false),
       saveStatus: ref<"idle" | "saving" | "saved" | "error">("idle"),
@@ -75,6 +76,7 @@ describe("talkBuilderPageActions", () => {
     await ctx.actions.saveOutline();
 
     expect(ctx.state.ui.error.value).toBe("builder.no_talk");
+    expect(ctx.state.ui.errorCategory.value).toBe("validation");
   });
 
   it("saves outline and resets save status", async () => {

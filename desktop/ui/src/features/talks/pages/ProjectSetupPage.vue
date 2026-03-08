@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useProjectSetupPageState } from "@/features/talks/composables/useProjectSetupPageState";
+import { useProjectSetupPageState } from "@/features/talks/composables/projectSetupPage/useProjectSetupPageState";
 
 const {
   t,

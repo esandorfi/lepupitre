@@ -24,3 +24,13 @@
 - [ ] `spec/active/DECISIONS.md` was updated for significant decisions (or N/A).
 - [ ] `docs/STATUS.md` was updated when touching `docs/` or `spec/`.
 - [ ] Superseded docs/specs are marked and linked to replacements.
+
+## Talks Architecture Checklist (when touching `desktop/ui/src/features/talks/**`)
+
+- [ ] Runtime state remains grouped by plane (`identity` / `model` / `ui`, plus `draft` only when needed).
+- [ ] Runtime UI errors use `runtimeContract` helpers and carry category where available.
+- [ ] Shared talks runtime loaders are reused (`talkRuntimeDataLoader`) instead of duplicated fetch orchestration.
+- [ ] Talks route links use `talkRoutes` helpers wherever navigation paths are composed (pages/components/composables/helpers).
+- [ ] Talks feature-local panel components own i18n labels directly (avoid label-prop forwarding unless true cross-feature reuse).
+- [ ] Talks composables follow page-scoped directories plus `shared` (avoid re-introducing flat composable sprawl).
+- [ ] Touched talks orchestration modules (runtime/action/loader) have matching test file updates.

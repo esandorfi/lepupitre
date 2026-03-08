@@ -1,12 +1,13 @@
 import type { Ref } from "vue";
 import { audioRevealWav } from "@/domains/recorder/api";
 import { coachStore, sessionStore, talksStore } from "@/stores/app";
-import { templateSections } from "@/features/talks/composables/talkBuilderPageHelpers";
+import { templateSections } from "@/features/talks/composables/builderPage/talkBuilderPageHelpers";
 import type { TalksBlueprint } from "@/schemas/ipc";
-
-function toError(err: unknown) {
-  return err instanceof Error ? err.message : String(err);
-}
+import {
+  clearRuntimeUiError,
+  setRuntimeUiError,
+  type RuntimeErrorCategory,
+} from "@/features/shared/runtime/runtimeContract";
 
 export type BuilderActionsState = {
   identity: {
@@ -20,6 +21,7 @@ export type BuilderActionsState = {
   };
   ui: {
     error: Ref<string | null>;
+    errorCategory?: Ref<RuntimeErrorCategory | null>;
     isLoading: Ref<boolean>;
     isSaving: Ref<boolean>;
     saveStatus: Ref<"idle" | "saving" | "saved" | "error">;
@@ -87,7 +89,7 @@ export function createBuilderActions(args: BuilderActionsArgs) {
   }
 
   async function loadOutline() {
-    ui.error.value = null;
+    clearRuntimeUiError(ui);
     model.exportPath.value = null;
     model.outline.value = "";
     model.blueprint.value = null;
@@ -104,7 +106,7 @@ export function createBuilderActions(args: BuilderActionsArgs) {
       model.blueprint.value = await deps.getTalksBlueprint(projectId);
       ui.saveStatus.value = "idle";
     } catch (err) {
-      ui.error.value = toError(err);
+      setRuntimeUiError(ui, err);
     } finally {
       ui.isLoading.value = false;
     }
@@ -113,11 +115,14 @@ export function createBuilderActions(args: BuilderActionsArgs) {
   async function saveOutline() {
     if (!identity.selectedProjectId.value) {
       ui.error.value = deps.t("builder.no_talk");
+      if (ui.errorCategory) {
+        ui.errorCategory.value = "validation";
+      }
       return;
     }
     ui.isSaving.value = true;
     ui.saveStatus.value = "saving";
-    ui.error.value = null;
+    clearRuntimeUiError(ui);
     try {
       await deps.saveOutline(identity.selectedProjectId.value, model.outline.value);
       await markBuilderStage();
@@ -127,7 +132,7 @@ export function createBuilderActions(args: BuilderActionsArgs) {
       }, 1200);
     } catch (err) {
       ui.saveStatus.value = "error";
-      ui.error.value = toError(err);
+      setRuntimeUiError(ui, err);
     } finally {
       ui.isSaving.value = false;
     }
@@ -156,16 +161,19 @@ export function createBuilderActions(args: BuilderActionsArgs) {
   async function exportOutline() {
     if (!identity.selectedProjectId.value) {
       ui.error.value = deps.t("builder.no_talk");
+      if (ui.errorCategory) {
+        ui.errorCategory.value = "validation";
+      }
       return;
     }
     ui.isExporting.value = true;
-    ui.error.value = null;
+    clearRuntimeUiError(ui);
     try {
       await markBuilderStage();
       const result = await deps.exportOutline(identity.selectedProjectId.value);
       model.exportPath.value = result.path;
     } catch (err) {
-      ui.error.value = toError(err);
+      setRuntimeUiError(ui, err);
     } finally {
       ui.isExporting.value = false;
     }
@@ -176,11 +184,11 @@ export function createBuilderActions(args: BuilderActionsArgs) {
       return;
     }
     ui.isRevealing.value = true;
-    ui.error.value = null;
+    clearRuntimeUiError(ui);
     try {
       await deps.revealPath(model.exportPath.value);
     } catch (err) {
-      ui.error.value = toError(err);
+      setRuntimeUiError(ui, err);
     } finally {
       ui.isRevealing.value = false;
     }

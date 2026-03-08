@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createProjectSetupPageRuntime,
   type ProjectSetupPageRuntimeDeps,
-} from "@/features/talks/composables/projectSetupPageRuntime";
+} from "@/features/talks/composables/projectSetupPage/projectSetupPageRuntime";
 
 vi.mock("@/stores/app", () => ({
   sessionStore: {},

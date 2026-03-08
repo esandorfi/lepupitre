@@ -14,6 +14,10 @@ import {
   setRuntimeUiError,
   type RuntimeErrorCategory,
 } from "@/features/shared/runtime/runtimeContract";
+import {
+  loadTalkArtifactsBase,
+  loadTalkPageData,
+} from "@/features/talks/composables/shared/talkRuntimeDataLoader";
 
 export type TalkExportRuntimeState = {
   identity: {
@@ -168,30 +172,26 @@ export function createTalkExportRuntime(args: TalkExportRuntimeArgs) {
     clearRuntimeUiError(ui);
     ui.isLoading.value = true;
     try {
-      await deps.bootstrapSession();
-      if (requestId !== loadSequence) {
+      const artifacts = await loadTalkPageData({
+        bootstrapSession: deps.bootstrapSession,
+        loadProjects: deps.loadProjects,
+        projectId: identity.projectId.value,
+        isStale: () => requestId !== loadSequence,
+        onProjectMissing: (runtimeUi) => {
+          runtimeUi.error.value = "project_missing";
+          if (ui.errorCategory) {
+            ui.errorCategory.value = "validation";
+          }
+        },
+        ui,
+        loadArtifacts: (projectId) => loadTalkArtifactsBase(deps, projectId),
+      });
+      if (!artifacts) {
         return;
       }
-      await deps.loadProjects();
-      if (requestId !== loadSequence) {
-        return;
-      }
-      if (!identity.projectId.value) {
-        ui.error.value = "project_missing";
-        if (ui.errorCategory) {
-          ui.errorCategory.value = "validation";
-        }
-        return;
-      }
-      model.report.value = await deps.getQuestReport(identity.projectId.value);
-      if (requestId !== loadSequence) {
-        return;
-      }
-      model.runs.value = await deps.getRuns(identity.projectId.value, 12);
-      if (requestId !== loadSequence) {
-        return;
-      }
-      model.peerReviews.value = await deps.getPeerReviews(identity.projectId.value, 12);
+      model.report.value = artifacts.report;
+      model.runs.value = artifacts.runs;
+      model.peerReviews.value = artifacts.peerReviews;
     } catch (err) {
       if (requestId !== loadSequence) {
         return;

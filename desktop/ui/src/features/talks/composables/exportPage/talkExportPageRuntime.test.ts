@@ -1,12 +1,7 @@
 import { ref } from "vue";
 import { describe, expect, it, vi } from "vitest";
-import type {
-  PeerReviewSummary,
-  QuestAttemptSummary,
-  QuestReportItem,
-  RunSummary,
-} from "@/schemas/ipc";
-import { createTalkTrainRuntime, type TalkTrainRuntimeDeps } from "./talkTrainPageRuntime";
+import type { PeerReviewSummary, QuestReportItem, RunSummary } from "@/schemas/ipc";
+import { createTalkExportRuntime, type TalkExportRuntimeDeps } from "./talkExportPageRuntime";
 
 vi.mock("@/stores/app", () => ({
   packStore: {},
@@ -30,14 +25,13 @@ function createDeferred<T>() {
   return { promise, resolve };
 }
 
-function setup(overrides: Partial<TalkTrainRuntimeDeps> = {}) {
+function setup(overrides: Partial<TalkExportRuntimeDeps> = {}) {
   const state = {
     identity: {
       projectId: ref("project-1"),
     },
     model: {
       report: ref<QuestReportItem[]>([]),
-      attempts: ref<QuestAttemptSummary[]>([]),
       runs: ref<RunSummary[]>([]),
       peerReviews: ref<PeerReviewSummary[]>([]),
     },
@@ -46,14 +40,22 @@ function setup(overrides: Partial<TalkTrainRuntimeDeps> = {}) {
       errorCategory: ref<"validation" | "domain" | "infrastructure" | "unknown" | null>(null),
       isLoading: ref(false),
       isActivating: ref(false),
+      exportPath: ref<string | null>(null),
+      exportingRunId: ref<string | null>(null),
+      isExportingOutline: ref(false),
+      isRevealing: ref(false),
+      exportError: ref<string | null>(null),
+      exportErrorCategory: ref<"validation" | "domain" | "infrastructure" | "unknown" | null>(null),
     },
   };
 
-  const deps: TalkTrainRuntimeDeps = {
+  const deps: TalkExportRuntimeDeps = {
+    revealPath: async () => {},
+    exportPack: async () => ({ path: "C:/tmp/pack.zip" }),
+    exportOutline: async () => ({ path: "C:/tmp/outline.md" }),
     bootstrapSession: async () => {},
     loadProjects: async () => {},
     getQuestReport: async () => [{ quest_code: "Q1" } as QuestReportItem],
-    getQuestAttempts: async () => [{ id: "attempt-1" } as QuestAttemptSummary],
     getRuns: async () => [{ id: "run-1" } as RunSummary],
     getPeerReviews: async () => [{ id: "peer-1" } as PeerReviewSummary],
     setActiveProject: async () => {},
@@ -64,12 +66,23 @@ function setup(overrides: Partial<TalkTrainRuntimeDeps> = {}) {
   return {
     state,
     deps,
-    runtime: createTalkTrainRuntime({ state, deps }),
+    runtime: createTalkExportRuntime({ state, deps }),
   };
 }
 
-describe("talkTrainPageRuntime", () => {
-  it("loads talk train datasets", async () => {
+describe("talkExportPageRuntime", () => {
+  it("sets validation error when project id is missing", async () => {
+    const ctx = setup();
+    ctx.state.identity.projectId.value = "";
+
+    await ctx.runtime.loadData();
+
+    expect(ctx.state.ui.error.value).toBe("project_missing");
+    expect(ctx.state.ui.errorCategory.value).toBe("validation");
+    expect(ctx.state.ui.isLoading.value).toBe(false);
+  });
+
+  it("loads export page datasets", async () => {
     const ctx = setup();
 
     await ctx.runtime.loadData();
@@ -77,7 +90,6 @@ describe("talkTrainPageRuntime", () => {
     expect(ctx.state.ui.error.value).toBeNull();
     expect(ctx.state.ui.isLoading.value).toBe(false);
     expect(ctx.state.model.report.value).toHaveLength(1);
-    expect(ctx.state.model.attempts.value).toHaveLength(1);
     expect(ctx.state.model.runs.value).toHaveLength(1);
     expect(ctx.state.model.peerReviews.value).toHaveLength(1);
   });
@@ -99,12 +111,9 @@ describe("talkTrainPageRuntime", () => {
         if (reportCalls === 1) {
           return [{ quest_code: "LATEST" } as QuestReportItem];
         }
-        await delay(25);
+        await delay(20);
         return [{ quest_code: "STALE" } as QuestReportItem];
       },
-      getQuestAttempts: async () => [{ id: "attempt" } as QuestAttemptSummary],
-      getRuns: async () => [{ id: "run" } as RunSummary],
-      getPeerReviews: async () => [{ id: "peer" } as PeerReviewSummary],
     });
 
     const firstLoad = ctx.runtime.loadData();
@@ -115,28 +124,38 @@ describe("talkTrainPageRuntime", () => {
     expect(ctx.state.model.report.value[0]?.quest_code).toBe("LATEST");
   });
 
-  it("maps setActive errors and resets activating flag", async () => {
+  it("exports an outline and stores the exported path", async () => {
+    const ctx = setup();
+
+    await ctx.runtime.exportOutline();
+
+    expect(ctx.state.ui.exportPath.value).toBe("C:/tmp/outline.md");
+    expect(ctx.state.ui.isExportingOutline.value).toBe(false);
+    expect(ctx.state.ui.exportError.value).toBeNull();
+  });
+
+  it("maps exportPack failures to exportError", async () => {
     const ctx = setup({
-      setActiveProject: async () => {
-        throw new Error("set-active-failed");
+      exportPack: async () => {
+        throw new Error("pack-export-failed");
       },
     });
 
-    await ctx.runtime.setActive();
+    await ctx.runtime.exportPack("run-5");
 
-    expect(ctx.state.ui.error.value).toBe("set-active-failed");
-    expect(ctx.state.ui.errorCategory.value).toBe("unknown");
-    expect(ctx.state.ui.isActivating.value).toBe(false);
+    expect(ctx.state.ui.exportError.value).toBe("pack-export-failed");
+    expect(ctx.state.ui.exportErrorCategory.value).toBe("unknown");
+    expect(ctx.state.ui.exportingRunId.value).toBeNull();
   });
 
-  it("keeps markTrainStage non-blocking on ensure errors", async () => {
+  it("keeps markExportStage non-blocking on ensure failures", async () => {
     const ctx = setup({
       ensureProjectStageAtLeast: vi.fn(async () => {
         throw new Error("ignored");
       }),
     });
 
-    await expect(ctx.runtime.markTrainStage()).resolves.toBeUndefined();
-    expect(ctx.deps.ensureProjectStageAtLeast).toHaveBeenCalledWith("project-1", "train");
+    await expect(ctx.runtime.markExportStage()).resolves.toBeUndefined();
+    expect(ctx.deps.ensureProjectStageAtLeast).toHaveBeenCalledWith("project-1", "export");
   });
 });

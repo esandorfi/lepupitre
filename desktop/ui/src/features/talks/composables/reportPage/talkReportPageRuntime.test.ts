@@ -1,7 +1,12 @@
 import { ref } from "vue";
 import { describe, expect, it, vi } from "vitest";
-import type { PeerReviewSummary, QuestReportItem, RunSummary } from "@/schemas/ipc";
-import { createTalkExportRuntime, type TalkExportRuntimeDeps } from "./talkExportPageRuntime";
+import type {
+  PeerReviewSummary,
+  QuestAttemptSummary,
+  QuestReportItem,
+  RunSummary,
+} from "@/schemas/ipc";
+import { createTalkReportRuntime, type TalkReportRuntimeDeps } from "./talkReportPageRuntime";
 
 vi.mock("@/stores/app", () => ({
   packStore: {},
@@ -25,13 +30,14 @@ function createDeferred<T>() {
   return { promise, resolve };
 }
 
-function setup(overrides: Partial<TalkExportRuntimeDeps> = {}) {
+function setup(overrides: Partial<TalkReportRuntimeDeps> = {}) {
   const state = {
     identity: {
       projectId: ref("project-1"),
     },
     model: {
       report: ref<QuestReportItem[]>([]),
+      attempts: ref<QuestAttemptSummary[]>([]),
       runs: ref<RunSummary[]>([]),
       peerReviews: ref<PeerReviewSummary[]>([]),
     },
@@ -42,48 +48,58 @@ function setup(overrides: Partial<TalkExportRuntimeDeps> = {}) {
       isActivating: ref(false),
       exportPath: ref<string | null>(null),
       exportingRunId: ref<string | null>(null),
-      isExportingOutline: ref(false),
       isRevealing: ref(false),
       exportError: ref<string | null>(null),
       exportErrorCategory: ref<"validation" | "domain" | "infrastructure" | "unknown" | null>(null),
     },
   };
 
-  const deps: TalkExportRuntimeDeps = {
+  const deps: TalkReportRuntimeDeps = {
     revealPath: async () => {},
     exportPack: async () => ({ path: "C:/tmp/pack.zip" }),
-    exportOutline: async () => ({ path: "C:/tmp/outline.md" }),
     bootstrapSession: async () => {},
     loadProjects: async () => {},
     getQuestReport: async () => [{ quest_code: "Q1" } as QuestReportItem],
+    getQuestAttempts: async () => [{ id: "attempt-1" } as QuestAttemptSummary],
     getRuns: async () => [{ id: "run-1" } as RunSummary],
     getPeerReviews: async () => [{ id: "peer-1" } as PeerReviewSummary],
     setActiveProject: async () => {},
-    ensureProjectStageAtLeast: async () => {},
     ...overrides,
   };
 
   return {
     state,
     deps,
-    runtime: createTalkExportRuntime({ state, deps }),
+    runtime: createTalkReportRuntime({ state, deps }),
   };
 }
 
-describe("talkExportPageRuntime", () => {
-  it("loads export page datasets", async () => {
+describe("talkReportPageRuntime", () => {
+  it("sets validation error when project id is missing", async () => {
+    const ctx = setup();
+    ctx.state.identity.projectId.value = "";
+
+    await ctx.runtime.loadReport();
+
+    expect(ctx.state.ui.error.value).toBe("project_missing");
+    expect(ctx.state.ui.errorCategory.value).toBe("validation");
+    expect(ctx.state.ui.isLoading.value).toBe(false);
+  });
+
+  it("loads report and timeline data", async () => {
     const ctx = setup();
 
-    await ctx.runtime.loadData();
+    await ctx.runtime.loadReport();
 
     expect(ctx.state.ui.error.value).toBeNull();
     expect(ctx.state.ui.isLoading.value).toBe(false);
     expect(ctx.state.model.report.value).toHaveLength(1);
+    expect(ctx.state.model.attempts.value).toHaveLength(1);
     expect(ctx.state.model.runs.value).toHaveLength(1);
     expect(ctx.state.model.peerReviews.value).toHaveLength(1);
   });
 
-  it("uses takeLatest behavior for concurrent loadData calls", async () => {
+  it("uses takeLatest behavior for concurrent loadReport calls", async () => {
     const firstBootstrap = createDeferred<void>();
     let bootstrapCalls = 0;
     let reportCalls = 0;
@@ -103,48 +119,55 @@ describe("talkExportPageRuntime", () => {
         await delay(20);
         return [{ quest_code: "STALE" } as QuestReportItem];
       },
+      getQuestAttempts: async () => [{ id: "attempt" } as QuestAttemptSummary],
+      getRuns: async () => [{ id: "run" } as RunSummary],
+      getPeerReviews: async () => [{ id: "peer" } as PeerReviewSummary],
     });
 
-    const firstLoad = ctx.runtime.loadData();
-    const secondLoad = ctx.runtime.loadData();
+    const firstLoad = ctx.runtime.loadReport();
+    const secondLoad = ctx.runtime.loadReport();
     firstBootstrap.resolve();
     await Promise.all([firstLoad, secondLoad]);
 
     expect(ctx.state.model.report.value[0]?.quest_code).toBe("LATEST");
   });
 
-  it("exports an outline and stores the exported path", async () => {
+  it("exports a run pack and stores exported path", async () => {
     const ctx = setup();
 
-    await ctx.runtime.exportOutline();
+    await ctx.runtime.exportPack("run-9");
 
-    expect(ctx.state.ui.exportPath.value).toBe("C:/tmp/outline.md");
-    expect(ctx.state.ui.isExportingOutline.value).toBe(false);
+    expect(ctx.state.ui.exportPath.value).toBe("C:/tmp/pack.zip");
+    expect(ctx.state.ui.exportingRunId.value).toBeNull();
     expect(ctx.state.ui.exportError.value).toBeNull();
   });
 
-  it("maps exportPack failures to exportError", async () => {
+  it("maps revealExport failures to exportError", async () => {
     const ctx = setup({
-      exportPack: async () => {
-        throw new Error("pack-export-failed");
+      revealPath: async () => {
+        throw new Error("reveal-failed");
+      },
+    });
+    ctx.state.ui.exportPath.value = "C:/tmp/pack.zip";
+
+    await ctx.runtime.revealExport();
+
+    expect(ctx.state.ui.exportError.value).toBe("reveal-failed");
+    expect(ctx.state.ui.exportErrorCategory.value).toBe("unknown");
+    expect(ctx.state.ui.isRevealing.value).toBe(false);
+  });
+
+  it("maps setActive failures to ui.error", async () => {
+    const ctx = setup({
+      setActiveProject: async () => {
+        throw new Error("set-active-failed");
       },
     });
 
-    await ctx.runtime.exportPack("run-5");
+    await ctx.runtime.setActive();
 
-    expect(ctx.state.ui.exportError.value).toBe("pack-export-failed");
-    expect(ctx.state.ui.exportErrorCategory.value).toBe("unknown");
-    expect(ctx.state.ui.exportingRunId.value).toBeNull();
-  });
-
-  it("keeps markExportStage non-blocking on ensure failures", async () => {
-    const ctx = setup({
-      ensureProjectStageAtLeast: vi.fn(async () => {
-        throw new Error("ignored");
-      }),
-    });
-
-    await expect(ctx.runtime.markExportStage()).resolves.toBeUndefined();
-    expect(ctx.deps.ensureProjectStageAtLeast).toHaveBeenCalledWith("project-1", "export");
+    expect(ctx.state.ui.error.value).toBe("set-active-failed");
+    expect(ctx.state.ui.errorCategory.value).toBe("unknown");
+    expect(ctx.state.ui.isActivating.value).toBe(false);
   });
 });
