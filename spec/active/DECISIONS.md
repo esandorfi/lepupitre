@@ -127,7 +127,7 @@ Use this file for new architecture, security, IPC, and release decisions.
   - `docs/operations/release.md`
 
 ### DEC-20260307-ui-runtime-input-contract
-- Status: proposed
+- Status: accepted
 - Context:
   - UI feature runtimes frequently use wide flat `RuntimeArgs` signatures with many refs.
   - This pattern is functional but causes readability drift and weak domain intent signaling when signatures grow.
@@ -144,7 +144,9 @@ Use this file for new architecture, security, IPC, and release decisions.
 - Consequences:
   - Runtime contracts become easier to review and evolve while preserving behavior.
   - Naming collisions between schema entities and runtime argument namespaces are reduced.
-  - Migration can proceed incrementally per feature without cross-cutting breaking changes.
+  - Runtime-like action modules now follow the same contract model for training/workspace orchestration.
+  - Feature pages/components have stricter boundaries (no direct store imports in feature `.vue` pages/components).
+  - Migration proved incremental adoption without IPC/store API redesign.
 - Related specs/docs:
   - `spec/active/ui/SPEC-UI-RUNTIME-INPUT-CONTRACT.md`
   - `docs/architecture/reports/desktop-ui.discovery.md`

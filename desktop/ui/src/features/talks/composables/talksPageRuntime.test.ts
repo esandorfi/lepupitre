@@ -39,10 +39,12 @@ function setup(overrides: Partial<TalksRuntimeDeps> = {}) {
     },
     ui: {
       error: ref<string | null>(null),
+      errorCategory: ref<"validation" | "domain" | "infrastructure" | "unknown" | null>(null),
       isLoading: ref(false),
       isBlueprintLoading: ref(false),
       isSwitching: ref<string | null>(null),
     },
+    draft: {},
   };
 
   const deps: TalksRuntimeDeps = {
@@ -113,6 +115,7 @@ describe("talksPageRuntime", () => {
     await ctx.runtime.setActive("project-2");
 
     expect(ctx.state.ui.error.value).toBe("set-active-failed");
+    expect(ctx.state.ui.errorCategory.value).toBe("unknown");
     expect(ctx.state.ui.isSwitching.value).toBeNull();
   });
 

@@ -12,10 +12,11 @@ import {
   talksStore,
   trainingStore,
 } from "@/stores/app";
-
-function toError(err: unknown) {
-  return err instanceof Error ? err.message : String(err);
-}
+import {
+  clearRuntimeUiError,
+  setRuntimeUiError,
+  type RuntimeErrorCategory,
+} from "@/features/shared/runtime/runtimeContract";
 
 export type TalkTrainRuntimeState = {
   identity: {
@@ -29,6 +30,7 @@ export type TalkTrainRuntimeState = {
   };
   ui: {
     error: Ref<string | null>;
+    errorCategory?: Ref<RuntimeErrorCategory | null>;
     isLoading: Ref<boolean>;
     isActivating: Ref<boolean>;
   };
@@ -70,11 +72,14 @@ type TalkTrainRuntimeArgs = {
 export function createTalkTrainRuntime(args: TalkTrainRuntimeArgs) {
   const deps = args.deps ?? createDefaultTalkTrainRuntimeDeps();
   const { identity, model, ui } = args.state;
+  // Policy: loadData uses takeLatest to prevent stale load overrides.
   let loadSequence = 0;
+  // Policy: setActive uses singleFlight to dedupe rapid repeated clicks.
+  let setActiveInFlight: Promise<void> | null = null;
 
   async function loadData() {
     const requestId = ++loadSequence;
-    ui.error.value = null;
+    clearRuntimeUiError(ui);
     ui.isLoading.value = true;
     try {
       await deps.bootstrapSession();
@@ -86,7 +91,11 @@ export function createTalkTrainRuntime(args: TalkTrainRuntimeArgs) {
         return;
       }
       if (!identity.projectId.value) {
-        throw new Error("project_missing");
+        ui.error.value = "project_missing";
+        if (ui.errorCategory) {
+          ui.errorCategory.value = "validation";
+        }
+        return;
       }
       model.report.value = await deps.getQuestReport(identity.projectId.value);
       if (requestId !== loadSequence) {
@@ -105,7 +114,7 @@ export function createTalkTrainRuntime(args: TalkTrainRuntimeArgs) {
       if (requestId !== loadSequence) {
         return;
       }
-      ui.error.value = toError(err);
+      setRuntimeUiError(ui, err);
     } finally {
       if (requestId === loadSequence) {
         ui.isLoading.value = false;
@@ -114,18 +123,29 @@ export function createTalkTrainRuntime(args: TalkTrainRuntimeArgs) {
   }
 
   async function setActive() {
+    if (setActiveInFlight) {
+      return setActiveInFlight;
+    }
     if (!identity.projectId.value) {
       return;
     }
-    ui.isActivating.value = true;
-    ui.error.value = null;
-    try {
-      await deps.setActiveProject(identity.projectId.value);
-    } catch (err) {
-      ui.error.value = toError(err);
-    } finally {
-      ui.isActivating.value = false;
-    }
+    const run = (async () => {
+      ui.isActivating.value = true;
+      clearRuntimeUiError(ui);
+      try {
+        await deps.setActiveProject(identity.projectId.value);
+      } catch (err) {
+        setRuntimeUiError(ui, err);
+      } finally {
+        ui.isActivating.value = false;
+      }
+    })();
+    setActiveInFlight = run;
+    await run.finally(() => {
+      if (setActiveInFlight === run) {
+        setActiveInFlight = null;
+      }
+    });
   }
 
   async function markTrainStage() {

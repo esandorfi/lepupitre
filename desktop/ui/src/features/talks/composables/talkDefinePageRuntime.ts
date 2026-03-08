@@ -9,10 +9,12 @@ import {
   type DefinePayload,
   type TalkProject,
 } from "@/features/talks/composables/talkDefinePageHelpers";
-
-function toError(err: unknown) {
-  return err instanceof Error ? err.message : String(err);
-}
+import {
+  clearRuntimeUiError,
+  normalizeRuntimeError,
+  setRuntimeUiError,
+  type RuntimeErrorCategory,
+} from "@/features/shared/runtime/runtimeContract";
 
 export type TalkDefineRuntimeState = {
   identity: {
@@ -27,8 +29,10 @@ export type TalkDefineRuntimeState = {
   };
   ui: {
     saveError: Ref<string | null>;
+    saveErrorCategory?: Ref<RuntimeErrorCategory | null>;
     saveState: Ref<"idle" | "saving" | "saved" | "error">;
     error: Ref<string | null>;
+    errorCategory?: Ref<RuntimeErrorCategory | null>;
     isLoading: Ref<boolean>;
   };
 };
@@ -70,12 +74,19 @@ export function createTalkDefineRuntime(args: TalkDefineRuntimeArgs) {
       return false;
     }
     ui.saveError.value = null;
+    if (ui.saveErrorCategory) {
+      ui.saveErrorCategory.value = null;
+    }
     let payload: DefinePayload;
     try {
       payload = buildPayload(deps.t, model.project.value, draft.form, stageOverride);
     } catch (err) {
       ui.saveState.value = "error";
-      ui.saveError.value = toError(err);
+      const normalized = normalizeRuntimeError(err, { validationCodes: ["project_missing"] });
+      ui.saveError.value = normalized.message;
+      if (ui.saveErrorCategory) {
+        ui.saveErrorCategory.value = normalized.category;
+      }
       return false;
     }
     if (payloadMatchesProject(model.project.value, payload)) {
@@ -89,7 +100,11 @@ export function createTalkDefineRuntime(args: TalkDefineRuntimeArgs) {
       return true;
     } catch (err) {
       ui.saveState.value = "error";
-      ui.saveError.value = toError(err);
+      const normalized = normalizeRuntimeError(err);
+      ui.saveError.value = normalized.message;
+      if (ui.saveErrorCategory) {
+        ui.saveErrorCategory.value = normalized.category;
+      }
       return false;
     }
   }
@@ -118,12 +133,12 @@ export function createTalkDefineRuntime(args: TalkDefineRuntimeArgs) {
 
   async function bootstrap() {
     ui.isLoading.value = true;
-    ui.error.value = null;
+    clearRuntimeUiError(ui);
     try {
       await deps.bootstrapSession();
       await deps.loadProjects();
     } catch (err) {
-      ui.error.value = toError(err);
+      setRuntimeUiError(ui, err);
     } finally {
       ui.isLoading.value = false;
     }

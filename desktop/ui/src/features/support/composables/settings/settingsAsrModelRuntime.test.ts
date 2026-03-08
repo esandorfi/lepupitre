@@ -48,6 +48,7 @@ describe("settingsAsrModelRuntime", () => {
     expect(typeof runtime.verifyModel).toBe("function");
     expect(typeof runtime.downloadModel).toBe("function");
     expect(state.downloadError.value).toBeNull();
+    expect(state.downloadErrorCategory.value).toBeNull();
   });
 
   it("stores open url failures in downloadError", async () => {
@@ -65,5 +66,6 @@ describe("settingsAsrModelRuntime", () => {
     await runtime.openSourceUrl("https://example.com/model");
 
     expect(state.downloadError.value).toBe("open-url-failed");
+    expect(state.downloadErrorCategory.value).toBe("unknown");
   });
 });

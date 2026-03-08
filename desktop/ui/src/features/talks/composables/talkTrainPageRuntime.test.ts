@@ -43,6 +43,7 @@ function setup(overrides: Partial<TalkTrainRuntimeDeps> = {}) {
     },
     ui: {
       error: ref<string | null>(null),
+      errorCategory: ref<"validation" | "domain" | "infrastructure" | "unknown" | null>(null),
       isLoading: ref(false),
       isActivating: ref(false),
     },
@@ -124,6 +125,7 @@ describe("talkTrainPageRuntime", () => {
     await ctx.runtime.setActive();
 
     expect(ctx.state.ui.error.value).toBe("set-active-failed");
+    expect(ctx.state.ui.errorCategory.value).toBe("unknown");
     expect(ctx.state.ui.isActivating.value).toBe(false);
   });
 

@@ -7,7 +7,11 @@ import type {
   FeedbackTimelineScope,
   TimelineState,
 } from "@/features/feedback/composables/feedbackTimelinePage.types";
-import { toError } from "@/features/feedback/composables/feedbackTimelinePage.utils";
+import {
+  clearRuntimeUiError,
+  setRuntimeUiError,
+  type RuntimeErrorCategory,
+} from "@/features/shared/runtime/runtimeContract";
 
 export type TimelineRuntimeState = {
   identity: {
@@ -27,6 +31,7 @@ export type TimelineRuntimeState = {
   ui: {
     isLoading: Ref<boolean>;
     error: Ref<string | null>;
+    errorCategory?: Ref<RuntimeErrorCategory | null>;
     filterType: Ref<FeedbackTimelineFilterType>;
   };
 };
@@ -61,6 +66,7 @@ export function createTimelineRuntime(args: TimelineRuntimeArgs) {
   const deps = args.deps ?? createDefaultTimelineRuntimeDeps();
   const { identity, model, ui } = args.state;
 
+  // Policy: loadTimeline uses takeLatest to keep latest timeline source-of-truth.
   let timelineLoadSeq = 0;
 
   function applyFocusedContextFilters() {
@@ -112,7 +118,7 @@ export function createTimelineRuntime(args: TimelineRuntimeArgs) {
       return;
     }
     ui.isLoading.value = true;
-    ui.error.value = null;
+    clearRuntimeUiError(ui);
     try {
       const timeline = await deps.getFeedbackTimeline(
         identity.scope.value === "talk" ? identity.activeProjectId.value : null,
@@ -130,7 +136,7 @@ export function createTimelineRuntime(args: TimelineRuntimeArgs) {
         return;
       }
       model.entries.value = [];
-      ui.error.value = toError(err);
+      setRuntimeUiError(ui, err);
       model.mascotMessage.value = null;
     } finally {
       if (requestSeq === timelineLoadSeq) {

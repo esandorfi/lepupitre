@@ -13,10 +13,12 @@ import {
   talksStore,
   trainingStore,
 } from "@/stores/app";
-
-function toError(err: unknown) {
-  return err instanceof Error ? err.message : String(err);
-}
+import {
+  clearRuntimeUiError,
+  normalizeRuntimeError,
+  setRuntimeUiError,
+  type RuntimeErrorCategory,
+} from "@/features/shared/runtime/runtimeContract";
 
 export type TalkReportRuntimeState = {
   identity: {
@@ -30,12 +32,14 @@ export type TalkReportRuntimeState = {
   };
   ui: {
     error: Ref<string | null>;
+    errorCategory?: Ref<RuntimeErrorCategory | null>;
     isLoading: Ref<boolean>;
     isActivating: Ref<boolean>;
     exportPath: Ref<string | null>;
     exportingRunId: Ref<string | null>;
     isRevealing: Ref<boolean>;
     exportError: Ref<string | null>;
+    exportErrorCategory?: Ref<RuntimeErrorCategory | null>;
   };
 };
 
@@ -73,17 +77,27 @@ type TalkReportRuntimeArgs = {
 export function createTalkReportRuntime(args: TalkReportRuntimeArgs) {
   const deps = args.deps ?? createDefaultTalkReportRuntimeDeps();
   const { identity, model, ui } = args.state;
+  // Policy: loadReport uses takeLatest to avoid stale report writes.
   let loadSequence = 0;
+  // Policy: setActive uses singleFlight to dedupe repeated activation clicks.
+  let setActiveInFlight: Promise<void> | null = null;
 
   async function exportPack(runId: string) {
     ui.exportPath.value = null;
     ui.exportingRunId.value = runId;
     ui.exportError.value = null;
+    if (ui.exportErrorCategory) {
+      ui.exportErrorCategory.value = null;
+    }
     try {
       const result = await deps.exportPack(runId);
       ui.exportPath.value = result.path;
     } catch (err) {
-      ui.exportError.value = toError(err);
+      const normalized = normalizeRuntimeError(err);
+      ui.exportError.value = normalized.message;
+      if (ui.exportErrorCategory) {
+        ui.exportErrorCategory.value = normalized.category;
+      }
     } finally {
       ui.exportingRunId.value = null;
     }
@@ -95,10 +109,17 @@ export function createTalkReportRuntime(args: TalkReportRuntimeArgs) {
     }
     ui.isRevealing.value = true;
     ui.exportError.value = null;
+    if (ui.exportErrorCategory) {
+      ui.exportErrorCategory.value = null;
+    }
     try {
       await deps.revealPath(ui.exportPath.value);
     } catch (err) {
-      ui.exportError.value = toError(err);
+      const normalized = normalizeRuntimeError(err);
+      ui.exportError.value = normalized.message;
+      if (ui.exportErrorCategory) {
+        ui.exportErrorCategory.value = normalized.category;
+      }
     } finally {
       ui.isRevealing.value = false;
     }
@@ -106,7 +127,7 @@ export function createTalkReportRuntime(args: TalkReportRuntimeArgs) {
 
   async function loadReport() {
     const requestId = ++loadSequence;
-    ui.error.value = null;
+    clearRuntimeUiError(ui);
     ui.isLoading.value = true;
     try {
       await deps.bootstrapSession();
@@ -118,7 +139,11 @@ export function createTalkReportRuntime(args: TalkReportRuntimeArgs) {
         return;
       }
       if (!identity.projectId.value) {
-        throw new Error("project_missing");
+        ui.error.value = "project_missing";
+        if (ui.errorCategory) {
+          ui.errorCategory.value = "validation";
+        }
+        return;
       }
       model.report.value = await deps.getQuestReport(identity.projectId.value);
       if (requestId !== loadSequence) {
@@ -137,7 +162,7 @@ export function createTalkReportRuntime(args: TalkReportRuntimeArgs) {
       if (requestId !== loadSequence) {
         return;
       }
-      ui.error.value = toError(err);
+      setRuntimeUiError(ui, err);
     } finally {
       if (requestId === loadSequence) {
         ui.isLoading.value = false;
@@ -146,18 +171,29 @@ export function createTalkReportRuntime(args: TalkReportRuntimeArgs) {
   }
 
   async function setActive() {
+    if (setActiveInFlight) {
+      return setActiveInFlight;
+    }
     if (!identity.projectId.value) {
       return;
     }
-    ui.isActivating.value = true;
-    ui.error.value = null;
-    try {
-      await deps.setActiveProject(identity.projectId.value);
-    } catch (err) {
-      ui.error.value = toError(err);
-    } finally {
-      ui.isActivating.value = false;
-    }
+    const run = (async () => {
+      ui.isActivating.value = true;
+      clearRuntimeUiError(ui);
+      try {
+        await deps.setActiveProject(identity.projectId.value);
+      } catch (err) {
+        setRuntimeUiError(ui, err);
+      } finally {
+        ui.isActivating.value = false;
+      }
+    })();
+    setActiveInFlight = run;
+    await run.finally(() => {
+      if (setActiveInFlight === run) {
+        setActiveInFlight = null;
+      }
+    });
   }
 
   return {

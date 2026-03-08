@@ -5,6 +5,7 @@ import {
 } from "@/features/support/composables/settings/useSettingsAsrModelHelpers";
 import { createAsrModelActions } from "@/features/support/composables/settings/settingsAsrModelActions";
 import { bindAsrModelLifecycle } from "@/features/support/composables/settings/settingsAsrModelLifecycle";
+import { normalizeRuntimeError } from "@/features/shared/runtime/runtimeContract";
 
 type Translate = (key: string) => string;
 
@@ -37,8 +38,12 @@ export function useAsrModelRuntime(args: AsrModelRuntimeArgs) {
   async function openSourceUrl(url: string) {
     try {
       await deps.openUrl(url);
+      state.downloadError.value = null;
+      state.downloadErrorCategory.value = null;
     } catch (err) {
-      state.downloadError.value = err instanceof Error ? err.message : String(err);
+      const normalized = normalizeRuntimeError(err);
+      state.downloadError.value = normalized.message;
+      state.downloadErrorCategory.value = normalized.category;
     }
   }
 

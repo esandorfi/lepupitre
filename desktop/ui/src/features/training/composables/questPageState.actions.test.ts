@@ -32,6 +32,7 @@ function setup(overrides: Partial<QuestActionsDeps> = {}) {
     },
     ui: {
       error: ref<string | null>(null),
+      errorCategory: ref<"validation" | "domain" | "infrastructure" | "unknown" | null>(null),
       isSubmitting: ref(false),
       isAnalyzing: ref(false),
       isLoading: ref(false),
@@ -72,6 +73,7 @@ describe("questPageState.actions", () => {
     await ctx.actions.loadQuest();
 
     expect(ctx.state.ui.error.value).toBe("quest.empty");
+    expect(ctx.state.ui.errorCategory.value).toBe("validation");
   });
 
   it("loads from daily quest when code matches", async () => {
@@ -114,6 +116,7 @@ describe("questPageState.actions", () => {
     await ctx.actions.requestFeedback();
 
     expect(ctx.state.ui.error.value).toBe("quest.transcribe_first");
+    expect(ctx.state.ui.errorCategory.value).toBe("validation");
     expect(analyzeAttempt).not.toHaveBeenCalled();
   });
 

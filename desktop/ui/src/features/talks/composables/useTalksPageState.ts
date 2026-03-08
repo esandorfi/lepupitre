@@ -25,6 +25,7 @@ export function useTalksPageState() {
 
   const state = computed(() => appState);
   const error = ref<string | null>(null);
+  const errorCategory = ref<"validation" | "domain" | "infrastructure" | "unknown" | null>(null);
   const isLoading = ref(false);
   const isBlueprintLoading = ref(false);
   const isSwitching = ref<string | null>(null);
@@ -47,8 +48,10 @@ export function useTalksPageState() {
         mascotMessage,
         talksBlueprint,
       },
+      draft: {},
       ui: {
         error,
+        errorCategory,
         isLoading,
         isBlueprintLoading,
         isSwitching,

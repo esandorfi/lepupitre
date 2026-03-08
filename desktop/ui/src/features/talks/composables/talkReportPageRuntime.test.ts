@@ -43,12 +43,14 @@ function setup(overrides: Partial<TalkReportRuntimeDeps> = {}) {
     },
     ui: {
       error: ref<string | null>(null),
+      errorCategory: ref<"validation" | "domain" | "infrastructure" | "unknown" | null>(null),
       isLoading: ref(false),
       isActivating: ref(false),
       exportPath: ref<string | null>(null),
       exportingRunId: ref<string | null>(null),
       isRevealing: ref(false),
       exportError: ref<string | null>(null),
+      exportErrorCategory: ref<"validation" | "domain" | "infrastructure" | "unknown" | null>(null),
     },
   };
 
@@ -140,6 +142,7 @@ describe("talkReportPageRuntime", () => {
     await ctx.runtime.revealExport();
 
     expect(ctx.state.ui.exportError.value).toBe("reveal-failed");
+    expect(ctx.state.ui.exportErrorCategory.value).toBe("unknown");
     expect(ctx.state.ui.isRevealing.value).toBe(false);
   });
 
@@ -153,6 +156,7 @@ describe("talkReportPageRuntime", () => {
     await ctx.runtime.setActive();
 
     expect(ctx.state.ui.error.value).toBe("set-active-failed");
+    expect(ctx.state.ui.errorCategory.value).toBe("unknown");
     expect(ctx.state.ui.isActivating.value).toBe(false);
   });
 });

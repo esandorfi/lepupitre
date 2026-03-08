@@ -37,6 +37,7 @@ function setup(overrides: Partial<TalkExportRuntimeDeps> = {}) {
     },
     ui: {
       error: ref<string | null>(null),
+      errorCategory: ref<"validation" | "domain" | "infrastructure" | "unknown" | null>(null),
       isLoading: ref(false),
       isActivating: ref(false),
       exportPath: ref<string | null>(null),
@@ -44,6 +45,7 @@ function setup(overrides: Partial<TalkExportRuntimeDeps> = {}) {
       isExportingOutline: ref(false),
       isRevealing: ref(false),
       exportError: ref<string | null>(null),
+      exportErrorCategory: ref<"validation" | "domain" | "infrastructure" | "unknown" | null>(null),
     },
   };
 
@@ -131,6 +133,7 @@ describe("talkExportPageRuntime", () => {
     await ctx.runtime.exportPack("run-5");
 
     expect(ctx.state.ui.exportError.value).toBe("pack-export-failed");
+    expect(ctx.state.ui.exportErrorCategory.value).toBe("unknown");
     expect(ctx.state.ui.exportingRunId.value).toBeNull();
   });
 
