@@ -2,7 +2,8 @@ import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "@/lib/i18n";
 import { appState } from "@/stores/app";
-import { createProjectSetupPageRuntime } from "@/features/talks/composables/projectSetupPageRuntime";
+import { useTalkFeatureProfileState } from "@/features/talks/composables/shared/talkFeatureState";
+import { createProjectSetupPageRuntime } from "@/features/talks/composables/projectSetupPage/projectSetupPageRuntime";
 
 export function useProjectSetupPageState() {
   const { t } = useI18n();
@@ -17,7 +18,7 @@ export function useProjectSetupPageState() {
   );
   const isSaving = ref(false);
 
-  const activeProfileId = computed(() => appState.activeProfileId);
+  const { activeProfileId } = useTalkFeatureProfileState();
   const activeProject = computed(() =>
     appState.activeProject ? { id: appState.activeProject.id, title: appState.activeProject.title } : null
   );

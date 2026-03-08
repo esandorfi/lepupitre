@@ -1,19 +1,20 @@
 import { computed, reactive, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "@/lib/i18n";
-import { appState } from "@/stores/app";
 import {
-  checklistRowClass,
   createNextAction,
-  minutesLabel,
   normalizeStage,
   type DefineFormState,
   type DefineStage,
-} from "@/features/talks/composables/talkDefinePageHelpers";
+} from "@/features/talks/composables/definePage/talkDefinePageHelpers";
+import {
+  useTalkFeatureProfileState,
+  useTalkProjectState,
+} from "@/features/talks/composables/shared/talkFeatureState";
 import {
   bindTalkDefineLifecycle,
   createTalkDefineRuntime,
-} from "@/features/talks/composables/talkDefinePageRuntime";
+} from "@/features/talks/composables/definePage/talkDefinePageRuntime";
 
 export function useTalkDefinePageState() {
   const { t } = useI18n();
@@ -32,8 +33,8 @@ export function useTalkDefinePageState() {
   });
 
   const projectId = computed(() => String(route.params.projectId || ""));
-  const activeProfileId = computed(() => appState.activeProfileId);
-  const project = computed(() => appState.projects.find((item) => item.id === projectId.value) ?? null);
+  const { activeProfileId } = useTalkFeatureProfileState();
+  const { project } = useTalkProjectState(projectId);
   const stageOptions = computed(() => [
     { value: "draft", label: t("talk_steps.define") },
     { value: "builder", label: t("talk_steps.builder") },
@@ -116,8 +117,6 @@ export function useTalkDefinePageState() {
     defineReady,
     nextMissingDefineItem,
     nextAction,
-    minutesLabel: (seconds: number | null | undefined) => minutesLabel(t, seconds),
-    checklistRowClass,
     saveDefine,
     setStage,
     runNextAction,

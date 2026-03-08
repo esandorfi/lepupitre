@@ -151,3 +151,25 @@ Use this file for new architecture, security, IPC, and release decisions.
   - `spec/active/ui/SPEC-UI-RUNTIME-INPUT-CONTRACT.md`
   - `docs/architecture/reports/desktop-ui.discovery.md`
   - `docs/architecture/reports/desktop-ui.future.md`
+
+### DEC-20260308-ui-talks-orchestration-guardrails
+- Status: accepted
+- Context:
+  - Talks runtime orchestration was split across runtime modules, runtime-like actions, and shared loader wrappers.
+  - Test-obligation enforcement and route helper usage were partially consistent, creating policy drift risk.
+- Decision:
+  - Define talks orchestration scope for quality gates as: runtime modules + runtime-like actions + shared runtime loaders.
+  - Enforce matching test updates for touched talks orchestration modules in CI guard scripts.
+  - Require feature route helper usage (`talkRoutes`) wherever talks navigation paths are composed (pages/components/composables/helpers).
+  - Adopt page-scoped composable directories plus `shared` for talks feature topology.
+- Consequences:
+  - QA guardrails now match real orchestration boundaries, including extracted shared loaders.
+  - Route migration risk is reduced by centralizing path composition logic.
+  - Contributors have slightly stricter update obligations when touching talks orchestration files.
+  - Talks feature discoverability improves by replacing the flat composable folder with page-scoped modules.
+- Related specs/docs:
+  - `spec/active/ui/SPEC-UI-RUNTIME-INPUT-CONTRACT.md`
+  - `docs/plan/PLAN-TALKS-VUE3-SOTA.md`
+  - `docs/testing/TEST_MATRIX.md`
+  - `.github/PULL_REQUEST_TEMPLATE.md`
+  - `scripts/check-test-obligations.sh`

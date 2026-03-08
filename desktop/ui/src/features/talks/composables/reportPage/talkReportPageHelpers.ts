@@ -4,8 +4,28 @@ import type {
   QuestReportItem,
   RunSummary,
 } from "@/schemas/ipc";
+import {
+  talkBossRunRoute,
+  talkPeerReviewRoute,
+  talkQuestRoute,
+} from "@/features/talks/composables/shared/talkRoutes";
 
 type TranslateFn = (key: string) => string;
+
+const DISPLAY_DATE_CACHE_LIMIT = 256;
+const displayDateCache = new Map<string, string>();
+const displayDateFormatter = new Intl.DateTimeFormat();
+
+function rememberDisplayDate(key: string, value: string) {
+  if (displayDateCache.size >= DISPLAY_DATE_CACHE_LIMIT) {
+    const oldest = displayDateCache.keys().next().value;
+    if (oldest) {
+      displayDateCache.delete(oldest);
+    }
+  }
+  displayDateCache.set(key, value);
+  return value;
+}
 
 export type TimelineItem = {
   id: string;
@@ -20,11 +40,15 @@ export function formatDate(value: string | null | undefined) {
   if (!value) {
     return "--";
   }
+  const cached = displayDateCache.get(value);
+  if (cached) {
+    return cached;
+  }
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
     return value;
   }
-  return date.toLocaleDateString();
+  return rememberDisplayDate(value, displayDateFormatter.format(date));
 }
 
 export function attemptStatus(
@@ -83,7 +107,7 @@ export function buildTimeline(
       label: attempt.quest_title,
       date: attempt.created_at,
       status: attemptStatus(t, attempt),
-      to: `/quest/${attempt.quest_code}?from=talk&projectId=${projectId}`,
+      to: talkQuestRoute(projectId, attempt.quest_code),
       meta: questCodeLabel(attempt.quest_code),
     });
   }
@@ -94,7 +118,7 @@ export function buildTimeline(
       label: t("talk_report.timeline_boss_run"),
       date: run.created_at,
       status: runStatus(t, run),
-      to: `/boss-run?runId=${run.id}`,
+      to: talkBossRunRoute(run.id),
     });
   }
 
@@ -104,7 +128,7 @@ export function buildTimeline(
       label: t("talk_report.timeline_peer_review"),
       date: review.created_at,
       status: t("talk_report.timeline_peer_review_status"),
-      to: `/peer-review/${review.id}?projectId=${projectId}`,
+      to: talkPeerReviewRoute(projectId, review.id),
       meta: review.reviewer_tag ?? undefined,
     });
   }
@@ -123,12 +147,30 @@ export function buildTimeline(
 
 export function buildSummary(report: QuestReportItem[]) {
   const total = report.length;
-  const started = report.filter((item) => item.attempt_id).length;
-  const feedbackCount = report.filter((item) => item.has_feedback).length;
-  const last = report
-    .map((item) => item.attempt_created_at)
-    .filter((value): value is string => Boolean(value))
-    .sort()
-    .pop();
+  let started = 0;
+  let feedbackCount = 0;
+  let last: string | undefined;
+  let lastTimestamp = -Infinity;
+
+  for (const item of report) {
+    if (item.attempt_id) {
+      started += 1;
+    }
+    if (item.has_feedback) {
+      feedbackCount += 1;
+    }
+    if (!item.attempt_created_at) {
+      continue;
+    }
+    const timestamp = new Date(item.attempt_created_at).getTime();
+    if (Number.isNaN(timestamp)) {
+      continue;
+    }
+    if (timestamp > lastTimestamp) {
+      lastTimestamp = timestamp;
+      last = item.attempt_created_at;
+    }
+  }
+
   return { total, started, feedbackCount, last };
 }

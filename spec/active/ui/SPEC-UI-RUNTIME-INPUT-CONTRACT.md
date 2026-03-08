@@ -1,9 +1,9 @@
 # UI Runtime Input Contract Refactor (SOTA Target)
 
-- Date: 2026-03-07
+- Date: 2026-03-08
 - Status: accepted
-- Scope: `desktop/ui/src/features/**/composables/*Runtime*.ts`, `*PageRuntime.ts`, runtime-like helpers
-- Related decision: `DEC-20260307-ui-runtime-input-contract`
+- Scope: `desktop/ui/src/features/**/composables/*Runtime*.ts`, `*PageRuntime.ts`, runtime-like actions/loaders/helpers
+- Related decision: `DEC-20260307-ui-runtime-input-contract`, `DEC-20260308-ui-talks-orchestration-guardrails`
 
 ## Context
 
@@ -164,6 +164,26 @@ Flat argument objects are allowed only if:
 
 Exception must be documented in file-level comment or spec note.
 
+## 9. Route composition policy
+
+Navigation paths composed in feature scope must use feature route helpers.
+
+- Applies to pages, components, composables, and helper/view-model modules returning routes.
+- Avoid raw string route composition in feature code when a route helper exists.
+- Exception is allowed only for one-off global routes with explicit rationale in code comment.
+
+## 10. Feature composable topology policy
+
+When feature composable count grows, organize by page/domain subdirectories plus `shared`.
+
+- Preferred shape:
+  - `composables/shared/*`
+  - `composables/<pageName>/*` (runtime, helpers, use-state, tests)
+- Goal:
+  - keep orchestration discoverable,
+  - reduce flat-folder entropy,
+  - preserve clear ownership boundaries per page flow.
+
 ## Store Alignment Challenge
 
 Should runtime contracts mirror store contracts exactly?
@@ -180,12 +200,13 @@ Forcing 1:1 shape would over-couple pages to global store structure.
 
 ## Testing Obligations (SOTA Minimum)
 
-For each new or changed runtime command:
+For each new or changed orchestration module (`runtime`, runtime-like `actions`, shared runtime `loaders`):
 
 1. transition test for success path,
 2. transition test for failure path,
-3. concurrency test for chosen async policy,
-4. one invariant test asserting no cross-plane pollution (`model` vs `ui` vs `draft`).
+3. concurrency test for chosen async policy (when async orchestration is present),
+4. one invariant test asserting no cross-plane pollution (`model` vs `ui` vs `draft`) when state mutation is present,
+5. direct unit tests for shared loaders/wrappers that coordinate bootstrap/project-missing/stale sequencing.
 
 If command semantics change, update related feature tests in the same MR.
 
@@ -197,7 +218,7 @@ Candidate checks for future enforcement:
 2. max flat runtime input threshold.
 3. forbidden cross-plane assignment patterns.
 4. async race guard presence for load/save commands.
-5. required runtime command tests in touched feature scope.
+5. required orchestration module tests in touched feature scope (`runtime`/`actions`/`loaders`).
 
 ## Migration Path (Incremental)
 
@@ -251,3 +272,6 @@ Decision is accepted based on end-to-end implementation evidence (runtime module
   - `QuickRecordPage.vue`
 - Lint guard rails added to block direct store/IPC imports in feature pages/components.
 - Runtime tests expanded with categorized-error and concurrency assertions; full UI lint/typecheck/test gates pass.
+- Talks route composition now uses `talkRoutes` helpers across pages/components/composables/helpers in touched scope.
+- Talks orchestration test-obligation CI guard now includes shared loader modules.
+- Talks composables are organized by page-scoped folders plus `shared`.

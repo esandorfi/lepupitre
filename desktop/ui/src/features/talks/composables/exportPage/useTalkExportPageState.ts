@@ -2,13 +2,12 @@ import { computed, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "@/lib/i18n";
 import type { PeerReviewSummary, QuestReportItem, RunSummary } from "@/schemas/ipc";
-import { appState } from "@/stores/app";
 import {
   buildSummary,
   formatDate,
-  runStatus,
-} from "@/features/talks/composables/talkReportPageHelpers";
-import { createTalkExportRuntime } from "@/features/talks/composables/talkExportPageRuntime";
+} from "@/features/talks/composables/reportPage/talkReportPageHelpers";
+import { useTalkProjectState } from "@/features/talks/composables/shared/talkFeatureState";
+import { createTalkExportRuntime } from "@/features/talks/composables/exportPage/talkExportPageRuntime";
 
 export function useTalkExportPageState() {
   const { t } = useI18n();
@@ -27,9 +26,7 @@ export function useTalkExportPageState() {
   const isRevealing = ref(false);
   const exportError = ref<string | null>(null);
 
-  const project = computed(() => appState.projects.find((item) => item.id === projectId.value) ?? null);
-  const isActive = computed(() => appState.activeProject?.id === projectId.value);
-  const talkNumber = computed(() => project.value?.talk_number ?? null);
+  const { project, isActive, talkNumber } = useTalkProjectState(projectId);
   const summary = computed(() => buildSummary(report.value));
 
   const {
@@ -84,7 +81,6 @@ export function useTalkExportPageState() {
     talkNumber,
     summary,
     formatDate,
-    runStatus: (run: RunSummary) => runStatus(t, run),
     exportPack,
     exportOutline,
     revealExport,

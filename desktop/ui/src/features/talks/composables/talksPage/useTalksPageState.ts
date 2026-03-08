@@ -5,23 +5,17 @@ import { useUiPreferences } from "@/lib/uiPreferences";
 import type { MascotMessage, TalksBlueprint } from "@/schemas/ipc";
 import { appState } from "@/stores/app";
 import {
-  blueprintPercentClass,
-  blueprintStepClass,
-  formatDuration,
-  formatLastActivity,
-  mascotToneClass,
-  talkNumberLabel,
-  talkStageLabel,
-} from "@/features/talks/composables/talksPageHelpers";
-import {
   bindTalksLifecycle,
   createTalksRuntime,
-} from "@/features/talks/composables/talksPageRuntime";
+} from "@/features/talks/composables/talksPage/talksPageRuntime";
+import { useTalkFeatureProfileState } from "@/features/talks/composables/shared/talkFeatureState";
+import { talkDefineRoute } from "@/features/talks/composables/shared/talkRoutes";
 
 export function useTalksPageState() {
   const { t, locale } = useI18n();
   const { settings: uiSettings } = useUiPreferences();
   const router = useRouter();
+  const { hasActiveProfile } = useTalkFeatureProfileState();
 
   const state = computed(() => appState);
   const error = ref<string | null>(null);
@@ -33,6 +27,7 @@ export function useTalksPageState() {
   const talksBlueprint = ref<TalksBlueprint | null>(null);
 
   const showMascotCard = computed(() => uiSettings.value.mascotEnabled);
+  const hasActiveProject = computed(() => Boolean(state.value.activeProject));
   const mascotBody = computed(() =>
     uiSettings.value.mascotIntensity === "minimal" ? "" : mascotMessage.value?.body ?? ""
   );
@@ -70,28 +65,55 @@ export function useTalksPageState() {
   });
 
   function goToDefine(projectId: string) {
-    void router.push(`/talks/${projectId}/define`);
+    void router.push(talkDefineRoute(projectId));
   }
+
+  const view = {
+    get projects() {
+      return state.value.projects;
+    },
+    get hasActiveProfile() {
+      return hasActiveProfile.value;
+    },
+    get hasActiveProject() {
+      return hasActiveProject.value;
+    },
+    get showMascotCard() {
+      return showMascotCard.value;
+    },
+    get mascotBody() {
+      return mascotBody.value;
+    },
+  };
+
+  const data = {
+    get error() {
+      return error.value;
+    },
+    get isLoading() {
+      return isLoading.value;
+    },
+    get isBlueprintLoading() {
+      return isBlueprintLoading.value;
+    },
+    get isSwitching() {
+      return isSwitching.value;
+    },
+    get mascotMessage() {
+      return mascotMessage.value;
+    },
+    get talksBlueprint() {
+      return talksBlueprint.value;
+    },
+  };
 
   return {
     t,
-    state,
-    error,
-    isLoading,
-    isBlueprintLoading,
-    isSwitching,
-    mascotMessage,
-    talksBlueprint,
-    showMascotCard,
-    mascotBody,
-    mascotToneClass,
-    blueprintPercentClass,
-    blueprintStepClass,
-    formatDuration,
-    formatLastActivity: (value: string | null | undefined) => formatLastActivity(t, value),
-    talkNumberLabel,
-    talkStageLabel: (stage: string | null | undefined) => talkStageLabel(t, stage),
-    setActive,
-    goToDefine,
+    view,
+    data,
+    actions: {
+      setActive,
+      goToDefine,
+    },
   };
 }

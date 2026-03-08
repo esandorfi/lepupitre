@@ -123,6 +123,15 @@ declare -A LINE_BUDGETS=(
   ["desktop/ui/src/domains/pack/api.ts"]=140
   ["desktop/ui/src/domains/recorder/api.ts"]=140
   ["desktop/ui/src/domains/asr/api.ts"]=140
+  ["desktop/ui/src/features/talks/composables/exportPage/talkExportPageRuntime.ts"]=260
+  ["desktop/ui/src/features/talks/composables/reportPage/talkReportPageRuntime.ts"]=230
+  ["desktop/ui/src/features/talks/composables/trainPage/talkTrainPageRuntime.ts"]=190
+  ["desktop/ui/src/features/talks/composables/builderPage/talkBuilderPageActions.ts"]=220
+  ["desktop/ui/src/features/talks/pages/TalksPage.vue"]=190
+  ["desktop/ui/src/features/talks/pages/TalkDefinePage.vue"]=170
+  ["desktop/ui/src/features/talks/pages/TalkTrainPage.vue"]=170
+  ["desktop/ui/src/features/talks/pages/TalkReportPage.vue"]=190
+  ["desktop/ui/src/features/talks/pages/TalkExportPage.vue"]=180
 )
 
 for file in "${!LINE_BUDGETS[@]}"; do

@@ -36,6 +36,19 @@ changed_has() {
   return 1
 }
 
+require_changed_pair() {
+  local source_file="$1"
+  local required_test_file="$2"
+  local message="$3"
+
+  if changed_has "$source_file"; then
+    is_triggered=true
+    if ! changed_has "$required_test_file"; then
+      missing+=("$message")
+    fi
+  fi
+}
+
 is_triggered=false
 missing=()
 
@@ -71,8 +84,49 @@ if changed_has "desktop/src-tauri/src/commands/feedback.rs"; then
   fi
 fi
 
+# Talks UI orchestration obligations
+require_changed_pair \
+  "desktop/ui/src/features/talks/composables/trainPage/talkTrainPageRuntime.ts" \
+  "desktop/ui/src/features/talks/composables/trainPage/talkTrainPageRuntime.test.ts" \
+  "talk train runtime: touch talkTrainPageRuntime.test.ts when talkTrainPageRuntime.ts changes"
+
+require_changed_pair \
+  "desktop/ui/src/features/talks/composables/reportPage/talkReportPageRuntime.ts" \
+  "desktop/ui/src/features/talks/composables/reportPage/talkReportPageRuntime.test.ts" \
+  "talk report runtime: touch talkReportPageRuntime.test.ts when talkReportPageRuntime.ts changes"
+
+require_changed_pair \
+  "desktop/ui/src/features/talks/composables/exportPage/talkExportPageRuntime.ts" \
+  "desktop/ui/src/features/talks/composables/exportPage/talkExportPageRuntime.test.ts" \
+  "talk export runtime: touch talkExportPageRuntime.test.ts when talkExportPageRuntime.ts changes"
+
+require_changed_pair \
+  "desktop/ui/src/features/talks/composables/definePage/talkDefinePageRuntime.ts" \
+  "desktop/ui/src/features/talks/composables/definePage/talkDefinePageRuntime.test.ts" \
+  "talk define runtime: touch talkDefinePageRuntime.test.ts when talkDefinePageRuntime.ts changes"
+
+require_changed_pair \
+  "desktop/ui/src/features/talks/composables/talksPage/talksPageRuntime.ts" \
+  "desktop/ui/src/features/talks/composables/talksPage/talksPageRuntime.test.ts" \
+  "talks page runtime: touch talksPageRuntime.test.ts when talksPageRuntime.ts changes"
+
+require_changed_pair \
+  "desktop/ui/src/features/talks/composables/projectSetupPage/projectSetupPageRuntime.ts" \
+  "desktop/ui/src/features/talks/composables/projectSetupPage/projectSetupPageRuntime.test.ts" \
+  "project setup runtime: touch projectSetupPageRuntime.test.ts when projectSetupPageRuntime.ts changes"
+
+require_changed_pair \
+  "desktop/ui/src/features/talks/composables/builderPage/talkBuilderPageActions.ts" \
+  "desktop/ui/src/features/talks/composables/builderPage/talkBuilderPageActions.test.ts" \
+  "talk builder actions: touch talkBuilderPageActions.test.ts when talkBuilderPageActions.ts changes"
+
+require_changed_pair \
+  "desktop/ui/src/features/talks/composables/shared/talkRuntimeDataLoader.ts" \
+  "desktop/ui/src/features/talks/composables/shared/talkRuntimeDataLoader.test.ts" \
+  "talk runtime data loader: touch talkRuntimeDataLoader.test.ts when talkRuntimeDataLoader.ts changes"
+
 if [[ "$is_triggered" == "false" ]]; then
-  echo "No guarded backend domains changed; test-obligation check passed."
+  echo "No guarded domains changed; test-obligation check passed."
   exit 0
 fi
 

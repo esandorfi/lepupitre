@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { RouterLink } from "vue-router";
 import TalkStepPageShell from "@/components/TalkStepPageShell.vue";
-import { useTalkBuilderPageState } from "@/features/talks/composables/useTalkBuilderPageState";
+import { useTalkBuilderPageState } from "@/features/talks/composables/builderPage/useTalkBuilderPageState";
 
 const {
   t,

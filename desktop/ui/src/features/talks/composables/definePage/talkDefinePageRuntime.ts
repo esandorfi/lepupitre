@@ -8,7 +8,7 @@ import {
   type DefineNextAction,
   type DefinePayload,
   type TalkProject,
-} from "@/features/talks/composables/talkDefinePageHelpers";
+} from "@/features/talks/composables/definePage/talkDefinePageHelpers";
 import {
   clearRuntimeUiError,
   normalizeRuntimeError,

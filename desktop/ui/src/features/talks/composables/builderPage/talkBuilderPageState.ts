@@ -1,8 +1,10 @@
 import { ref, type Ref } from "vue";
 import type { TalksBlueprint } from "@/schemas/ipc";
+import type { RuntimeErrorCategory } from "@/features/shared/runtime/runtimeContract";
 
 export type BuilderState = {
   error: Ref<string | null>;
+  errorCategory: Ref<RuntimeErrorCategory | null>;
   isLoading: Ref<boolean>;
   isSaving: Ref<boolean>;
   saveStatus: Ref<"idle" | "saving" | "saved" | "error">;
@@ -17,6 +19,7 @@ export type BuilderState = {
 export function createBuilderState(): BuilderState {
   return {
     error: ref<string | null>(null),
+    errorCategory: ref<RuntimeErrorCategory | null>(null),
     isLoading: ref(false),
     isSaving: ref(false),
     saveStatus: ref<"idle" | "saving" | "saved" | "error">("idle"),

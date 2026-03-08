@@ -7,16 +7,14 @@ import type {
   QuestReportItem,
   RunSummary,
 } from "@/schemas/ipc";
-import { appState, trainingStore } from "@/stores/app";
+import { trainingStore } from "@/stores/app";
 import {
-  attemptStatus,
   buildSummary,
   buildTimeline,
   formatDate,
-  outputLabel,
-  runStatus,
-} from "@/features/talks/composables/talkReportPageHelpers";
-import { createTalkReportRuntime } from "@/features/talks/composables/talkReportPageRuntime";
+} from "@/features/talks/composables/reportPage/talkReportPageHelpers";
+import { useTalkProjectState } from "@/features/talks/composables/shared/talkFeatureState";
+import { createTalkReportRuntime } from "@/features/talks/composables/reportPage/talkReportPageRuntime";
 
 export function useTalkReportPageState() {
   const { t } = useI18n();
@@ -35,9 +33,7 @@ export function useTalkReportPageState() {
   const isRevealing = ref(false);
   const exportError = ref<string | null>(null);
 
-  const project = computed(() => appState.projects.find((item) => item.id === projectId.value) ?? null);
-  const isActive = computed(() => appState.activeProject?.id === projectId.value);
-  const talkNumber = computed(() => project.value?.talk_number ?? null);
+  const { project, isActive, talkNumber } = useTalkProjectState(projectId);
   const activeStep = computed<"train" | "export">(() => (route.name === "talk-export" ? "export" : "train"));
   const summary = computed(() => buildSummary(report.value));
   const timeline = computed(() =>
@@ -97,10 +93,6 @@ export function useTalkReportPageState() {
     summary,
     timeline,
     formatDate,
-    attemptStatus: (item: { has_feedback: boolean; has_transcript: boolean; has_audio: boolean }) =>
-      attemptStatus(t, item),
-    runStatus: (run: RunSummary) => runStatus(t, run),
-    outputLabel: (outputType: string) => outputLabel(t, outputType),
     questCodeLabel: (code: string) => trainingStore.formatQuestCode(projectId.value, code),
     exportPack,
     revealExport,
