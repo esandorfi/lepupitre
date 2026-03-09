@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { PrimaryNavMode } from "@/lib/uiPreferences";
+import { useI18n } from "@/lib/i18n";
 
 type SelectOption = { value: string; label: string; disabled?: boolean };
 
 const props = defineProps<{
-  t: (key: string) => string;
   navMetrics: {
     switchCount: number;
     topSwitchCount: number;
@@ -17,6 +17,8 @@ const props = defineProps<{
   selectedNavMode: PrimaryNavMode;
   resetNavMetrics: () => void;
 }>();
+
+const { t } = useI18n();
 
 const emit = defineEmits<{
   "update:selectedNavMode": [value: PrimaryNavMode];

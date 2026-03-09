@@ -16,6 +16,12 @@ const route = useRoute();
 const { setOnboardingSeen } = useUiPreferences();
 const selectedAudience = ref<HelpAudience>(parseHelpAudience(route.query.audience) ?? "first");
 
+/**
+ * Page composition root (onboarding flow).
+ * Reads: audience track content and safe post-onboarding navigation target.
+ * Actions: audience selection and onboarding completion redirect.
+ * Boundary: page coordinates onboarding content; persistence stays in ui-preferences layer.
+ */
 const quickstartSteps = computed(() => [
   {
     title: t("onboarding.step_workspace_title"),

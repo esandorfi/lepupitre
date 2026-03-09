@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { GamificationMode, MascotIntensity } from "@/lib/uiPreferences";
+import { useI18n } from "@/lib/i18n";
 
 type SelectOption = { value: string; label: string; disabled?: boolean };
 
 const props = defineProps<{
-  t: (key: string) => string;
   gamificationModeOptions: SelectOption[];
   mascotIntensityOptions: SelectOption[];
   selectedGamificationMode: GamificationMode;
   mascotEnabled: boolean;
   selectedMascotIntensity: MascotIntensity;
 }>();
+
+const { t } = useI18n();
 
 const emit = defineEmits<{
   "update:selectedGamificationMode": [value: GamificationMode];

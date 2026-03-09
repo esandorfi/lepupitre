@@ -1,6 +1,6 @@
 # Plan: UI Feature Rules Rollout (Cross-Feature)
 
-Status: in_progress  
+Status: implemented  
 Owner: UI / Maintainers  
 Last updated: 2026-03-09
 
@@ -19,7 +19,9 @@ Reference context: this rollout follows the same training/governance direction d
 ## Scope
 
 - `desktop/ui/src/features/{feedback,home,packs,training,workspace}/pages/*.vue`
+- `desktop/ui/src/features/support/{pages,components}/**/*.vue`
 - `desktop/ui/src/features/{feedback,packs,training,workspace}/composables/use*PageState.ts`
+- `desktop/ui/src/features/support/composables/useSettingsPageController.ts`
 - governance docs/spec updates for enforceable continuity
 
 Out of scope:
@@ -68,6 +70,10 @@ Legend:
 - [x] W3. Apply same rules to home, packs, training, and workspace pages.
 - [x] W4. Remove `t` from touched non-talk `use*PageState` return APIs.
 - [x] W5. Validate with `ui:typecheck`, `ui:lint`, and `docs:lint`.
+- [x] W6. Apply full-uniformity pass on support pages/components:
+  - local i18n ownership in child sections,
+  - single-`vm` page consumption in `SettingsPage`,
+  - composition-root headers on support pages.
 
 ## Execution Log
 
@@ -88,3 +94,16 @@ Legend:
     - `pnpm -C desktop ui:lint` passed with existing warning:
       - `training/composables/questPageState.actions.ts` (`max-lines-per-function`).
     - `pnpm -C desktop docs:lint` passed.
+- 2026-03-09 (support full-uniformity continuation):
+  - Refactored `features/support/pages/SettingsPage` to single-`vm` consumption (`reactive(useSettingsPageController())`) and removed wide script destructuring.
+  - Removed `t` forwarding from support pages to child components:
+    - `HelpTopicSection`, `HelpDevSection`, `HelpActionsSection`,
+    - `SettingsNavigationSection`, `SettingsInsightsSection`, `SettingsVoiceupSection`, `SettingsTranscriptionSection`.
+  - Moved i18n ownership into support child components (`useI18n()` local usage).
+  - Removed `t` from `useSettingsPageController` return API.
+  - Added composition-root header comments to support pages:
+    - `AboutPage`, `HelpPage`, `OnboardingPage`, `SettingsPage`.
+  - Validation:
+    - `pnpm -C desktop ui:typecheck` passed.
+    - `pnpm -C desktop ui:lint` passed with existing warning:
+      - `training/composables/questPageState.actions.ts` (`max-lines-per-function`).

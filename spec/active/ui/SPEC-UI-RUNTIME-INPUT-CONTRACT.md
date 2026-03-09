@@ -312,3 +312,8 @@ Decision is accepted based on end-to-end implementation evidence (runtime module
   - training pages: `QuickRecordPage`, `QuestPage`, `BossRunPage`,
   - workspace page: `ProfilesPage`,
   - touched non-talk `use*PageState` modules no longer expose `t`.
+- Support full-uniformity continuation implemented on 2026-03-09:
+  - `SettingsPage` migrated from wide destructuring to single `vm` consumption,
+  - support child sections now own i18n locally (`useI18n()` in component scope),
+  - `useSettingsPageController` no longer exposes `t` in its return contract,
+  - support page roots include composition headers (`About`, `Help`, `Onboarding`, `Settings`).

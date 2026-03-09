@@ -22,6 +22,12 @@ const { setOnboardingSeen } = useUiPreferences();
 const selectedAudience = ref<HelpAudience>(parseHelpAudience(route.query.audience) ?? "first");
 const highlightedTopicId = ref<string | null>(null);
 
+/**
+ * Page composition root (help center).
+ * Reads: help markdown catalog, route query context, and audience selection.
+ * Actions: audience deep-link updates and onboarding restart.
+ * Boundary: page coordinates help browsing; topic cards and action panels stay presentational.
+ */
 const faqs = computed(() => [
   { q: t("help.faq_1_q"), a: t("help.faq_1_a") },
   { q: t("help.faq_2_q"), a: t("help.faq_2_a") },
@@ -179,7 +185,6 @@ async function restartOnboarding() {
     </UCard>
 
     <HelpTopicSection
-      :t="t"
       :title="t('help.onboarding_tracks_title')"
       :subtitle="t('help.onboarding_tracks_subtitle')"
       :entries="onboardingEntries"
@@ -190,7 +195,6 @@ async function restartOnboarding() {
     />
 
     <HelpTopicSection
-      :t="t"
       :title="t('help.contextual_title')"
       :subtitle="t('help.contextual_subtitle')"
       :entries="contextualEntries"
@@ -200,8 +204,8 @@ async function restartOnboarding() {
       :topic-deep-link="topicDeepLink"
     />
 
-    <HelpDevSection :t="t" />
+    <HelpDevSection />
 
-    <HelpActionsSection :t="t" :restart-onboarding="restartOnboarding" />
+    <HelpActionsSection :restart-onboarding="restartOnboarding" />
   </section>
 </template>

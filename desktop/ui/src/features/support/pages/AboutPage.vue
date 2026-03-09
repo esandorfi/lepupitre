@@ -7,6 +7,12 @@ import readmeRaw from "@repo/README.md?raw";
 const { t } = useI18n();
 const appVersion = packageJson.version as string;
 
+/**
+ * Page composition root (about and build context).
+ * Reads: package version and README introduction excerpt.
+ * Actions: none (read-only informational surface).
+ * Boundary: page only formats static metadata and markdown excerpt.
+ */
 const readmeIntro = computed(() => {
   const endMarker = "\n## 3)";
   const endIndex = readmeRaw.indexOf(endMarker);
