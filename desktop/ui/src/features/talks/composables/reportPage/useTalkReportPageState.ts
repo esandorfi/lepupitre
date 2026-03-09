@@ -79,7 +79,6 @@ export function useTalkReportPageState() {
   });
 
   return {
-    t,
     projectId,
     error,
     isLoading,

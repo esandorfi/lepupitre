@@ -103,7 +103,6 @@ export function useTalkDefinePageState() {
   });
 
   return {
-    t,
     projectId,
     activeProfileId,
     project,

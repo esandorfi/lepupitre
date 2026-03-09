@@ -70,7 +70,6 @@ export function useTalkTrainPageState() {
   });
 
   return {
-    t,
     projectId,
     error,
     isLoading,

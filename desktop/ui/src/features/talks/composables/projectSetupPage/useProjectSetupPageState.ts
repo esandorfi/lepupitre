@@ -55,7 +55,6 @@ export function useProjectSetupPageState() {
   });
 
   return {
-    t,
     title,
     audience,
     goal,
