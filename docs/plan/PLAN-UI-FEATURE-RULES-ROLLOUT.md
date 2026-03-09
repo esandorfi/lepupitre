@@ -74,6 +74,12 @@ Legend:
   - local i18n ownership in child sections,
   - single-`vm` page consumption in `SettingsPage`,
   - composition-root headers on support pages.
+- [x] W7. Add enforceable guardrails:
+  - UI feature-rule check for `no :t prop threading` and `single vm page consumption`,
+  - CI wiring and validation checklist updates.
+- [x] W8. Remove remaining quality warning hotspot:
+  - split `training/createQuestActions` orchestration into helper commands.
+- [x] W9. Add support regression coverage for settings vm passthrough contract.
 
 ## Execution Log
 
@@ -93,6 +99,18 @@ Legend:
     - `pnpm -C desktop ui:typecheck` passed.
     - `pnpm -C desktop ui:lint` passed with existing warning:
       - `training/composables/questPageState.actions.ts` (`max-lines-per-function`).
+- 2026-03-09 (guardrails and warning-removal completion):
+  - Added `scripts/check-ui-feature-rules.mjs` and wired it to:
+    - `desktop/ui/package.json` (`lint:feature-rules`),
+    - `desktop/package.json` (`ui:lint:feature-rules`),
+    - CI UI job (`UI feature rule guard` step).
+  - Added PR/docs governance references for the new gate:
+    - `.github/PULL_REQUEST_TEMPLATE.md`,
+    - `docs/CONTRIBUTION_RULES.md`,
+    - `docs/testing/TEST_MATRIX.md`.
+  - Refactored `training/composables/questPageState.actions.ts` to remove `max-lines-per-function` warning by extracting command helpers.
+  - Added regression coverage for settings vm controller passthrough:
+    - `features/support/composables/useSettingsPageController.test.ts`.
     - `pnpm -C desktop docs:lint` passed.
 - 2026-03-09 (support full-uniformity continuation):
   - Refactored `features/support/pages/SettingsPage` to single-`vm` consumption (`reactive(useSettingsPageController())`) and removed wide script destructuring.

@@ -78,196 +78,226 @@ type QuestActionsArgs = {
   deps?: QuestActionsDeps;
 };
 
-export function createQuestActions(args: QuestActionsArgs) {
-  const deps = args.deps ?? createDefaultQuestActionsDeps(args.t, args.routerPush);
-  const { identity, model, ui } = args.state;
-  // Policy: loadQuest uses takeLatest; submit/requestFeedback use singleFlight.
-  let loadSequence = 0;
-  let submitInFlight: Promise<void> | null = null;
-  let feedbackInFlight: Promise<void> | null = null;
+type QuestActionsContext = {
+  deps: QuestActionsDeps;
+  state: QuestActionsState;
+};
 
-  async function bootstrap() {
-    await deps.bootstrapSession();
+type SingleFlight = {
+  current: Promise<void> | null;
+};
+
+function setValidationError(
+  ui: QuestActionsState["ui"],
+  t: (key: string) => string,
+  key: string
+) {
+  ui.error.value = t(key);
+  if (ui.errorCategory) {
+    ui.errorCategory.value = "validation";
+  }
+}
+
+function resetQuestState(model: QuestActionsState["model"]) {
+  model.quest.value = null;
+  model.attemptId.value = null;
+  model.audioArtifactId.value = null;
+  model.transcriptId.value = null;
+  model.text.value = "";
+  model.submittedTextSnapshot.value = null;
+}
+
+async function runSingleFlight(flight: SingleFlight, task: () => Promise<void>) {
+  if (flight.current) {
+    await flight.current;
+    return;
+  }
+  const run = task();
+  flight.current = run;
+  await run.finally(() => {
+    if (flight.current === run) {
+      flight.current = null;
+    }
+  });
+}
+
+async function loadQuestWithLatestPolicy(
+  context: QuestActionsContext,
+  policy: {
+    nextRequestId: () => number;
+    isLatest: (requestId: number) => boolean;
+    bootstrap: () => Promise<void>;
+  }
+) {
+  const { deps, state } = context;
+  const requestId = policy.nextRequestId();
+  clearRuntimeUiError(state.ui);
+  resetQuestState(state.model);
+
+  const code = state.identity.questCode.value.trim();
+  if (!code) {
+    setValidationError(state.ui, deps.t, "quest.empty");
+    return;
   }
 
-  async function loadQuest() {
-    const requestId = ++loadSequence;
-    clearRuntimeUiError(ui);
-    model.quest.value = null;
-    model.attemptId.value = null;
-    model.audioArtifactId.value = null;
-    model.transcriptId.value = null;
-    model.text.value = "";
-    model.submittedTextSnapshot.value = null;
-
-    const code = identity.questCode.value.trim();
-    if (!code) {
-      ui.error.value = deps.t("quest.empty");
-      if (ui.errorCategory) {
-        ui.errorCategory.value = "validation";
-      }
+  state.ui.isLoading.value = true;
+  try {
+    await policy.bootstrap();
+    if (!policy.isLatest(requestId)) {
+      return;
+    }
+    if (!deps.getActiveProfileId() || !state.identity.contextProjectId.value) {
+      setValidationError(state.ui, deps.t, "home.quest_empty");
       return;
     }
 
-    ui.isLoading.value = true;
-    try {
-      await bootstrap();
-      if (requestId !== loadSequence) {
-        return;
-      }
-      if (!deps.getActiveProfileId() || !identity.contextProjectId.value) {
-        ui.error.value = deps.t("home.quest_empty");
-        if (ui.errorCategory) {
-          ui.errorCategory.value = "validation";
-        }
-        return;
-      }
-
-      if (deps.getDailyQuestCode() === code) {
-        model.quest.value = deps.getDailyQuestQuest();
-      } else {
-        model.quest.value = await deps.getQuestByCode(code);
-      }
-    } catch (err) {
-      if (requestId !== loadSequence) {
-        return;
-      }
-      setRuntimeUiError(ui, err);
-    } finally {
-      if (requestId === loadSequence) {
-        ui.isLoading.value = false;
-      }
+    if (deps.getDailyQuestCode() === code) {
+      state.model.quest.value = deps.getDailyQuestQuest();
+    } else {
+      state.model.quest.value = await deps.getQuestByCode(code);
     }
+  } catch (err) {
+    if (!policy.isLatest(requestId)) {
+      return;
+    }
+    setRuntimeUiError(state.ui, err);
+  } finally {
+    if (policy.isLatest(requestId)) {
+      state.ui.isLoading.value = false;
+    }
+  }
+}
+
+async function submitTextAttempt(context: QuestActionsContext) {
+  const { deps, state } = context;
+  if (!state.model.quest.value) {
+    setValidationError(state.ui, deps.t, "quest.empty");
+    return;
+  }
+  if (!state.model.text.value.trim()) {
+    setValidationError(state.ui, deps.t, "quest.response_required");
+    return;
+  }
+  const quest = state.model.quest.value;
+  if (!quest) {
+    setValidationError(state.ui, deps.t, "quest.empty");
+    return;
+  }
+
+  state.ui.isSubmitting.value = true;
+  clearRuntimeUiError(state.ui);
+  try {
+    const trimmed = state.model.text.value.trim();
+    const attempt = await deps.submitQuestTextForProject(
+      state.identity.contextProjectId.value,
+      quest.code,
+      trimmed
+    );
+    state.model.attemptId.value = attempt;
+    state.model.submittedTextSnapshot.value = trimmed;
+  } catch (err) {
+    setRuntimeUiError(state.ui, err);
+  } finally {
+    state.ui.isSubmitting.value = false;
+  }
+}
+
+async function submitAudioAttempt(
+  context: QuestActionsContext,
+  payload: { artifactId: string; transcriptId: string | null }
+) {
+  const { deps, state } = context;
+  if (!state.model.quest.value) {
+    return;
+  }
+  clearRuntimeUiError(state.ui);
+  state.model.audioArtifactId.value = payload.artifactId;
+  state.model.transcriptId.value = payload.transcriptId;
+  try {
+    const attempt = await deps.submitQuestAudioForProject(state.identity.contextProjectId.value, {
+      questCode: state.model.quest.value.code,
+      audioArtifactId: payload.artifactId,
+      transcriptId: payload.transcriptId,
+    });
+    state.model.attemptId.value = attempt;
+  } catch (err) {
+    setRuntimeUiError(state.ui, err);
+  }
+}
+
+async function requestFeedbackForAttempt(context: QuestActionsContext) {
+  const { deps, state } = context;
+  if (!state.model.attemptId.value) {
+    setValidationError(state.ui, deps.t, "quest.empty");
+    return;
+  }
+  if (state.identity.isAudioQuest.value && !state.model.transcriptId.value) {
+    setValidationError(state.ui, deps.t, "quest.transcribe_first");
+    return;
+  }
+  const attemptId = state.model.attemptId.value;
+  if (!attemptId) {
+    return;
+  }
+
+  state.ui.isAnalyzing.value = true;
+  clearRuntimeUiError(state.ui);
+  try {
+    const feedbackId = await deps.analyzeAttempt(attemptId);
+    await deps.routerPush(`/feedback?focus=${feedbackId}&source=quest`);
+  } catch (err) {
+    setRuntimeUiError(state.ui, err);
+  } finally {
+    state.ui.isAnalyzing.value = false;
+  }
+}
+
+export function createQuestActions(args: QuestActionsArgs) {
+  const deps = args.deps ?? createDefaultQuestActionsDeps(args.t, args.routerPush);
+  const context: QuestActionsContext = {
+    deps,
+    state: args.state,
+  };
+  // Policy: loadQuest uses takeLatest; submit/requestFeedback use singleFlight.
+  let loadSequence = 0;
+  const submitFlight: SingleFlight = { current: null };
+  const feedbackFlight: SingleFlight = { current: null };
+
+  async function loadQuest() {
+    await loadQuestWithLatestPolicy(context, {
+      nextRequestId: () => ++loadSequence,
+      isLatest: (requestId) => requestId === loadSequence,
+      bootstrap: () => deps.bootstrapSession(),
+    });
   }
 
   async function submit() {
-    if (submitInFlight) {
-      return submitInFlight;
-    }
-    if (!model.quest.value) {
-      ui.error.value = deps.t("quest.empty");
-      if (ui.errorCategory) {
-        ui.errorCategory.value = "validation";
-      }
-      return;
-    }
-    if (!model.text.value.trim()) {
-      ui.error.value = deps.t("quest.response_required");
-      if (ui.errorCategory) {
-        ui.errorCategory.value = "validation";
-      }
-      return;
-    }
-    const run = (async () => {
-      const quest = model.quest.value;
-      if (!quest) {
-        ui.error.value = deps.t("quest.empty");
-        if (ui.errorCategory) {
-          ui.errorCategory.value = "validation";
-        }
-        return;
-      }
-      ui.isSubmitting.value = true;
-      clearRuntimeUiError(ui);
-      try {
-        const trimmed = model.text.value.trim();
-        const attempt = await deps.submitQuestTextForProject(
-          identity.contextProjectId.value,
-          quest.code,
-          trimmed
-        );
-        model.attemptId.value = attempt;
-        model.submittedTextSnapshot.value = trimmed;
-      } catch (err) {
-        setRuntimeUiError(ui, err);
-      } finally {
-        ui.isSubmitting.value = false;
-      }
-    })();
-    submitInFlight = run;
-    await run.finally(() => {
-      if (submitInFlight === run) {
-        submitInFlight = null;
-      }
+    await runSingleFlight(submitFlight, async () => {
+      await submitTextAttempt(context);
     });
   }
 
   async function handleAudioSaved(payload: { artifactId: string }) {
-    if (!model.quest.value) {
-      return;
-    }
-    clearRuntimeUiError(ui);
-    model.transcriptId.value = null;
-    model.audioArtifactId.value = payload.artifactId;
-    try {
-      const attempt = await deps.submitQuestAudioForProject(identity.contextProjectId.value, {
-        questCode: model.quest.value.code,
-        audioArtifactId: payload.artifactId,
-        transcriptId: null,
-      });
-      model.attemptId.value = attempt;
-    } catch (err) {
-      setRuntimeUiError(ui, err);
-    }
+    await submitAudioAttempt(context, {
+      artifactId: payload.artifactId,
+      transcriptId: null,
+    });
   }
 
   async function handleTranscribed(payload: { transcriptId: string }) {
-    if (!model.quest.value || !model.audioArtifactId.value) {
+    const artifactId = context.state.model.audioArtifactId.value;
+    if (!artifactId) {
       return;
     }
-    clearRuntimeUiError(ui);
-    model.transcriptId.value = payload.transcriptId;
-    try {
-      const attempt = await deps.submitQuestAudioForProject(identity.contextProjectId.value, {
-        questCode: model.quest.value.code,
-        audioArtifactId: model.audioArtifactId.value,
-        transcriptId: payload.transcriptId,
-      });
-      model.attemptId.value = attempt;
-    } catch (err) {
-      setRuntimeUiError(ui, err);
-    }
+    await submitAudioAttempt(context, {
+      artifactId,
+      transcriptId: payload.transcriptId,
+    });
   }
 
   async function requestFeedback() {
-    if (feedbackInFlight) {
-      return feedbackInFlight;
-    }
-    if (!model.attemptId.value) {
-      ui.error.value = deps.t("quest.empty");
-      if (ui.errorCategory) {
-        ui.errorCategory.value = "validation";
-      }
-      return;
-    }
-    if (identity.isAudioQuest.value && !model.transcriptId.value) {
-      ui.error.value = deps.t("quest.transcribe_first");
-      if (ui.errorCategory) {
-        ui.errorCategory.value = "validation";
-      }
-      return;
-    }
-    const attemptId = model.attemptId.value;
-    if (!attemptId) {
-      return;
-    }
-    const run = (async () => {
-      ui.isAnalyzing.value = true;
-      clearRuntimeUiError(ui);
-      try {
-        const feedbackId = await deps.analyzeAttempt(attemptId);
-        await deps.routerPush(`/feedback?focus=${feedbackId}&source=quest`);
-      } catch (err) {
-        setRuntimeUiError(ui, err);
-      } finally {
-        ui.isAnalyzing.value = false;
-      }
-    })();
-    feedbackInFlight = run;
-    await run.finally(() => {
-      if (feedbackInFlight === run) {
-        feedbackInFlight = null;
-      }
+    await runSingleFlight(feedbackFlight, async () => {
+      await requestFeedbackForAttempt(context);
     });
   }
 
@@ -276,7 +306,7 @@ export function createQuestActions(args: QuestActionsArgs) {
   }
 
   async function skipTranscription() {
-    await deps.routerPush(identity.backLink.value);
+    await deps.routerPush(context.state.identity.backLink.value);
   }
 
   return {

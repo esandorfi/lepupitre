@@ -9,6 +9,7 @@
 
 - [ ] `pnpm -C desktop docs:lint`
 - [ ] `pnpm -C desktop ui:lint`
+- [ ] `pnpm -C desktop ui:lint:feature-rules`
 - [ ] `pnpm -C desktop ui:typecheck`
 - [ ] `pnpm -C desktop ui:test`
 - [ ] `cargo fmt --all -- --check` (from `desktop/src-tauri`)
