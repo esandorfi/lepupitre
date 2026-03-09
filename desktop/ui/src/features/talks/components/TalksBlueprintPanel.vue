@@ -11,15 +11,13 @@ import {
 const { t } = useI18n();
 
 defineProps<{
-  hasActiveProfile: boolean;
-  hasActiveProject: boolean;
   isLoading: boolean;
   blueprint: TalksBlueprint | null;
 }>();
 </script>
 
 <template>
-  <SectionPanel v-if="hasActiveProfile && hasActiveProject" variant="compact" class="border">
+  <SectionPanel variant="compact" class="border">
     <div v-if="isLoading" class="app-meta-muted">
       {{ t("talks.loading") }}
     </div>

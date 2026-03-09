@@ -10,6 +10,10 @@ import {
   useTalkProjectState,
 } from "@/features/talks/composables/shared/talkFeatureState";
 
+/**
+ * Composes builder-page reactive state and binds builder action commands.
+ * This module prepares derived labels/prompts and keeps side effects in actions runtime.
+ */
 export function useTalkBuilderPageState() {
   const { t } = useI18n();
   const route = useRoute();

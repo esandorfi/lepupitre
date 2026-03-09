@@ -16,6 +16,9 @@ export type BuilderState = {
   isApplyingTemplate: Ref<boolean>;
 };
 
+/**
+ * Allocates reactive state atoms used by the builder page.
+ */
 export function createBuilderState(): BuilderState {
   return {
     error: ref<string | null>(null),

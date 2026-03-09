@@ -16,6 +16,10 @@ import {
 import { useTalkProjectState } from "@/features/talks/composables/shared/talkFeatureState";
 import { createTalkTrainRuntime } from "@/features/talks/composables/trainPage/talkTrainPageRuntime";
 
+/**
+ * Composes train-page view state and binds runtime commands.
+ * This hook owns page-level derived data while runtime owns side effects.
+ */
 export function useTalkTrainPageState() {
   const { t } = useI18n();
   const route = useRoute();

@@ -79,6 +79,10 @@ type TalkExportRuntimeArgs = {
   deps?: TalkExportRuntimeDeps;
 };
 
+/**
+ * Creates the export-page runtime command layer.
+ * Keeps stage progression advisory while preserving export UX continuity.
+ */
 export function createTalkExportRuntime(args: TalkExportRuntimeArgs) {
   const deps = args.deps ?? createDefaultTalkExportRuntimeDeps();
   const { identity, model, ui } = args.state;

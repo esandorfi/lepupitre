@@ -3,6 +3,12 @@ import { RouterLink } from "vue-router";
 import TalkStepPageShell from "@/components/TalkStepPageShell.vue";
 import { useTalkBuilderPageState } from "@/features/talks/composables/builderPage/useTalkBuilderPageState";
 
+/**
+ * Page composition root (builder step).
+ * Reads: builder draft/export/blueprint state from `useTalkBuilderPageState`.
+ * Actions: load/save/template/export/reveal commands delegated to builder actions runtime.
+ * Boundary: page stays presentation-focused; orchestration is outside this SFC.
+ */
 const {
   t,
   error,

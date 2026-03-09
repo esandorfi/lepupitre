@@ -191,6 +191,12 @@ Use this file for new architecture, security, IPC, and release decisions.
     - add concise module/function context comments for non-obvious intent and invariants,
     - avoid comments for self-evident implementation details.
   - Define module-type comment thresholds and good/bad examples to keep comment style consistent in talks scope.
+  - Standardize on JSDoc (`/** ... */`) for exported talks composable/runtime/helper APIs and require same-PR docstring updates when behavior contracts change.
+  - For talks page roots (`features/talks/pages/*.vue`), standardize one script-level composition-root header (`Purpose/Reads/Actions/Boundary`) to document page flow without template comment noise.
+  - Standardize guard layering in talks:
+    - compute feature access gates once in shared composables and page roots,
+    - keep child panels render-only,
+    - reserve router guards for hard redirect invariants.
   - Challenge "single token only" policy with a constrained compromise:
     - keep one-class semantic bundles for common cases,
     - retain limited orthogonal primitives for accessibility and exception handling.
@@ -198,6 +204,9 @@ Use this file for new architecture, security, IPC, and release decisions.
   - Styling decisions become reviewable through a deterministic order rather than ad hoc local preference.
   - Talks migration can remove redundant default props and reduce token/class overlap incrementally with low risk.
   - Comment quality expectations become explicit, reducing both under-documentation and comment noise.
+  - Exported talks API hover-help remains consistent and reviewable through JSDoc maintenance in each change.
+  - Page-level architecture flow remains discoverable from a single header block per talks page while keeping templates clean.
+  - Talks guard behavior is easier to reason about with reduced page/component duplication and explicit router-vs-feature responsibility split.
   - Talks now uses single-class semantic text bundles for common muted/meta/link status rendering while preserving base primitives for exceptions.
   - Feature-only visual policies remain explicit and auditable through the talks exception registry.
 - Related specs/docs:

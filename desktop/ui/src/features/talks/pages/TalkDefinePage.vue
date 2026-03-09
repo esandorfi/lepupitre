@@ -5,6 +5,12 @@ import TalkDefineEditorPanel from "@/features/talks/components/TalkDefineEditorP
 import { talksRoute } from "@/features/talks/composables/shared/talkRoutes";
 import { useTalkDefinePageState } from "@/features/talks/composables/definePage/useTalkDefinePageState";
 
+/**
+ * Page composition root (define step).
+ * Reads: define VM state/draft/checklist from `useTalkDefinePageState`.
+ * Actions: save, stage transition, and next-step navigation commands from the define runtime.
+ * Boundary: this page owns layout and conditional rendering only.
+ */
 const {
   t,
   projectId,
@@ -80,4 +86,3 @@ const {
     />
   </TalkStepPageShell>
 </template>
-

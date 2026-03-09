@@ -65,6 +65,10 @@ type TalkDefineRuntimeArgs = {
   pushRoute: (to: string) => Promise<void>;
 };
 
+/**
+ * Creates define-page runtime commands for save/stage transition/navigation.
+ * This runtime persists draft state and keeps UI error/status transitions coherent.
+ */
 export function createTalkDefineRuntime(args: TalkDefineRuntimeArgs) {
   const deps = args.deps ?? createDefaultTalkDefineRuntimeDeps(args.t, args.pushRoute);
   const { identity, model, draft, ui } = args.state;
@@ -156,6 +160,9 @@ type TalkDefineLifecycleArgs = {
   bootstrap: () => Promise<void>;
 };
 
+/**
+ * Binds define-page lifecycle wiring (initial bootstrap + project-to-form sync).
+ */
 export function bindTalkDefineLifecycle(args: TalkDefineLifecycleArgs) {
   const { project, form, bootstrap } = args;
   onMounted(() => {

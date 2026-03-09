@@ -12,6 +12,12 @@ import {
 } from "@/features/talks/composables/shared/talkRoutes";
 import { useTalkExportPageState } from "@/features/talks/composables/exportPage/useTalkExportPageState";
 
+/**
+ * Page composition root (export step).
+ * Reads: export/report/review projections from `useTalkExportPageState`.
+ * Actions: export pack/outline, reveal export path, and mark-export-stage command delegation.
+ * Boundary: this page coordinates sections; runtime handles async and failure behavior.
+ */
 const {
   t,
   projectId,

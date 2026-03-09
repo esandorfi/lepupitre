@@ -78,8 +78,16 @@ Every async command must declare behavior:
 - Page state API shape:
   - avoid wide destructuring of dozens of fields from page-state composables,
   - prefer grouped page view-model surfaces (`view`, `data`, `actions`) when signatures grow.
+- i18n ownership:
+  - pages/components call `useI18n()` directly for labels,
+  - do not proxy translation helpers (`t`) through `use*PageState` return APIs.
 - Shared feature context:
   - feature-level identity/project selectors should be centralized in shared composables (`talkFeatureState`) instead of repeated ad hoc computed blocks.
+- Guard layering:
+  - App/router guards are reserved for hard navigation invariants (redirect-required constraints).
+  - Feature access requirements (profile/project readiness) must be computed once in shared feature gates (`talkFeatureState`), then consumed at page composition root.
+  - Child panels/components should be render-only and must not re-check access flags already resolved by page-level gates.
+  - Runtime/action modules still enforce command preconditions for safety (defense in depth).
 - Composables layout:
   - organize composables by page domain plus `shared`:
     - `composables/shared/*`
@@ -151,6 +159,7 @@ Goal: improve developer context in source files without Python-style over-commen
   - preconditions,
   - invariants,
   - failure behavior or fallback policy.
+- Use TypeScript JSDoc (`/** ... */`) as the canonical docstring format in talks composables.
 - Do not comment obvious implementation lines.
 - Keep comments stable and concise; stale comments are treated as defects.
 - Prefer documenting:
@@ -165,22 +174,31 @@ Goal: improve developer context in source files without Python-style over-commen
 
 - Runtime files (`*Runtime*.ts`, runtime-like actions/loaders):
   - required:
+    - JSDoc on each exported function,
     - one file-level context comment,
     - one comment for each non-obvious async/race policy,
     - one comment when command ordering is policy-driven.
 - Shared helper files (`*Helpers*.ts`, selector/computed helper modules):
   - required:
+    - JSDoc on each exported function,
     - function-level comments only for non-obvious domain policy or fallback behavior.
   - optional:
     - no comments for pure formatting helpers with obvious behavior.
 - Page state composables (`use*PageState.ts`):
   - required:
+    - JSDoc on exported hook function,
     - one comment if returning grouped view-model surfaces (`view`/`data`/`actions`) to explain boundary intent.
 - Vue components (`*.vue`):
   - default:
     - no inline comments.
   - exception:
     - add short comments only when accessibility/business constraints are not inferable from template markup.
+  - talks page root exception:
+    - for `features/talks/pages/*.vue`, add one script-level composition-root header comment describing:
+      - purpose,
+      - read model source (`use*PageState`),
+      - delegated actions,
+      - boundary (no direct side-effect orchestration in page).
 
 ## Principle 9.2: Comment examples and anti-patterns (G2)
 
@@ -192,6 +210,28 @@ Goal: improve developer context in source files without Python-style over-commen
   - "set loading to true" above `isLoading.value = true`.
   - restating variable names without adding policy/boundary meaning.
   - outdated comments describing previous behavior after refactors.
+
+## Principle 9.3: JSDoc maintenance obligations
+
+- When changing an exported talks composable/runtime function:
+  - update its JSDoc in the same PR if behavior, constraints, or return contract changed.
+- When removing/replacing an exported function:
+  - remove or migrate stale JSDoc in the same patch.
+- JSDoc quality baseline:
+  - keep to 1-3 short lines,
+  - explain purpose + boundary/policy,
+  - avoid duplicating obvious implementation details.
+
+## Principle 9.4: Page composition-root header contract
+
+- Talks page SFCs (`features/talks/pages/*.vue`) keep one short header block in `<script setup>`:
+  - format:
+    - `Page composition root (...)`
+    - `Reads: ...`
+    - `Actions: ...`
+    - `Boundary: ...`
+- Keep this header stable and update it when page-state API or delegated action flow changes.
+- Do not add additional template-inline comments unless required by accessibility/business constraints.
 
 ## Principle 10: Talks visual exception registry (F5)
 
@@ -344,3 +384,16 @@ Legend:
       - `talkExportPageRuntime`
       - `projectSetupPageRuntime`
       - `talkBuilderPageActions`
+  - i18n ownership alignment:
+    - `TalksPage.vue` now uses page-local `useI18n()` in template bindings,
+    - `useTalksPageState` no longer exposes `t`, keeping composable API focused on view/data/actions.
+  - docstring alignment pass:
+    - added JSDoc docstrings to exported talks composable/runtime/helper/route APIs in `features/talks/composables/**`,
+    - codified a JSDoc maintenance contract (Principle 9.3) for future talks changes.
+  - page composition header pass:
+    - added uniform composition-root header comments to all talks page SFCs under `features/talks/pages`,
+    - codified page-header maintenance contract (Principle 9.4).
+  - guard layering pass:
+    - introduced shared talks-hub access gate in `talkFeatureState` (`useTalkHubAccessGate`),
+    - moved talks-hub guard ownership to `TalksPage` (single evaluation at page root),
+    - simplified `TalksBlueprintPanel`/`TalksProjectsPanel` to render-only inputs (removed duplicated access props/checks).

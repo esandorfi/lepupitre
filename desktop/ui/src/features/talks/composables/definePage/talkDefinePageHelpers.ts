@@ -36,6 +36,9 @@ function normalizeOptional(value: string) {
   return trimmed.length ? trimmed : null;
 }
 
+/**
+ * Normalizes incoming stage values to the supported define-stage union.
+ */
 export function normalizeStage(stage: string | null | undefined): DefineStage {
   if (stage === "builder" || stage === "train" || stage === "export") {
     return stage;
@@ -43,12 +46,18 @@ export function normalizeStage(stage: string | null | undefined): DefineStage {
   return "draft";
 }
 
+/**
+ * Returns row classes for define checklist completion state.
+ */
 export function checklistRowClass(done: boolean) {
   return done
     ? "border-[var(--color-success)] bg-[color-mix(in_srgb,var(--color-success)_12%,var(--color-surface))]"
     : "border-[var(--app-border)] bg-[var(--color-surface-elevated)]";
 }
 
+/**
+ * Formats duration target as localized minutes label.
+ */
 export function minutesLabel(t: TranslateFn, seconds: number | null | undefined) {
   if (!seconds || seconds <= 0) {
     return t("talk_define.duration_missing");
@@ -56,6 +65,9 @@ export function minutesLabel(t: TranslateFn, seconds: number | null | undefined)
   return `${Math.round(seconds / 60)} ${t("talks.minutes")}`;
 }
 
+/**
+ * Synchronizes local define-form draft values from the current project model.
+ */
 export function syncFormFromProject(form: DefineFormState, project: TalkProject | null) {
   if (!project) {
     form.title = "";
@@ -72,6 +84,10 @@ export function syncFormFromProject(form: DefineFormState, project: TalkProject 
     : "";
 }
 
+/**
+ * Builds a schema-aligned update payload from define form inputs.
+ * Throws translated validation errors for missing/invalid fields.
+ */
 export function buildPayload(
   t: TranslateFn,
   project: TalkProject | null,
@@ -103,6 +119,9 @@ export function buildPayload(
   };
 }
 
+/**
+ * Checks whether a generated payload would mutate the current project snapshot.
+ */
 export function payloadMatchesProject(project: TalkProject | null, payload: DefinePayload) {
   if (!project) {
     return true;
@@ -116,6 +135,9 @@ export function payloadMatchesProject(project: TalkProject | null, payload: Defi
   );
 }
 
+/**
+ * Resolves the next talks-step action from current define stage.
+ */
 export function createNextAction(
   t: TranslateFn,
   projectId: string | undefined,
