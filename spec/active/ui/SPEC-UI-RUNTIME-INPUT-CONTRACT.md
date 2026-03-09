@@ -317,3 +317,8 @@ Decision is accepted based on end-to-end implementation evidence (runtime module
   - support child sections now own i18n locally (`useI18n()` in component scope),
   - `useSettingsPageController` no longer exposes `t` in its return contract,
   - support page roots include composition headers (`About`, `Help`, `Onboarding`, `Settings`).
+- Rule enforcement follow-up implemented on 2026-03-09:
+  - UI guard script added for:
+    - forbidding `:t=` prop threading in feature SFCs,
+    - requiring single-`vm` page consumption when `use*PageState/use*PageController` is used,
+    - forbidding wide page-level destructuring from page-state/controller composables.

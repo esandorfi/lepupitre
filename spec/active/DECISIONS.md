@@ -231,11 +231,17 @@ Use this file for new architecture, security, IPC, and release decisions.
     - i18n labels stay page/component-local (`useI18n()` directly),
     - `use*PageState` return APIs do not expose `t`,
     - touched page roots include one short composition header (`Purpose/Reads/Actions/Boundary`).
+  - Enforce these rules in CI with a dedicated UI feature-rule guard:
+    - forbid `:t=` prop threading in feature SFCs,
+    - forbid feature component `defineProps` contracts exposing `t`,
+    - require single `vm` page binding for `use*PageState/use*PageController`,
+    - forbid wide page-level destructuring for these composables.
   - Keep runtime/store/IPC boundaries unchanged in this rollout.
 - Consequences:
   - Cross-feature page scripts are easier to scan and safer to evolve when page-state APIs change.
   - i18n ownership is explicit and avoids helper leakage through page-state contracts.
   - Runtime-vs-state separation remains aligned with existing architecture and does not require backend or store rewrites.
+  - Feature-level consistency drift is now blocked early by deterministic static checks in local/CI validation.
 - Related specs/docs:
   - `docs/plan/PLAN-TALKS-VUE3-SOTA.md`
   - `docs/plan/PLAN-UI-FEATURE-RULES-ROLLOUT.md`

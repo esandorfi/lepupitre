@@ -78,6 +78,14 @@ if changed_has "desktop/ui/src/lib/questFlow.ts"; then
   fi
 fi
 
+# Settings page controller vm-binding contract
+if changed_has "desktop/ui/src/features/support/composables/useSettingsPageController.ts"; then
+  is_triggered=true
+  if ! changed_has "desktop/ui/src/features/support/composables/useSettingsPageController.test.ts"; then
+    missing+=("settings page controller contract: touch desktop/ui/src/features/support/composables/useSettingsPageController.test.ts when useSettingsPageController.ts changes")
+  fi
+fi
+
 # ASR settings and payload mapping contract
 if changed_has "desktop/ui/src/lib/transcriptionSettings.ts"; then
   is_triggered=true

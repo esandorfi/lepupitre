@@ -9,6 +9,7 @@
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext .ts,.vue",
+    "lint:feature-rules": "node ../../scripts/check-ui-feature-rules.mjs",
     "lint:design": "node ./scripts/design-guard.mjs",
     "typecheck": "vue-tsc --noEmit",
     "test": "vitest run --passWithNoTests"

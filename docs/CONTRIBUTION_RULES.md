@@ -42,6 +42,7 @@ These are repository process gates for contributors.
     - threshold: all reliability groups must pass (single failure blocks CI)
 - Frontend:
   - `pnpm -C desktop ui:lint`
+  - `pnpm -C desktop ui:lint:feature-rules`
   - `pnpm -C desktop ui:typecheck`
   - `pnpm -C desktop ui:test`
 - If a gate cannot run, document why in PR notes.
