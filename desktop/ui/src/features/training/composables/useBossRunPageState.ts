@@ -95,7 +95,6 @@ export function useBossRunPageState() {
   );
 
   return {
-    t,
     error: refs.error,
     isLoading: refs.isLoading,
     isSaving: refs.isSaving,

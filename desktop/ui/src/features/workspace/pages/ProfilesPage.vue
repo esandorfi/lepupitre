@@ -1,35 +1,17 @@
 <script setup lang="ts">
+import { reactive } from "vue";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
+import { useI18n } from "@/lib/i18n";
 import { useProfilesPageState } from "@/features/workspace/composables/useProfilesPageState";
 
-const {
-  t,
-  name,
-  error,
-  isSaving,
-  isRenaming,
-  deletingId,
-  editingId,
-  renameValue,
-  deleteTarget,
-  createSection,
-  createInput,
-  setRenameInput,
-  profiles,
-  activeProfileId,
-  deleteDialogTitle,
-  deleteDialogBody,
-  formatProfileMeta,
-  initialsFor,
-  focusCreateForm,
-  createProfile,
-  switchProfile,
-  confirmRename,
-  cancelRename,
-  profileMenuItems,
-  cancelDelete,
-  confirmDelete,
-} = useProfilesPageState();
+/**
+ * Page composition root (profiles management).
+ * Reads: profiles and editing state from `useProfilesPageState`.
+ * Actions: create/switch/rename/delete profile commands delegated to runtime actions.
+ * Boundary: page handles composition and local i18n labels.
+ */
+const { t } = useI18n();
+const vm = reactive(useProfilesPageState());
 </script>
 
 <template>
@@ -39,13 +21,13 @@ const {
         <h1 class="app-text text-2xl font-semibold tracking-tight">{{ t("profiles.title") }}</h1>
         <p class="app-muted mt-1 text-sm">{{ t("profiles.subtitle") }}</p>
       </div>
-      <UButton size="lg" color="primary" @click="focusCreateForm">
+      <UButton size="lg" color="primary" @click="vm.focusCreateForm">
         {{ t("profiles.create_action") }}
       </UButton>
     </header>
 
     <UCard
-      v-if="profiles.length === 0"
+      v-if="vm.profiles.length === 0"
       as="div"
       class="app-panel app-panel-compact rounded-2xl px-5 py-8 text-center"
       variant="outline"
@@ -55,7 +37,7 @@ const {
       </div>
       <h2 class="app-text text-lg font-semibold">{{ t("profiles.empty_title") }}</h2>
       <p class="app-muted mx-auto mt-2 max-w-xl text-sm">{{ t("profiles.empty_body") }}</p>
-      <UButton class="mt-4" size="lg" color="primary" @click="focusCreateForm">
+      <UButton class="mt-4" size="lg" color="primary" @click="vm.focusCreateForm">
         {{ t("profiles.create_action") }}
       </UButton>
     </UCard>
@@ -69,7 +51,7 @@ const {
 
       <div class="mt-4 space-y-2">
         <UCard
-          v-for="profile in profiles"
+          v-for="profile in vm.profiles"
           :key="profile.id"
           as="div"
           class="app-panel app-panel-compact flex flex-col gap-3 rounded-xl px-3 py-3 md:flex-row md:items-center md:justify-between"
@@ -77,38 +59,38 @@ const {
         >
           <div class="flex min-w-0 items-start gap-3">
             <div class="app-avatar mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold">
-              {{ initialsFor(profile.name) }}
+              {{ vm.initialsFor(profile.name) }}
             </div>
             <div class="min-w-0 flex-1">
-              <div v-if="editingId !== profile.id" class="app-text truncate text-sm font-semibold">
+              <div v-if="vm.editingId !== profile.id" class="app-text truncate text-sm font-semibold">
                 {{ profile.name }}
               </div>
               <div v-else class="flex flex-wrap gap-2">
                 <UInput
                   :id="`rename-${profile.id}`"
-                  :ref="setRenameInput(profile.id)"
-                  v-model="renameValue"
-                  :disabled="isRenaming"
+                  :ref="vm.setRenameInput(profile.id)"
+                  v-model="vm.renameValue"
+                  :disabled="vm.isRenaming"
                   :aria-label="t('profiles.rename')"
                   class="min-w-[240px] flex-1 app-text-body"
                   size="md"
                   type="text"
-                  @blur="confirmRename(profile.id)"
-                  @keyup.enter="confirmRename(profile.id)"
-                  @keyup.escape="cancelRename"
+                  @blur="vm.confirmRename(profile.id)"
+                  @keyup.enter="vm.confirmRename(profile.id)"
+                  @keyup.escape="vm.cancelRename"
                 />
               </div>
-              <div class="app-muted mt-1 text-xs">{{ formatProfileMeta(profile) }}</div>
+              <div class="app-muted mt-1 text-xs">{{ vm.formatProfileMeta(profile) }}</div>
             </div>
           </div>
 
           <div class="flex items-center gap-2">
             <UButton
-              v-if="profile.id !== activeProfileId"
+              v-if="profile.id !== vm.activeProfileId"
               size="lg"
               color="neutral"
               variant="outline"
-              @click="switchProfile(profile.id)"
+              @click="vm.switchProfile(profile.id)"
             >
               {{ t("profiles.switch") }}
             </UButton>
@@ -117,7 +99,7 @@ const {
             </UBadge>
 
             <UDropdownMenu
-              :items="profileMenuItems(profile)"
+              :items="vm.profileMenuItems(profile)"
               :content="{ align: 'end', side: 'bottom', sideOffset: 6 }"
               :portal="false"
             >
@@ -126,7 +108,7 @@ const {
                   :aria-label="`${t('profiles.row_actions')}: ${profile.name}`"
                   :aria-expanded="menuOpen ? 'true' : 'false'"
                   aria-haspopup="menu"
-                  :disabled="isRenaming || deletingId === profile.id"
+                  :disabled="vm.isRenaming || vm.deletingId === profile.id"
                   color="neutral"
                   variant="outline"
                   size="xl"
@@ -152,11 +134,11 @@ const {
         </UCard>
       </div>
 
-      <p v-if="error" class="app-danger-text mt-3 text-xs">{{ error }}</p>
+      <p v-if="vm.error" class="app-danger-text mt-3 text-xs">{{ vm.error }}</p>
     </UCard>
 
     <UCard as="section" class="app-panel app-panel-compact app-radius-panel-lg" variant="outline">
-      <div ref="createSection">
+      <div ref="vm.createSection">
         <h2 class="app-subtle text-xs font-semibold uppercase tracking-[0.2em]">
           {{ t("profiles.add_title") }}
         </h2>
@@ -168,39 +150,39 @@ const {
           >
             <UInput
               id="workspace-name-input"
-              ref="createInput"
-              v-model="name"
+              ref="vm.createInput"
+              v-model="vm.name"
               type="text"
               class="w-full app-text-body"
               size="md"
               :placeholder="t('profiles.create_placeholder')"
-              @keyup.enter="createProfile"
-              @keyup.escape="name = ''"
+              @keyup.enter="vm.createProfile"
+              @keyup.escape="vm.name = ''"
             />
           </UFormField>
           <UButton
             size="lg"
-            :disabled="isSaving"
+            :disabled="vm.isSaving"
             color="primary"
-            @click="createProfile"
+            @click="vm.createProfile"
           >
             {{ t("profiles.create_action") }}
           </UButton>
         </div>
       </div>
-      <p v-if="error" class="app-danger-text mt-3 text-xs">{{ error }}</p>
+      <p v-if="vm.error" class="app-danger-text mt-3 text-xs">{{ vm.error }}</p>
     </UCard>
 
     <ConfirmDialog
-      :open="deleteTarget !== null"
-      :title="deleteDialogTitle"
-      :body="deleteDialogBody"
+      :open="vm.deleteTarget !== null"
+      :title="vm.deleteDialogTitle"
+      :body="vm.deleteDialogBody"
       :confirm-label="t('profiles.confirm_delete_action')"
       :cancel-label="t('profiles.cancel')"
       confirm-variant="danger"
-      :busy="Boolean(deleteTarget && deletingId === deleteTarget.id)"
-      @cancel="cancelDelete"
-      @confirm="confirmDelete"
+      :busy="Boolean(vm.deleteTarget && vm.deletingId === vm.deleteTarget.id)"
+      @cancel="vm.cancelDelete"
+      @confirm="vm.confirmDelete"
     />
   </section>
 </template>

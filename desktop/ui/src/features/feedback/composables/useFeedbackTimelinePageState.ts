@@ -103,7 +103,6 @@ export function useFeedbackTimelinePageState() {
   });
 
   return {
-    t,
     state,
     showMascotCard,
     mascotMessage,

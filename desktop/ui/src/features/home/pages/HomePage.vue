@@ -1,127 +1,85 @@
 <script setup lang="ts">
+import { reactive } from "vue";
 import HomeTrainingHeroHighlights from "../components/HomeTrainingHeroHighlights.vue";
 import HomeQuestAlternatePanel from "../components/HomeQuestAlternatePanel.vue";
 import HomeTrainingSidebar from "../components/HomeTrainingSidebar.vue";
 import { useHomePageState } from "@/features/home/composables/useHomePageState";
 
-const {
-  estimatedMinutesLabel,
-  outputLabel,
-  trainingProjectId,
-  trainingDailyQuest,
-  recentAttempts,
-  trainingProgress,
-  mascotMessage,
-  trainingError,
-  isTrainingLoading,
-  isQuestPickerOpen,
-  isQuestPickerLoading,
-  questPickerError,
-  questPickerSearch,
-  questPickerCategory,
-  questPickerSort,
-  achievementPulse,
-  feedbackAttempts,
-  heroQuest,
-  heroQuestIsOverride,
-  heroQuestRoute,
-  questCategories,
-  filteredQuests,
-  recentPickerQuests,
-  pickerMainQuests,
-  showRecentQuestSection,
-  showMascotCard,
-  showCredits,
-  showQuestMap,
-  isQuestWorldMode,
-  mascotBody,
-  weeklyProgressPercent,
-  creditsToMilestone,
-  questMapNodes,
-  questMapHint,
-  rewardBadges,
-  unlockedRewardCount,
-  nextRewardBadge,
-  dailyLoopSteps,
-  dailyLoopCompletedCount,
-  dailyLoopIsComplete,
-  questCodeLabel,
-  closeQuestPicker,
-  selectHeroQuest,
-  resetHeroQuestToDaily,
-  questPickerActiveCode,
-  onQuestPickerKeydown,
-  focusQuestMapNode,
-  openQuestPicker,
-} = useHomePageState();
+/**
+ * Page composition root (home training dashboard).
+ * Reads: hero/picker/sidebar projections from `useHomePageState`.
+ * Actions: quest selection, picker controls, and quest-map focus delegation.
+ * Boundary: page composes feature panels and forwards view-model bindings.
+ */
+const vm = reactive(useHomePageState());
 </script>
 <template>
   <section class="app-page-shell">
     <div class="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(0,0.95fr)] xl:items-start">
       <div class="space-y-4">
         <HomeTrainingHeroHighlights
-          :training-error="trainingError"
-          :is-training-loading="isTrainingLoading"
-          :hero-quest="heroQuest"
-          :hero-quest-is-override="heroQuestIsOverride"
-          :training-daily-quest="trainingDailyQuest"
-          :hero-quest-route="heroQuestRoute"
-          :achievement-pulse="achievementPulse"
-          :show-mascot-card="showMascotCard"
-          :mascot-message="mascotMessage"
-          :mascot-body="mascotBody"
-          :training-progress="trainingProgress"
-          :daily-loop-steps="dailyLoopSteps"
-          :daily-loop-completed-count="dailyLoopCompletedCount"
-          :daily-loop-is-complete="dailyLoopIsComplete"
-          @reset-hero-quest-to-daily="resetHeroQuestToDaily"
-          @dismiss-achievement="achievementPulse = null"
+          :training-error="vm.trainingError"
+          :is-training-loading="vm.isTrainingLoading"
+          :hero-quest="vm.heroQuest"
+          :hero-quest-is-override="vm.heroQuestIsOverride"
+          :training-daily-quest="vm.trainingDailyQuest"
+          :hero-quest-route="vm.heroQuestRoute"
+          :achievement-pulse="vm.achievementPulse"
+          :show-mascot-card="vm.showMascotCard"
+          :mascot-message="vm.mascotMessage"
+          :mascot-body="vm.mascotBody"
+          :training-progress="vm.trainingProgress"
+          :daily-loop-steps="vm.dailyLoopSteps"
+          :daily-loop-completed-count="vm.dailyLoopCompletedCount"
+          :daily-loop-is-complete="vm.dailyLoopIsComplete"
+          @reset-hero-quest-to-daily="vm.resetHeroQuestToDaily"
+          @dismiss-achievement="vm.achievementPulse = null"
         />
         <HomeQuestAlternatePanel
-          :training-project-id="trainingProjectId"
-          :is-quest-picker-open="isQuestPickerOpen"
-          :is-quest-picker-loading="isQuestPickerLoading"
-          :quest-picker-error="questPickerError"
-          :quest-picker-search="questPickerSearch"
-          :quest-picker-category="questPickerCategory"
-          :quest-picker-sort="questPickerSort"
-          :quest-categories="questCategories"
-          :has-filtered-quests="filteredQuests.length > 0"
-          :show-recent-quest-section="showRecentQuestSection"
-          :recent-picker-quests="recentPickerQuests"
-          :picker-main-quests="pickerMainQuests"
-          :selected-hero-quest-code="heroQuest?.code ?? null"
-          :quest-picker-active-code="questPickerActiveCode"
-          :quest-code-label="questCodeLabel"
-          :output-label="outputLabel"
-          :estimated-minutes-label="estimatedMinutesLabel"
-          @open-quest-picker="openQuestPicker"
-          @update:search="questPickerSearch = $event"
-          @update:category="questPickerCategory = $event"
-          @update:sort="questPickerSort = $event"
-          @close="closeQuestPicker"
-          @select-quest="selectHeroQuest"
-          @keydown="onQuestPickerKeydown"
+          :training-project-id="vm.trainingProjectId"
+          :is-quest-picker-open="vm.isQuestPickerOpen"
+          :is-quest-picker-loading="vm.isQuestPickerLoading"
+          :quest-picker-error="vm.questPickerError"
+          :quest-picker-search="vm.questPickerSearch"
+          :quest-picker-category="vm.questPickerCategory"
+          :quest-picker-sort="vm.questPickerSort"
+          :quest-categories="vm.questCategories"
+          :has-filtered-quests="vm.filteredQuests.length > 0"
+          :show-recent-quest-section="vm.showRecentQuestSection"
+          :recent-picker-quests="vm.recentPickerQuests"
+          :picker-main-quests="vm.pickerMainQuests"
+          :selected-hero-quest-code="vm.heroQuest?.code ?? null"
+          :quest-picker-active-code="vm.questPickerActiveCode"
+          :quest-code-label="vm.questCodeLabel"
+          :output-label="vm.outputLabel"
+          :estimated-minutes-label="vm.estimatedMinutesLabel"
+          @open-quest-picker="vm.openQuestPicker"
+          @update:search="vm.questPickerSearch = $event"
+          @update:category="vm.questPickerCategory = $event"
+          @update:sort="vm.questPickerSort = $event"
+          @close="vm.closeQuestPicker"
+          @select-quest="vm.selectHeroQuest"
+          @keydown="vm.onQuestPickerKeydown"
         />
       </div>
       <HomeTrainingSidebar
-        :is-training-loading="isTrainingLoading"
-        :training-progress="trainingProgress"
-        :show-credits="showCredits"
-        :show-quest-map="showQuestMap"
-        :is-quest-world-mode="isQuestWorldMode"
-        :weekly-progress-percent="weeklyProgressPercent"
-        :credits-to-milestone="creditsToMilestone"
-        :quest-map-nodes="questMapNodes"
-        :quest-map-hint="questMapHint"
-        :reward-badges="rewardBadges"
-        :unlocked-reward-count="unlockedRewardCount"
-        :next-reward-badge="nextRewardBadge"
-        :feedback-attempts="feedbackAttempts"
-        :recent-attempts="recentAttempts"
-        :training-project-id="trainingProjectId"
-        :quest-code-label="questCodeLabel"
-        @focus-quest-map-node="focusQuestMapNode"
+        :is-training-loading="vm.isTrainingLoading"
+        :training-progress="vm.trainingProgress"
+        :show-credits="vm.showCredits"
+        :show-quest-map="vm.showQuestMap"
+        :is-quest-world-mode="vm.isQuestWorldMode"
+        :weekly-progress-percent="vm.weeklyProgressPercent"
+        :credits-to-milestone="vm.creditsToMilestone"
+        :quest-map-nodes="vm.questMapNodes"
+        :quest-map-hint="vm.questMapHint"
+        :reward-badges="vm.rewardBadges"
+        :unlocked-reward-count="vm.unlockedRewardCount"
+        :next-reward-badge="vm.nextRewardBadge"
+        :feedback-attempts="vm.feedbackAttempts"
+        :recent-attempts="vm.recentAttempts"
+        :training-project-id="vm.trainingProjectId"
+        :quest-code-label="vm.questCodeLabel"
+        @focus-quest-map-node="vm.focusQuestMapNode"
       />
     </div>
   </section>

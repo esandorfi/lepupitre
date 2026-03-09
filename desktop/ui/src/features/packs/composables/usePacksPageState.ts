@@ -55,7 +55,6 @@ export function usePacksPageState() {
   });
 
   return {
-    t,
     error,
     importPath,
     importStatus,

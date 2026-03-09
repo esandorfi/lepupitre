@@ -89,7 +89,6 @@ export function usePeerReviewPageState() {
   });
 
   return {
-    t,
     reviewDetail,
     error,
     isLoading,

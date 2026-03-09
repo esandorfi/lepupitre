@@ -218,3 +218,25 @@ Use this file for new architecture, security, IPC, and release decisions.
   - `docs/CONTRIBUTION_RULES.md`
   - `desktop/ui/vite.config.ts`
   - `desktop/ui/src/assets/main.css`
+
+### DEC-20260309-ui-feature-rules-rollout
+- Status: accepted
+- Context:
+  - Talks governance introduced stable page composition rules (single `vm`, local i18n ownership, composition-root headers) with good readability and low regression risk.
+  - Non-talk features still had mixed page patterns (wide destructuring and composable-proxied `t`), increasing drift and review noise.
+  - Team requested broader consistency without touching IPC or store contracts.
+- Decision:
+  - Adopt the same page-level rules for touched non-talk features:
+    - page scripts consume one `vm` from `use*PageState`,
+    - i18n labels stay page/component-local (`useI18n()` directly),
+    - `use*PageState` return APIs do not expose `t`,
+    - touched page roots include one short composition header (`Purpose/Reads/Actions/Boundary`).
+  - Keep runtime/store/IPC boundaries unchanged in this rollout.
+- Consequences:
+  - Cross-feature page scripts are easier to scan and safer to evolve when page-state APIs change.
+  - i18n ownership is explicit and avoids helper leakage through page-state contracts.
+  - Runtime-vs-state separation remains aligned with existing architecture and does not require backend or store rewrites.
+- Related specs/docs:
+  - `docs/plan/PLAN-TALKS-VUE3-SOTA.md`
+  - `docs/plan/PLAN-UI-FEATURE-RULES-ROLLOUT.md`
+  - `spec/active/ui/SPEC-UI-RUNTIME-INPUT-CONTRACT.md`

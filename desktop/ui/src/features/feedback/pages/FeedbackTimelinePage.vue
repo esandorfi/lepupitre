@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { reactive } from "vue";
 import { RouterLink } from "vue-router";
+import { useI18n } from "@/lib/i18n";
 import PageHeader from "@/components/PageHeader.vue";
 import PageShell from "@/components/PageShell.vue";
 import SectionPanel from "@/components/SectionPanel.vue";
@@ -9,34 +11,14 @@ import FeedbackTimelineFocusCard from "@/features/feedback/components/FeedbackTi
 import FeedbackTimelineMascotCard from "@/features/feedback/components/FeedbackTimelineMascotCard.vue";
 import { useFeedbackTimelinePageState } from "@/features/feedback/composables/useFeedbackTimelinePageState";
 
-const {
-  t,
-  state,
-  showMascotCard,
-  mascotMessage,
-  mascotBody,
-  canUseTalkScope,
-  focusedEntry,
-  focusedDeltaLabel,
-  focusedActionRoute,
-  focusedActionLabel,
-  focusedTitle,
-  focusedCreatedAtLabel,
-  focusedFeedbackRoute,
-  visibleCount,
-  averageScore,
-  notesCount,
-  scope,
-  filterType,
-  showUnreadOnly,
-  unreadCount,
-  timelineRows,
-  isLoading,
-  error,
-  setScope,
-  setFilterType,
-  toggleUnreadOnly,
-} = useFeedbackTimelinePageState();
+/**
+ * Page composition root (feedback timeline).
+ * Reads: timeline projections and filters from `useFeedbackTimelinePageState`.
+ * Actions: filter/scope mutations via state composable commands.
+ * Boundary: page coordinates cards and sections only.
+ */
+const { t } = useI18n();
+const vm = reactive(useFeedbackTimelinePageState());
 </script>
 
 <template>
@@ -54,12 +36,12 @@ const {
     </PageHeader>
 
     <FeedbackTimelineMascotCard
-      v-if="showMascotCard && mascotMessage"
-      :message="mascotMessage"
-      :body="mascotBody"
+      v-if="vm.showMascotCard && vm.mascotMessage"
+      :message="vm.mascotMessage"
+      :body="vm.mascotBody"
     />
 
-    <SectionPanel v-if="!state.activeProfileId" variant="compact">
+    <SectionPanel v-if="!vm.state.activeProfileId" variant="compact">
       <p class="app-text app-text-body">{{ t("talk.need_profile") }}</p>
       <RouterLink
         class="app-link app-text-meta mt-2 inline-block underline underline-offset-4"
@@ -71,33 +53,33 @@ const {
 
     <template v-else>
       <FeedbackTimelineFocusCard
-        v-if="focusedEntry"
-        :title="focusedTitle"
-        :created-at-label="focusedCreatedAtLabel"
-        :delta-label="focusedDeltaLabel"
-        :action-route="focusedActionRoute"
-        :action-label="focusedActionLabel"
-        :feedback-route="focusedFeedbackRoute"
+        v-if="vm.focusedEntry"
+        :title="vm.focusedTitle"
+        :created-at-label="vm.focusedCreatedAtLabel"
+        :delta-label="vm.focusedDeltaLabel"
+        :action-route="vm.focusedActionRoute"
+        :action-label="vm.focusedActionLabel"
+        :feedback-route="vm.focusedFeedbackRoute"
       />
 
       <FeedbackTimelineFiltersPanel
-        :visible-count="visibleCount"
-        :average-score="averageScore"
-        :notes-count="notesCount"
-        :scope="scope"
-        :can-use-talk-scope="canUseTalkScope"
-        :filter-type="filterType"
-        :show-unread-only="showUnreadOnly"
-        :unread-count="unreadCount"
-        @update:scope="setScope"
-        @update:filter-type="setFilterType"
-        @toggle-unread="toggleUnreadOnly"
+        :visible-count="vm.visibleCount"
+        :average-score="vm.averageScore"
+        :notes-count="vm.notesCount"
+        :scope="vm.scope"
+        :can-use-talk-scope="vm.canUseTalkScope"
+        :filter-type="vm.filterType"
+        :show-unread-only="vm.showUnreadOnly"
+        :unread-count="vm.unreadCount"
+        @update:scope="vm.setScope"
+        @update:filter-type="vm.setFilterType"
+        @toggle-unread="vm.toggleUnreadOnly"
       />
 
       <FeedbackTimelineEntriesPanel
-        :rows="timelineRows"
-        :is-loading="isLoading"
-        :error="error"
+        :rows="vm.timelineRows"
+        :is-loading="vm.isLoading"
+        :error="vm.error"
       />
     </template>
   </PageShell>
