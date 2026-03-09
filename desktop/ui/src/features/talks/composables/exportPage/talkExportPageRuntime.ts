@@ -94,7 +94,7 @@ export function createTalkExportRuntime(args: TalkExportRuntimeArgs) {
     try {
       await deps.ensureProjectStageAtLeast(identity.projectId.value, "export");
     } catch {
-      // keep export actions non-blocking
+      // Stage progression is advisory; file export should not fail because of stage sync.
     }
   }
 
@@ -172,6 +172,7 @@ export function createTalkExportRuntime(args: TalkExportRuntimeArgs) {
     clearRuntimeUiError(ui);
     ui.isLoading.value = true;
     try {
+      // Shared loader keeps bootstrap/order/stale semantics aligned with train/report pages.
       const artifacts = await loadTalkPageData({
         bootstrapSession: deps.bootstrapSession,
         loadProjects: deps.loadProjects,

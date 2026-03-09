@@ -90,6 +90,7 @@ export function createBuilderActions(args: BuilderActionsArgs) {
 
   async function loadOutline() {
     clearRuntimeUiError(ui);
+    // Reset derived UI/model fields so project switches do not leak stale blueprint/export state.
     model.exportPath.value = null;
     model.outline.value = "";
     model.blueprint.value = null;
@@ -146,6 +147,7 @@ export function createBuilderActions(args: BuilderActionsArgs) {
     const template = sections.map((section) => `${section}\n`).join("\n");
 
     if (model.outline.value.trim().length > 0) {
+      // Template apply is destructive by design; explicit confirm prevents silent draft loss.
       const confirmed = deps.confirm(deps.t("builder.template_confirm_overwrite"));
       if (!confirmed) {
         return;

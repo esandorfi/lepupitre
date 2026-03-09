@@ -96,6 +96,7 @@ export function createProjectSetupPageRuntime(args: ProjectSetupPageRuntimeArgs)
       ui.isSaving.value = true;
       clearRuntimeUiError(ui);
       try {
+        // Keep input parsing at runtime boundary so store receives schema-aligned payload values.
         const minutes = Number(draft.duration.value);
         await deps.createProject({
           title: draft.title.value.trim(),

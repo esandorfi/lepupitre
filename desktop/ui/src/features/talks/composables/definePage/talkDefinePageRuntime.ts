@@ -69,6 +69,7 @@ export function createTalkDefineRuntime(args: TalkDefineRuntimeArgs) {
   const deps = args.deps ?? createDefaultTalkDefineRuntimeDeps(args.t, args.pushRoute);
   const { identity, model, draft, ui } = args.state;
 
+  // `stageOverride` lets navigation actions persist the latest form and stage in one request.
   async function persistDefine(stageOverride?: string) {
     if (!model.project.value || !identity.activeProfileId.value) {
       return false;
@@ -89,6 +90,7 @@ export function createTalkDefineRuntime(args: TalkDefineRuntimeArgs) {
       }
       return false;
     }
+    // Skip writes when nothing changed to keep save actions idempotent and cheap.
     if (payloadMatchesProject(model.project.value, payload)) {
       ui.saveState.value = "saved";
       return true;
@@ -135,6 +137,7 @@ export function createTalkDefineRuntime(args: TalkDefineRuntimeArgs) {
     ui.isLoading.value = true;
     clearRuntimeUiError(ui);
     try {
+      // Keep ordering explicit: session context must exist before project loading.
       await deps.bootstrapSession();
       await deps.loadProjects();
     } catch (err) {
@@ -159,6 +162,7 @@ export function bindTalkDefineLifecycle(args: TalkDefineLifecycleArgs) {
     void bootstrap();
   });
 
+  // Form is a local draft mirror; always resync from store project on source changes.
   watch(
     project,
     () => {

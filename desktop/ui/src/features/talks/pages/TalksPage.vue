@@ -19,7 +19,7 @@ const vm = useTalksPageState();
       :subtitle="vm.t('talks.subtitle')"
     >
       <template #actions>
-        <UButton size="md" to="/project/new" color="primary">
+        <UButton to="/project/new" color="primary">
           {{ vm.t("talks.create") }}
         </UButton>
       </template>
@@ -40,7 +40,7 @@ const vm = useTalksPageState();
 
     <SectionPanel v-if="!vm.view.hasActiveProfile" variant="compact">
       <p class="app-text app-text-body">{{ vm.t("talk.need_profile") }}</p>
-      <RouterLink class="app-link app-text-meta mt-2 inline-block underline underline-offset-4" to="/profiles">
+      <RouterLink class="app-link-meta mt-2 inline-block underline underline-offset-4" to="/profiles">
         {{ vm.t("talk.goto_profiles") }}
       </RouterLink>
     </SectionPanel>

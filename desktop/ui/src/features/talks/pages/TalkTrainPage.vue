@@ -64,8 +64,6 @@ const {
         v-else
         size="sm"
         :disabled="isActivating"
-        color="neutral"
-        variant="outline"
         @click="setActive"
       >
         {{ t("talk_report.set_active") }}

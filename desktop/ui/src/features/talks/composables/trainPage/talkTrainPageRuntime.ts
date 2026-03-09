@@ -86,6 +86,7 @@ export function createTalkTrainRuntime(args: TalkTrainRuntimeArgs) {
     clearRuntimeUiError(ui);
     ui.isLoading.value = true;
     try {
+      // Shared loader enforces a single bootstrap/project-guard flow across talks pages.
       const artifacts = await loadTalkPageData({
         bootstrapSession: deps.bootstrapSession,
         loadProjects: deps.loadProjects,
@@ -152,7 +153,7 @@ export function createTalkTrainRuntime(args: TalkTrainRuntimeArgs) {
     try {
       await deps.ensureProjectStageAtLeast(identity.projectId.value, "train");
     } catch {
-      // non-blocking UI progression hint
+      // Stage progression is advisory here; training data should still be available.
     }
   }
 

@@ -26,9 +26,9 @@ function openQuest(questCode: string) {
 </script>
 
 <template>
-  <UCard class="app-panel" variant="outline">
+  <UCard class="app-panel">
     <div class="app-text-eyebrow">{{ t("talk_report.quest_library") }}</div>
-    <div v-if="entries.length === 0" class="app-muted app-text-body mt-3">
+    <div v-if="entries.length === 0" class="app-body-muted mt-3">
       {{ t("talk_report.no_quests") }}
     </div>
     <div v-else class="mt-3 space-y-3">
@@ -37,7 +37,6 @@ function openQuest(questCode: string) {
         :key="quest.quest_code"
         as="div"
         class="app-panel app-panel-compact app-radius-card"
-        variant="outline"
       >
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div>

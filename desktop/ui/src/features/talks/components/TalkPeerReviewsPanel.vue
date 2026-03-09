@@ -14,9 +14,9 @@ defineProps<{
 </script>
 
 <template>
-  <UCard class="app-panel" variant="outline">
+  <UCard class="app-panel">
     <div class="app-text-eyebrow">{{ t("talk_report.packs") }}</div>
-    <div v-if="peerReviews.length === 0" class="app-muted app-text-body mt-3">
+    <div v-if="peerReviews.length === 0" class="app-body-muted mt-3">
       {{ t("talk_report.timeline_empty") }}
     </div>
     <div v-else class="mt-3 space-y-2 app-text-meta">
@@ -27,18 +27,18 @@ defineProps<{
       >
         <div>
           <div class="app-text text-sm">{{ t("talk_report.timeline_peer_review") }}</div>
-          <div class="app-muted app-text-meta">
+          <div class="app-meta-muted">
             {{ formatDate(review.created_at) }}
             <span v-if="review.reviewer_tag"> - {{ review.reviewer_tag }}</span>
           </div>
         </div>
-        <RouterLink class="app-link app-text-meta underline" :to="talkPeerReviewRoute(projectId, review.id)">
+        <RouterLink class="app-link-meta underline" :to="talkPeerReviewRoute(projectId, review.id)">
           {{ t("talk_report.view_item") }}
         </RouterLink>
       </div>
     </div>
     <div class="mt-3">
-      <UButton size="lg" to="/packs" color="neutral" variant="outline" @click="onOpenPacks?.()">
+      <UButton size="lg" to="/packs" @click="onOpenPacks?.()">
         {{ t("talk_report.packs") }}
       </UButton>
     </div>

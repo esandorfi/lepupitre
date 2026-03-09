@@ -87,6 +87,7 @@ export function createTalkReportRuntime(args: TalkReportRuntimeArgs) {
   let setActiveInFlight: Promise<void> | null = null;
 
   async function exportPack(runId: string) {
+    // Reset per-action export UI state so each run action has isolated feedback.
     ui.exportPath.value = null;
     ui.exportingRunId.value = runId;
     ui.exportError.value = null;
@@ -134,6 +135,7 @@ export function createTalkReportRuntime(args: TalkReportRuntimeArgs) {
     clearRuntimeUiError(ui);
     ui.isLoading.value = true;
     try {
+      // Reuse shared flow so report/train/export keep identical bootstrap and stale handling.
       const artifacts = await loadTalkPageData({
         bootstrapSession: deps.bootstrapSession,
         loadProjects: deps.loadProjects,
