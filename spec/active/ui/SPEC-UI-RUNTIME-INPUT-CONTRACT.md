@@ -3,7 +3,7 @@
 - Date: 2026-03-08
 - Status: accepted
 - Scope: `desktop/ui/src/features/**/composables/*Runtime*.ts`, `*PageRuntime.ts`, runtime-like actions/loaders/helpers
-- Related decision: `DEC-20260307-ui-runtime-input-contract`, `DEC-20260308-ui-talks-orchestration-guardrails`
+- Related decision: `DEC-20260307-ui-runtime-input-contract`, `DEC-20260308-ui-talks-orchestration-guardrails`, `DEC-20260309-ui-feature-rules-rollout`
 
 ## Context
 
@@ -184,6 +184,36 @@ When feature composable count grows, organize by page/domain subdirectories plus
   - reduce flat-folder entropy,
   - preserve clear ownership boundaries per page flow.
 
+## 11. Page-state consumption style (cross-feature)
+
+For new or touched feature pages that consume `use*PageState`:
+
+- bind one page-level view model:
+  - `const vm = reactive(useXPageState())` (or non-reactive wrapper only when already reactive by design),
+- avoid wide script-level destructuring from `use*PageState`,
+- keep template bindings through `vm.*` for API-change resilience.
+
+## 12. i18n ownership contract (cross-feature)
+
+For new or touched feature pages/components:
+
+- call `useI18n()` directly where labels are rendered,
+- do not expose/forward `t` through `use*PageState` return APIs.
+
+This keeps translation boundaries aligned with view ownership and avoids composable surface bloat.
+
+## 13. Composition-root context header (cross-feature)
+
+For touched feature page SFC roots:
+
+- include one short script-level header describing:
+  - purpose,
+  - reads,
+  - actions,
+  - boundary.
+
+This improves onboarding and review clarity while keeping templates free of inline comment noise.
+
 ## Store Alignment Challenge
 
 Should runtime contracts mirror store contracts exactly?
@@ -275,3 +305,10 @@ Decision is accepted based on end-to-end implementation evidence (runtime module
 - Talks route composition now uses `talkRoutes` helpers across pages/components/composables/helpers in touched scope.
 - Talks orchestration test-obligation CI guard now includes shared loader modules.
 - Talks composables are organized by page-scoped folders plus `shared`.
+- Cross-feature page-consumption rollout implemented on 2026-03-09:
+  - feedback pages: `FeedbackPage`, `FeedbackTimelinePage`, `PeerReviewPage`,
+  - home page: `HomePage`,
+  - packs page: `PacksPage`,
+  - training pages: `QuickRecordPage`, `QuestPage`, `BossRunPage`,
+  - workspace page: `ProfilesPage`,
+  - touched non-talk `use*PageState` modules no longer expose `t`.

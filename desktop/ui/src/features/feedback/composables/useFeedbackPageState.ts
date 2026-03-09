@@ -103,7 +103,6 @@ export function useFeedbackPageState() {
   );
 
   return {
-    t,
     feedback,
     mascotMessage,
     error,

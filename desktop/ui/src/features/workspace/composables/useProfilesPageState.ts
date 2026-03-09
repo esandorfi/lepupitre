@@ -75,7 +75,6 @@ export function useProfilesPageState() {
   });
 
   return {
-    t,
     name: state.name,
     error: state.error,
     isSaving: state.isSaving,

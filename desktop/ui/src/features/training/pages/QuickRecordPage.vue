@@ -1,9 +1,18 @@
 <script setup lang="ts">
+import { reactive } from "vue";
 import { RouterLink } from "vue-router";
+import { useI18n } from "@/lib/i18n";
 import AudioRecorder from "@/components/AudioRecorder.vue";
 import { useQuickRecordPageState } from "@/features/training/composables/useQuickRecordPageState";
 
-const { t, activeProfileId } = useQuickRecordPageState();
+/**
+ * Page composition root (quick record).
+ * Reads: profile readiness from `useQuickRecordPageState`.
+ * Actions: none; recording handled by `AudioRecorder`.
+ * Boundary: page orchestrates profile gate and recorder placement.
+ */
+const { t } = useI18n();
+const vm = reactive(useQuickRecordPageState());
 </script>
 
 <template>
@@ -17,7 +26,7 @@ const { t, activeProfileId } = useQuickRecordPageState();
       </p>
     </header>
 
-    <UCard v-if="!activeProfileId" class="app-panel app-panel-compact" variant="outline">
+    <UCard v-if="!vm.activeProfileId" class="app-panel app-panel-compact" variant="outline">
       <p class="app-muted text-sm">{{ t("quick_record.need_profile") }}</p>
       <RouterLink class="app-link mt-3 inline-block text-xs underline" to="/profiles">
         {{ t("quick_record.setup_profile") }}

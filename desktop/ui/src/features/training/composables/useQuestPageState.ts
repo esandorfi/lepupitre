@@ -123,7 +123,6 @@ export function useQuestPageState() {
   });
 
   return {
-    t,
     questCode,
     backLink,
     displayQuestCode,
