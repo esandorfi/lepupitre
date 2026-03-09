@@ -1,6 +1,5 @@
 import { computed, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
-import { useI18n } from "@/lib/i18n";
 import type { PeerReviewSummary, QuestReportItem, RunSummary } from "@/schemas/ipc";
 import {
   buildSummary,
@@ -14,7 +13,6 @@ import { createTalkExportRuntime } from "@/features/talks/composables/exportPage
  * Keep orchestration in runtime so template logic remains declarative.
  */
 export function useTalkExportPageState() {
-  const { t } = useI18n();
   const route = useRoute();
   const projectId = computed(() => String(route.params.projectId || ""));
 
@@ -68,7 +66,6 @@ export function useTalkExportPageState() {
   });
 
   return {
-    t,
     projectId,
     error,
     isLoading,

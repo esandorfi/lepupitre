@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { reactive } from "vue";
 import { RouterLink } from "vue-router";
+import { useI18n } from "@/lib/i18n";
 import TalkStepPageShell from "@/components/TalkStepPageShell.vue";
 import TalkOutlineExportPanel from "@/features/talks/components/TalkOutlineExportPanel.vue";
 import TalkPeerReviewsPanel from "@/features/talks/components/TalkPeerReviewsPanel.vue";
@@ -18,57 +20,35 @@ import { useTalkExportPageState } from "@/features/talks/composables/exportPage/
  * Actions: export pack/outline, reveal export path, and mark-export-stage command delegation.
  * Boundary: this page coordinates sections; runtime handles async and failure behavior.
  */
-const {
-  t,
-  projectId,
-  error,
-  isLoading,
-  isActivating,
-  runs,
-  peerReviews,
-  exportPath,
-  exportingRunId,
-  isExportingOutline,
-  isRevealing,
-  exportError,
-  project,
-  isActive,
-  talkNumber,
-  summary,
-  formatDate,
-  exportPack,
-  exportOutline,
-  revealExport,
-  setActive,
-  markExportStage,
-} = useTalkExportPageState();
+const { t } = useI18n();
+const vm = reactive(useTalkExportPageState());
 </script>
 
 <template>
   <TalkStepPageShell
-    :project-id="projectId"
+    :project-id="vm.projectId"
     active="export"
     :eyebrow="t('talk_steps.export')"
-    :title="project?.title || t('talk_report.unknown')"
+    :title="vm.project?.title || t('talk_report.unknown')"
   >
     <template #meta>
-      <span v-if="talkNumber">T{{ talkNumber }}</span>
-      <span v-if="project">
+      <span v-if="vm.talkNumber">T{{ vm.talkNumber }}</span>
+      <span v-if="vm.project">
         {{ t("talk_report.duration") }}:
-        {{ project.duration_target_sec ? Math.round(project.duration_target_sec / 60) : "--" }}
+        {{ vm.project.duration_target_sec ? Math.round(vm.project.duration_target_sec / 60) : "--" }}
         {{ t("talk_report.minutes") }}
       </span>
       <RouterLink class="app-link underline" :to="talksRoute()">{{ t("talk_report.back") }}</RouterLink>
-      <RouterLink class="app-link underline" :to="talkTrainRoute(projectId)">
+      <RouterLink class="app-link underline" :to="talkTrainRoute(vm.projectId)">
         {{ t("talk_steps.train") }}
       </RouterLink>
-      <RouterLink class="app-link underline" :to="talkBuilderRoute(projectId)">
+      <RouterLink class="app-link underline" :to="talkBuilderRoute(vm.projectId)">
         {{ t("talk_report.builder") }}
       </RouterLink>
     </template>
     <template #actions>
       <span
-        v-if="isActive"
+        v-if="vm.isActive"
         class="app-pill app-pill-active app-text-meta inline-flex items-center rounded-full px-3 py-1 font-semibold"
       >
         {{ t("talk_report.active") }}
@@ -76,40 +56,40 @@ const {
       <UButton
         v-else
         size="sm"
-        :disabled="isActivating"
-        @click="setActive"
+        :disabled="vm.isActivating"
+        @click="vm.setActive"
       >
         {{ t("talk_report.set_active") }}
       </UButton>
     </template>
 
     <TalkSummaryPanel
-      :is-loading="isLoading"
-      :error="error"
-      :summary="summary"
-      :last-activity="formatDate(summary.last)"
+      :is-loading="vm.isLoading"
+      :error="vm.error"
+      :summary="vm.summary"
+      :last-activity="vm.formatDate(vm.summary.last)"
     />
 
     <TalkOutlineExportPanel
-      :project-id="projectId"
-      :is-exporting="isExportingOutline"
-      :on-export="exportOutline"
+      :project-id="vm.projectId"
+      :is-exporting="vm.isExportingOutline"
+      :on-export="vm.exportOutline"
     />
 
     <TalkRunExportsPanel
-      :runs="runs"
-      :exporting-run-id="exportingRunId"
-      :export-path="exportPath"
-      :is-revealing="isRevealing"
-      :export-error="exportError"
-      :on-export-pack="exportPack"
-      :on-reveal-export="revealExport"
+      :runs="vm.runs"
+      :exporting-run-id="vm.exportingRunId"
+      :export-path="vm.exportPath"
+      :is-revealing="vm.isRevealing"
+      :export-error="vm.exportError"
+      :on-export-pack="vm.exportPack"
+      :on-reveal-export="vm.revealExport"
     />
 
     <TalkPeerReviewsPanel
-      :project-id="projectId"
-      :peer-reviews="peerReviews"
-      :on-open-packs="markExportStage"
+      :project-id="vm.projectId"
+      :peer-reviews="vm.peerReviews"
+      :on-open-packs="vm.markExportStage"
     />
   </TalkStepPageShell>
 </template>

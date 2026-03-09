@@ -81,7 +81,6 @@ export function useTalkBuilderPageState() {
   );
 
   return {
-    t,
     error: state.error,
     errorCategory: state.errorCategory,
     isLoading: state.isLoading,

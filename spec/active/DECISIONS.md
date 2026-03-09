@@ -197,6 +197,9 @@ Use this file for new architecture, security, IPC, and release decisions.
     - compute feature access gates once in shared composables and page roots,
     - keep child panels render-only,
     - reserve router guards for hard redirect invariants.
+  - Standardize talks page consumption style:
+    - pages bind one `vm` object from `use*PageState`,
+    - avoid wide script-level destructuring of page-state fields.
   - Challenge "single token only" policy with a constrained compromise:
     - keep one-class semantic bundles for common cases,
     - retain limited orthogonal primitives for accessibility and exception handling.
@@ -207,6 +210,7 @@ Use this file for new architecture, security, IPC, and release decisions.
   - Exported talks API hover-help remains consistent and reviewable through JSDoc maintenance in each change.
   - Page-level architecture flow remains discoverable from a single header block per talks page while keeping templates clean.
   - Talks guard behavior is easier to reason about with reduced page/component duplication and explicit router-vs-feature responsibility split.
+  - Talks page scripts stay simpler and less brittle during composable API evolution.
   - Talks now uses single-class semantic text bundles for common muted/meta/link status rendering while preserving base primitives for exceptions.
   - Feature-only visual policies remain explicit and auditable through the talks exception registry.
 - Related specs/docs:

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { reactive } from "vue";
+import { useI18n } from "@/lib/i18n";
 import { useProjectSetupPageState } from "@/features/talks/composables/projectSetupPage/useProjectSetupPageState";
 
 /**
@@ -7,25 +9,15 @@ import { useProjectSetupPageState } from "@/features/talks/composables/projectSe
  * Actions: save-project command delegated to project-setup runtime.
  * Boundary: this page remains a form/layout surface without direct store side-effect code.
  */
-const {
-  t,
-  title,
-  audience,
-  goal,
-  duration,
-  error,
-  isSaving,
-  activeProfileId,
-  activeProject,
-  saveProject,
-} = useProjectSetupPageState();
+const { t } = useI18n();
+const vm = reactive(useProjectSetupPageState());
 </script>
 
 <template>
   <section class="space-y-6">
     <p class="app-muted text-sm font-semibold">{{ t("talk.subtitle") }}</p>
 
-    <UCard v-if="!activeProfileId" class="app-panel app-panel-compact">
+    <UCard v-if="!vm.activeProfileId" class="app-panel app-panel-compact">
       <p class="app-text text-sm">{{ t("talk.need_profile") }}</p>
       <RouterLink class="app-link text-xs underline underline-offset-4" to="/profiles">
         {{ t("talk.goto_profiles") }}
@@ -33,31 +25,31 @@ const {
     </UCard>
 
     <UCard v-else class="app-panel app-panel-compact">
-      <UCard v-if="activeProject" as="div" class="app-panel app-panel-compact mb-4">
+      <UCard v-if="vm.activeProject" as="div" class="app-panel app-panel-compact mb-4">
         <div class="app-subtle text-xs uppercase tracking-[0.2em]">
           {{ t("talk.active_title") }}
         </div>
-        <div class="app-text text-sm">{{ activeProject.title }}</div>
+        <div class="app-text text-sm">{{ vm.activeProject.title }}</div>
       </UCard>
 
       <div class="space-y-3">
         <UInput
-          v-model="title"
+          v-model="vm.title"
           class="w-full"
           :placeholder="t('talk.title_placeholder')"
         />
         <UInput
-          v-model="audience"
+          v-model="vm.audience"
           class="w-full"
           :placeholder="t('talk.audience_placeholder')"
         />
         <UInput
-          v-model="goal"
+          v-model="vm.goal"
           class="w-full"
           :placeholder="t('talk.goal_placeholder')"
         />
         <UInput
-          v-model="duration"
+          v-model="vm.duration"
           class="w-full"
           type="number"
           min="1"
@@ -67,9 +59,9 @@ const {
 
       <div class="mt-4 flex items-center gap-3">
         <UButton
-          :disabled="isSaving"
+          :disabled="vm.isSaving"
           color="primary"
-          @click="saveProject"
+          @click="vm.saveProject"
         >
           {{ t("talk.save") }}
         </UButton>
@@ -78,7 +70,7 @@ const {
         </RouterLink>
       </div>
 
-      <p v-if="error" class="app-danger-text mt-2 text-xs">{{ error }}</p>
+      <p v-if="vm.error" class="app-danger-text mt-2 text-xs">{{ vm.error }}</p>
     </UCard>
   </section>
 </template>

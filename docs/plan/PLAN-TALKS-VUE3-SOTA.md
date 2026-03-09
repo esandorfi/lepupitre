@@ -78,6 +78,9 @@ Every async command must declare behavior:
 - Page state API shape:
   - avoid wide destructuring of dozens of fields from page-state composables,
   - prefer grouped page view-model surfaces (`view`, `data`, `actions`) when signatures grow.
+- Page consumption style:
+  - in talks page SFCs, prefer a single `const vm = use*PageState()` binding,
+  - avoid wide page-script destructuring to keep template wiring and API evolution stable.
 - i18n ownership:
   - pages/components call `useI18n()` directly for labels,
   - do not proxy translation helpers (`t`) through `use*PageState` return APIs.
@@ -385,8 +388,8 @@ Legend:
       - `projectSetupPageRuntime`
       - `talkBuilderPageActions`
   - i18n ownership alignment:
-    - `TalksPage.vue` now uses page-local `useI18n()` in template bindings,
-    - `useTalksPageState` no longer exposes `t`, keeping composable API focused on view/data/actions.
+    - all talks pages now use page-local `useI18n()` in template bindings,
+    - talks `use*PageState` composables keep `t` internal and no longer expose translation helpers in returned APIs.
   - docstring alignment pass:
     - added JSDoc docstrings to exported talks composable/runtime/helper/route APIs in `features/talks/composables/**`,
     - codified a JSDoc maintenance contract (Principle 9.3) for future talks changes.
@@ -397,3 +400,6 @@ Legend:
     - introduced shared talks-hub access gate in `talkFeatureState` (`useTalkHubAccessGate`),
     - moved talks-hub guard ownership to `TalksPage` (single evaluation at page root),
     - simplified `TalksBlueprintPanel`/`TalksProjectsPanel` to render-only inputs (removed duplicated access props/checks).
+  - talks page VM usage pass:
+    - standardized all talks page SFCs on `const vm = use*PageState()` usage,
+    - removed wide page-level destructuring for define/builder/train/report/export/project-setup pages.
