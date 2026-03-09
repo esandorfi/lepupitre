@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { useI18n } from "@/lib/i18n";
 import type {
   TranscriptionLanguage,
   TranscriptionMode,
@@ -20,7 +21,6 @@ type ModelOption = {
 };
 
 const props = defineProps<{
-  t: (key: string) => string;
   sidecarBadgeTone: "error" | "neutral" | "success";
   sidecarStatusLabel: string;
   sidecarMessage: string | null;
@@ -45,6 +45,8 @@ const props = defineProps<{
   verifyModel: (modelId: string) => void | Promise<void>;
   downloadModel: (modelId: string) => void | Promise<void>;
 }>();
+
+const { t } = useI18n();
 
 const emit = defineEmits<{
   "update:selectedModel": [value: TranscriptionModel];

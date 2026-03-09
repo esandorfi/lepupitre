@@ -2,6 +2,7 @@
 /* eslint-disable vue/no-v-html */
 import { RouterLink } from "vue-router";
 import type { RouteLocationRaw } from "vue-router";
+import { useI18n } from "@/lib/i18n";
 
 type HelpEntry = {
   id: string;
@@ -10,7 +11,6 @@ type HelpEntry = {
 };
 
 defineProps<{
-  t: (key: string) => string;
   title: string;
   subtitle: string;
   entries: HelpEntry[];
@@ -20,6 +20,8 @@ defineProps<{
   topicDeepLink: (topicId: string) => RouteLocationRaw;
   gridClass?: string;
 }>();
+
+const { t } = useI18n();
 </script>
 
 <template>

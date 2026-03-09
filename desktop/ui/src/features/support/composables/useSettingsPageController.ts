@@ -10,7 +10,6 @@ export function useSettingsPageController() {
   const preferences = useSettingsPreferences(t, asrModels.modelOptions);
 
   return {
-    t,
     ...insights,
     ...asrModels,
     ...preferences,

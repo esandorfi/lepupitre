@@ -1,7 +1,7 @@
 <script setup lang="ts">
-defineProps<{
-  t: (key: string) => string;
-}>();
+import { useI18n } from "@/lib/i18n";
+
+const { t } = useI18n();
 </script>
 
 <template>

@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { RouterLink } from "vue-router";
+import { useI18n } from "@/lib/i18n";
 
 defineProps<{
-  t: (key: string) => string;
   restartOnboarding: () => void | Promise<void>;
 }>();
+
+const { t } = useI18n();
 </script>
 
 <template>
