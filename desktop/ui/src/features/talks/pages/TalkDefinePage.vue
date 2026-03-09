@@ -38,24 +38,24 @@ const {
     :subtitle="t('talk_define.subtitle')"
   >
 
-    <UCard v-if="!activeProfileId" class="app-panel app-panel-compact" variant="outline">
-      <p class="app-muted app-text-body">{{ t("talk.need_profile") }}</p>
-      <RouterLink class="app-link app-text-meta mt-3 inline-block underline" to="/profiles">
+    <UCard v-if="!activeProfileId" class="app-panel app-panel-compact">
+      <p class="app-body-muted">{{ t("talk.need_profile") }}</p>
+      <RouterLink class="app-link-meta mt-3 inline-block underline" to="/profiles">
         {{ t("talk.goto_profiles") }}
       </RouterLink>
     </UCard>
 
-    <UCard v-else-if="isLoading" class="app-panel app-panel-compact" variant="outline">
-      <p class="app-muted app-text-body">{{ t("talks.loading") }}</p>
+    <UCard v-else-if="isLoading" class="app-panel app-panel-compact">
+      <p class="app-body-muted">{{ t("talks.loading") }}</p>
     </UCard>
 
-    <UCard v-else-if="error" class="app-panel app-panel-compact" variant="outline">
+    <UCard v-else-if="error" class="app-panel app-panel-compact">
       <p class="app-danger-text app-text-body">{{ error }}</p>
     </UCard>
 
-    <UCard v-else-if="!project" class="app-panel app-panel-compact" variant="outline">
-      <p class="app-muted app-text-body">{{ t("talk_define.missing") }}</p>
-      <RouterLink class="app-link app-text-meta mt-3 inline-block underline" :to="talksRoute()">
+    <UCard v-else-if="!project" class="app-panel app-panel-compact">
+      <p class="app-body-muted">{{ t("talk_define.missing") }}</p>
+      <RouterLink class="app-link-meta mt-3 inline-block underline" :to="talksRoute()">
         {{ t("talk_report.back") }}
       </RouterLink>
     </UCard>

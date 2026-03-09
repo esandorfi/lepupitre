@@ -11,9 +11,9 @@ defineProps<{
 </script>
 
 <template>
-  <UCard class="app-panel" variant="outline">
+  <UCard class="app-panel">
     <div class="app-text-eyebrow">{{ t("talk_report.timeline") }}</div>
-    <div v-if="items.length === 0" class="app-muted app-text-body mt-3">
+    <div v-if="items.length === 0" class="app-body-muted mt-3">
       {{ t("talk_report.timeline_empty") }}
     </div>
     <div v-else class="mt-3 space-y-2 app-text-meta">
@@ -24,7 +24,7 @@ defineProps<{
       >
         <div>
           <div class="app-text text-sm">{{ item.label }}</div>
-          <div class="app-muted app-text-meta">
+          <div class="app-meta-muted">
             {{ formatDate(item.date) }} - {{ item.status }}
             <span v-if="item.meta">- {{ item.meta }}</span>
           </div>

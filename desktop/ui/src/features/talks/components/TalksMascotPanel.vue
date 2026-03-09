@@ -24,14 +24,11 @@ defineProps<{
       <div class="min-w-0 flex-1">
         <div class="app-text-eyebrow">{{ t("talks.mascot_label") }}</div>
         <div class="app-text app-text-subheadline mt-1">{{ message.title }}</div>
-        <div v-if="body" class="app-muted app-text-body mt-1">{{ body }}</div>
+        <div v-if="body" class="app-body-muted mt-1">{{ body }}</div>
       </div>
       <UButton
         v-if="message.cta_route && message.cta_label"
-        size="md"
         :to="message.cta_route"
-        color="neutral"
-        variant="outline"
       >
         {{ message.cta_label }}
       </UButton>

@@ -17,9 +17,9 @@ defineProps<{
 </script>
 
 <template>
-  <UCard class="app-panel" variant="outline">
+  <UCard class="app-panel">
     <div class="app-text-eyebrow">{{ t("talk_report.export_title") }}</div>
-    <div v-if="runs.length === 0" class="app-muted app-text-body mt-3">
+    <div v-if="runs.length === 0" class="app-body-muted mt-3">
       {{ t("boss_run.latest_empty") }}
     </div>
     <div v-else class="mt-3 space-y-2 app-text-meta">
@@ -30,7 +30,7 @@ defineProps<{
       >
         <div>
           <div class="app-text text-sm">{{ t("talk_report.timeline_boss_run") }}</div>
-          <div class="app-muted app-text-meta">
+          <div class="app-meta-muted">
             {{ formatDate(run.created_at) }} - {{ runStatus(t, run) }}
           </div>
         </div>
@@ -38,8 +38,6 @@ defineProps<{
           <UButton
             size="sm"
             :disabled="exportingRunId === run.id"
-            color="neutral"
-            variant="outline"
             @click="onExportPack(run.id)"
           >
             {{ t("packs.export") }}
@@ -48,22 +46,21 @@ defineProps<{
       </div>
     </div>
     <div v-if="exportPath" class="mt-3 flex flex-wrap items-center gap-2 text-xs">
-      <span class="app-muted app-text-meta">{{ t("packs.export_path") }}:</span>
+      <span class="app-meta-muted">{{ t("packs.export_path") }}:</span>
       <span class="app-text max-w-[360px] truncate" style="direction: rtl; text-align: left;">
         {{ exportPath }}
       </span>
       <UButton
         size="sm"
         :disabled="isRevealing"
-        color="neutral"
         variant="ghost"
         @click="onRevealExport"
       >
         {{ t("packs.export_reveal") }}
       </UButton>
-      <span class="app-subtle app-text-meta">{{ t("packs.export_ready") }}</span>
+      <span class="app-meta-subtle">{{ t("packs.export_ready") }}</span>
     </div>
-    <div v-if="exportError" class="app-danger-text app-text-meta mt-2">
+    <div v-if="exportError" class="app-meta-danger mt-2">
       {{ exportError }}
     </div>
   </UCard>

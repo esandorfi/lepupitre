@@ -69,6 +69,10 @@ type TalksRuntimeArgs = {
   deps?: TalksRuntimeDeps;
 };
 
+/**
+ * Talks hub runtime orchestrates side effects only.
+ * Page composables own reactive state allocation and pass refs through `state`.
+ */
 export function createTalksRuntime(args: TalksRuntimeArgs) {
   const deps = args.deps ?? createDefaultTalksRuntimeDeps();
   const { identity, model, ui } = args.state;
@@ -165,6 +169,10 @@ export function createTalksRuntime(args: TalksRuntimeArgs) {
   return { refreshTalksBlueprint, refreshMascotMessage, bootstrap, setActive };
 }
 
+/**
+ * Lifecycle binding stays thin: trigger bootstrap once, then react to context changes.
+ * Runtime commands keep the async/race policy centralized.
+ */
 export function bindTalksLifecycle(args: TalksLifecycleArgs) {
   const {
     locale,

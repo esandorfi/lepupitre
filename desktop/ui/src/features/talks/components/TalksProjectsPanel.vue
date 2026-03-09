@@ -25,13 +25,13 @@ defineProps<{
 
 <template>
   <SectionPanel variant="dense-list">
-    <div v-if="isLoading" class="app-muted app-text-meta">
+    <div v-if="isLoading" class="app-meta-muted">
       {{ t("talks.loading") }}
     </div>
-    <div v-else-if="error" class="app-danger-text app-text-meta">
+    <div v-else-if="error" class="app-meta-danger">
       {{ error }}
     </div>
-    <div v-else-if="hasActiveProfile && projects.length === 0" class="app-muted app-text-body">
+    <div v-else-if="hasActiveProfile && projects.length === 0" class="app-body-muted">
       {{ t("talks.empty") }}
     </div>
     <div v-else-if="hasActiveProfile" class="space-y-3">
@@ -53,12 +53,12 @@ defineProps<{
             >
               {{ talkNumberLabel(project.talk_number) }}
             </span>
-            <UBadge color="neutral" variant="solid">
+            <UBadge>
               {{ talkStageLabel(t, project.stage) }}
             </UBadge>
             <div class="app-text app-text-body-strong">{{ project.title }}</div>
           </div>
-          <div class="app-subtle app-text-meta mt-1">
+          <div class="app-meta-subtle mt-1">
             {{ t("talks.duration") }}: {{ formatDuration(project.duration_target_sec) }}
             {{ t("talks.minutes") }} -
             {{ t("talks.last_activity") }}: {{ formatLastActivity(t, project.updated_at) }}
@@ -69,9 +69,6 @@ defineProps<{
           <UButton
             :aria-label="t('talks.view_report')"
             :title="t('talks.view_report')"
-            color="neutral"
-            variant="outline"
-            size="md"
             square
             @click.stop="onGoToDefine(project.id)"
           >
@@ -99,8 +96,6 @@ defineProps<{
             v-else
             size="sm"
             :disabled="switchingProjectId === project.id"
-            color="neutral"
-            variant="outline"
             @click.stop="onSetActive(project.id)"
           >
             {{ t("talks.set_active") }}

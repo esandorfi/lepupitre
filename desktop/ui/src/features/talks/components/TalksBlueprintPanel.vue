@@ -20,7 +20,7 @@ defineProps<{
 
 <template>
   <SectionPanel v-if="hasActiveProfile && hasActiveProject" variant="compact" class="border">
-    <div v-if="isLoading" class="app-muted app-text-meta">
+    <div v-if="isLoading" class="app-meta-muted">
       {{ t("talks.loading") }}
     </div>
     <div v-else-if="blueprint" class="space-y-3">
@@ -28,9 +28,9 @@ defineProps<{
         <div>
           <div class="app-text-eyebrow">{{ t("talks.blueprint_label") }}</div>
           <div class="app-text app-text-subheadline mt-1">{{ blueprint.framework_label }}</div>
-          <div class="app-muted app-text-body mt-1">{{ blueprint.framework_summary }}</div>
+          <div class="app-body-muted mt-1">{{ blueprint.framework_summary }}</div>
         </div>
-        <UBadge color="neutral" variant="solid">
+        <UBadge>
           {{ blueprint.completion_percent }}%
         </UBadge>
       </div>
@@ -52,17 +52,17 @@ defineProps<{
         >
           <div class="min-w-0 flex-1">
             <div class="app-text app-text-body-strong">{{ step.title }}</div>
-            <div class="app-muted app-text-meta mt-1">
+            <div class="app-meta-muted mt-1">
               +{{ step.reward_credits }} {{ t("training.progress_credits") }}
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <UBadge :color="step.done ? 'success' : 'neutral'" variant="solid">
+            <UBadge :color="step.done ? 'success' : 'neutral'">
               {{ step.done ? t("talks.blueprint_done") : t("talks.blueprint_pending") }}
             </UBadge>
             <RouterLink
               v-if="!step.done && step.cta_route"
-              class="app-link app-text-meta underline"
+              class="app-link-meta underline"
               :to="step.cta_route"
             >
               {{ t("talks.blueprint_open") }}

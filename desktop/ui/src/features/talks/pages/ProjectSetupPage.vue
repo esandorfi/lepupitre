@@ -19,15 +19,15 @@ const {
   <section class="space-y-6">
     <p class="app-muted text-sm font-semibold">{{ t("talk.subtitle") }}</p>
 
-    <UCard v-if="!activeProfileId" class="app-panel app-panel-compact" variant="outline">
+    <UCard v-if="!activeProfileId" class="app-panel app-panel-compact">
       <p class="app-text text-sm">{{ t("talk.need_profile") }}</p>
       <RouterLink class="app-link text-xs underline underline-offset-4" to="/profiles">
         {{ t("talk.goto_profiles") }}
       </RouterLink>
     </UCard>
 
-    <UCard v-else class="app-panel app-panel-compact" variant="outline">
-      <UCard v-if="activeProject" as="div" class="app-panel app-panel-compact mb-4" variant="outline">
+    <UCard v-else class="app-panel app-panel-compact">
+      <UCard v-if="activeProject" as="div" class="app-panel app-panel-compact mb-4">
         <div class="app-subtle text-xs uppercase tracking-[0.2em]">
           {{ t("talk.active_title") }}
         </div>
@@ -61,11 +61,10 @@ const {
 
       <div class="mt-4 flex items-center gap-3">
         <UButton
-          size="md"
-         
           :disabled="isSaving"
           color="primary"
-         @click="saveProject">
+          @click="saveProject"
+        >
           {{ t("talk.save") }}
         </UButton>
         <RouterLink class="app-muted text-xs underline underline-offset-4" to="/">
@@ -77,4 +76,3 @@ const {
     </UCard>
   </section>
 </template>
-

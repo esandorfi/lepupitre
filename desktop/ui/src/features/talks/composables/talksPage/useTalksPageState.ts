@@ -68,6 +68,7 @@ export function useTalksPageState() {
     void router.push(talkDefineRoute(projectId));
   }
 
+  // Keep a grouped VM API to avoid wide page-level destructuring churn.
   const view = {
     get projects() {
       return state.value.projects;
@@ -86,6 +87,7 @@ export function useTalksPageState() {
     },
   };
 
+  // `data` exposes runtime-managed refs as read-only getters for page templates.
   const data = {
     get error() {
       return error.value;

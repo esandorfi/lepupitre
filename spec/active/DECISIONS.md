@@ -173,3 +173,35 @@ Use this file for new architecture, security, IPC, and release decisions.
   - `docs/testing/TEST_MATRIX.md`
   - `.github/PULL_REQUEST_TEMPLATE.md`
   - `scripts/check-test-obligations.sh`
+
+### DEC-20260309-ui-governance-priority-ladder
+- Status: accepted
+- Context:
+  - Talks UI currently mixes app-level Nuxt defaults, shared CSS classes/tokens, and feature-local style decisions without a strict priority order.
+  - Repeated default prop usage and overlapping token/class naming increase review noise and maintenance drift.
+  - Contributors requested stronger source-context comments, but without turning files into high-noise inline documentation.
+- Decision:
+  - Adopt a three-level UI governance priority for talks:
+    - P1 app-level defaults first (`@nuxt/ui` defaults in Vite config),
+    - P2 simplified CSS token contract second (minimal canonical vocabulary),
+    - P3 feature-level style rules last (documented exceptions only).
+  - Define talks-scope canonical semantic text bundles and explicit deprecation mapping for recurring dual-class combinations.
+  - Maintain a talks visual exception registry for feature-only mappings (for example mascot tone and blueprint threshold policies).
+  - Enforce "why-focused" source documentation contract:
+    - add concise module/function context comments for non-obvious intent and invariants,
+    - avoid comments for self-evident implementation details.
+  - Define module-type comment thresholds and good/bad examples to keep comment style consistent in talks scope.
+  - Challenge "single token only" policy with a constrained compromise:
+    - keep one-class semantic bundles for common cases,
+    - retain limited orthogonal primitives for accessibility and exception handling.
+- Consequences:
+  - Styling decisions become reviewable through a deterministic order rather than ad hoc local preference.
+  - Talks migration can remove redundant default props and reduce token/class overlap incrementally with low risk.
+  - Comment quality expectations become explicit, reducing both under-documentation and comment noise.
+  - Talks now uses single-class semantic text bundles for common muted/meta/link status rendering while preserving base primitives for exceptions.
+  - Feature-only visual policies remain explicit and auditable through the talks exception registry.
+- Related specs/docs:
+  - `docs/plan/PLAN-TALKS-VUE3-SOTA.md`
+  - `docs/CONTRIBUTION_RULES.md`
+  - `desktop/ui/vite.config.ts`
+  - `desktop/ui/src/assets/main.css`

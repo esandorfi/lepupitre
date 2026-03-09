@@ -32,14 +32,13 @@ defineProps<{
   <div class="space-y-4">
     <UCard
       class="app-panel app-panel-compact border border-[var(--color-accent)] bg-[var(--color-surface-selected)]"
-      variant="outline"
     >
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div>
           <div class="app-text-eyebrow">{{ t("talk_define.readiness_title") }}</div>
-          <div class="app-muted app-text-meta mt-1">{{ t("talk_define.readiness_subtitle") }}</div>
+          <div class="app-meta-muted mt-1">{{ t("talk_define.readiness_subtitle") }}</div>
         </div>
-        <UBadge color="neutral" variant="solid">
+        <UBadge>
           {{ defineCompletedCount }} / {{ defineChecklist.length }}
         </UBadge>
       </div>
@@ -58,13 +57,13 @@ defineProps<{
         >
           <div class="flex items-center justify-between gap-2">
             <span class="app-text app-text-body-strong text-sm">{{ item.label }}</span>
-            <UBadge :color="item.done ? 'success' : 'neutral'" variant="solid">
+            <UBadge :color="item.done ? 'success' : 'neutral'">
               {{ item.done ? t("talk_define.check_done") : t("talk_define.check_missing") }}
             </UBadge>
           </div>
         </div>
       </div>
-      <div class="app-muted app-text-meta mt-2">
+      <div class="app-meta-muted mt-2">
         {{
           defineReady
             ? t("talk_define.readiness_ready")
@@ -73,9 +72,9 @@ defineProps<{
       </div>
     </UCard>
 
-    <UCard class="app-panel" variant="outline">
+    <UCard class="app-panel">
       <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <p class="app-muted app-text-meta">{{ t("talk_define.autosave_hint") }}</p>
+        <p class="app-meta-muted">{{ t("talk_define.autosave_hint") }}</p>
         <p
           class="app-text-meta"
           :class="{
@@ -94,7 +93,7 @@ defineProps<{
         </p>
       </div>
       <div class="grid gap-3 md:grid-cols-2">
-        <UCard as="div" class="app-panel app-panel-compact app-radius-card md:col-span-2" variant="outline">
+        <UCard as="div" class="app-panel app-panel-compact app-radius-card md:col-span-2">
           <div class="app-text-eyebrow">{{ t("talk_define.field_title") }}</div>
           <UInput
             v-model="form.title"
@@ -106,7 +105,7 @@ defineProps<{
             @keydown.enter.prevent="onSaveDefine"
           />
         </UCard>
-        <UCard as="div" class="app-panel app-panel-compact app-radius-card" variant="outline">
+        <UCard as="div" class="app-panel app-panel-compact app-radius-card">
           <div class="app-text-eyebrow">{{ t("talk_define.field_audience") }}</div>
           <UInput
             v-model="form.audience"
@@ -118,7 +117,7 @@ defineProps<{
             @keydown.enter.prevent="onSaveDefine"
           />
         </UCard>
-        <UCard as="div" class="app-panel app-panel-compact app-radius-card" variant="outline">
+        <UCard as="div" class="app-panel app-panel-compact app-radius-card">
           <div class="app-text-eyebrow">{{ t("talk_define.field_duration") }}</div>
           <UInput
             v-model="form.durationMinutes"
@@ -131,11 +130,11 @@ defineProps<{
             @blur="onSaveDefine"
             @keydown.enter.prevent="onSaveDefine"
           />
-          <p class="app-muted app-text-meta mt-2">
+          <p class="app-meta-muted mt-2">
             {{ minutesLabel(t, project?.duration_target_sec) }}
           </p>
         </UCard>
-        <UCard as="div" class="app-panel app-panel-compact app-radius-card md:col-span-2" variant="outline">
+        <UCard as="div" class="app-panel app-panel-compact app-radius-card md:col-span-2">
           <div class="app-text-eyebrow">{{ t("talk_define.field_goal") }}</div>
           <UTextarea
             v-model="form.goal"
@@ -145,13 +144,13 @@ defineProps<{
             @blur="onSaveDefine"
           />
         </UCard>
-        <UCard as="div" class="app-panel app-panel-compact app-radius-card md:col-span-2" variant="outline">
+        <UCard as="div" class="app-panel app-panel-compact app-radius-card md:col-span-2">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div>
               <div class="app-text-eyebrow">{{ t("talk_define.stage_title") }}</div>
-              <p class="app-muted app-text-meta mt-1">{{ t("talk_define.stage_hint") }}</p>
+              <p class="app-meta-muted mt-1">{{ t("talk_define.stage_hint") }}</p>
             </div>
-            <UBadge color="neutral" variant="solid">
+            <UBadge>
               {{ stageOptions.find((option) => option.value === projectStage)?.label }}
             </UBadge>
           </div>
@@ -160,7 +159,6 @@ defineProps<{
               v-for="option in stageOptions"
               :key="option.value"
               size="sm"
-              color="neutral"
               :variant="projectStage === option.value ? 'outline' : 'ghost'"
               @click="onSetStage(option.value)"
             >
@@ -178,13 +176,13 @@ defineProps<{
         >
           {{ nextAction.label }}
         </UButton>
-        <UButton size="lg" :to="talkBuilderRoute(project?.id ?? '')" color="neutral" variant="outline">
+        <UButton size="lg" :to="talkBuilderRoute(project?.id ?? '')">
           {{ t("talk_steps.builder") }}
         </UButton>
-        <UButton size="lg" :to="talkTrainRoute(project?.id ?? '')" color="neutral" variant="outline">
+        <UButton size="lg" :to="talkTrainRoute(project?.id ?? '')">
           {{ t("talk_steps.train") }}
         </UButton>
-        <UButton size="lg" :to="talkExportRoute(project?.id ?? '')" color="neutral" variant="outline">
+        <UButton size="lg" :to="talkExportRoute(project?.id ?? '')">
           {{ t("talk_steps.export") }}
         </UButton>
       </div>

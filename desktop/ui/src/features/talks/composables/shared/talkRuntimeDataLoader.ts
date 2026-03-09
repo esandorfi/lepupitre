@@ -38,6 +38,10 @@ type LoadTalkPageDataArgs<TArtifacts> = {
   loadArtifacts: (projectId: string) => Promise<TArtifacts>;
 };
 
+/**
+ * Loads shared report/runs/review artifacts in parallel for talks pages.
+ * Keep this function side-effect free so runtimes control state transitions.
+ */
 export async function loadTalkArtifactsBase(
   deps: TalkArtifactsBaseDeps,
   projectId: string,
@@ -51,6 +55,10 @@ export async function loadTalkArtifactsBase(
   return { report, runs, peerReviews };
 }
 
+/**
+ * Extends the base artifact loader with attempts for pages that need attempt timelines.
+ * The base loader remains the single source for report/runs/reviews behavior.
+ */
 export async function loadTalkArtifactsWithAttempts(
   deps: TalkArtifactsWithAttemptsDeps,
   projectId: string,
@@ -63,6 +71,11 @@ export async function loadTalkArtifactsWithAttempts(
   return { ...base, attempts };
 }
 
+/**
+ * Shared bootstrap wrapper used by talks page runtimes.
+ * Ordering matters: session -> projects -> project guard -> artifacts.
+ * `isStale` is checked between stages to enforce takeLatest semantics at runtime level.
+ */
 export async function loadTalkPageData<TArtifacts>(
   args: LoadTalkPageDataArgs<TArtifacts>
 ): Promise<TArtifacts | null> {
