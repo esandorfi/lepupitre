@@ -25,6 +25,9 @@ type ProfilesActionsArgs = {
   pushHome: () => Promise<void>;
 };
 
+/**
+ * Creates and returns the create profiles actions contract.
+ */
 export function createProfilesActions(args: ProfilesActionsArgs) {
   const { state, t, focusRenameInput, pushHome } = args;
   const createSwitchActions = createProfilesCreateSwitchActions({
@@ -92,6 +95,9 @@ type LifecycleArgs = {
   focusCreateForm: () => Promise<void>;
 };
 
+/**
+ * Binds lifecycle/effect wiring for bind profiles lifecycle.
+ */
 export function bindProfilesLifecycle(args: LifecycleArgs) {
   const deps = args.deps ?? {
     ensureBootstrapped: () => sessionStore.ensureBootstrapped(),

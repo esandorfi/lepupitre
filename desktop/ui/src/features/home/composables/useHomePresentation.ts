@@ -27,6 +27,9 @@ export type RewardBadge = {
 
 type Translate = (key: string) => string;
 
+/**
+ * Provides the use home presentation composable contract.
+ */
 export function useHomePresentation(t: Translate) {
   function formatDate(value: string) {
     const date = new Date(value);

@@ -61,6 +61,9 @@ type ProfilesManageArgs = {
   deps?: ProfilesManageDeps;
 };
 
+/**
+ * Creates and returns the create profiles manage actions contract.
+ */
 export function createProfilesManageActions(args: ProfilesManageArgs) {
   const deps = args.deps ?? createDefaultProfilesManageDeps(args.t, args.focusRenameInput, args.pushHome);
   const { identity, model, ui } = args.state;

@@ -8,6 +8,9 @@ import {
 import type { AudioRecorderRuntimeDeps } from "@/components/recorder/composables/audioRecorderRuntimeDeps";
 import type { AudioRecorderCleanupSet } from "@/components/recorder/composables/runtime/audioRecorderRuntimeListenerTypes";
 
+/**
+ * Implements register recording telemetry listener behavior.
+ */
 export async function registerRecordingTelemetryListener(
   getDeps: () => AudioRecorderRuntimeDeps,
   cleanups: AudioRecorderCleanupSet

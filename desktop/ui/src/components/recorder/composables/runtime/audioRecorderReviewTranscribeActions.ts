@@ -8,6 +8,9 @@ import {
 } from "@/components/recorder/composables/runtime/audioRecorderCaptureUtils";
 import type { AudioRecorderRuntimeDeps } from "@/components/recorder/composables/audioRecorderRuntimeDeps";
 
+/**
+ * Implements transcribe recording behavior.
+ */
 export async function transcribeRecording(deps: AudioRecorderRuntimeDeps) {
   deps.clearError();
   if (!deps.activeProfileId.value || !deps.lastArtifactId.value) {
@@ -77,6 +80,9 @@ export async function transcribeRecording(deps: AudioRecorderRuntimeDeps) {
   }
 }
 
+/**
+ * Implements save edited transcript behavior.
+ */
 export async function saveEditedTranscript(deps: AudioRecorderRuntimeDeps) {
   if (!deps.activeProfileId.value || !deps.baseTranscriptId.value) {
     return;

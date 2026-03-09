@@ -33,6 +33,9 @@ function requireActiveProfileId(state: AppState): string {
   return state.activeProfileId;
 }
 
+/**
+ * Creates and returns the create talks store contract.
+ */
 export function createTalksStore(state: AppState) {
   async function loadProjects() {
     if (!state.activeProfileId) {

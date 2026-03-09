@@ -10,6 +10,9 @@ type Dependencies = {
   formatQuestCode: (projectId: string, code: string) => string;
 };
 
+/**
+ * Provides the use home quest selection composable contract.
+ */
 export function useHomeQuestSelection(dependencies: Dependencies) {
   function questCodeLabel(code: string) {
     const projectId = dependencies.trainingProjectId.value ?? "";

@@ -22,6 +22,9 @@ export const CANONICAL_HELP_TOPIC_IDS = [
 
 export type CanonicalHelpTopicId = (typeof CANONICAL_HELP_TOPIC_IDS)[number];
 
+/**
+ * Resolves resolve help topic for route from current inputs.
+ */
 export function resolveHelpTopicForRoute(routeName: string | null): CanonicalHelpTopicId | null {
   if (!routeName) {
     return null;

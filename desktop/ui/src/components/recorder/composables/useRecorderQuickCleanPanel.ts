@@ -16,6 +16,9 @@ import {
 export { AUDIENCE_OPTIONS, GOAL_OPTIONS };
 export type { RecorderQuickCleanPanelEmit, RecorderQuickCleanPanelProps };
 
+/**
+ * Provides the use recorder quick clean panel composable contract.
+ */
 export function useRecorderQuickCleanPanel(options: {
   props: RecorderQuickCleanPanelProps;
   emit: RecorderQuickCleanPanelEmit;

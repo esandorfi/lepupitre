@@ -15,6 +15,9 @@ export type AchievementPulse = {
 
 type Translate = (key: string) => string;
 
+/**
+ * Implements evaluate achievement pulse behavior.
+ */
 export function evaluateAchievementPulse(
   profileId: string,
   progress: ProgressSnapshot,

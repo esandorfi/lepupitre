@@ -44,6 +44,9 @@ async function hydratePreferenceContext(profileId: string | null) {
   await hydratePreferences(entries);
 }
 
+/**
+ * Creates and returns the create workspace store contract.
+ */
 export function createWorkspaceStore(state: AppState) {
   async function loadProfiles() {
     const profiles = await listWorkspaceProfiles();

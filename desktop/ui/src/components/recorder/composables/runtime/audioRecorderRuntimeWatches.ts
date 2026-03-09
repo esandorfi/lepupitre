@@ -1,6 +1,9 @@
 import { watch } from "vue";
 import type { AudioRecorderRuntimeDeps } from "@/components/recorder/composables/audioRecorderRuntimeDeps";
 
+/**
+ * Binds lifecycle/effect wiring for bind audio recorder runtime watches.
+ */
 export function bindAudioRecorderRuntimeWatches(getDeps: () => AudioRecorderRuntimeDeps) {
   watch(
     () => getDeps().transcriptionSettings.value.model,

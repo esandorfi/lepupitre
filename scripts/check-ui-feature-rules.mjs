@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, "..");
+const uiSrcRoot = join(repoRoot, "desktop", "ui", "src");
 const featuresRoot = join(repoRoot, "desktop", "ui", "src", "features");
 
 /**
@@ -21,6 +22,25 @@ function collectVueFiles(dir) {
       continue;
     }
     if (entry.isFile() && entry.name.endsWith(".vue")) {
+      files.push(fullPath);
+    }
+  }
+  return files;
+}
+
+/**
+ * Collects all `.ts` files in a directory tree.
+ */
+function collectTsFiles(dir) {
+  const entries = readdirSync(dir, { withFileTypes: true });
+  const files = [];
+  for (const entry of entries) {
+    const fullPath = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...collectTsFiles(fullPath));
+      continue;
+    }
+    if (entry.isFile() && entry.name.endsWith(".ts")) {
       files.push(fullPath);
     }
   }
@@ -45,6 +65,38 @@ function firstMatchLine(source, pattern) {
 
 const errors = [];
 const vueFiles = collectVueFiles(featuresRoot);
+const tsFiles = collectTsFiles(uiSrcRoot).filter((file) => {
+  if (file.endsWith(".test.ts") || file.endsWith(".types.ts")) {
+    return false;
+  }
+  return !/i18n\.messages\.(en|fr)\.ts$/.test(file);
+});
+
+function hasJsDocBefore(lines, lineIndex) {
+  let cursor = lineIndex - 1;
+  while (cursor >= 0 && lines[cursor].trim() === "") {
+    cursor -= 1;
+  }
+  if (cursor < 0 || lines[cursor].trim() !== "*/") {
+    return false;
+  }
+  for (let k = cursor - 1; k >= 0; k -= 1) {
+    const trimmed = lines[k].trim();
+    if (trimmed.startsWith("/**")) {
+      return true;
+    }
+    if (
+      trimmed === "" ||
+      trimmed.startsWith("*") ||
+      trimmed.startsWith("//") ||
+      trimmed.startsWith("/*")
+    ) {
+      continue;
+    }
+    break;
+  }
+  return false;
+}
 
 for (const file of vueFiles) {
   const content = readFileSync(file, "utf8");
@@ -71,6 +123,12 @@ for (const file of vueFiles) {
   }
 
   if (isPage) {
+    if (!/Page composition root/.test(content)) {
+      errors.push(
+        `${relPath}:1 - Feature page roots must include one \`Page composition root\` header block in \`<script setup>\`.`
+      );
+    }
+
     const pageComposablePattern = /use[A-Za-z0-9]+Page(?:State|Controller)\s*\(/;
     if (!pageComposablePattern.test(content)) {
       continue;
@@ -91,6 +149,24 @@ for (const file of vueFiles) {
       const line = firstMatchLine(content, destructurePattern);
       errors.push(
         `${relPath}:${line} - Wide destructuring from \`use*PageState/use*PageController\` is forbidden; use \`vm.*\` consumption.`
+      );
+    }
+  }
+}
+
+for (const file of tsFiles) {
+  const content = readFileSync(file, "utf8");
+  const relPath = toPosix(relative(repoRoot, file));
+  const lines = content.split(/\r?\n/);
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const match = lines[i].match(/^export\s+(async\s+)?function\s+([A-Za-z0-9_]+)/);
+    if (!match) {
+      continue;
+    }
+    if (!hasJsDocBefore(lines, i)) {
+      errors.push(
+        `${relPath}:${i + 1} - Exported UI functions must keep a JSDoc docstring block immediately above the declaration.`
       );
     }
   }

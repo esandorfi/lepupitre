@@ -11,6 +11,9 @@ import { createFeedbackPageRuntime } from "@/features/feedback/composables/feedb
 export type FeedbackNoteStatus = "idle" | "saving" | "saved" | "error";
 export type FeedbackQuestLink = { code: string; label: string; to: string };
 
+/**
+ * Provides the use feedback page state composable contract.
+ */
 export function useFeedbackPageState() {
   const { t, locale } = useI18n();
   const { settings: uiSettings } = useUiPreferences();

@@ -3,6 +3,9 @@ import { mapStageToLabel } from "@/components/recorder/composables/audioRecorder
 import type { AudioRecorderRuntimeDeps } from "@/components/recorder/composables/audioRecorderRuntimeDeps";
 import type { AudioRecorderCleanupSet } from "@/components/recorder/composables/runtime/audioRecorderRuntimeListenerTypes";
 
+/**
+ * Implements register job lifecycle listeners behavior.
+ */
 export async function registerJobLifecycleListeners(
   getDeps: () => AudioRecorderRuntimeDeps,
   cleanups: AudioRecorderCleanupSet

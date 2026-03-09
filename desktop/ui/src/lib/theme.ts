@@ -48,6 +48,9 @@ function nextTheme(current: Theme): Theme {
   return themes[(index + 1) % themes.length];
 }
 
+/**
+ * Provides the use theme composable contract.
+ */
 export function useTheme() {
   return {
     theme,

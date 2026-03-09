@@ -20,26 +20,41 @@ import {
   VoidResponseSchema,
 } from "@/schemas/ipc";
 
+/**
+ * Implements asr sidecar status behavior.
+ */
 export async function asrSidecarStatus() {
   return invokeChecked("asr_sidecar_status", EmptyPayloadSchema, AsrSidecarStatusResponseSchema, {});
 }
 
+/**
+ * Implements asr model verify behavior.
+ */
 export async function asrModelVerify(modelId: string) {
   return invokeChecked("asr_model_verify", AsrModelVerifyPayloadSchema, AsrModelVerifyResultSchema, {
     modelId,
   });
 }
 
+/**
+ * Implements asr models list behavior.
+ */
 export async function asrModelsList() {
   return invokeChecked("asr_models_list", EmptyPayloadSchema, AsrModelsListSchema, {});
 }
 
+/**
+ * Implements asr model remove behavior.
+ */
 export async function asrModelRemove(modelId: string) {
   await invokeChecked("asr_model_remove", AsrModelRemovePayloadSchema, VoidResponseSchema, {
     modelId,
   });
 }
 
+/**
+ * Implements asr model download behavior.
+ */
 export async function asrModelDownload(modelId: string) {
   return invokeChecked(
     "asr_model_download",
@@ -49,6 +64,9 @@ export async function asrModelDownload(modelId: string) {
   );
 }
 
+/**
+ * Implements transcribe audio behavior.
+ */
 export async function transcribeAudio(payload: {
   profileId: string;
   audioArtifactId: string;
@@ -66,6 +84,9 @@ export async function transcribeAudio(payload: {
   );
 }
 
+/**
+ * Implements transcript get behavior.
+ */
 export async function transcriptGet(profileId: string, transcriptId: string) {
   return invokeChecked("transcript_get", TranscriptGetPayloadSchema, TranscriptV1Schema, {
     profileId,
@@ -73,6 +94,9 @@ export async function transcriptGet(profileId: string, transcriptId: string) {
   });
 }
 
+/**
+ * Implements transcript edit save behavior.
+ */
 export async function transcriptEditSave(
   profileId: string,
   transcriptId: string,
@@ -90,6 +114,9 @@ export async function transcriptEditSave(
   );
 }
 
+/**
+ * Implements transcript export behavior.
+ */
 export async function transcriptExport(
   profileId: string,
   transcriptId: string,

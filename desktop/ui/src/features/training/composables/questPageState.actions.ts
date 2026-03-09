@@ -252,6 +252,9 @@ async function requestFeedbackForAttempt(context: QuestActionsContext) {
   }
 }
 
+/**
+ * Creates and returns the create quest actions contract.
+ */
 export function createQuestActions(args: QuestActionsArgs) {
   const deps = args.deps ?? createDefaultQuestActionsDeps(args.t, args.routerPush);
   const context: QuestActionsContext = {

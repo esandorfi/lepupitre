@@ -22,6 +22,9 @@ export type ProfilesState = {
   deleteTarget: Ref<ProfileSummary | null>;
 };
 
+/**
+ * Resolves resolve input element from current inputs.
+ */
 export function resolveInputElement(target: InputRefTarget): HTMLInputElement | null {
   if (!target) {
     return null;
@@ -41,6 +44,9 @@ export function resolveInputElement(target: InputRefTarget): HTMLInputElement | 
   return null;
 }
 
+/**
+ * Implements to localized error behavior.
+ */
 export function toLocalizedError(t: Translate, err: unknown) {
   const message = err instanceof Error ? err.message : String(err);
   if (message.includes("recording_active")) {
@@ -61,11 +67,17 @@ function formatBytes(bytes: number) {
   return `${mb.toFixed(1)} MB`;
 }
 
+/**
+ * Formats values for format profile meta.
+ */
 export function formatProfileMeta(profile: { talks_count: number; size_bytes: number }) {
   const talksLabel = profile.talks_count === 1 ? "talk" : "talks";
   return `${profile.talks_count} ${talksLabel} - ${formatBytes(profile.size_bytes)}`;
 }
 
+/**
+ * Implements initials for behavior.
+ */
 export function initialsFor(nameValue: string) {
   const parts = nameValue.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) {
@@ -77,6 +89,9 @@ export function initialsFor(nameValue: string) {
   return `${parts[0][0] ?? ""}${parts[1][0] ?? ""}`.toUpperCase();
 }
 
+/**
+ * Implements has duplicate name behavior.
+ */
 export function hasDuplicateName(nextName: string, exceptId?: string) {
   return appState.profiles.some(
     (profile) =>
@@ -85,6 +100,9 @@ export function hasDuplicateName(nextName: string, exceptId?: string) {
   );
 }
 
+/**
+ * Creates and returns the create profiles state contract.
+ */
 export function createProfilesState(): ProfilesState {
   return {
     name: ref(""),
@@ -99,6 +117,9 @@ export function createProfilesState(): ProfilesState {
   };
 }
 
+/**
+ * Creates and returns the create rename inputs contract.
+ */
 export function createRenameInputs() {
   const renameInputs = new Map<string, InputRefTarget>();
 

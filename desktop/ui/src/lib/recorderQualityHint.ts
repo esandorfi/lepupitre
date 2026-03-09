@@ -50,6 +50,9 @@ function deescalationDelayMs(
   return 0;
 }
 
+/**
+ * Normalizes normalize recorder quality hint to a safe shape.
+ */
 export function normalizeRecorderQualityHint(value?: string | null): RecorderQualityHintKey {
   if (!value) {
     return "good_level";
@@ -59,6 +62,9 @@ export function normalizeRecorderQualityHint(value?: string | null): RecorderQua
     : "good_level";
 }
 
+/**
+ * Creates and returns the create recorder quality hint stabilizer contract.
+ */
 export function createRecorderQualityHintStabilizer(
   initial: RecorderQualityHintKey = "good_level"
 ): RecorderQualityHintStabilizer {
@@ -69,6 +75,9 @@ export function createRecorderQualityHintStabilizer(
   };
 }
 
+/**
+ * Implements update recorder quality hint behavior.
+ */
 export function updateRecorderQualityHint(
   state: RecorderQualityHintStabilizer,
   incoming: RecorderQualityHintKey,

@@ -131,6 +131,9 @@ function updateMetrics(mutator: (current: NavMetricsSnapshot) => NavMetricsSnaps
   persist(next);
 }
 
+/**
+ * Records record nav intent telemetry/state events.
+ */
 export function recordNavIntent(source: PrimaryNavMode, itemId: string) {
   pendingIntent = {
     startedAt: Date.now(),
@@ -139,6 +142,9 @@ export function recordNavIntent(source: PrimaryNavMode, itemId: string) {
   };
 }
 
+/**
+ * Implements flush nav intent behavior.
+ */
 export function flushNavIntent() {
   if (!pendingIntent) {
     return;
@@ -162,6 +168,9 @@ export function flushNavIntent() {
   });
 }
 
+/**
+ * Marks mark sidebar session state transitions.
+ */
 export function markSidebarSession() {
   if (sidebarSessionMarked) {
     return;
@@ -174,12 +183,18 @@ export function markSidebarSession() {
   }));
 }
 
+/**
+ * Implements reset nav metrics behavior.
+ */
 export function resetNavMetrics() {
   pendingIntent = null;
   sidebarSessionMarked = false;
   persist({ ...defaultMetrics }, true);
 }
 
+/**
+ * Provides the use nav metrics composable contract.
+ */
 export function useNavMetrics() {
   return {
     metrics,

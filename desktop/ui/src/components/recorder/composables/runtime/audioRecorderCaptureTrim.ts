@@ -4,6 +4,9 @@ import { refreshTranscribeReadiness } from "@/components/recorder/composables/ru
 import { resolveRecorderHealthErrorCode } from "@/components/recorder/composables/runtime/audioRecorderCaptureUtils";
 import type { AudioRecorderRuntimeDeps } from "@/components/recorder/composables/audioRecorderRuntimeDeps";
 
+/**
+ * Applies apply trim updates to runtime state.
+ */
 export async function applyTrim(
   deps: AudioRecorderRuntimeDeps,
   payload: { startMs: number; endMs: number }

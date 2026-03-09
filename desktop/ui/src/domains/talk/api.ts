@@ -20,22 +20,34 @@ import {
   VoidResponseSchema,
 } from "@/schemas/ipc";
 
+/**
+ * Lists list projects from domain/runtime dependencies.
+ */
 export async function listProjects(profileId: string): Promise<ProjectListItem[]> {
   return invokeChecked("project_list", ProfileIdPayloadSchema, ProjectListResponseSchema, {
     profileId,
   });
 }
 
+/**
+ * Implements ensure training project behavior.
+ */
 export async function ensureTrainingProject(profileId: string) {
   return invokeChecked("project_ensure_training", ProfileIdPayloadSchema, IdSchema, { profileId });
 }
 
+/**
+ * Retrieves get active project from domain/runtime dependencies.
+ */
 export async function getActiveProject(profileId: string): Promise<ProjectSummary | null> {
   return invokeChecked("project_get_active", ProfileIdPayloadSchema, ProjectSummaryNullableSchema, {
     profileId,
   });
 }
 
+/**
+ * Creates and returns the create project contract.
+ */
 export async function createProject(
   profileId: string,
   payload: {
@@ -51,6 +63,9 @@ export async function createProject(
   });
 }
 
+/**
+ * Implements update project behavior.
+ */
 export async function updateProject(
   profileId: string,
   projectId: string,
@@ -63,6 +78,9 @@ export async function updateProject(
   });
 }
 
+/**
+ * Sets set active project in runtime state.
+ */
 export async function setActiveProject(profileId: string, projectId: string) {
   await invokeChecked("project_set_active", ProjectIdPayloadSchema, VoidResponseSchema, {
     profileId,
@@ -70,6 +88,9 @@ export async function setActiveProject(profileId: string, projectId: string) {
   });
 }
 
+/**
+ * Retrieves get outline from domain/runtime dependencies.
+ */
 export async function getOutline(profileId: string, projectId: string): Promise<OutlineDoc> {
   return invokeChecked("outline_get", OutlineGetPayloadSchema, OutlineDocSchema, {
     profileId,
@@ -77,6 +98,9 @@ export async function getOutline(profileId: string, projectId: string): Promise<
   });
 }
 
+/**
+ * Implements save outline behavior.
+ */
 export async function saveOutline(profileId: string, projectId: string, markdown: string) {
   await invokeChecked("outline_set", OutlineSetPayloadSchema, VoidResponseSchema, {
     profileId,
@@ -85,6 +109,9 @@ export async function saveOutline(profileId: string, projectId: string, markdown
   });
 }
 
+/**
+ * Implements export outline behavior.
+ */
 export async function exportOutline(profileId: string, projectId: string): Promise<ExportResult> {
   return invokeChecked("export_outline", ExportOutlinePayloadSchema, ExportResultSchema, {
     profileId,

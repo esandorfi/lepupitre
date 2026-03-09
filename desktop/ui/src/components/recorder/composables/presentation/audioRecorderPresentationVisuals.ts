@@ -106,6 +106,9 @@ function createCaptureControls(state: AudioRecorderState, t: (key: string) => st
   };
 }
 
+/**
+ * Creates and returns the create visual presentation contract.
+ */
 export function createVisualPresentation(params: AudioRecorderPresentationParams) {
   const { state, t, uiSettings } = params;
 

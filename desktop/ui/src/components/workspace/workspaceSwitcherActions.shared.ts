@@ -36,6 +36,9 @@ export type WorkspaceSwitcherActionDeps = {
   showSearch: ComputedRef<boolean>;
 };
 
+/**
+ * Implements has duplicate name behavior.
+ */
 export function hasDuplicateName(
   profiles: ReadonlyArray<Pick<ProfileSummary, "id" | "name">>,
   nextName: string,
@@ -48,6 +51,9 @@ export function hasDuplicateName(
   );
 }
 
+/**
+ * Implements to workspace error behavior.
+ */
 export function toWorkspaceError(t: Translate, err: unknown) {
   const message = err instanceof Error ? err.message : String(err);
   if (message.includes("recording_active")) {
@@ -56,23 +62,35 @@ export function toWorkspaceError(t: Translate, err: unknown) {
   return message;
 }
 
+/**
+ * Implements refresh profile context behavior.
+ */
 export async function refreshProfileContext() {
   await talksStore.loadActiveProject();
   await talksStore.loadProjects();
   await trainingStore.loadDailyQuest();
 }
 
+/**
+ * Creates and returns the create profile with context contract.
+ */
 export async function createProfileWithContext(name: string) {
   const id = await workspaceStore.createProfile(name);
   await refreshProfileContext();
   return id;
 }
 
+/**
+ * Implements switch profile with context behavior.
+ */
 export async function switchProfileWithContext(profileId: string) {
   await workspaceStore.switchProfile(profileId);
   await refreshProfileContext();
 }
 
+/**
+ * Implements delete profile with context behavior.
+ */
 export async function deleteProfileWithContext(profileId: string) {
   await workspaceStore.deleteProfile(profileId);
   await refreshProfileContext();

@@ -5,6 +5,9 @@ export type RecorderQualityHint =
   | "noisy_room"
   | "no_signal";
 
+/**
+ * Normalizes normalize recorder quality hint key to a safe shape.
+ */
 export function normalizeRecorderQualityHintKey(raw: string): RecorderQualityHint {
   if (raw === "too_quiet") {
     return "too_quiet";
@@ -21,6 +24,9 @@ export function normalizeRecorderQualityHintKey(raw: string): RecorderQualityHin
   return "good_level";
 }
 
+/**
+ * Implements quality guidance message keys behavior.
+ */
 export function qualityGuidanceMessageKeys(hint: RecorderQualityHint): string[] {
   if (hint === "too_quiet") {
     return ["audio.calibration_quiet_1", "audio.calibration_quiet_2"];

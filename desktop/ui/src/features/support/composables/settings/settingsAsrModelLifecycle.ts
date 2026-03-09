@@ -4,6 +4,9 @@ import { hasTauriRuntime } from "@/lib/runtime";
 import { AsrModelDownloadProgressEventSchema } from "@/schemas/ipc";
 import { createDownloadProgressQueue } from "@/features/support/composables/settings/useSettingsAsrModelHelpers";
 
+/**
+ * Binds lifecycle/effect wiring for bind asr model lifecycle.
+ */
 export function bindAsrModelLifecycle(
   progressQueue: ReturnType<typeof createDownloadProgressQueue>,
   refreshModels: () => Promise<void>,

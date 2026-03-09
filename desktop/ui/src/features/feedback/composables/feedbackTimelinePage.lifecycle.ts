@@ -5,6 +5,9 @@ import type {
   TimelineState,
 } from "@/features/feedback/composables/feedbackTimelinePage.types";
 
+/**
+ * Binds lifecycle/effect wiring for bind timeline lifecycle.
+ */
 export function bindTimelineLifecycle(options: {
   locale: Ref<string>;
   uiSettings: Ref<{ mascotEnabled: boolean; mascotIntensity: string }>;

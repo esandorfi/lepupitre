@@ -138,6 +138,9 @@ function setWaveformStyle(waveformStyle: WaveformStyle) {
   updateSettings({ waveformStyle });
 }
 
+/**
+ * Provides the use ui preferences composable contract.
+ */
 export function useUiPreferences() {
   return {
     settings,

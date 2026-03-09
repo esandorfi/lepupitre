@@ -162,10 +162,16 @@ function removeLocal(key: string): void {
   }
 }
 
+/**
+ * Sets set active preference profile in runtime state.
+ */
 export function setActivePreferenceProfile(profileId: string | null): void {
   activeProfileId = profileId;
 }
 
+/**
+ * Reads read preference from runtime storage.
+ */
 export function readPreference(key: string, options: PreferenceOptions = {}): string | null {
   const localValue = readLocalWithLegacy(key, options);
   const resolved = normalizeOptions(options);
@@ -187,6 +193,9 @@ export function readPreference(key: string, options: PreferenceOptions = {}): st
   return localValue;
 }
 
+/**
+ * Implements hydrate preference behavior.
+ */
 export async function hydratePreference(
   key: string,
   options: PreferenceOptions = {},
@@ -221,6 +230,9 @@ export async function hydratePreference(
   return localValue;
 }
 
+/**
+ * Implements hydrate preferences behavior.
+ */
 export async function hydratePreferences(
   entries: Array<{ key: string; options?: PreferenceOptions }>
 ): Promise<void> {
@@ -231,6 +243,9 @@ export async function hydratePreferences(
   );
 }
 
+/**
+ * Writes write preference to runtime storage.
+ */
 export function writePreference(
   key: string,
   value: string,
@@ -249,10 +264,16 @@ export function writePreference(
   });
 }
 
+/**
+ * Writes write preference local to runtime storage.
+ */
 export function writePreferenceLocal(key: string, value: string): void {
   writeLocal(key, value);
 }
 
+/**
+ * Implements remove preference behavior.
+ */
 export function removePreference(key: string, options: PreferenceOptions = {}): void {
   removeLocal(key);
   const resolved = normalizeOptions(options);

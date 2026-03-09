@@ -41,6 +41,9 @@ function t(key: string) {
   return messages[locale.value][key] ?? key;
 }
 
+/**
+ * Provides the use i18n composable contract.
+ */
 export function useI18n() {
   return { locale, setLocale, t };
 }

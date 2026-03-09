@@ -10,6 +10,9 @@ type SessionBootstrapDependencies = {
   hydratePreferenceContext: (profileId: string | null) => Promise<void>;
 };
 
+/**
+ * Creates and returns the create session store contract.
+ */
 export function createSessionStore(
   state: AppState,
   dependencies: SessionBootstrapDependencies

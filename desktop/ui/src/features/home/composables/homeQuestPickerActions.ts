@@ -9,6 +9,9 @@ type HomeQuestPickerActionOptions = {
   toError: (err: unknown) => string;
 };
 
+/**
+ * Creates and returns the create home quest picker actions contract.
+ */
 export function createHomeQuestPickerActions(options: HomeQuestPickerActionOptions) {
   const {
     state,

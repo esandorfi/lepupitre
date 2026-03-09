@@ -18,6 +18,9 @@ export type AsrModelState = {
   downloadProgress: Ref<Record<string, DownloadProgress>>;
 };
 
+/**
+ * Creates and returns the create asr model state contract.
+ */
 export function createAsrModelState(): AsrModelState {
   return {
     models: ref<AsrModelStatus[]>([]),
@@ -32,6 +35,9 @@ export function createAsrModelState(): AsrModelState {
   };
 }
 
+/**
+ * Formats values for format bytes.
+ */
 export function formatBytes(value?: number | null) {
   if (!value || value <= 0) {
     return "0 B";
@@ -46,6 +52,9 @@ export function formatBytes(value?: number | null) {
   return `${size.toFixed(size >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
 }
 
+/**
+ * Implements sidecar message for code behavior.
+ */
 export function sidecarMessageForCode(code: string | null, t: Translate) {
   if (code === "sidecar_missing") {
     return {

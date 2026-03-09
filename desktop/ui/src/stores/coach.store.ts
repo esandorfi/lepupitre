@@ -17,6 +17,9 @@ function requireActiveProfileId(state: AppState): string {
   return state.activeProfileId;
 }
 
+/**
+ * Creates and returns the create coach store contract.
+ */
 export function createCoachStore(state: AppState) {
   async function getProgressSnapshot(projectId?: string | null): Promise<ProgressSnapshot> {
     const profileId = requireActiveProfileId(state);

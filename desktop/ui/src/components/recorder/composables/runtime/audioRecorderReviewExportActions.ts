@@ -4,6 +4,9 @@ import { audioRevealWav } from "@/domains/recorder/api";
 import type { TranscriptExportFormat } from "@/schemas/ipc";
 import type { AudioRecorderRuntimeDeps } from "@/components/recorder/composables/audioRecorderRuntimeDeps";
 
+/**
+ * Implements export transcript behavior.
+ */
 export async function exportTranscript(
   deps: AudioRecorderRuntimeDeps,
   format: TranscriptExportFormat
@@ -27,6 +30,9 @@ export async function exportTranscript(
   }
 }
 
+/**
+ * Implements export preset behavior.
+ */
 export function exportPreset(
   deps: AudioRecorderRuntimeDeps,
   preset: "presentation" | "podcast" | "voice_note"
@@ -42,6 +48,9 @@ export function exportPreset(
   void exportTranscript(deps, "vtt");
 }
 
+/**
+ * Implements open export path behavior.
+ */
 export async function openExportPath(deps: AudioRecorderRuntimeDeps) {
   if (!deps.exportPath.value) {
     return;
@@ -53,6 +62,9 @@ export async function openExportPath(deps: AudioRecorderRuntimeDeps) {
   }
 }
 
+/**
+ * Implements reveal recording behavior.
+ */
 export async function revealRecording(deps: AudioRecorderRuntimeDeps) {
   if (!deps.lastSavedPath.value) {
     return;

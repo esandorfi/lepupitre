@@ -5,6 +5,9 @@ export type InputRefTarget =
   | { $el?: Element | null; inputRef?: HTMLInputElement | null }
   | null;
 
+/**
+ * Resolves resolve input element from current inputs.
+ */
 export function resolveInputElement(target: InputRefTarget): HTMLInputElement | null {
   if (!target) {
     return null;
@@ -24,6 +27,9 @@ export function resolveInputElement(target: InputRefTarget): HTMLInputElement | 
   return null;
 }
 
+/**
+ * Resolves resolve button element from current inputs.
+ */
 export function resolveButtonElement(target: ButtonRefTarget): HTMLButtonElement | null {
   if (!target) {
     return null;

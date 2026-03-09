@@ -2,6 +2,9 @@ import { computed, type Ref } from "vue";
 import type { QuestMapNode } from "@/features/home/composables/useHomePresentation";
 import type { ProgressSnapshot } from "@/schemas/ipc";
 
+/**
+ * Builds the build quest map state derived model.
+ */
 export function buildQuestMapState(options: {
   t: (key: string) => string;
   trainingProgress: Ref<ProgressSnapshot | null>;

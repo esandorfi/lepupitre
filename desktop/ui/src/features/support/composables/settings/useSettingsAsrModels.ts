@@ -7,6 +7,9 @@ import { useAsrModelRuntime } from "@/features/support/composables/settings/sett
 
 type Translate = (key: string) => string;
 
+/**
+ * Provides the use settings asr models composable contract.
+ */
 export function useSettingsAsrModels(t: Translate) {
   const state = createAsrModelState();
   const view = createAsrModelView(t, state);

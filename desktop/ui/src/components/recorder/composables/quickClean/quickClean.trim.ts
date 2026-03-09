@@ -5,6 +5,9 @@ import type {
   RecorderQuickCleanPanelProps,
 } from "@/components/recorder/composables/quickClean/quickClean.types";
 
+/**
+ * Creates and returns the create trim state contract.
+ */
 export function createTrimState(props: RecorderQuickCleanPanelProps, emit: RecorderQuickCleanPanelEmit) {
   const trimStartSec = ref(0);
   const trimEndSec = ref(0);

@@ -24,6 +24,9 @@ function formatValue(value: unknown) {
   }
 }
 
+/**
+ * Provides the use peer review page state composable contract.
+ */
 export function usePeerReviewPageState() {
   const { t } = useI18n();
   const route = useRoute();

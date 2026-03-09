@@ -5,6 +5,9 @@ import { registerJobLifecycleListeners } from "@/components/recorder/composables
 import { registerRecordingTelemetryListener } from "@/components/recorder/composables/runtime/audioRecorderRuntimeTelemetryListener";
 import { registerAsrListeners } from "@/components/recorder/composables/runtime/audioRecorderRuntimeAsrListeners";
 
+/**
+ * Implements register audio recorder runtime listeners behavior.
+ */
 export async function registerAudioRecorderRuntimeListeners(
   getDeps: () => AudioRecorderRuntimeDeps,
   cleanups: AudioRecorderCleanupSet

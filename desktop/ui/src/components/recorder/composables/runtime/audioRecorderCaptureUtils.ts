@@ -8,6 +8,9 @@ import { estimateTelemetryPayloadBytes } from "@/lib/recorderTelemetryBudget";
 import type { TranscriptV1 } from "@/schemas/ipc";
 import type { AudioRecorderRuntimeDeps } from "@/components/recorder/composables/audioRecorderRuntimeDeps";
 
+/**
+ * Implements map stage to label behavior.
+ */
 export function mapStageToLabel(
   deps: AudioRecorderRuntimeDeps,
   stage: string | null,
@@ -36,16 +39,25 @@ export function mapStageToLabel(
   return deps.t("audio.stage_processing");
 }
 
+/**
+ * Implements reset live transcript behavior.
+ */
 export function resetLiveTranscript(deps: AudioRecorderRuntimeDeps) {
   deps.liveSegments.value = [];
   deps.livePartial.value = null;
 }
 
+/**
+ * Implements reset quality hint state behavior.
+ */
 export function resetQualityHintState(deps: AudioRecorderRuntimeDeps) {
   deps.qualityHintStabilizer.value = createRecorderQualityHintStabilizer("good_level");
   deps.qualityHintKey.value = "good_level";
 }
 
+/**
+ * Applies apply quality hint updates to runtime state.
+ */
 export function applyQualityHint(deps: AudioRecorderRuntimeDeps, rawHint: string | null | undefined) {
   const normalized = normalizeRecorderQualityHint(rawHint);
   deps.qualityHintKey.value = updateRecorderQualityHint(
@@ -55,6 +67,9 @@ export function applyQualityHint(deps: AudioRecorderRuntimeDeps, rawHint: string
   );
 }
 
+/**
+ * Formats values for format duration.
+ */
 export function formatDuration(value: number | null) {
   if (value === null || Number.isNaN(value)) {
     return "0:00";
@@ -65,14 +80,23 @@ export function formatDuration(value: number | null) {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
+/**
+ * Implements level percent behavior.
+ */
 export function levelPercent(value: number) {
   return Math.max(0, Math.min(1, value)) * 100;
 }
 
+/**
+ * Implements transcript to editor text behavior.
+ */
 export function transcriptToEditorText(value: TranscriptV1): string {
   return value.segments.map((segment) => segment.text.trim()).join("\n").trim();
 }
 
+/**
+ * Resolves resolve recorder health error code from current inputs.
+ */
 export function resolveRecorderHealthErrorCode(raw: string): string | null {
   const asrCode = classifyAsrError(raw);
   if (asrCode) {
@@ -82,6 +106,9 @@ export function resolveRecorderHealthErrorCode(raw: string): string | null {
   return match?.[0] ?? null;
 }
 
+/**
+ * Implements peaks changed behavior.
+ */
 export function peaksChanged(next: number[], current: number[], epsilon = 0.01): boolean {
   if (next.length !== current.length) {
     return true;
@@ -94,12 +121,18 @@ export function peaksChanged(next: number[], current: number[], epsilon = 0.01):
   return false;
 }
 
+/**
+ * Implements reset telemetry observation behavior.
+ */
 export function resetTelemetryObservation(deps: AudioRecorderRuntimeDeps) {
   deps.telemetryWindowStartMs.value = null;
   deps.telemetryEventCount.value = 0;
   deps.telemetryMaxPayloadBytes.value = 0;
 }
 
+/**
+ * Implements register telemetry observation behavior.
+ */
 export function registerTelemetryObservation(deps: AudioRecorderRuntimeDeps, payload: unknown) {
   if (deps.telemetryWindowStartMs.value === null) {
     deps.telemetryWindowStartMs.value = Date.now();

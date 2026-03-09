@@ -17,6 +17,9 @@ function formatDate(value: string | null | undefined) {
 }
 
 
+/**
+ * Provides the use boss run page state composable contract.
+ */
 export function useBossRunPageState() {
   const { t } = useI18n();
   const router = useRouter();

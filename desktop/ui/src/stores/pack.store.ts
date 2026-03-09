@@ -19,6 +19,9 @@ function requireActiveProfileId(state: AppState): string {
   return state.activeProfileId;
 }
 
+/**
+ * Creates and returns the create pack store contract.
+ */
 export function createPackStore(state: AppState) {
   async function exportPack(runId: string): Promise<ExportResult> {
     const profileId = requireActiveProfileId(state);

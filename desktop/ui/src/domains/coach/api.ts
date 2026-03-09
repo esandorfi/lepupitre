@@ -11,6 +11,9 @@ import {
   TalksBlueprintSchema,
 } from "@/schemas/ipc";
 
+/**
+ * Retrieves get progress snapshot from domain/runtime dependencies.
+ */
 export async function getProgressSnapshot(
   profileId: string,
   projectId?: string | null
@@ -26,6 +29,9 @@ export async function getProgressSnapshot(
   );
 }
 
+/**
+ * Retrieves get mascot context message from domain/runtime dependencies.
+ */
 export async function getMascotContextMessage(
   profileId: string,
   payload: {
@@ -47,6 +53,9 @@ export async function getMascotContextMessage(
   );
 }
 
+/**
+ * Retrieves get talks blueprint from domain/runtime dependencies.
+ */
 export async function getTalksBlueprint(
   profileId: string,
   projectId: string,

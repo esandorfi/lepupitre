@@ -1,6 +1,9 @@
 import { isTypingTargetElement, resolveRecorderShortcutAction } from "@/lib/recorderFlow";
 import type { AudioRecorderRuntimeDeps } from "@/components/recorder/composables/audioRecorderRuntimeDeps";
 
+/**
+ * Implements go analyze export behavior.
+ */
 export function goAnalyzeExport(deps: AudioRecorderRuntimeDeps) {
   if (!deps.activeTranscriptIdForAnalysis.value) {
     return;
@@ -8,10 +11,16 @@ export function goAnalyzeExport(deps: AudioRecorderRuntimeDeps) {
   deps.phase.value = "analyze_export";
 }
 
+/**
+ * Implements back to quick clean behavior.
+ */
 export function backToQuickClean(deps: AudioRecorderRuntimeDeps) {
   deps.phase.value = "quick_clean";
 }
 
+/**
+ * Implements request analyze behavior.
+ */
 export function requestAnalyze(deps: AudioRecorderRuntimeDeps) {
   if (!deps.activeTranscriptIdForAnalysis.value || !deps.canAnalyzeRecorder.value) {
     return;
@@ -19,10 +28,16 @@ export function requestAnalyze(deps: AudioRecorderRuntimeDeps) {
   deps.emit("analyze", { transcriptId: deps.activeTranscriptIdForAnalysis.value });
 }
 
+/**
+ * Implements handle view feedback behavior.
+ */
 export function handleViewFeedback(deps: AudioRecorderRuntimeDeps) {
   deps.emit("viewFeedback");
 }
 
+/**
+ * Implements handle onboarding context behavior.
+ */
 export function handleOnboardingContext(
   deps: AudioRecorderRuntimeDeps,
   payload: {
@@ -35,6 +50,9 @@ export function handleOnboardingContext(
   deps.emit("onboardingContext", payload);
 }
 
+/**
+ * Implements handle capture primary action behavior.
+ */
 export async function handleCapturePrimaryAction(deps: AudioRecorderRuntimeDeps) {
   if (deps.isStarting.value) {
     return;
@@ -50,6 +68,9 @@ export async function handleCapturePrimaryAction(deps: AudioRecorderRuntimeDeps)
   await deps.startRecording();
 }
 
+/**
+ * Implements handle shortcut behavior.
+ */
 export function handleShortcut(deps: AudioRecorderRuntimeDeps, event: KeyboardEvent) {
   if (isTypingTargetElement(event.target)) {
     return;

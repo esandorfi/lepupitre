@@ -3,6 +3,9 @@ import { useSettingsAsrModels } from "@/features/support/composables/settings/us
 import { useSettingsInsights } from "@/features/support/composables/settings/useSettingsInsights";
 import { useSettingsPreferences } from "@/features/support/composables/settings/useSettingsPreferences";
 
+/**
+ * Provides the use settings page controller composable contract.
+ */
 export function useSettingsPageController() {
   const { t } = useI18n();
   const insights = useSettingsInsights();

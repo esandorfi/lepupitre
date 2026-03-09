@@ -85,6 +85,9 @@ function updateSettings(patch: Partial<TranscriptionSettings>) {
   });
 }
 
+/**
+ * Provides the use transcription settings composable contract.
+ */
 export function useTranscriptionSettings() {
   return {
     settings,

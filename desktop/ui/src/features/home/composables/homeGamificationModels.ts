@@ -9,6 +9,9 @@ import type {
   QuestDaily,
 } from "@/schemas/ipc";
 
+/**
+ * Creates and returns the create gamification state contract.
+ */
 export function createGamificationState(params: {
   t: (key: string) => string;
   uiSettings: Readonly<

@@ -17,6 +17,9 @@ import {
   VoidResponseSchema,
 } from "@/schemas/ipc";
 
+/**
+ * Implements analyze attempt behavior.
+ */
 export async function analyzeAttempt(profileId: string, attemptId: string) {
   return invokeChecked("analyze_attempt", AnalyzeAttemptPayloadSchema, AnalyzeResponseSchema, {
     profileId,
@@ -24,6 +27,9 @@ export async function analyzeAttempt(profileId: string, attemptId: string) {
   });
 }
 
+/**
+ * Retrieves get feedback from domain/runtime dependencies.
+ */
 export async function getFeedback(profileId: string, feedbackId: string): Promise<FeedbackV1> {
   return invokeChecked("feedback_get", FeedbackGetPayloadSchema, FeedbackV1Schema, {
     profileId,
@@ -31,6 +37,9 @@ export async function getFeedback(profileId: string, feedbackId: string): Promis
   });
 }
 
+/**
+ * Retrieves get feedback context from domain/runtime dependencies.
+ */
 export async function getFeedbackContext(
   profileId: string,
   feedbackId: string
@@ -46,6 +55,9 @@ export async function getFeedbackContext(
   );
 }
 
+/**
+ * Retrieves get feedback timeline from domain/runtime dependencies.
+ */
 export async function getFeedbackTimeline(
   profileId: string,
   projectId?: string | null,
@@ -63,6 +75,9 @@ export async function getFeedbackTimeline(
   );
 }
 
+/**
+ * Retrieves get feedback note from domain/runtime dependencies.
+ */
 export async function getFeedbackNote(
   profileId: string,
   feedbackId: string
@@ -73,6 +88,9 @@ export async function getFeedbackNote(
   });
 }
 
+/**
+ * Sets set feedback note in runtime state.
+ */
 export async function setFeedbackNote(profileId: string, feedbackId: string, note: string) {
   await invokeChecked("feedback_note_set", FeedbackNoteSetPayloadSchema, VoidResponseSchema, {
     profileId,

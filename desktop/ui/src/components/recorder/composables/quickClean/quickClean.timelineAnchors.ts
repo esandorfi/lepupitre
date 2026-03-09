@@ -4,6 +4,9 @@ import type {
   RawTimelineChunk,
 } from "@/components/recorder/composables/quickClean/quickClean.types";
 
+/**
+ * Implements compact preview behavior.
+ */
 export function compactPreview(value: string, max = 120): string {
   if (value.length <= max) {
     return value;
@@ -58,6 +61,9 @@ function resolveChunkForLine(
   return chunks[bestIndex] ?? chunks[fallbackIndex]!;
 }
 
+/**
+ * Builds the build clean text line anchors derived model.
+ */
 export function buildCleanTextLineAnchors(options: {
   transcriptText: string;
   hasTranscript: boolean;
@@ -79,6 +85,9 @@ export function buildCleanTextLineAnchors(options: {
   });
 }
 
+/**
+ * Builds the build clean text anchors derived model.
+ */
 export function buildCleanTextAnchors(options: {
   transcriptText: string;
   hasTranscript: boolean;

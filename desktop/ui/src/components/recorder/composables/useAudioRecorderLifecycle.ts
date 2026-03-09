@@ -9,6 +9,9 @@ import {
   registerAudioRecorderRuntimeListeners,
 } from "@/components/recorder/composables/runtime/audioRecorderRuntimeListeners";
 
+/**
+ * Binds lifecycle/effect wiring for bind audio recorder mounted hooks.
+ */
 export function bindAudioRecorderMountedHooks(getDeps: () => AudioRecorderRuntimeDeps) {
   const cleanups = createAudioRecorderCleanupSet();
 
@@ -39,6 +42,9 @@ export function bindAudioRecorderMountedHooks(getDeps: () => AudioRecorderRuntim
   });
 }
 
+/**
+ * Binds lifecycle/effect wiring for bind audio recorder watches.
+ */
 export function bindAudioRecorderWatches(getDeps: () => AudioRecorderRuntimeDeps) {
   bindAudioRecorderRuntimeWatches(getDeps);
 }

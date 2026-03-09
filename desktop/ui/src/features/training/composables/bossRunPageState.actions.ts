@@ -61,6 +61,9 @@ type BossRunActionsArgs = {
   deps?: BossRunActionsDeps;
 };
 
+/**
+ * Creates and returns the create boss run actions contract.
+ */
 export function createBossRunActions(args: BossRunActionsArgs) {
   const deps = args.deps ?? createDefaultBossRunActionsDeps(args.t, args.routerPush);
   const { identity, model, ui } = args.state;

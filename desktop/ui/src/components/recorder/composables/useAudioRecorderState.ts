@@ -15,6 +15,9 @@ import type {
   AudioStatusKey,
 } from "@/components/recorder/composables/audioRecorderRuntimeDeps";
 
+/**
+ * Provides the use audio recorder state composable contract.
+ */
 export function useAudioRecorderState() {
   const activeProfileId = computed(() => appState.activeProfileId);
   const phase = ref<AudioRecorderPhase>("capture");

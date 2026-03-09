@@ -8,6 +8,9 @@ import {
 import type { AudioRecorderRuntimeDeps } from "@/components/recorder/composables/audioRecorderRuntimeDeps";
 import type { AudioRecorderCleanupSet } from "@/components/recorder/composables/runtime/audioRecorderRuntimeListenerTypes";
 
+/**
+ * Implements register asr listeners behavior.
+ */
 export async function registerAsrListeners(
   getDeps: () => AudioRecorderRuntimeDeps,
   cleanups: AudioRecorderCleanupSet

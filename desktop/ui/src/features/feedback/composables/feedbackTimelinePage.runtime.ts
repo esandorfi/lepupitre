@@ -62,6 +62,9 @@ type TimelineRuntimeArgs = {
   deps?: TimelineRuntimeDeps;
 };
 
+/**
+ * Creates and returns the create timeline runtime contract.
+ */
 export function createTimelineRuntime(args: TimelineRuntimeArgs) {
   const deps = args.deps ?? createDefaultTimelineRuntimeDeps();
   const { identity, model, ui } = args.state;

@@ -6,6 +6,9 @@ import { appState } from "@/stores/app";
 import { formatBytes } from "@/features/packs/composables/packsPageHelpers";
 import { createPacksPageRuntime } from "@/features/packs/composables/packsPageRuntime";
 
+/**
+ * Provides the use packs page state composable contract.
+ */
 export function usePacksPageState() {
   const { t } = useI18n();
   const error = ref<string | null>(null);
