@@ -13,6 +13,12 @@ import {
 } from "@/features/talks/composables/shared/talkRoutes";
 import { useTalkReportPageState } from "@/features/talks/composables/reportPage/useTalkReportPageState";
 
+/**
+ * Page composition root (report step).
+ * Reads: summary/timeline/runs projections from `useTalkReportPageState`.
+ * Actions: export pack, reveal export path, and set-active command delegation.
+ * Boundary: side-effect and race policies live in report runtime, not in template/page code.
+ */
 const {
   t,
   projectId,

@@ -15,7 +15,6 @@ const { t } = useI18n();
 defineProps<{
   isLoading: boolean;
   error: string | null;
-  hasActiveProfile: boolean;
   projects: ProjectListItem[];
   switchingProjectId: string | null;
   onGoToDefine: (projectId: string) => void;
@@ -31,10 +30,10 @@ defineProps<{
     <div v-else-if="error" class="app-meta-danger">
       {{ error }}
     </div>
-    <div v-else-if="hasActiveProfile && projects.length === 0" class="app-body-muted">
+    <div v-else-if="projects.length === 0" class="app-body-muted">
       {{ t("talks.empty") }}
     </div>
-    <div v-else-if="hasActiveProfile" class="space-y-3">
+    <div v-else class="space-y-3">
       <EntityRow
         v-for="project in projects"
         :key="project.id"

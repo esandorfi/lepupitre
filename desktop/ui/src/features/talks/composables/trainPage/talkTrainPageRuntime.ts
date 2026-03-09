@@ -73,6 +73,10 @@ type TalkTrainRuntimeArgs = {
   deps?: TalkTrainRuntimeDeps;
 };
 
+/**
+ * Creates the train-page runtime command layer.
+ * Applies takeLatest for data loading and singleFlight for project activation.
+ */
 export function createTalkTrainRuntime(args: TalkTrainRuntimeArgs) {
   const deps = args.deps ?? createDefaultTalkTrainRuntimeDeps();
   const { identity, model, ui } = args.state;

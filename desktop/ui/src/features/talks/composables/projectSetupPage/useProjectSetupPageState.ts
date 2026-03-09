@@ -5,6 +5,9 @@ import { appState } from "@/stores/app";
 import { useTalkFeatureProfileState } from "@/features/talks/composables/shared/talkFeatureState";
 import { createProjectSetupPageRuntime } from "@/features/talks/composables/projectSetupPage/projectSetupPageRuntime";
 
+/**
+ * Composes project-setup page state and delegates persistence/navigation to runtime.
+ */
 export function useProjectSetupPageState() {
   const { t } = useI18n();
   const router = useRouter();

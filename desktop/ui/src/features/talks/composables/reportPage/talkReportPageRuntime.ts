@@ -78,6 +78,10 @@ type TalkReportRuntimeArgs = {
   deps?: TalkReportRuntimeDeps;
 };
 
+/**
+ * Creates the report-page runtime command layer.
+ * Export actions and report loading share normalized runtime error handling.
+ */
 export function createTalkReportRuntime(args: TalkReportRuntimeArgs) {
   const deps = args.deps ?? createDefaultTalkReportRuntimeDeps();
   const { identity, model, ui } = args.state;

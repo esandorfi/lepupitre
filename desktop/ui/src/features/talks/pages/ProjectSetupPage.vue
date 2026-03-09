@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { useProjectSetupPageState } from "@/features/talks/composables/projectSetupPage/useProjectSetupPageState";
 
+/**
+ * Page composition root (project setup).
+ * Reads: setup draft/profile/project state from `useProjectSetupPageState`.
+ * Actions: save-project command delegated to project-setup runtime.
+ * Boundary: this page remains a form/layout surface without direct store side-effect code.
+ */
 const {
   t,
   title,

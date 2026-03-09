@@ -16,6 +16,9 @@ import {
   createTalkDefineRuntime,
 } from "@/features/talks/composables/definePage/talkDefinePageRuntime";
 
+/**
+ * Composes define-page draft/checklist state and wires define runtime commands.
+ */
 export function useTalkDefinePageState() {
   const { t } = useI18n();
   const route = useRoute();

@@ -8,14 +8,17 @@ import {
   bindTalksLifecycle,
   createTalksRuntime,
 } from "@/features/talks/composables/talksPage/talksPageRuntime";
-import { useTalkFeatureProfileState } from "@/features/talks/composables/shared/talkFeatureState";
+import { useTalkHubAccessGate } from "@/features/talks/composables/shared/talkFeatureState";
 import { talkDefineRoute } from "@/features/talks/composables/shared/talkRoutes";
 
+/**
+ * Composes talks-hub page VM surfaces (`view`, `data`, `actions`) from app state + runtime.
+ */
 export function useTalksPageState() {
-  const { t, locale } = useI18n();
+  const { locale } = useI18n();
   const { settings: uiSettings } = useUiPreferences();
   const router = useRouter();
-  const { hasActiveProfile } = useTalkFeatureProfileState();
+  const gate = useTalkHubAccessGate();
 
   const state = computed(() => appState);
   const error = ref<string | null>(null);
@@ -27,7 +30,6 @@ export function useTalksPageState() {
   const talksBlueprint = ref<TalksBlueprint | null>(null);
 
   const showMascotCard = computed(() => uiSettings.value.mascotEnabled);
-  const hasActiveProject = computed(() => Boolean(state.value.activeProject));
   const mascotBody = computed(() =>
     uiSettings.value.mascotIntensity === "minimal" ? "" : mascotMessage.value?.body ?? ""
   );
@@ -73,12 +75,6 @@ export function useTalksPageState() {
     get projects() {
       return state.value.projects;
     },
-    get hasActiveProfile() {
-      return hasActiveProfile.value;
-    },
-    get hasActiveProject() {
-      return hasActiveProject.value;
-    },
     get showMascotCard() {
       return showMascotCard.value;
     },
@@ -109,10 +105,28 @@ export function useTalksPageState() {
     },
   };
 
+  const guard = {
+    get hasActiveProfile() {
+      return gate.hasActiveProfile.value;
+    },
+    get hasActiveProject() {
+      return gate.hasActiveProject.value;
+    },
+    get canShowProjects() {
+      return gate.canShowProjects.value;
+    },
+    get canShowBlueprint() {
+      return gate.canShowBlueprint.value;
+    },
+    get shouldShowProfilePrompt() {
+      return gate.shouldShowProfilePrompt.value;
+    },
+  };
+
   return {
-    t,
     view,
     data,
+    guard,
     actions: {
       setActive,
       goToDefine,

@@ -73,6 +73,10 @@ type BuilderActionsArgs = {
   deps?: BuilderActionsDeps;
 };
 
+/**
+ * Creates builder-page command actions (load/save/template/export/reveal).
+ * Async policies and runtime error transitions are centralized here.
+ */
 export function createBuilderActions(args: BuilderActionsArgs) {
   const deps = args.deps ?? createDefaultBuilderActionsDeps(args.t);
   const { identity, model, ui } = args.state;

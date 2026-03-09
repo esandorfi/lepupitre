@@ -1,3 +1,6 @@
+/**
+ * Returns framework-specific coaching prompts shown next to the outline editor.
+ */
 export function frameworkPrompts(t: (key: string) => string, frameworkId: string) {
   if (frameworkId === "problem-solution-impact") {
     return [
@@ -20,6 +23,9 @@ export function frameworkPrompts(t: (key: string) => string, frameworkId: string
   ];
 }
 
+/**
+ * Returns markdown section headers for the selected framework template.
+ */
 export function templateSections(t: (key: string) => string, frameworkId: string) {
   if (frameworkId === "problem-solution-impact") {
     return [

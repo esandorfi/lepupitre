@@ -1,5 +1,8 @@
 type TranslateFn = (key: string) => string;
 
+/**
+ * Normalizes unknown project stages to the default talks stage.
+ */
 export function normalizedStage(stage: string | null | undefined) {
   if (stage === "builder" || stage === "train" || stage === "export") {
     return stage;
@@ -7,6 +10,9 @@ export function normalizedStage(stage: string | null | undefined) {
   return "draft";
 }
 
+/**
+ * Returns mascot panel tone classes from semantic message kind.
+ */
 export function mascotToneClass(kind: string | null | undefined) {
   if (kind === "celebrate") {
     return "border-[var(--color-success)] bg-[color-mix(in_srgb,var(--color-success)_15%,var(--color-surface))]";
@@ -17,6 +23,9 @@ export function mascotToneClass(kind: string | null | undefined) {
   return "border-[var(--color-border)] bg-[var(--color-surface-elevated)]";
 }
 
+/**
+ * Maps completion percent to progress-tone class.
+ */
 export function blueprintPercentClass(percent: number) {
   if (percent >= 100) {
     return "bg-[var(--color-success)]";
@@ -27,6 +36,9 @@ export function blueprintPercentClass(percent: number) {
   return "bg-[var(--color-warning)]";
 }
 
+/**
+ * Returns class tokens for completed vs pending blueprint steps.
+ */
 export function blueprintStepClass(done: boolean) {
   if (done) {
     return "border-[var(--color-success)] bg-[color-mix(in_srgb,var(--color-success)_14%,var(--color-surface))]";
@@ -34,6 +46,9 @@ export function blueprintStepClass(done: boolean) {
   return "border-[var(--app-border)] bg-[var(--color-surface-elevated)]";
 }
 
+/**
+ * Formats duration in minutes for compact talks-card display.
+ */
 export function formatDuration(seconds: number | null | undefined) {
   if (!seconds || seconds <= 0) {
     return "--";
@@ -41,6 +56,9 @@ export function formatDuration(seconds: number | null | undefined) {
   return Math.round(seconds / 60).toString();
 }
 
+/**
+ * Builds a relative "last activity" label with translation fallbacks.
+ */
 export function formatLastActivity(t: TranslateFn, value: string | null | undefined) {
   if (!value) {
     return t("talks.last_activity_unknown");
@@ -70,6 +88,9 @@ export function formatLastActivity(t: TranslateFn, value: string | null | undefi
   return date.toLocaleDateString();
 }
 
+/**
+ * Formats canonical talks numbering labels (T1, T2, ...).
+ */
 export function talkNumberLabel(number: number | null | undefined) {
   if (!number) {
     return null;
@@ -77,6 +98,9 @@ export function talkNumberLabel(number: number | null | undefined) {
   return `T${number}`;
 }
 
+/**
+ * Maps a normalized stage key to the translated talks step label.
+ */
 export function talkStageLabel(t: TranslateFn, stage: string | null | undefined) {
   const key = normalizedStage(stage);
   if (key === "draft") {

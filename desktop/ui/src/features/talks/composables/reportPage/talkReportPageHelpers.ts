@@ -36,6 +36,9 @@ export type TimelineItem = {
   meta?: string;
 };
 
+/**
+ * Formats an ISO date for UI display with a small cache for repeated values.
+ */
 export function formatDate(value: string | null | undefined) {
   if (!value) {
     return "--";
@@ -51,6 +54,9 @@ export function formatDate(value: string | null | undefined) {
   return rememberDisplayDate(value, displayDateFormatter.format(date));
 }
 
+/**
+ * Maps quest-attempt artifact presence to a translated status label.
+ */
 export function attemptStatus(
   t: TranslateFn,
   item: { has_feedback: boolean; has_transcript: boolean; has_audio: boolean }
@@ -67,6 +73,9 @@ export function attemptStatus(
   return t("quest.status_not_started");
 }
 
+/**
+ * Maps boss-run artifact presence to a translated timeline status label.
+ */
 export function runStatus(t: TranslateFn, run: RunSummary) {
   if (run.feedback_id) {
     return t("talk_report.timeline_feedback");
@@ -80,6 +89,9 @@ export function runStatus(t: TranslateFn, run: RunSummary) {
   return t("talk_report.timeline_started");
 }
 
+/**
+ * Normalizes output type labels with translation for known artifact types.
+ */
 export function outputLabel(t: TranslateFn, outputType: string) {
   const type = outputType.toLowerCase();
   if (type === "audio") {
@@ -91,6 +103,9 @@ export function outputLabel(t: TranslateFn, outputType: string) {
   return outputType;
 }
 
+/**
+ * Builds a unified timeline of attempts, runs, and peer reviews sorted by newest first.
+ */
 export function buildTimeline(
   t: TranslateFn,
   projectId: string,
@@ -145,6 +160,9 @@ export function buildTimeline(
   return items;
 }
 
+/**
+ * Aggregates top-level report metrics used by talks summary cards.
+ */
 export function buildSummary(report: QuestReportItem[]) {
   const total = report.length;
   let started = 0;

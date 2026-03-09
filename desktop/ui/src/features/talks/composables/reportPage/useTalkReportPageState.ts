@@ -16,6 +16,10 @@ import {
 import { useTalkProjectState } from "@/features/talks/composables/shared/talkFeatureState";
 import { createTalkReportRuntime } from "@/features/talks/composables/reportPage/talkReportPageRuntime";
 
+/**
+ * Composes report-page view state and timeline projections.
+ * Runtime remains the only layer performing fetch/export side effects.
+ */
 export function useTalkReportPageState() {
   const { t } = useI18n();
   const route = useRoute();

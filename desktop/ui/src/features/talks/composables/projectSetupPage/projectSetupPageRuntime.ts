@@ -57,6 +57,10 @@ type ProjectSetupPageRuntimeArgs = {
   deps?: ProjectSetupPageRuntimeDeps;
 };
 
+/**
+ * Creates project-setup runtime commands for bootstrap and project creation.
+ * Validation and payload normalization are handled before calling store APIs.
+ */
 export function createProjectSetupPageRuntime(args: ProjectSetupPageRuntimeArgs) {
   const deps =
     args.deps ?? createDefaultProjectSetupPageRuntimeDeps(args.t, args.pushHome);

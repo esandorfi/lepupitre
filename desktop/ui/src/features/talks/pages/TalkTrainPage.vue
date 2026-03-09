@@ -12,6 +12,12 @@ import {
 } from "@/features/talks/composables/shared/talkRoutes";
 import { useTalkTrainPageState } from "@/features/talks/composables/trainPage/useTalkTrainPageState";
 
+/**
+ * Page composition root (train step).
+ * Reads: project/report/timeline projections from `useTalkTrainPageState`.
+ * Actions: activate project and mark-train-stage commands from train runtime.
+ * Boundary: page wires cards and navigation metadata only.
+ */
 const {
   t,
   projectId,

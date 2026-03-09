@@ -9,6 +9,10 @@ import {
 import { useTalkProjectState } from "@/features/talks/composables/shared/talkFeatureState";
 import { createTalkExportRuntime } from "@/features/talks/composables/exportPage/talkExportPageRuntime";
 
+/**
+ * Composes export-page reactive state and binds export runtime commands.
+ * Keep orchestration in runtime so template logic remains declarative.
+ */
 export function useTalkExportPageState() {
   const { t } = useI18n();
   const route = useRoute();
