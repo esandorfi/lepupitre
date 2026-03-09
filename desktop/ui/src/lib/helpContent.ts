@@ -134,10 +134,16 @@ function loadHelpContentEntries(): HelpContentEntry[] {
 const HELP_CONTENT_ENTRIES = loadHelpContentEntries();
 const HELP_CONTENT_BY_ID = new Map(HELP_CONTENT_ENTRIES.map((entry) => [entry.id, entry]));
 
+/**
+ * Lists list help content entries from domain/runtime dependencies.
+ */
 export function listHelpContentEntries(): HelpContentEntry[] {
   return HELP_CONTENT_ENTRIES;
 }
 
+/**
+ * Lists list help content by audience from domain/runtime dependencies.
+ */
 export function listHelpContentByAudience(audience: HelpAudience | null): HelpContentEntry[] {
   if (!audience) {
     return HELP_CONTENT_ENTRIES;
@@ -145,6 +151,9 @@ export function listHelpContentByAudience(audience: HelpAudience | null): HelpCo
   return HELP_CONTENT_ENTRIES.filter((entry) => entry.audiences.includes(audience));
 }
 
+/**
+ * Retrieves get help content by id from domain/runtime dependencies.
+ */
 export function getHelpContentById(id: string | null | undefined): HelpContentEntry | null {
   if (!id) {
     return null;
@@ -152,10 +161,16 @@ export function getHelpContentById(id: string | null | undefined): HelpContentEn
   return HELP_CONTENT_BY_ID.get(id) ?? null;
 }
 
+/**
+ * Retrieves get onboarding track by audience from domain/runtime dependencies.
+ */
 export function getOnboardingTrackByAudience(audience: HelpAudience): HelpContentEntry | null {
   return getHelpContentById(ONBOARDING_TRACK_BY_AUDIENCE[audience]);
 }
 
+/**
+ * Implements parse help audience behavior.
+ */
 export function parseHelpAudience(value: unknown): HelpAudience | null {
   const candidate = Array.isArray(value) ? value[0] : value;
   if (typeof candidate !== "string") {
@@ -164,6 +179,9 @@ export function parseHelpAudience(value: unknown): HelpAudience | null {
   return HELP_AUDIENCES.includes(candidate as HelpAudience) ? (candidate as HelpAudience) : null;
 }
 
+/**
+ * Implements parse help topic behavior.
+ */
 export function parseHelpTopic(value: unknown): string | null {
   const candidate = Array.isArray(value) ? value[0] : value;
   if (typeof candidate !== "string") {
@@ -173,6 +191,9 @@ export function parseHelpTopic(value: unknown): string | null {
   return trimmed ? trimmed : null;
 }
 
+/**
+ * Implements to help topic element id behavior.
+ */
 export function toHelpTopicElementId(topicId: string): string {
   return `help-topic-${topicId.replace(/[^a-z0-9_-]/gi, "-")}`;
 }

@@ -14,6 +14,9 @@ import {
   compactPreview,
 } from "@/components/recorder/composables/quickClean/quickClean.timelineAnchors";
 
+/**
+ * Formats values for format timeline clock.
+ */
 export function formatTimelineClock(totalMs: number): string {
   const totalSeconds = Math.max(0, Math.floor(totalMs / 1000));
   const minutes = Math.floor(totalSeconds / 60);
@@ -21,6 +24,9 @@ export function formatTimelineClock(totalMs: number): string {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
+/**
+ * Creates and returns the create timeline state contract.
+ */
 export function createTimelineState(
   props: RecorderQuickCleanPanelProps,
   t: TFunction,

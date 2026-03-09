@@ -15,6 +15,9 @@ import {
   createQuestPickerState,
 } from "@/features/home/composables/useHomePageModels";
 
+/**
+ * Provides the use home page state composable contract.
+ */
 export function useHomePageState() {
   const { t, locale } = useI18n();
   const { estimatedMinutesLabel, outputLabel, toError } = useHomePresentation(t);

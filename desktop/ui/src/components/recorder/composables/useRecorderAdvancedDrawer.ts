@@ -33,6 +33,9 @@ export type RecorderAdvancedDrawerEmit = {
 
 const INPUT_DEVICE_NONE_SENTINEL = "__no_input_device__";
 
+/**
+ * Provides the use recorder advanced drawer composable contract.
+ */
 export function useRecorderAdvancedDrawer(options: {
   t: (key: string) => string;
   props: RecorderAdvancedDrawerProps;

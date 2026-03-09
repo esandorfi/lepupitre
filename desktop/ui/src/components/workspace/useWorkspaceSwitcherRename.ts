@@ -7,6 +7,9 @@ import {
   type WorkspaceSwitcherActionDeps,
 } from "@/components/workspace/workspaceSwitcherActions.shared";
 
+/**
+ * Creates and returns the create workspace rename actions contract.
+ */
 export function createWorkspaceRenameActions(deps: WorkspaceSwitcherActionDeps) {
   function startRename(profileId: string, currentName: string) {
     deps.editingId.value = profileId;

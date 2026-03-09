@@ -254,6 +254,9 @@ function resolveTalkCrumbLabel(context: ShellNavigationContext, t: TranslateFn):
   return `${prefix}${truncate(activeTalkTitle)}`;
 }
 
+/**
+ * Resolves resolve primary nav items from current inputs.
+ */
 export function resolvePrimaryNavItems(
   context: ShellNavigationContext,
   t: TranslateFn
@@ -275,6 +278,9 @@ export function resolvePrimaryNavItems(
   });
 }
 
+/**
+ * Builds the build context breadcrumbs derived model.
+ */
 export function buildContextBreadcrumbs(
   context: ShellNavigationContext,
   t: TranslateFn

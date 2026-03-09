@@ -5,6 +5,9 @@ import type {
 } from "@/schemas/ipc";
 import type { QuestSort } from "@/features/home/composables/homePageModels.shared";
 
+/**
+ * Creates and returns the create quest picker state contract.
+ */
 export function createQuestPickerState(params: {
   availableQuests: Ref<Quest[]>;
   questPickerSearch: Ref<string>;

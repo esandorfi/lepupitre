@@ -257,6 +257,9 @@ function isFailureEvent(event: RecorderHealthEvent): boolean {
   return event.endsWith("_failure");
 }
 
+/**
+ * Records record recorder health event telemetry/state events.
+ */
 export function recordRecorderHealthEvent(
   event: RecorderHealthEvent,
   details?: { errorCode?: string | null; at?: Date }
@@ -294,10 +297,16 @@ export function recordRecorderHealthEvent(
   });
 }
 
+/**
+ * Implements reset recorder health metrics behavior.
+ */
 export function resetRecorderHealthMetrics() {
   persist({ ...defaultMetrics, daily: {}, errorsByCode: {} }, true);
 }
 
+/**
+ * Provides the use recorder health metrics composable contract.
+ */
 export function useRecorderHealthMetrics() {
   return {
     metrics,

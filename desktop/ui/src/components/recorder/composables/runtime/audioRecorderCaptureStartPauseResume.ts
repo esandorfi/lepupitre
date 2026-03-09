@@ -9,6 +9,9 @@ import {
 } from "@/components/recorder/composables/runtime/audioRecorderCaptureUtils";
 import type { AudioRecorderRuntimeDeps } from "@/components/recorder/composables/audioRecorderRuntimeDeps";
 
+/**
+ * Implements start recording behavior.
+ */
 export async function startRecording(deps: AudioRecorderRuntimeDeps) {
   if (deps.isStarting.value) {
     return;
@@ -70,6 +73,9 @@ export async function startRecording(deps: AudioRecorderRuntimeDeps) {
   }
 }
 
+/**
+ * Implements pause recording behavior.
+ */
 export async function pauseRecording(deps: AudioRecorderRuntimeDeps) {
   if (!deps.recordingId.value || !deps.isRecording.value) {
     return;
@@ -84,6 +90,9 @@ export async function pauseRecording(deps: AudioRecorderRuntimeDeps) {
   }
 }
 
+/**
+ * Implements resume recording behavior.
+ */
 export async function resumeRecording(deps: AudioRecorderRuntimeDeps) {
   if (!deps.recordingId.value || !deps.isPaused.value) {
     return;

@@ -15,6 +15,9 @@ import {
   VoidResponseSchema,
 } from "@/schemas/ipc";
 
+/**
+ * Creates and returns the create run contract.
+ */
 export async function createRun(profileId: string, projectId: string) {
   return invokeChecked("run_create", RunCreatePayloadSchema, IdSchema, {
     profileId,
@@ -22,6 +25,9 @@ export async function createRun(profileId: string, projectId: string) {
   });
 }
 
+/**
+ * Implements finish run behavior.
+ */
 export async function finishRun(
   profileId: string,
   runId: string,
@@ -34,6 +40,9 @@ export async function finishRun(
   });
 }
 
+/**
+ * Sets set run transcript in runtime state.
+ */
 export async function setRunTranscript(
   profileId: string,
   runId: string,
@@ -51,6 +60,9 @@ export async function setRunTranscript(
   );
 }
 
+/**
+ * Implements analyze run behavior.
+ */
 export async function analyzeRun(profileId: string, runId: string) {
   return invokeChecked("run_analyze", RunAnalyzePayloadSchema, AnalyzeResponseSchema, {
     profileId,
@@ -58,6 +70,9 @@ export async function analyzeRun(profileId: string, runId: string) {
   });
 }
 
+/**
+ * Retrieves get latest run from domain/runtime dependencies.
+ */
 export async function getLatestRun(
   profileId: string,
   projectId: string
@@ -68,6 +83,9 @@ export async function getLatestRun(
   });
 }
 
+/**
+ * Retrieves get run from domain/runtime dependencies.
+ */
 export async function getRun(
   profileId: string,
   runId: string
@@ -78,6 +96,9 @@ export async function getRun(
   });
 }
 
+/**
+ * Retrieves get runs from domain/runtime dependencies.
+ */
 export async function getRuns(
   profileId: string,
   projectId: string,

@@ -117,6 +117,9 @@ function setupWorkspaceSwitcherEffects(deps: WorkspaceSwitcherActionDeps) {
   );
 }
 
+/**
+ * Creates and returns the create workspace switcher actions contract.
+ */
 export function createWorkspaceSwitcherActions(deps: WorkspaceSwitcherActionDeps) {
   const renameActions = createWorkspaceRenameActions(deps);
   const panelActions = createPanelActions(deps, renameActions.confirmRename);

@@ -6,6 +6,9 @@ import {
 import { evaluateAchievementPulse } from "@/features/home/composables/useAchievementPulse";
 import type { HomeOrchestrationOptions } from "@/features/home/composables/homeTrainingOrchestration.shared";
 
+/**
+ * Creates and returns the create home training data actions contract.
+ */
 export function createHomeTrainingDataActions(options: HomeOrchestrationOptions) {
   const {
     state,

@@ -9,6 +9,9 @@ export type AudioRecorderCleanupSet = {
   unlistenRecordingTelemetry: (() => void) | null;
 };
 
+/**
+ * Creates and returns the create audio recorder cleanup set contract.
+ */
 export function createAudioRecorderCleanupSet(): AudioRecorderCleanupSet {
   return {
     unlistenProgress: null,
@@ -22,6 +25,9 @@ export function createAudioRecorderCleanupSet(): AudioRecorderCleanupSet {
   };
 }
 
+/**
+ * Implements cleanup audio recorder listeners behavior.
+ */
 export function cleanupAudioRecorderListeners(cleanups: AudioRecorderCleanupSet) {
   cleanups.unlistenProgress?.();
   cleanups.unlistenCompleted?.();

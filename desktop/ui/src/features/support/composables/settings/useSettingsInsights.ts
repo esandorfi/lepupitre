@@ -14,6 +14,9 @@ function formatUtcDayLabel(dayKey: string): string {
   }).format(parsed);
 }
 
+/**
+ * Provides the use settings insights composable contract.
+ */
 export function useSettingsInsights() {
   const { metrics: navMetrics, resetNavMetrics } = useNavMetrics();
   const { metrics: recorderHealthMetrics, resetRecorderHealthMetrics } =

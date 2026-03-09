@@ -6,6 +6,9 @@ import {
 
 type Translate = (key: string) => string;
 
+/**
+ * Creates and returns the create asr model view contract.
+ */
 export function createAsrModelView(t: Translate, state: AsrModelState) {
   const modelOptions = computed(() =>
     state.models.value.map((model) => {

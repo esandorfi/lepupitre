@@ -36,6 +36,9 @@ function flushList(items: string[], blocks: string[], ordered: boolean) {
   items.length = 0;
 }
 
+/**
+ * Implements render markdown behavior.
+ */
 export function renderMarkdown(markdown: string) {
   const lines = markdown.replace(/\r\n/g, "\n").split("\n");
   const blocks: string[] = [];

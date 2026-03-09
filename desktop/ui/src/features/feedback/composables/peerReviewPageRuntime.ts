@@ -39,6 +39,9 @@ type PeerReviewPageRuntimeArgs = {
   deps?: PeerReviewPageRuntimeDeps;
 };
 
+/**
+ * Creates and returns the create peer review page runtime contract.
+ */
 export function createPeerReviewPageRuntime(args: PeerReviewPageRuntimeArgs) {
   const deps = args.deps ?? createDefaultPeerReviewPageRuntimeDeps();
   const { identity, model, ui } = args.state;

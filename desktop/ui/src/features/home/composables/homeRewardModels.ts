@@ -2,6 +2,9 @@ import { computed, type Ref } from "vue";
 import type { RewardBadge } from "@/features/home/composables/useHomePresentation";
 import type { ProgressSnapshot } from "@/schemas/ipc";
 
+/**
+ * Builds the build reward state derived model.
+ */
 export function buildRewardState(options: {
   t: (key: string) => string;
   trainingProgress: Ref<ProgressSnapshot | null>;

@@ -1,5 +1,8 @@
 import type { AudioRecorderRuntimeDeps } from "@/components/recorder/composables/audioRecorderRuntimeDeps";
 
+/**
+ * Implements auto clean fillers behavior.
+ */
 export function autoCleanFillers(deps: AudioRecorderRuntimeDeps) {
   const next = deps.transcriptDraftText.value
     .replace(
@@ -16,6 +19,9 @@ export function autoCleanFillers(deps: AudioRecorderRuntimeDeps) {
   deps.transcriptDraftText.value = next;
 }
 
+/**
+ * Implements fix punctuation behavior.
+ */
 export function fixPunctuation(deps: AudioRecorderRuntimeDeps) {
   let next = deps.transcriptDraftText.value
     .replace(/\s+([,.;!?:])/g, "$1")

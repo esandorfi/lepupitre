@@ -22,6 +22,9 @@ function requireActiveProfileId(state: AppState): string {
   return state.activeProfileId;
 }
 
+/**
+ * Creates and returns the create training store contract.
+ */
 export function createTrainingStore(
   state: AppState,
   dependencies: {

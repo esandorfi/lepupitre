@@ -11,6 +11,9 @@ import { appState, trainingStore } from "@/stores/app";
 import { createQuestActions } from "@/features/training/composables/questPageState.actions";
 import { createQuestRefs } from "@/features/training/composables/questPageState.refs";
 
+/**
+ * Provides the use quest page state composable contract.
+ */
 export function useQuestPageState() {
   const { t } = useI18n();
   const route = useRoute();

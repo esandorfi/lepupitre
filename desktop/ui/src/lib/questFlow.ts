@@ -8,6 +8,9 @@ export type QuestFlowState = {
   audioArtifactId: string | null;
 };
 
+/**
+ * Evaluates whether can submit quest text is allowed.
+ */
 export function canSubmitQuestText(state: QuestFlowState): boolean {
   if (state.isAudioQuest || state.isSubmitting) {
     return false;
@@ -19,6 +22,9 @@ export function canSubmitQuestText(state: QuestFlowState): boolean {
   return state.submittedTextSnapshot !== trimmed;
 }
 
+/**
+ * Evaluates whether can analyze quest is allowed.
+ */
 export function canAnalyzeQuest(state: QuestFlowState): boolean {
   if (!state.attemptId) {
     return false;
@@ -29,10 +35,16 @@ export function canAnalyzeQuest(state: QuestFlowState): boolean {
   return Boolean(state.transcriptId);
 }
 
+/**
+ * Evaluates whether can leave quest without feedback is allowed.
+ */
 export function canLeaveQuestWithoutFeedback(state: QuestFlowState): boolean {
   return state.isAudioQuest && Boolean(state.audioArtifactId) && !state.transcriptId;
 }
 
+/**
+ * Implements quest analysis hint key behavior.
+ */
 export function questAnalysisHintKey(state: QuestFlowState): string {
   if (!state.attemptId) {
     if (state.isAudioQuest) {

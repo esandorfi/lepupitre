@@ -5,6 +5,9 @@ import type {
   QuestDaily,
 } from "@/schemas/ipc";
 
+/**
+ * Creates and returns the create hero state contract.
+ */
 export function createHeroState(params: {
   selectedHeroQuest: Ref<Quest | null>;
   trainingDailyQuest: Ref<QuestDaily | null>;

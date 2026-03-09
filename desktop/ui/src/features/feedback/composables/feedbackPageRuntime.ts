@@ -72,6 +72,9 @@ type FeedbackPageRuntimeArgs = {
   deps?: FeedbackPageRuntimeDeps;
 };
 
+/**
+ * Creates and returns the create feedback page runtime contract.
+ */
 export function createFeedbackPageRuntime(args: FeedbackPageRuntimeArgs) {
   const deps = args.deps ?? createDefaultFeedbackPageRuntimeDeps();
   const { identity, model, draft, ui } = args.state;

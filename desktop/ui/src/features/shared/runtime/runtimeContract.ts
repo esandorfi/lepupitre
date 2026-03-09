@@ -40,6 +40,9 @@ function asCode(value: unknown): string | null {
   return null;
 }
 
+/**
+ * Normalizes normalize runtime error to a safe shape.
+ */
 export function normalizeRuntimeError(err: unknown, options?: RuntimeErrorOptions): RuntimeError {
   const code = asCode(err);
   const message = err instanceof Error ? err.message : String(err);
@@ -70,6 +73,9 @@ export function normalizeRuntimeError(err: unknown, options?: RuntimeErrorOption
   return { category: "unknown", message, cause: err };
 }
 
+/**
+ * Implements clear runtime ui error behavior.
+ */
 export function clearRuntimeUiError(ui: RuntimeUiErrorState) {
   ui.error.value = null;
   if (ui.errorCategory) {
@@ -77,6 +83,9 @@ export function clearRuntimeUiError(ui: RuntimeUiErrorState) {
   }
 }
 
+/**
+ * Sets set runtime ui error in runtime state.
+ */
 export function setRuntimeUiError(
   ui: RuntimeUiErrorState,
   err: unknown,

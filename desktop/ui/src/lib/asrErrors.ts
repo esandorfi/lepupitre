@@ -4,6 +4,9 @@ export type AsrErrorCode =
   | "model_missing"
   | "asr_timeout";
 
+/**
+ * Implements classify asr error behavior.
+ */
 export function classifyAsrError(rawMessage: string): AsrErrorCode | null {
   if (rawMessage.includes("sidecar_missing")) {
     return "sidecar_missing";

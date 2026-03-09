@@ -45,6 +45,9 @@ type AsrModelActionsArgs = {
   deps?: AsrModelActionsDeps;
 };
 
+/**
+ * Creates and returns the create asr model actions contract.
+ */
 export function createAsrModelActions(args: AsrModelActionsArgs) {
   const deps = args.deps ?? createDefaultAsrModelActionsDeps();
   const { t, state, progressQueue } = args;

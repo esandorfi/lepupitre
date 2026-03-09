@@ -8,6 +8,9 @@ import {
 import { applyQualityHint } from "@/components/recorder/composables/runtime/audioRecorderCaptureUtils";
 import type { AudioRecorderRuntimeDeps } from "@/components/recorder/composables/audioRecorderRuntimeDeps";
 
+/**
+ * Implements refresh status behavior.
+ */
 export async function refreshStatus(deps: AudioRecorderRuntimeDeps) {
   const currentRecordingId = deps.recordingId.value;
   if (!currentRecordingId) {
@@ -31,6 +34,9 @@ export async function refreshStatus(deps: AudioRecorderRuntimeDeps) {
   }
 }
 
+/**
+ * Implements refresh transcribe readiness behavior.
+ */
 export async function refreshTranscribeReadiness(deps: AudioRecorderRuntimeDeps) {
   deps.transcribeBlockedCode.value = null;
   deps.transcribeBlockedMessage.value = null;
@@ -68,6 +74,9 @@ export async function refreshTranscribeReadiness(deps: AudioRecorderRuntimeDeps)
   }
 }
 
+/**
+ * Implements refresh input devices behavior.
+ */
 export async function refreshInputDevices(deps: AudioRecorderRuntimeDeps) {
   deps.isLoadingInputDevices.value = true;
   try {
@@ -91,6 +100,9 @@ export async function refreshInputDevices(deps: AudioRecorderRuntimeDeps) {
   }
 }
 
+/**
+ * Implements refresh telemetry budget behavior.
+ */
 export async function refreshTelemetryBudget(deps: AudioRecorderRuntimeDeps) {
   try {
     deps.telemetryBudget.value = await recordingTelemetryBudget();

@@ -1,5 +1,8 @@
 import type { FeedbackContext } from "../schemas/ipc";
 
+/**
+ * Resolves resolve feedback back link from current inputs.
+ */
 export function resolveFeedbackBackLink(
   context: FeedbackContext | null,
   activeProjectId: string | null
@@ -16,6 +19,9 @@ export function resolveFeedbackBackLink(
   return "/";
 }
 
+/**
+ * Resolves resolve feedback context label from current inputs.
+ */
 export function resolveFeedbackContextLabel(
   context: FeedbackContext | null,
   formatQuestCode: (projectId: string, questCode: string) => string,

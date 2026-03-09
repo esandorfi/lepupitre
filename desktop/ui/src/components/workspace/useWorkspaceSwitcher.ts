@@ -20,6 +20,9 @@ const PANEL_POPOVER_UI = {
     "z-40 w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-3 text-[var(--color-text)] shadow-[var(--shadow-md)]",
 } as const;
 
+/**
+ * Provides the use workspace switcher composable contract.
+ */
 export function useWorkspaceSwitcher() {
   const { t } = useI18n();
   const router = useRouter();

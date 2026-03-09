@@ -14,6 +14,9 @@ import {
 
 export type { FeedbackTimelineFilterType, FeedbackTimelineRow, FeedbackTimelineScope } from "@/features/feedback/composables/useFeedbackTimelinePageHelpers";
 
+/**
+ * Provides the use feedback timeline page state composable contract.
+ */
 export function useFeedbackTimelinePageState() {
   const { t, locale } = useI18n();
   const route = useRoute();

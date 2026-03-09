@@ -16,6 +16,9 @@ type UseQuestPickerNavigationOptions<TItem extends QuestPickerItem> = {
   onSelect: (item: TItem) => void;
 };
 
+/**
+ * Provides the use quest picker navigation composable contract.
+ */
 export function useQuestPickerNavigation<TItem extends QuestPickerItem>(
   options: UseQuestPickerNavigationOptions<TItem>
 ) {

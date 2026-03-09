@@ -1,7 +1,13 @@
+/**
+ * Implements to error behavior.
+ */
 export function toError(err: unknown) {
   return err instanceof Error ? err.message : String(err);
 }
 
+/**
+ * Formats values for format bytes.
+ */
 export function formatBytes(bytes: number) {
   if (!Number.isFinite(bytes) || bytes <= 0) {
     return "--";

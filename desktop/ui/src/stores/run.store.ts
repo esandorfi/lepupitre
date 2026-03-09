@@ -17,6 +17,9 @@ function requireActiveProfileId(state: AppState): string {
   return state.activeProfileId;
 }
 
+/**
+ * Creates and returns the create run store contract.
+ */
 export function createRunStore(state: AppState) {
   async function createRun(projectId: string) {
     const profileId = requireActiveProfileId(state);

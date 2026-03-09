@@ -12,6 +12,9 @@ export type RecorderMediaActions = {
   canTrim: boolean;
 };
 
+/**
+ * Applies apply recorder transport action updates to runtime state.
+ */
 export function applyRecorderTransportAction(
   state: RecorderTransportFlags,
   action: RecorderTransportAction
@@ -34,6 +37,9 @@ export function applyRecorderTransportAction(
   return { isRecording: false, isPaused: false };
 }
 
+/**
+ * Implements derive recorder transport state behavior.
+ */
 export function deriveRecorderTransportState(
   state: RecorderTransportFlags
 ): RecorderTransportState {
@@ -46,6 +52,9 @@ export function deriveRecorderTransportState(
   return "idle";
 }
 
+/**
+ * Resolves resolve recorder media actions from current inputs.
+ */
 export function resolveRecorderMediaActions(input: {
   hasAudioArtifact: boolean;
   isApplyingTrim: boolean;

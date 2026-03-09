@@ -1,6 +1,9 @@
 import type { Ref } from "vue";
 import type { DownloadProgress } from "@/features/support/composables/settings/settingsAsrModelState";
 
+/**
+ * Creates and returns the create download progress queue contract.
+ */
 export function createDownloadProgressQueue(downloadProgress: Ref<Record<string, DownloadProgress>>) {
   const DOWNLOAD_PROGRESS_UI_FLUSH_MS = 80;
   let downloadProgressFlushTimer: ReturnType<typeof setTimeout> | null = null;

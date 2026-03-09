@@ -14,6 +14,9 @@ type ModelOption = {
   installed: boolean;
 };
 
+/**
+ * Provides the use settings preferences composable contract.
+ */
 export function useSettingsPreferences(
   t: Translate,
   modelOptions: ComputedRef<ModelOption[]>

@@ -189,6 +189,9 @@ function setToolbarVars(vars: ToolbarColorVars | null) {
   root.style.setProperty("--workspace-toolbar-button-hover", vars.buttonHover);
 }
 
+/**
+ * Retrieves get workspace toolbar color from domain/runtime dependencies.
+ */
 export function getWorkspaceToolbarColor(profileId: string | null | undefined): WorkspaceToolbarColorKey {
   if (!profileId) {
     return "default";
@@ -197,6 +200,9 @@ export function getWorkspaceToolbarColor(profileId: string | null | undefined): 
   return map[profileId] ?? "default";
 }
 
+/**
+ * Sets set workspace toolbar color in runtime state.
+ */
 export function setWorkspaceToolbarColor(profileId: string, key: WorkspaceToolbarColorKey) {
   const map = loadMap();
   if (key === "default") {
@@ -207,6 +213,9 @@ export function setWorkspaceToolbarColor(profileId: string, key: WorkspaceToolba
   saveMap(map);
 }
 
+/**
+ * Implements cycle workspace toolbar color behavior.
+ */
 export function cycleWorkspaceToolbarColor(profileId: string): WorkspaceToolbarColorKey {
   const current = getWorkspaceToolbarColor(profileId);
   const currentIndex = ORDER.indexOf(current);
@@ -215,6 +224,9 @@ export function cycleWorkspaceToolbarColor(profileId: string): WorkspaceToolbarC
   return next;
 }
 
+/**
+ * Applies apply workspace toolbar color updates to runtime state.
+ */
 export function applyWorkspaceToolbarColor(profileId: string | null | undefined, theme: Theme) {
   if (!profileId) {
     setToolbarVars(null);
@@ -228,6 +240,9 @@ export function applyWorkspaceToolbarColor(profileId: string | null | undefined,
   setToolbarVars(PALETTE[key].themes[theme]);
 }
 
+/**
+ * Retrieves get workspace toolbar color preview from domain/runtime dependencies.
+ */
 export function getWorkspaceToolbarColorPreview(
   key: WorkspaceToolbarColorKey,
   theme: Theme
@@ -259,6 +274,9 @@ export function getWorkspaceToolbarColorPreview(
   };
 }
 
+/**
+ * Implements workspace toolbar color keys behavior.
+ */
 export function workspaceToolbarColorKeys(): readonly WorkspaceToolbarColorKey[] {
   return ORDER;
 }

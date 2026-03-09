@@ -19,6 +19,9 @@ export type RecorderTelemetryBudgetEvaluation = {
   violations: Array<"event_rate" | "payload_size">;
 };
 
+/**
+ * Implements estimate telemetry payload bytes behavior.
+ */
 export function estimateTelemetryPayloadBytes(payload: unknown): number {
   try {
     return new TextEncoder().encode(JSON.stringify(payload)).length;
@@ -27,6 +30,9 @@ export function estimateTelemetryPayloadBytes(payload: unknown): number {
   }
 }
 
+/**
+ * Implements evaluate recorder telemetry budget behavior.
+ */
 export function evaluateRecorderTelemetryBudget(
   budget: RecorderTelemetryBudget | null,
   observation: RecorderTelemetryObservation

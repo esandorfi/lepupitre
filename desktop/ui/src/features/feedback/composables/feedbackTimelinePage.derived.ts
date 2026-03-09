@@ -10,6 +10,9 @@ import {
   scoreToneClass,
 } from "@/features/feedback/composables/feedbackTimelinePage.utils";
 
+/**
+ * Creates and returns the create timeline derived state contract.
+ */
 export function createTimelineDerivedState(options: {
   t: (key: string) => string;
   entries: Ref<FeedbackTimelineItem[]>;

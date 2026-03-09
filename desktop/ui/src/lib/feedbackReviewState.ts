@@ -29,6 +29,9 @@ function sanitizeReviewedIds(value: unknown): string[] {
   return all.slice(all.length - MAX_REVIEWED_IDS);
 }
 
+/**
+ * Reads read reviewed feedback ids from runtime storage.
+ */
 export function readReviewedFeedbackIds(profileId: string): Set<string> {
   if (!profileId) {
     return new Set();
@@ -47,6 +50,9 @@ export function readReviewedFeedbackIds(profileId: string): Set<string> {
   }
 }
 
+/**
+ * Marks mark feedback reviewed state transitions.
+ */
 export function markFeedbackReviewed(profileId: string, feedbackId: string) {
   if (!profileId || !feedbackId) {
     return;
@@ -64,6 +70,9 @@ export function markFeedbackReviewed(profileId: string, feedbackId: string) {
   });
 }
 
+/**
+ * Returns whether is feedback reviewed is true.
+ */
 export function isFeedbackReviewed(profileId: string, feedbackId: string): boolean {
   if (!profileId || !feedbackId) {
     return false;

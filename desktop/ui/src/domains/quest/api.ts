@@ -19,6 +19,9 @@ import {
   QuestSubmitTextPayloadSchema,
 } from "@/schemas/ipc";
 
+/**
+ * Retrieves get daily quest from domain/runtime dependencies.
+ */
 export async function getDailyQuest(
   profileId: string,
   projectId: string
@@ -29,6 +32,9 @@ export async function getDailyQuest(
   });
 }
 
+/**
+ * Retrieves get quest attempts from domain/runtime dependencies.
+ */
 export async function getQuestAttempts(
   profileId: string,
   projectId: string,
@@ -46,6 +52,9 @@ export async function getQuestAttempts(
   );
 }
 
+/**
+ * Implements submit quest text behavior.
+ */
 export async function submitQuestText(
   profileId: string,
   projectId: string,
@@ -60,6 +69,9 @@ export async function submitQuestText(
   });
 }
 
+/**
+ * Implements submit quest audio behavior.
+ */
 export async function submitQuestAudio(
   profileId: string,
   projectId: string,
@@ -78,6 +90,9 @@ export async function submitQuestAudio(
   });
 }
 
+/**
+ * Retrieves get quest by code from domain/runtime dependencies.
+ */
 export async function getQuestByCode(profileId: string, questCode: string): Promise<Quest> {
   return invokeChecked("quest_get_by_code", QuestGetByCodePayloadSchema, QuestSchema, {
     profileId,
@@ -85,12 +100,18 @@ export async function getQuestByCode(profileId: string, questCode: string): Prom
   });
 }
 
+/**
+ * Retrieves get quest list from domain/runtime dependencies.
+ */
 export async function getQuestList(profileId: string): Promise<Quest[]> {
   return invokeChecked("quest_list", QuestListPayloadSchema, QuestListResponseSchema, {
     profileId,
   });
 }
 
+/**
+ * Retrieves get quest report from domain/runtime dependencies.
+ */
 export async function getQuestReport(
   profileId: string,
   projectId: string

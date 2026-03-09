@@ -8,6 +8,9 @@ import {
 } from "@/lib/recorderFlow";
 import type { AudioRecorderPresentationParams } from "@/components/recorder/composables/presentation/audioRecorderPresentation.types";
 
+/**
+ * Creates and returns the create review presentation contract.
+ */
 export function createReviewPresentation(params: AudioRecorderPresentationParams) {
   const { state, canAnalyze, hasAnalysisResult } = params;
 

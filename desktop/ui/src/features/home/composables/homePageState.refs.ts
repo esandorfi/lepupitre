@@ -9,6 +9,9 @@ import type {
 import type { AchievementPulse } from "@/features/home/composables/useAchievementPulse";
 import type { QuestSort } from "@/features/home/composables/homePageModels.shared";
 
+/**
+ * Creates and returns the create home page state refs contract.
+ */
 export function createHomePageStateRefs() {
   const trainingProjectId = ref<string | null>(null);
   const trainingDailyQuest = ref<QuestDaily | null>(null);

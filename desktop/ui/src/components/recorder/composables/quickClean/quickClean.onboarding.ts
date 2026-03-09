@@ -1,6 +1,9 @@
 import { ref } from "vue";
 import type { RecorderQuickCleanPanelEmit } from "@/components/recorder/composables/quickClean/quickClean.types";
 
+/**
+ * Creates and returns the create onboarding state contract.
+ */
 export function createOnboardingState(emit: RecorderQuickCleanPanelEmit) {
   const showOnboarding = ref(true);
   const onboardingAudience = ref("");

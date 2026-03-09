@@ -14,6 +14,9 @@ import {
   createProfilesActions,
 } from "@/features/workspace/composables/profilesPageRuntime";
 
+/**
+ * Provides the use profiles page state composable contract.
+ */
 export function useProfilesPageState() {
   const { t } = useI18n();
   const router = useRouter();

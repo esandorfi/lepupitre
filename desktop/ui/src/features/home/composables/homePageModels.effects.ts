@@ -4,6 +4,9 @@ import type { MascotMessage, Quest } from "@/schemas/ipc";
 import { appState, coachStore, sessionStore } from "@/stores/app";
 import type { QuestSort } from "@/features/home/composables/homePageModels.shared";
 
+/**
+ * Binds lifecycle/effect wiring for bind home page effects.
+ */
 export function bindHomePageEffects(params: {
   state: Readonly<Ref<typeof appState>>;
   availableQuests: Ref<Quest[]>;

@@ -15,6 +15,9 @@ import {
   PeerReviewSummarySchema,
 } from "@/schemas/ipc";
 
+/**
+ * Implements export pack behavior.
+ */
 export async function exportPack(profileId: string, runId: string): Promise<ExportResult> {
   return invokeChecked("pack_export", PackExportPayloadSchema, ExportResultSchema, {
     profileId,
@@ -22,6 +25,9 @@ export async function exportPack(profileId: string, runId: string): Promise<Expo
   });
 }
 
+/**
+ * Implements inspect pack behavior.
+ */
 export async function inspectPack(profileId: string, path: string) {
   return invokeChecked("pack_inspect", PackInspectPayloadSchema, PackInspectResponseSchema, {
     profileId,
@@ -29,6 +35,9 @@ export async function inspectPack(profileId: string, path: string) {
   });
 }
 
+/**
+ * Implements import peer review behavior.
+ */
 export async function importPeerReview(profileId: string, path: string) {
   return invokeChecked(
     "peer_review_import",
@@ -41,6 +50,9 @@ export async function importPeerReview(profileId: string, path: string) {
   );
 }
 
+/**
+ * Retrieves get peer reviews from domain/runtime dependencies.
+ */
 export async function getPeerReviews(
   profileId: string,
   projectId: string,
@@ -54,6 +66,9 @@ export async function getPeerReviews(
   );
 }
 
+/**
+ * Retrieves get peer review from domain/runtime dependencies.
+ */
 export async function getPeerReview(
   profileId: string,
   peerReviewId: string

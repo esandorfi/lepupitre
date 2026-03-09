@@ -7,6 +7,9 @@ import type { AudioRecorderRuntimeDeps } from "@/components/recorder/composables
 
 const AUTO_TRANSCRIBE_ON_STOP = true;
 
+/**
+ * Implements stop recording behavior.
+ */
 export async function stopRecording(deps: AudioRecorderRuntimeDeps) {
   if (
     !deps.recordingId.value ||

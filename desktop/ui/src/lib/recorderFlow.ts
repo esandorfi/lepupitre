@@ -13,6 +13,9 @@ export type ReviewCtaConfig = {
   progressPercent: number | null;
 };
 
+/**
+ * Resolves resolve review state from current inputs.
+ */
 export function resolveReviewState(input: {
   hasTranscript: boolean;
   isTranscribing: boolean;
@@ -30,6 +33,9 @@ export function resolveReviewState(input: {
   return "review_no_transcript";
 }
 
+/**
+ * Resolves resolve review cta from current inputs.
+ */
 export function resolveReviewCta(input: {
   reviewState: ReviewState;
   canTranscribe: boolean;
@@ -88,6 +94,9 @@ export type RecorderTranscribeReadiness = {
   showBlockedHint: boolean;
 };
 
+/**
+ * Resolves resolve active transcript id for analysis from current inputs.
+ */
 export function resolveActiveTranscriptIdForAnalysis(
   baseTranscriptId: string | null,
   editedTranscriptId: string | null
@@ -95,6 +104,9 @@ export function resolveActiveTranscriptIdForAnalysis(
   return editedTranscriptId ?? baseTranscriptId;
 }
 
+/**
+ * Returns whether is typing target element is true.
+ */
 export function isTypingTargetElement(target: EventTarget | null): boolean {
   const element = target as HTMLElement | null;
   if (!element) {
@@ -107,6 +119,9 @@ export function isTypingTargetElement(target: EventTarget | null): boolean {
   return element.isContentEditable;
 }
 
+/**
+ * Records recorder stop transition plan telemetry/state events.
+ */
 export function recorderStopTransitionPlan(
   autoTranscribeOnStop: boolean,
   canTranscribe: boolean
@@ -120,6 +135,9 @@ export function recorderStopTransitionPlan(
   };
 }
 
+/**
+ * Resolves resolve recorder transcribe readiness from current inputs.
+ */
 export function resolveRecorderTranscribeReadiness(input: {
   hasAudioArtifact: boolean;
   isTranscribing: boolean;
@@ -146,6 +164,9 @@ export function resolveRecorderTranscribeReadiness(input: {
   };
 }
 
+/**
+ * Resolves resolve recorder shortcut action from current inputs.
+ */
 export function resolveRecorderShortcutAction(input: {
   key: string;
   ctrlOrMeta: boolean;

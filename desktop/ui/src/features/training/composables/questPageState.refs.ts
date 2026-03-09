@@ -14,6 +14,9 @@ export type QuestRefs = {
   transcriptId: Ref<string | null>;
 };
 
+/**
+ * Creates and returns the create quest refs contract.
+ */
 export function createQuestRefs(): QuestRefs {
   return {
     text: ref(""),

@@ -17,6 +17,9 @@ function achievementStorageKey(profileId: string) {
   return `${ACHIEVEMENT_PREFIX}.${profileId}`;
 }
 
+/**
+ * Reads read stored hero quest code from runtime storage.
+ */
 export function readStoredHeroQuestCode(profileId: string): string | null {
   if (!profileId) {
     return null;
@@ -39,6 +42,9 @@ export function readStoredHeroQuestCode(profileId: string): string | null {
   }
 }
 
+/**
+ * Writes write stored hero quest code to runtime storage.
+ */
 export function writeStoredHeroQuestCode(profileId: string, questCode: string | null) {
   if (!profileId) {
     return;
@@ -55,6 +61,9 @@ export function writeStoredHeroQuestCode(profileId: string, questCode: string | 
   writePreference(key, normalized, { scope: "profile", profileId });
 }
 
+/**
+ * Reads read achievement memory from runtime storage.
+ */
 export function readAchievementMemory(profileId: string): AchievementMemory | null {
   if (!profileId) {
     return null;
@@ -85,6 +94,9 @@ export function readAchievementMemory(profileId: string): AchievementMemory | nu
   }
 }
 
+/**
+ * Writes write achievement memory to runtime storage.
+ */
 export function writeAchievementMemory(profileId: string, memory: AchievementMemory) {
   if (!profileId) {
     return;

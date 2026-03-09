@@ -25,6 +25,9 @@ type AsrModelRuntimeArgs = {
   deps?: AsrModelRuntimeDeps;
 };
 
+/**
+ * Provides the use asr model runtime composable contract.
+ */
 export function useAsrModelRuntime(args: AsrModelRuntimeArgs) {
   const deps = args.deps ?? createDefaultAsrModelRuntimeDeps();
   const { t, state } = args;

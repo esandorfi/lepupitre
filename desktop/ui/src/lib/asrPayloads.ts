@@ -44,6 +44,9 @@ function toTranscribeAsrSettingsPayload(
   };
 }
 
+/**
+ * Builds the build recording start payload derived model.
+ */
 export function buildRecordingStartPayload(
   profileId: string,
   settings: TranscriptionSettings,
@@ -59,6 +62,9 @@ export function buildRecordingStartPayload(
   return payload;
 }
 
+/**
+ * Builds the build transcribe audio payload derived model.
+ */
 export function buildTranscribeAudioPayload(
   profileId: string,
   audioArtifactId: string,

@@ -2,6 +2,9 @@ import { computed, type Ref } from "vue";
 import type { DailyLoopStep } from "@/features/home/composables/useHomePresentation";
 import type { ProgressSnapshot, Quest } from "@/schemas/ipc";
 
+/**
+ * Builds the build daily loop state derived model.
+ */
 export function buildDailyLoopState(options: {
   t: (key: string) => string;
   trainingProgress: Ref<ProgressSnapshot | null>;

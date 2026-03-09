@@ -2,6 +2,9 @@ import { createHomeTrainingDataActions } from "@/features/home/composables/homeT
 import { createHomeQuestPickerActions } from "@/features/home/composables/homeQuestPickerActions";
 import type { HomeOrchestrationOptions } from "@/features/home/composables/homeTrainingOrchestration.shared";
 
+/**
+ * Provides the use home training orchestration composable contract.
+ */
 export function useHomeTrainingOrchestration(options: HomeOrchestrationOptions) {
   const { preloadQuestCatalog, loadTrainingData } = createHomeTrainingDataActions(options);
   const { openQuestPicker, focusQuestMapNode } = createHomeQuestPickerActions({

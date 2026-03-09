@@ -14,6 +14,9 @@ function profileSortScore(profile: { last_opened_at?: string | null; created_at:
   return Number.isFinite(timestamp) ? timestamp : 0;
 }
 
+/**
+ * Creates and returns the create workspace switcher model contract.
+ */
 export function createWorkspaceSwitcherModel(params: {
   search: Ref<string>;
   deleteTarget: Ref<{ id: string; name: string } | null>;

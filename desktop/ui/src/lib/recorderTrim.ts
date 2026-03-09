@@ -3,6 +3,9 @@ export type TrimWindow = {
   endSec: number;
 };
 
+/**
+ * Normalizes normalize trim window to a safe shape.
+ */
 export function normalizeTrimWindow(
   durationSec: number,
   startSec: number,
@@ -39,6 +42,9 @@ export function normalizeTrimWindow(
   return { startSec: start, endSec: end };
 }
 
+/**
+ * Formats values for format trim clock.
+ */
 export function formatTrimClock(valueSec: number): string {
   if (!Number.isFinite(valueSec)) {
     return "0:00";

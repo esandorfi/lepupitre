@@ -7,6 +7,9 @@ import {
   type WorkspaceSwitcherActionDeps,
 } from "@/components/workspace/workspaceSwitcherActions.shared";
 
+/**
+ * Creates and returns the create workspace profile actions contract.
+ */
 export function createWorkspaceProfileActions(
   deps: WorkspaceSwitcherActionDeps,
   closePanel: () => void

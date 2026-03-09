@@ -8,6 +8,9 @@ import {
   type TimelineMarker,
 } from "@/components/recorder/composables/quickClean/quickClean.types";
 
+/**
+ * Creates and returns the create anchor map exporter contract.
+ */
 export function createAnchorMapExporter(options: {
   props: RecorderQuickCleanPanelProps;
   rawTranscriptDurationMs: Ref<number>;

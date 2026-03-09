@@ -10,6 +10,9 @@ export type BossRunRefs = {
   pendingTranscriptId: Ref<string | null>;
 };
 
+/**
+ * Creates and returns the create boss run refs contract.
+ */
 export function createBossRunRefs(): BossRunRefs {
   return {
     error: ref<string | null>(null),

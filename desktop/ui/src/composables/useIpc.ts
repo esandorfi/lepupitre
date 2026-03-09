@@ -3,6 +3,9 @@ import { z } from "zod";
 import { AppError } from "../lib/errors";
 import { hasTauriRuntime, isUiDevWithoutTauri } from "../lib/runtime";
 
+/**
+ * Implements invoke checked behavior.
+ */
 export async function invokeChecked<TPayload, TResponse>(
   command: string,
   payloadSchema: z.ZodType<TPayload>,

@@ -58,6 +58,9 @@ type ProfilesCreateSwitchArgs = {
   deps?: ProfilesCreateSwitchDeps;
 };
 
+/**
+ * Creates and returns the create profiles create switch actions contract.
+ */
 export function createProfilesCreateSwitchActions(args: ProfilesCreateSwitchArgs) {
   const deps = args.deps ?? createDefaultProfilesCreateSwitchDeps(args.t, args.pushHome);
   const { identity, model, ui } = args.state;

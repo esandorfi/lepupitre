@@ -71,6 +71,9 @@ type PacksPageRuntimeArgs = {
   deps?: PacksPageRuntimeDeps;
 };
 
+/**
+ * Creates and returns the create packs page runtime contract.
+ */
 export function createPacksPageRuntime(args: PacksPageRuntimeArgs) {
   const deps = args.deps ?? createDefaultPacksPageRuntimeDeps();
   const { identity, model, ui } = args.state;

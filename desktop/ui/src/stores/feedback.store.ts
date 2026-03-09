@@ -20,6 +20,9 @@ function requireActiveProfileId(state: AppState): string {
   return state.activeProfileId;
 }
 
+/**
+ * Creates and returns the create feedback store contract.
+ */
 export function createFeedbackStore(state: AppState) {
   async function analyzeAttempt(attemptId: string) {
     const profileId = requireActiveProfileId(state);
