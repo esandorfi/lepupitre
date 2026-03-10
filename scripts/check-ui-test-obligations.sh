@@ -19,10 +19,16 @@ if ! git rev-parse --verify "$HEAD_SHA" >/dev/null 2>&1; then
   exit 2
 fi
 
-mapfile -t CHANGED_FILES < <(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
+# PR checks should use the branch fork point, not the current base branch tip.
+if ! EFFECTIVE_BASE_SHA="$(git merge-base "$BASE_SHA" "$HEAD_SHA")"; then
+  echo "Could not determine merge-base between $BASE_SHA and $HEAD_SHA"
+  exit 2
+fi
+
+mapfile -t CHANGED_FILES < <(git diff --name-only "$EFFECTIVE_BASE_SHA" "$HEAD_SHA")
 
 if [[ ${#CHANGED_FILES[@]} -eq 0 ]]; then
-  echo "No changed files detected between $BASE_SHA and $HEAD_SHA."
+  echo "No changed files detected between $EFFECTIVE_BASE_SHA and $HEAD_SHA."
   exit 0
 fi
 
