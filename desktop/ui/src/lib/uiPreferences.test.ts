@@ -7,6 +7,8 @@ type FakeStorage = {
   clear: () => void;
 };
 
+type UiPreferencesModule = Awaited<typeof import("./uiPreferences")>;
+
 function createStorage(seed: Record<string, string> = {}): FakeStorage {
   const state = { ...seed };
   return {
@@ -25,14 +27,32 @@ function createStorage(seed: Record<string, string> = {}): FakeStorage {
   };
 }
 
+function setLocalStorage(seed: Record<string, string> = {}) {
+  vi.resetModules();
+  Object.defineProperty(globalThis, "localStorage", {
+    value: createStorage(seed),
+    configurable: true,
+    writable: true,
+  });
+}
+
+async function loadUiPreferences(): Promise<ReturnType<UiPreferencesModule["useUiPreferences"]>> {
+  return (await import("./uiPreferences")).useUiPreferences();
+}
+
+function expectDefaultSettings(settings: ReturnType<UiPreferencesModule["useUiPreferences"]>["settings"]) {
+  expect(settings.value.primaryNavMode).toBe("sidebar-icon");
+  expect(settings.value.sidebarPinned).toBe(false);
+  expect(settings.value.onboardingSeen).toBe(false);
+  expect(settings.value.gamificationMode).toBe("balanced");
+  expect(settings.value.mascotEnabled).toBe(true);
+  expect(settings.value.mascotIntensity).toBe("contextual");
+  expect(settings.value.waveformStyle).toBe("classic");
+}
+
 describe("uiPreferences", () => {
   beforeEach(() => {
-    vi.resetModules();
-    Object.defineProperty(globalThis, "localStorage", {
-      value: createStorage(),
-      configurable: true,
-      writable: true,
-    });
+    setLocalStorage();
   });
 
   afterEach(() => {
@@ -40,20 +60,12 @@ describe("uiPreferences", () => {
   });
 
   it("defaults to sidebar navigation mode", async () => {
-    const { useUiPreferences } = await import("./uiPreferences");
-    const { settings } = useUiPreferences();
-    expect(settings.value.primaryNavMode).toBe("sidebar-icon");
-    expect(settings.value.sidebarPinned).toBe(false);
-    expect(settings.value.onboardingSeen).toBe(false);
-    expect(settings.value.gamificationMode).toBe("balanced");
-    expect(settings.value.mascotEnabled).toBe(true);
-    expect(settings.value.mascotIntensity).toBe("contextual");
-    expect(settings.value.waveformStyle).toBe("classic");
+    const { settings } = await loadUiPreferences();
+    expectDefaultSettings(settings);
   });
 
   it("updates and persists navigation mode", async () => {
-    const { useUiPreferences } = await import("./uiPreferences");
-    const { settings, setPrimaryNavMode } = useUiPreferences();
+    const { settings, setPrimaryNavMode } = await loadUiPreferences();
 
     setPrimaryNavMode("sidebar-icon");
 
@@ -63,8 +75,7 @@ describe("uiPreferences", () => {
   });
 
   it("updates and persists sidebar pin setting", async () => {
-    const { useUiPreferences } = await import("./uiPreferences");
-    const { settings, setSidebarPinned } = useUiPreferences();
+    const { settings, setSidebarPinned } = await loadUiPreferences();
 
     setSidebarPinned(true);
 
@@ -74,8 +85,7 @@ describe("uiPreferences", () => {
   });
 
   it("updates and persists onboarding completion", async () => {
-    const { useUiPreferences } = await import("./uiPreferences");
-    const { settings, setOnboardingSeen } = useUiPreferences();
+    const { settings, setOnboardingSeen } = await loadUiPreferences();
 
     setOnboardingSeen(true);
 
@@ -85,19 +95,13 @@ describe("uiPreferences", () => {
   });
 
   it("marks onboarding seen for legacy saved settings", async () => {
-    vi.resetModules();
-    Object.defineProperty(globalThis, "localStorage", {
-      value: createStorage({
-        lepupitre_ui_settings_v1: JSON.stringify({
-          primaryNavMode: "top",
-          sidebarPinned: false,
-        }),
+    setLocalStorage({
+      lepupitre_ui_settings_v1: JSON.stringify({
+        primaryNavMode: "top",
+        sidebarPinned: false,
       }),
-      configurable: true,
-      writable: true,
     });
-    const { useUiPreferences } = await import("./uiPreferences");
-    const { settings } = useUiPreferences();
+    const { settings } = await loadUiPreferences();
     expect(settings.value.primaryNavMode).toBe("top");
     expect(settings.value.onboardingSeen).toBe(true);
     expect(settings.value.gamificationMode).toBe("balanced");
@@ -107,19 +111,13 @@ describe("uiPreferences", () => {
   });
 
   it("migrates legacy storage key to the current key", async () => {
-    vi.resetModules();
-    Object.defineProperty(globalThis, "localStorage", {
-      value: createStorage({
-        lepupitre_ui_settings: JSON.stringify({
-          primaryNavMode: "top",
-          sidebarPinned: true,
-        }),
+    setLocalStorage({
+      lepupitre_ui_settings: JSON.stringify({
+        primaryNavMode: "top",
+        sidebarPinned: true,
       }),
-      configurable: true,
-      writable: true,
     });
-    const { useUiPreferences } = await import("./uiPreferences");
-    const { settings } = useUiPreferences();
+    const { settings } = await loadUiPreferences();
     expect(settings.value.primaryNavMode).toBe("top");
     expect(settings.value.sidebarPinned).toBe(true);
     expect(globalThis.localStorage.getItem("lepupitre_ui_settings")).toBeNull();
@@ -128,33 +126,20 @@ describe("uiPreferences", () => {
   });
 
   it("falls back to defaults for malformed saved settings", async () => {
-    vi.resetModules();
-    Object.defineProperty(globalThis, "localStorage", {
-      value: createStorage({
-        lepupitre_ui_settings_v1: "{bad-json",
-      }),
-      configurable: true,
-      writable: true,
+    setLocalStorage({
+      lepupitre_ui_settings_v1: "{bad-json",
     });
-    const { useUiPreferences } = await import("./uiPreferences");
-    const { settings } = useUiPreferences();
-    expect(settings.value.primaryNavMode).toBe("sidebar-icon");
-    expect(settings.value.sidebarPinned).toBe(false);
-    expect(settings.value.onboardingSeen).toBe(false);
-    expect(settings.value.gamificationMode).toBe("balanced");
-    expect(settings.value.mascotEnabled).toBe(true);
-    expect(settings.value.mascotIntensity).toBe("contextual");
-    expect(settings.value.waveformStyle).toBe("classic");
+    const { settings } = await loadUiPreferences();
+    expectDefaultSettings(settings);
   });
 
   it("persists voiceup mascot and gamification preferences", async () => {
-    const { useUiPreferences } = await import("./uiPreferences");
     const {
       settings,
       setGamificationMode,
       setMascotEnabled,
       setMascotIntensity,
-    } = useUiPreferences();
+    } = await loadUiPreferences();
 
     setGamificationMode("quest-world");
     setMascotEnabled(false);
@@ -170,8 +155,7 @@ describe("uiPreferences", () => {
   });
 
   it("persists waveform style preferences and falls back when invalid", async () => {
-    const { useUiPreferences } = await import("./uiPreferences");
-    const { settings, setWaveformStyle } = useUiPreferences();
+    const { settings, setWaveformStyle } = await loadUiPreferences();
 
     setWaveformStyle("spark");
 
@@ -179,22 +163,17 @@ describe("uiPreferences", () => {
     const stored = globalThis.localStorage.getItem("lepupitre_ui_settings_v1") ?? "";
     expect(stored).toContain("\"waveformStyle\":\"spark\"");
 
-    vi.resetModules();
-    Object.defineProperty(globalThis, "localStorage", {
-      value: createStorage({
-        lepupitre_ui_settings_v1: JSON.stringify({
-          waveformStyle: "invalid-style",
-        }),
+    setLocalStorage({
+      lepupitre_ui_settings_v1: JSON.stringify({
+        waveformStyle: "invalid-style",
       }),
-      configurable: true,
-      writable: true,
     });
-    const reloaded = (await import("./uiPreferences")).useUiPreferences();
+    const reloaded = await loadUiPreferences();
     expect(reloaded.settings.value.waveformStyle).toBe("classic");
   });
 
   it("exposes setter helpers for the full UI preference contract", async () => {
-    const preferences = (await import("./uiPreferences")).useUiPreferences();
+    const preferences = await loadUiPreferences();
 
     expect(typeof preferences.setPrimaryNavMode).toBe("function");
     expect(typeof preferences.setSidebarPinned).toBe("function");
