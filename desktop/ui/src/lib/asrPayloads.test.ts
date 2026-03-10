@@ -44,4 +44,9 @@ describe("asrPayloads", () => {
       spokenPunctuation: true,
     });
   });
+
+  it("omits input device id when the caller passes null", () => {
+    const payload = buildRecordingStartPayload("profile-1", SETTINGS, null);
+    expect(payload).not.toHaveProperty("inputDeviceId");
+  });
 });

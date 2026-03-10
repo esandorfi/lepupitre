@@ -154,6 +154,18 @@ describe("resolvePrimaryNavItems", () => {
     const currentTalk = items.find((item) => item.id === "current-talk");
     expect(currentTalk?.active).toBe(false);
   });
+
+  it("shows the talks badge from the current project list size", () => {
+    const items = resolvePrimaryNavItems(
+      baseContext({
+        projects: [PROJECT_P7],
+      }),
+      (key) => key
+    );
+
+    const talks = items.find((item) => item.id === "talks");
+    expect(talks?.badge).toBe(1);
+  });
 });
 
 describe("buildContextBreadcrumbs", () => {

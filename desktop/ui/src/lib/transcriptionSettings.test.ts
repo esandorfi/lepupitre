@@ -85,4 +85,11 @@ describe("transcriptionSettings", () => {
       spokenPunctuation: false,
     });
   });
+
+  it("exposes settings state and the update helper", async () => {
+    const transcription = (await import("./transcriptionSettings")).useTranscriptionSettings();
+
+    expect(typeof transcription.updateSettings).toBe("function");
+    expect(transcription.settings.value.model).toBe("tiny");
+  });
 });

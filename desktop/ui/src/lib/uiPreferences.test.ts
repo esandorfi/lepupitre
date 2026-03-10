@@ -192,4 +192,16 @@ describe("uiPreferences", () => {
     const reloaded = (await import("./uiPreferences")).useUiPreferences();
     expect(reloaded.settings.value.waveformStyle).toBe("classic");
   });
+
+  it("exposes setter helpers for the full UI preference contract", async () => {
+    const preferences = (await import("./uiPreferences")).useUiPreferences();
+
+    expect(typeof preferences.setPrimaryNavMode).toBe("function");
+    expect(typeof preferences.setSidebarPinned).toBe("function");
+    expect(typeof preferences.setOnboardingSeen).toBe("function");
+    expect(typeof preferences.setGamificationMode).toBe("function");
+    expect(typeof preferences.setMascotEnabled).toBe("function");
+    expect(typeof preferences.setMascotIntensity).toBe("function");
+    expect(typeof preferences.setWaveformStyle).toBe("function");
+  });
 });

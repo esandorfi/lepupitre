@@ -69,4 +69,8 @@ describe("feedbackContext", () => {
       )
     ).toBe("Boss run");
   });
+
+  it("returns an empty label when no feedback context is available", () => {
+    expect(resolveFeedbackContextLabel(null, () => "unused", "Boss run")).toBe("");
+  });
 });
