@@ -69,4 +69,10 @@ describe("questFlow", () => {
       questAnalysisHintKey(state({ isAudioQuest: true, attemptId: "a1", transcriptId: "t1" }))
     ).toBe("quest.analysis_ready");
   });
+
+  it("treats trimmed text as unchanged when it matches the submitted snapshot", () => {
+    expect(
+      canSubmitQuestText(state({ text: " draft ", submittedTextSnapshot: "draft" }))
+    ).toBe(false);
+  });
 });

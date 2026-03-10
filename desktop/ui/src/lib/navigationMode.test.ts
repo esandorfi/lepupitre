@@ -15,4 +15,8 @@ describe("resolveEffectiveNavMode", () => {
     expect(resolveEffectiveNavMode("top", 1280)).toBe("top");
     expect(resolveEffectiveNavMode("top", 800)).toBe("top");
   });
+
+  it("falls back to top mode at very small widths", () => {
+    expect(resolveEffectiveNavMode("sidebar-icon", 0)).toBe("top");
+  });
 });

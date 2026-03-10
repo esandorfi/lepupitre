@@ -24,4 +24,8 @@ describe("classifyAsrError", () => {
   it("returns null for unknown errors", () => {
     expect(classifyAsrError("permission denied")).toBeNull();
   });
+
+  it("keeps model missing classification ahead of timeout fragments", () => {
+    expect(classifyAsrError("model_missing sidecar_decode_timeout")).toBe("model_missing");
+  });
 });
