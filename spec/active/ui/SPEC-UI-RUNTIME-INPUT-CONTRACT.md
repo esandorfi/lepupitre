@@ -164,6 +164,32 @@ Flat argument objects are allowed only if:
 
 Exception must be documented in file-level comment or spec note.
 
+## 8.1 Feature-fit rule: runtime vs semantic controller
+
+Do not treat runtime-style grouped contracts as the default best fit for every touched feature page.
+
+Choose architecture by orchestration fit:
+
+- Prefer `controller + commands + view-model (+ pure helpers)` when a feature/page is mostly:
+  - moderate CRUD or settings behavior,
+  - local dialog/focus state,
+  - limited async concurrency,
+  - low shared orchestration reuse.
+- Prefer grouped runtime-style contracts (`state.identity/model/draft/ui + deps`) when a feature/page has:
+  - explicit concurrency policy,
+  - multi-stage async orchestration,
+  - lifecycle listeners/subscriptions,
+  - meaningful shared runtime reuse across pages or subsections.
+
+Pilot evidence:
+
+- workspace profiles supports semantic split better than transport split,
+- packs import remains a better fit for runtime-style orchestration,
+- settings supports a hybrid model:
+  - page-level controller for composition,
+  - semantic modules for moderate sections,
+  - runtime-style modules for ASR-heavy subsections.
+
 ## 9. Route composition policy
 
 Navigation paths composed in feature scope must use feature route helpers.

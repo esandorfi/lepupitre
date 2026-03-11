@@ -2,16 +2,16 @@
 import { reactive } from "vue";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import { useI18n } from "@/lib/i18n";
-import { useProfilesPageState } from "@/features/workspace/composables/useProfilesPageState";
+import { useProfilesPageController } from "@/features/workspace/composables/useProfilesPageController";
 
 /**
  * Page composition root (profiles management).
- * Reads: profiles and editing state from `useProfilesPageState`.
- * Actions: create/switch/rename/delete profile commands delegated to runtime actions.
+ * Reads: profiles and editing state from `useProfilesPageController`.
+ * Actions: create/switch/rename/delete profile commands delegated to controller commands.
  * Boundary: page handles composition and local i18n labels.
  */
 const { t } = useI18n();
-const vm = reactive(useProfilesPageState());
+const vm = reactive(useProfilesPageController(t));
 </script>
 
 <template>
