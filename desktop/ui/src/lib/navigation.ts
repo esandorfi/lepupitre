@@ -3,12 +3,13 @@ import type { FeedbackContext, ProjectListItem, ProjectSummary } from "../schema
 export type PrimaryNavIcon =
   | "training"
   | "quick-record"
+  | "voice-recorder"
   | "talks"
   | "feedback"
   | "current-talk";
 
 export type PrimaryNavItem = {
-  id: "training" | "quick-record" | "talks" | "feedback" | "current-talk";
+  id: "training" | "quick-record" | "voice-recorder" | "talks" | "feedback" | "current-talk";
   labelKey: string;
   icon: PrimaryNavIcon;
   to: (context: ShellNavigationContext) => string;
@@ -35,6 +36,7 @@ export type ContextBreadcrumb = {
 type RouteName =
   | "training"
   | "quick-record"
+  | "voice-recorder"
   | "talks"
   | "talk-define"
   | "talk-builder"
@@ -92,6 +94,13 @@ const PRIMARY_NAV_ITEMS: PrimaryNavItem[] = [
     icon: "quick-record",
     to: () => "/record",
     active: (context) => context.routeName === "quick-record",
+  },
+  {
+    id: "voice-recorder",
+    labelKey: "nav.voice_recorder",
+    icon: "voice-recorder",
+    to: () => "/voice-recorder",
+    active: (context) => context.routeName === "voice-recorder",
   },
   {
     id: "talks",

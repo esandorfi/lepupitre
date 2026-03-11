@@ -250,6 +250,10 @@ export const AsrModelDownloadProgressEventSchema = z.object({
   totalBytes: z.number().nonnegative(),
 });
 
+export const VoiceMemoDeletePayloadSchema = z.object({
+  path: z.string().min(1),
+});
+
 export const AnalyzeAttemptPayloadSchema = z.object({
   profileId: IdSchema,
   attemptId: IdSchema,

@@ -5,12 +5,14 @@ import { packsRoutes } from "./packs.routes";
 import { supportRoutes } from "./support.routes";
 import { talksRoutes } from "./talks.routes";
 import { trainingRoutes } from "./training.routes";
+import { voiceRecorderRoutes } from "./voice-recorder.routes";
 import { workspaceRoutes } from "./workspace.routes";
 
 export const routes: RouteRecordRaw[] = [
   { path: "/", redirect: "/training" },
   ...homeRoutes,
   ...trainingRoutes,
+  ...voiceRecorderRoutes,
   ...workspaceRoutes,
   ...talksRoutes,
   ...feedbackRoutes,

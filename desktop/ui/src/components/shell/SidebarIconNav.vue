@@ -15,6 +15,8 @@ function iconPath(icon: PrimaryNavIcon): string {
       return "M3 11.5 12 4l9 7.5M5.5 10.5V20h13v-9.5";
     case "quick-record":
       return "M12 8a4 4 0 1 0 0 8a4 4 0 0 0 0-8Zm0 10v3m-3 0h6";
+    case "voice-recorder":
+      return "M12 1a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3ZM19 10v1a7 7 0 0 1-14 0v-1M12 18v4m-4 0h8";
     case "talks":
       return "M4 6h16M4 12h16M4 18h16";
     case "feedback":

@@ -1178,6 +1178,27 @@ fn reveal_in_file_manager(path: &Path) -> Result<(), String> {
     }
 }
 
+#[tauri::command]
+pub fn voice_memo_delete(app: tauri::AppHandle, path: String) -> Result<(), String> {
+    let app_data_dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("app_data_dir: {e}"))?;
+    let app_data_dir = app_data_dir
+        .canonicalize()
+        .map_err(|e| format!("app_data_dir: {e}"))?;
+    let requested = PathBuf::from(&path)
+        .canonicalize()
+        .map_err(|e| format!("path: {e}"))?;
+
+    if !requested.starts_with(&app_data_dir) {
+        return Err("path_not_allowed".to_string());
+    }
+
+    std::fs::remove_file(&requested).map_err(|e| format!("delete: {e}"))?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod audio_tests {
     use super::*;

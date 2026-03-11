@@ -1,9 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(ls:*)",
-      "Bash(pnpm:*)",
-      "WebSearch"
+      "Bash(cargo check:*)",
+      "Bash(npx vue-tsc:*)"
     ]
   }
 }
