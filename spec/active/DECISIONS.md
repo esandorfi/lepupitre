@@ -246,3 +246,38 @@ Use this file for new architecture, security, IPC, and release decisions.
   - `docs/plan/PLAN-TALKS-VUE3-SOTA.md`
   - `docs/plan/PLAN-UI-FEATURE-RULES-ROLLOUT.md`
   - `spec/active/ui/SPEC-UI-RUNTIME-INPUT-CONTRACT.md`
+
+### DEC-20260310-workspace-profiles-semantic-controller-split
+- Status: accepted
+- Context:
+  - The workspace profiles page had already adopted cross-feature page rules (`single vm`, local i18n, composition header), but the underlying orchestration remained split across page-state, runtime, and action-factory layers.
+  - For the actual product behavior on this page (create, switch, rename, delete profile + create-focus route query), that split created more navigation and review cost than it removed.
+  - Existing runtime-input governance remains valuable for higher-orchestration features, but the workspace profiles page did not benefit from a transport-heavy `identity/model/ui` fan-out.
+- Decision:
+  - For the workspace profiles feature, replace transport-oriented orchestration with a semantic split:
+    - `useProfilesPageController`
+    - `profilesCommands`
+    - `profilesViewModel`
+    - `profilesPageHelpers` limited to pure helpers
+  - Keep the page-level governance already adopted:
+    - single `vm` page consumption,
+    - page-local i18n ownership,
+    - composition-root header,
+    - no direct IPC/store orchestration in the page SFC.
+  - Treat this as a pilot rule:
+    - moderate CRUD-style pages may prefer semantic split (`controller` + `commands` + `view-model`) over transport split,
+    - high-orchestration features can continue using explicit runtime-style grouped contracts.
+- Consequences:
+  - The workspace profiles feature becomes easier to trace: one user action should now be understandable from page + controller + commands/view-model.
+  - Existing UI governance is refined, not reverted:
+    - page/container rules remain,
+    - runtime-style grouped contracts are no longer assumed to be the default best fit for every touched feature.
+  - The extracted repository rule is now:
+    - moderate CRUD/settings pages may use semantic split,
+    - async/lifecycle-heavy flows should keep runtime-style grouped contracts,
+    - hybrid pages may combine both at subsection level.
+  - Future cross-feature rollout of this pattern requires evidence from at least one additional feature before changing broader governance documents.
+- Related specs/docs:
+  - `docs/plan/PLAN-WORKSPACE-PROFILES-PAGE-CONTROLLER.md`
+  - `docs/plan/PLAN-UI-FEATURE-RULES-ROLLOUT.md`
+  - `spec/active/ui/SPEC-UI-RUNTIME-INPUT-CONTRACT.md`

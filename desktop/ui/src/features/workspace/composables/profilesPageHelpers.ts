@@ -1,6 +1,4 @@
-import { ref, type ComponentPublicInstance, type Ref } from "vue";
-import type { ProfileSummary } from "@/schemas/ipc";
-import { appState } from "@/stores/app";
+import type { ComponentPublicInstance } from "vue";
 
 export type InputRefTarget =
   | HTMLInputElement
@@ -9,18 +7,6 @@ export type InputRefTarget =
   | null;
 
 export type Translate = (key: string) => string;
-
-export type ProfilesState = {
-  name: Ref<string>;
-  error: Ref<string | null>;
-  isSaving: Ref<boolean>;
-  isRenaming: Ref<boolean>;
-  deletingId: Ref<string | null>;
-  editingId: Ref<string | null>;
-  renameValue: Ref<string>;
-  renameOriginal: Ref<string>;
-  deleteTarget: Ref<ProfileSummary | null>;
-};
 
 /**
  * Resolves resolve input element from current inputs.
@@ -92,53 +78,14 @@ export function initialsFor(nameValue: string) {
 /**
  * Implements has duplicate name behavior.
  */
-export function hasDuplicateName(nextName: string, exceptId?: string) {
-  return appState.profiles.some(
+export function hasDuplicateName(
+  profiles: ReadonlyArray<{ id: string; name: string }>,
+  nextName: string,
+  exceptId?: string
+) {
+  return profiles.some(
     (profile) =>
       profile.id !== exceptId &&
       profile.name.trim().toLowerCase() === nextName.trim().toLowerCase()
   );
-}
-
-/**
- * Creates and returns the create profiles state contract.
- */
-export function createProfilesState(): ProfilesState {
-  return {
-    name: ref(""),
-    error: ref<string | null>(null),
-    isSaving: ref(false),
-    isRenaming: ref(false),
-    deletingId: ref<string | null>(null),
-    editingId: ref<string | null>(null),
-    renameValue: ref(""),
-    renameOriginal: ref(""),
-    deleteTarget: ref<ProfileSummary | null>(null),
-  };
-}
-
-/**
- * Creates and returns the create rename inputs contract.
- */
-export function createRenameInputs() {
-  const renameInputs = new Map<string, InputRefTarget>();
-
-  const setRenameInput =
-    (profileId: string) =>
-    (el: Element | ComponentPublicInstance | null, _refs?: Record<string, unknown>) => {
-      void _refs;
-      if (!el) {
-        renameInputs.delete(profileId);
-        return;
-      }
-      renameInputs.set(profileId, el as InputRefTarget);
-    };
-
-  function focusRenameInput(profileId: string) {
-    const input = resolveInputElement(renameInputs.get(profileId) ?? null);
-    input?.focus();
-    input?.select();
-  }
-
-  return { setRenameInput, focusRenameInput };
 }
